@@ -7,4 +7,3 @@ class settings(QObject):
         super().__init__(parent)
         self.priority = math.inf
         self.name = "Settings"
-        self.qml = f"qrc:/tabs/settings/settings.qml"

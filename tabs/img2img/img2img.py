@@ -5,4 +5,3 @@ class img2img(QObject):
         super().__init__(parent)
         self.priority = 1
         self.name = "Img2Img"
-        self.qml = f"qrc:/tabs/img2img/img2img.qml"

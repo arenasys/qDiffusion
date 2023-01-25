@@ -59,6 +59,23 @@ def build_qml_py():
         raise Exception(status.stderr.decode("utf-8"))
 
     shutil.rmtree(os.path.join("qml", "tabs"))
+    os.remove(qml_rc)
+
+def load_tabs(backend):
+    tabs = []
+    for tab in glob.glob(os.path.join("tabs", "*")):
+        tab_name = tab.split(os.path.sep)[-1]
+        tab_module = importlib.import_module(f"tabs.{tab_name}.{tab_name}")
+        tab_class = getattr(tab_module, tab_name)
+        tab_instance = tab_class(parent=backend)
+        tab_instance.source = f"qrc:/tabs/{tab_name}/{tab_name}.qml"
+        tabs += [tab_instance]
+    for tab in tabs:
+        if not hasattr(tab, "priority"):
+            tab.priority = len(tabs)
+    
+    tabs.sort(key=lambda tab: tab.priority)
+    backend.register_tabs(tabs)
 
 def start():
     import qml.qml_rc
@@ -79,18 +96,7 @@ def start():
 
     qmlRegisterSingletonType(gui.GUI, "gui", 1, 0, "GUI", lambda qml, js: backend)
 
-    tabs = []
-    for tab in glob.glob(os.path.join("tabs", "*")):
-        tab_name = tab.split(os.path.sep)[-1]
-        tab_py = f"tabs.{tab_name}.{tab_name}"
-        tab_module = importlib.import_module(tab_py)
-        tab_class = getattr(tab_module, tab_name)
-        tab_instance = tab_class(parent=backend)
-        tabs += [tab_instance]
-        qmlRegisterSingletonType(tab_class, "gui", 1, 0, tab_name.capitalize(), lambda qml, js: tab_instance)
-    
-    tabs.sort(key=lambda tab: tab.priority)
-    backend.register_tabs(tabs)
+    load_tabs(backend)
 
     engine.load(QUrl('qrc:/Main.qml'))
     

@@ -3,7 +3,6 @@ import glob
 import importlib
 
 from PyQt5.QtCore import pyqtProperty, QObject
-from PyQt5.QtQml import qmlRegisterSingletonType
 
 class GUI(QObject):
     def __init__(self, parent):
@@ -15,7 +14,7 @@ class GUI(QObject):
 
     @pyqtProperty(list, constant=True)
     def tab_sources(self):
-        return [tab.qml for tab in self.tabs]
+        return [tab.source for tab in self.tabs]
 
     @pyqtProperty(list, constant=True)
     def tab_names(self): 
