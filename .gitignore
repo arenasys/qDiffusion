@@ -1,0 +1,4 @@
+qml/qml_rc.py
+*.log
+.vscode
+__pycache__
