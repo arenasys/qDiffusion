@@ -5,11 +5,19 @@ import QtQuick.Layouts 1.15
 
 import gui 1.0
 
+import "style"
+import "components"
+
 ApplicationWindow {
     visible: true
     width: 1100
     height: 600
     title: GUI.title
     id: root
-    color: COMMON.bg0
+    color: "#000"
+
+    WindowBar {
+        anchors.left: parent.left
+        anchors.right: parent.right
+    }
 }
