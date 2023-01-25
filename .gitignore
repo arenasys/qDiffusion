@@ -1,4 +1,6 @@
+qml/tabs
 qml/qml_rc.py
 *.log
 .vscode
 __pycache__
+*/__pycache__

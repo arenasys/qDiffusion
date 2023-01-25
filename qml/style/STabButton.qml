@@ -2,6 +2,8 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 
+import gui 1.0
+
 TabButton {
     id: control
     width: implicitWidth
@@ -18,7 +20,7 @@ TabButton {
         Rectangle {
             height: 25
             opacity: enabled ? 1 : 0.3
-            color: control.down ? "#161616" : (selected ? "#404040" : "#202020")
+            color: control.down ? COMMON.bg0 : (selected ? COMMON.bg4 : COMMON.bg2)
             anchors.bottom: parent.bottom
             anchors.left: parent.left
             anchors.right: parent.right
@@ -31,7 +33,7 @@ TabButton {
                 y: -parent.height
                 transformOrigin: Item.BottomRight
                 antialiasing: true
-                color: "#303030"
+                color: COMMON.bg3
             }
 
             Rectangle {
@@ -42,16 +44,16 @@ TabButton {
                 y: -parent.height
                 transformOrigin: Item.BottomRight
                 antialiasing: true
-                color: "#303030"
+                color: COMMON.bg3
             }
 
-            UniformText {
+            SText {
                 anchors.fill: parent
                 topPadding: 1
                 text: control.text
                 font.pointSize: 10.9
                 opacity: enabled ? 1.0 : 0.3
-                color: "white"
+                color: COMMON.fg0
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment:  Text.AlignVCenter
                 elide: Text.ElideRight
