@@ -9,10 +9,12 @@ import shutil
 import importlib
 
 from PyQt5.QtCore import QUrl, QCoreApplication, Qt
-from PyQt5.QtQml import QQmlApplicationEngine, qmlRegisterSingletonType
+from PyQt5.QtQml import QQmlApplicationEngine, qmlRegisterSingletonType, qmlRegisterType
 from PyQt5.QtWidgets import QApplication
 
 import gui
+import sql
+import thumbnails
 
 class Application(QApplication):
         def event(self, e):
@@ -61,13 +63,13 @@ def build_qml_py():
     shutil.rmtree(os.path.join("qml", "tabs"))
     os.remove(qml_rc)
 
-def load_tabs(backend):
+def load_tabs(app, backend):
     tabs = []
     for tab in glob.glob(os.path.join("tabs", "*")):
         tab_name = tab.split(os.path.sep)[-1]
         tab_module = importlib.import_module(f"tabs.{tab_name}.{tab_name}")
         tab_class = getattr(tab_module, tab_name)
-        tab_instance = tab_class(parent=backend)
+        tab_instance = tab_class(parent=app)
         tab_instance.source = f"qrc:/tabs/{tab_name}/{tab_name}.qml"
         tabs += [tab_instance]
     for tab in tabs:
@@ -87,6 +89,8 @@ def start():
     signal.signal(signal.SIGINT, lambda sig, frame: app.quit())
     app.startTimer(100)
 
+    qmlRegisterType(sql.Sql, "gui", 1, 0, "Sql")
+
     engine = QQmlApplicationEngine()
     engine.quit.connect(app.quit)
 
@@ -94,9 +98,14 @@ def start():
 
     backend = gui.GUI(parent=app)
 
-    qmlRegisterSingletonType(gui.GUI, "gui", 1, 0, "GUI", lambda qml, js: backend)
+    os.makedirs("outputs/txt2img", exist_ok=True)
 
-    load_tabs(backend)
+    engine.addImageProvider("thumbnail", backend.thumbnails.sync_provider)
+    engine.addImageProvider("async-thumbnail", backend.thumbnails.async_provider)
+
+    qmlRegisterSingletonType(gui.GUI, "gui", 1, 0, "GUI", lambda qml, js: backend)
+    
+    load_tabs(backend, backend)
 
     engine.load(QUrl('qrc:/Main.qml'))
     

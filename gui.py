@@ -2,12 +2,29 @@ import os
 import glob
 import importlib
 
-from PyQt5.QtCore import pyqtProperty, QObject
+from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt
+from PyQt5.QtSql import QSqlDriver
+
+import sql
+import filesystem
+import thumbnails
 
 class GUI(QObject):
+    aboutToQuit = pyqtSignal()
+
     def __init__(self, parent):
         super().__init__(parent)
+        self.db = sql.Database(self)
+        self.watcher = filesystem.Watcher()
+        self.thumbnails = thumbnails.ThumbnailStorage((256, 256), 75)
         self.tabs = []
+
+        parent.aboutToQuit.connect(self.stop)
+
+    @pyqtSlot()
+    def stop(self):
+        self.watcher.stop()
+        self.aboutToQuit.emit()
     
     def register_tabs(self, tabs):
         self.tabs = tabs
