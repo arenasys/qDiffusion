@@ -14,13 +14,12 @@ from PyQt5.QtWidgets import QApplication
 
 import gui
 import sql
-import thumbnails
 
 class Application(QApplication):
         def event(self, e):
             return QApplication.event(self, e)
 
-def build_qml_rc():
+def buildQMLRc():
     qml_rc = os.path.join("qml", "qml.qrc")
     if os.path.exists(qml_rc):
         os.remove(qml_rc)
@@ -49,7 +48,7 @@ def build_qml_rc():
     with open(qml_rc, "w") as f:
         f.write(contents)
 
-def build_qml_py():
+def buildQMLPy():
     qml_py = os.path.join("qml", "qml_rc.py")
     qml_rc = os.path.join("qml", "qml.qrc")
 
@@ -63,7 +62,7 @@ def build_qml_py():
     shutil.rmtree(os.path.join("qml", "tabs"))
     os.remove(qml_rc)
 
-def load_tabs(app, backend):
+def loadTabs(app, backend):
     tabs = []
     for tab in glob.glob(os.path.join("tabs", "*")):
         tab_name = tab.split(os.path.sep)[-1]
@@ -77,7 +76,7 @@ def load_tabs(app, backend):
             tab.priority = len(tabs)
     
     tabs.sort(key=lambda tab: tab.priority)
-    backend.register_tabs(tabs)
+    backend.registerTabs(tabs)
 
 def start():
     import qml.qml_rc
@@ -100,18 +99,18 @@ def start():
 
     os.makedirs("outputs/txt2img", exist_ok=True)
 
-    engine.addImageProvider("thumbnail", backend.thumbnails.sync_provider)
-    engine.addImageProvider("async-thumbnail", backend.thumbnails.async_provider)
+    engine.addImageProvider("sync", backend.thumbnails.sync_provider)
+    engine.addImageProvider("async", backend.thumbnails.async_provider)
 
     qmlRegisterSingletonType(gui.GUI, "gui", 1, 0, "GUI", lambda qml, js: backend)
     
-    load_tabs(backend, backend)
+    loadTabs(backend, backend)
 
     engine.load(QUrl('qrc:/Main.qml'))
     
     sys.exit(app.exec())
 
-def excepthook(exc_type, exc_value, exc_tb):
+def exceptHook(exc_type, exc_value, exc_tb):
     tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
     with open("crash.log", "a") as f:
         f.write(f"{datetime.datetime.now()}\n{tb}\n")
@@ -120,7 +119,7 @@ def excepthook(exc_type, exc_value, exc_tb):
     QApplication.quit()
 
 if __name__ == "__main__":
-    sys.excepthook = excepthook
-    build_qml_rc()
-    build_qml_py()
+    sys.excepthook = exceptHook
+    buildQMLRc()
+    buildQMLPy()
     start()

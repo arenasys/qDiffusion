@@ -9,8 +9,8 @@ import "../style"
 Item {
     id: root
 
-    property var currentTab: GUI.tab_names[0]
-    property var shown: GUI.tab_names.slice(0,-1)
+    property var currentTab: GUI.tabNames[0]
+    property var shown: GUI.tabNames.slice(0,-1)
 
     function getShown() {
         var _shown = []
@@ -58,7 +58,7 @@ Item {
         anchors.top: root.top
         contentHeight: 30
 
-        property var settingsName: GUI.tab_names.slice(-1)[0] 
+        property var settingsName: GUI.tabNames.slice(-1)[0] 
 
         STabButton {
             text: qsTr(rightBar.settingsName)
@@ -82,7 +82,7 @@ Item {
             id: dropdownContextMenu
 
             Repeater {
-                model: GUI.tab_names.slice(0,-1)
+                model: GUI.tabNames.slice(0,-1)
                 SContextMenuItem {
                     text: modelData
                     checkable: true

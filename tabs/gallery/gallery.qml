@@ -17,7 +17,7 @@ Rectangle {
         anchors.fill: parent
         model: Sql {
             id: sql
-            query: "SELECT file FROM images ORDER BY rowid;"
+            query: "SELECT file FROM images ORDER BY file;"
         }
     }
 }

@@ -34,7 +34,7 @@ Item {
         id: img
         anchors.fill: thumb
         asynchronous: false
-        source: "image://async-thumbnail/" + thumb.source
+        source: (GUI.isCached(thumb.source) ? "image://sync/" : "image://async/") + thumb.source
         fillMode: Image.PreserveAspectFit
         mipmap: true
         cache: false

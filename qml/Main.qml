@@ -51,12 +51,11 @@ ApplicationWindow {
         anchors.top: barDivider.bottom
         anchors.bottom: root.bottom
 
-        currentIndex: GUI.tab_names.indexOf(tabBar.currentTab)
-
+        currentIndex: GUI.tabNames.indexOf(tabBar.currentTab)
 
         function addTab() {
-            for(var i = 0; i < GUI.tab_sources.length; i++) {
-                var component = Qt.createComponent(GUI.tab_sources[i])
+            for(var i = 0; i < GUI.tabSources.length; i++) {
+                var component = Qt.createComponent(GUI.tabSources[i])
                 if(component.status != Component.Ready) {
                     console.log("ERROR", component.errorString())
                 } else {

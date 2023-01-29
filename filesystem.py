@@ -17,7 +17,6 @@ class WatcherRunnableSignals(QObject):
             self.stopping = True
 
 class WatcherRunnable(QRunnable):
-    found_image = pyqtSignal(int, str, str, str)
     def __init__(self, folder):
         super(WatcherRunnable, self).__init__()
         self.signals = WatcherRunnableSignals(folder)
@@ -39,7 +38,8 @@ class WatcherRunnable(QRunnable):
 
 class Watcher(QObject):
     started = pyqtSignal(str)
-    result = pyqtSignal(str, str, int)
+    folder_changed = pyqtSignal(str, str, int)
+    file_changed = pyqtSignal(str)
     finished = pyqtSignal(str, int)
     kill = pyqtSignal(str)
 
@@ -48,7 +48,8 @@ class Watcher(QObject):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.watcher = QFileSystemWatcher(self)
-        self.watcher.directoryChanged.connect(self.folder_changed)
+        self.watcher.directoryChanged.connect(self.onFolderChanged)
+        self.watcher.fileChanged.connect(self.onFileChanged)
 
         self.folders = set()
         self.parents = {}
@@ -64,9 +65,17 @@ class Watcher(QObject):
     def stop(self):
         self.stopping = True
         self.pool.waitForDone()
+
+    @pyqtSlot(str)
+    def watchFile(self, file):
+        self.watcher.addPath(file)
+
+    @pyqtSlot(str)
+    def unwatchFile(self, file):
+        self.watcher.removePath(file)
         
     @pyqtSlot(str)
-    def watch_folder(self, folder):
+    def watchFolder(self, folder):
         self.folders.add(folder)
         parentFolder = os.path.dirname(folder)
         self.parents[folder] = parentFolder
@@ -74,10 +83,10 @@ class Watcher(QObject):
         self.watcher.addPath(folder)
         self.watcher.addPath(parentFolder)
 
-        self.watcher_start(folder)
+        self.watcherStart(folder)
 
     @pyqtSlot(str)
-    def unwatch_folder(self, folder):
+    def unwatchFolder(self, folder):
         self.kill.emit(folder)
 
         self.folders.remove(folder)
@@ -88,7 +97,7 @@ class Watcher(QObject):
         if not parent in self.parents.values():
             self.watcher.removePath(parent)
 
-    def watcher_start(self, folder):
+    def watcherStart(self, folder):
         if self.stopping:
             return
 
@@ -98,8 +107,8 @@ class Watcher(QObject):
             self.kill.emit(folder)
         
         watcher = WatcherRunnable(folder)
-        watcher.signals.result.connect(self.on_watcher_result)
-        watcher.signals.finished.connect(self.on_watcher_finished)
+        watcher.signals.result.connect(self.onWatcherResult)
+        watcher.signals.finished.connect(self.onWatcherFinished)
         self.kill.connect(watcher.signals.die)
 
         self.running[folder] = watcher
@@ -109,21 +118,25 @@ class Watcher(QObject):
         self.started.emit(folder)
     
     @pyqtSlot(str)
-    def folder_changed(self, folder):
+    def onFileChanged(self, file):
+        self.file_changed.emit(file)
+
+    @pyqtSlot(str)
+    def onFolderChanged(self, folder):
         if folder in self.folders:
-            self.watcher_start(folder)
+            self.watcherStart(folder)
             return
         else:
             for child, parent in self.parents.items():
                 if parent == folder:
                     self.watcher.addPath(child)
-                    self.watcher_start(child)
+                    self.watcherStart(child)
 
     @pyqtSlot(str, int)
-    def on_watcher_finished(self, folder, total):
+    def onWatcherFinished(self, folder, total):
         del self.running[folder]
         self.finished.emit(folder, total)
 
     @pyqtSlot(str, str, int)
-    def on_watcher_result(self, folder, file, idx):
-        self.result.emit(folder, file, idx)
+    def onWatcherResult(self, folder, file, idx):
+        self.folder_changed.emit(folder, file, idx)

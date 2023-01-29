@@ -1,6 +1,7 @@
 import io
+import os
 
-from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject, QMutex, QRunnable, QThreadPool, QUrl, QByteArray
+from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject, QMutex, QRunnable, QThreadPool, QUrl, QByteArray, QThread
 from PyQt5.QtSql import QSqlQuery
 from PyQt5.QtQuick import QQuickImageProvider, QQuickAsyncImageProvider, QQuickImageResponse, QQuickTextureFactory
 from PyQt5.QtGui import QImage
@@ -8,11 +9,18 @@ from PyQt5.QtGui import QImage
 import PIL.Image
 
 import filesystem
+import sql
 
 def get_thumbnail(file, size, quality):
-    image = PIL.Image.open(file)
     blob = io.BytesIO()
-    image.thumbnail(size, PIL.Image.ANTIALIAS)
+    while True:
+        try:
+            image = PIL.Image.open(file)
+            image.thumbnail(size, PIL.Image.ANTIALIAS)
+        except Exception:
+            QThread.msleep(100)
+            continue
+        break
     image.save(blob, "JPEG", quality=quality)
     return blob.getvalue()
 
@@ -26,8 +34,6 @@ class ThumbnailStorage(QObject):
 
         self.async_provider = AsyncThumbnailProvider(size, quality)
         self.sync_provider = SyncThumbnailProvider(size, quality)
-
-        #filesystem.Watcher.instance.result.connect(self.fileChanged)
 
     def get(self, file):
         self.guard.lock()
@@ -48,11 +54,6 @@ class ThumbnailStorage(QObject):
         if file in self.cache:
             del self.cache[file]
         self.guard.unlock()
-
-    #@pyqtSlot(str, str, int)
-    #def fileChanged(self, folder, file, idx):
-    #    if False:
-    #        self.remove(file)
 
 class ThumbnailResponseRunnableSignals(QObject):
     done = pyqtSignal('QImage')
