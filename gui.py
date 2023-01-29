@@ -8,12 +8,15 @@ from PyQt5.QtSql import QSqlDriver
 import sql
 import filesystem
 import thumbnails
+import backend
 
 class GUI(QObject):
     aboutToQuit = pyqtSignal()
 
     def __init__(self, parent):
         super().__init__(parent)
+
+        self.backend = backend.Backend()
         self.db = sql.Database(self)
         self.watcher = filesystem.Watcher()
         self.thumbnails = thumbnails.ThumbnailStorage((256, 256), 75, self)

@@ -5,3 +5,6 @@ qml/qml.rc
 .vscode
 __pycache__
 */__pycache__
+models
+outputs
+sd-inference-server
