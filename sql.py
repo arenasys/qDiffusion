@@ -59,6 +59,7 @@ class Connection(QObject):
 
 class Sql(QAbstractListModel):
     queryChanged = pyqtSignal()
+    resultsChanged = pyqtSignal()
     def __init__(self, parent):
         super().__init__(parent)
 
@@ -123,8 +124,10 @@ class Sql(QAbstractListModel):
             self.beginResetModel()
             self.results = newResults
             self.endResetModel()
+            self.resultsChanged.emit()
             return
 
+        changed = False
         i = 0
         while newResults and i < len(self.results):
             if self.results[i] == newResults[0]:
@@ -138,16 +141,19 @@ class Sql(QAbstractListModel):
                 self.beginRemoveRows(QModelIndex(), i, len(self.results)-1)
                 self.results = self.results[:i]
                 self.endRemoveRows()
+                changed = True
                 break
             elif srcIdx > 0:
                 self.beginRemoveRows(QModelIndex(), i, i+srcIdx-1)
                 self.results = self.results[:i] + self.results[i+srcIdx:]
                 self.endRemoveRows()
+                changed = True
         
             if dstIdx > 0:
                 self.beginInsertRows(QModelIndex(), i, i+dstIdx-1)
                 self.results = self.results[:i] + newResults[:dstIdx] + self.results[i:]
                 self.endInsertRows()
+                changed = True
                 newResults = newResults[dstIdx:]
                 i += dstIdx
 
@@ -155,6 +161,10 @@ class Sql(QAbstractListModel):
             self.beginInsertRows(QModelIndex(), i, i+len(newResults)-1)
             self.results += newResults
             self.endInsertRows()
+            changed = True
+
+        if changed:
+            self.resultsChanged.emit()
 
     def data(self, index, role):
         value = QVariant()
@@ -163,10 +173,15 @@ class Sql(QAbstractListModel):
             row = index.row()
             if row < len(self.results):
                 value = self.results[row].value(column)
+        elif role == Qt.UserRole:
+            row = index.row()
+            if row < len(self.results):
+                value = self.results[row].value(0)
         return value
 
     def updateFieldNames(self, record):
         self.fieldNames = {}
+        self.fieldNames[Qt.UserRole] = QByteArray(("modelData").encode("utf-8"))
         for i in range(len(record)):
             self.fieldNames[Qt.UserRole + i + 1] = QByteArray(("sql_" + record.fieldName(i)).encode("utf-8"))
 

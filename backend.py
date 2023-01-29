@@ -11,24 +11,22 @@ class Backend(QObject):
     response = pyqtSignal(int, object)
     cancel = pyqtSignal(int)
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
         self.inference = local.LocalInference()
         self.responses = queue.Queue()
 
-        self.inferenceThread = QThread()
-        self.inferenceThread.started.connect(self.inference.start)
-        self.inference.moveToThread(self.inferenceThread)
-        self.inferenceThread.start()
+        self.inference.start()
 
         self.request.connect(self.inference.onRequest)
         self.cancel.connect(self.inference.onCancel)
         self.inference.response.connect(self.onResponse)
+        
+        parent.aboutToQuit.connect(self.inference.stop)
 
-    def stop(self):
-        self.inference.stopping = True
-        self.inferenceThread.join()
+    def wait(self):
+        self.inference.wait()
     
     @pyqtSlot(object, result=int)
     def makeRequest(self, request):

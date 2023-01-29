@@ -16,7 +16,7 @@ class GUI(QObject):
     def __init__(self, parent):
         super().__init__(parent)
 
-        self.backend = backend.Backend()
+        self.backend = backend.Backend(self)
         self.db = sql.Database(self)
         self.watcher = filesystem.Watcher()
         self.thumbnails = thumbnails.ThumbnailStorage((256, 256), 75, self)
@@ -26,8 +26,9 @@ class GUI(QObject):
 
     @pyqtSlot()
     def stop(self):
-        self.watcher.stop()
         self.aboutToQuit.emit()
+        self.backend.wait()
+        self.watcher.wait()
     
     def registerTabs(self, tabs):
         self.tabs = tabs

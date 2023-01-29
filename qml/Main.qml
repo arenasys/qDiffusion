@@ -53,6 +53,10 @@ ApplicationWindow {
 
         currentIndex: GUI.tabNames.indexOf(tabBar.currentTab)
 
+        function releaseFocus() {
+            keyboardFocus.forceActiveFocus()
+        }
+
         function addTab() {
             for(var i = 0; i < GUI.tabSources.length; i++) {
                 var component = Qt.createComponent(GUI.tabSources[i])
@@ -67,5 +71,30 @@ ApplicationWindow {
         Component.onCompleted: {
             addTab()
         }
+
+        onCurrentIndexChanged: {
+            releaseFocus()
+        }
+    }
+
+    Item {
+        id: keyboardFocus
+        Keys.onPressed: {
+            event.accepted = true
+            if(event.modifiers & Qt.ControlModifier) {
+                switch(event.key) {
+                default:
+                    event.accepted = false
+                    break;
+                }
+            } else {
+                switch(event.key) {
+                default:
+                    event.accepted = false
+                    break;
+                }
+            }
+        }
+        Keys.forwardTo: [stackLayout.children[stackLayout.currentIndex]]
     }
 }

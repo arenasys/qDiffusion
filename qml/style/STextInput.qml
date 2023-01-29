@@ -3,7 +3,7 @@ import QtQuick.Controls 2.15
 
 import gui 1.0
 
-Text {
+TextInput {
     FontLoader {
         source: "qrc:/fonts/Cantarell-Regular.ttf"
     }

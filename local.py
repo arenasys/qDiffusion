@@ -7,7 +7,7 @@ import shutil
 from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, QThread
 from PyQt5.QtWidgets import QApplication
 
-class LocalInference(QObject):
+class LocalInference(QThread):
     response = pyqtSignal(int, object)
     def __init__(self):
         super().__init__()
@@ -19,6 +19,7 @@ class LocalInference(QObject):
             shutil.copytree(os.path.join("sd-inference-server", "models"), os.path.join(os.getcwd(), "models"))
 
         sys.path.insert(0, "sd-inference-server")
+
         import torch
         import attention, storage, wrapper
 
@@ -34,8 +35,7 @@ class LocalInference(QObject):
         self.current = None
         self.cancelled = set()
 
-    @pyqtSlot()
-    def start(self):
+    def run(self):
         while not self.stopping:
             try:
                 QThread.msleep(10)
@@ -54,6 +54,10 @@ class LocalInference(QObject):
                 pass
             except Exception as e:
                 self.response.emit(self.current, {"type":"error", "data":{"message":str(e)}})
+
+    @pyqtSlot()
+    def stop(self):
+        self.stopping = True
 
     @pyqtSlot(int, object)
     def onRequest(self, id, request):

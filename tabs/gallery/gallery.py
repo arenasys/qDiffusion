@@ -60,10 +60,11 @@ class Populater(QObject):
         try:
             with PIL.Image.open(file) as img:
                 parameters = img.info["parameters"]
+                width, height = img.size
         except Exception:
-            parameters = ""
+            return
 
-        width, height = img.size
+        
 
         q = QSqlQuery(self.conn.db)
         q.prepare("INSERT OR REPLACE INTO images(file, folder, parameters, idx, width, height) VALUES (:file, :folder, :parameters, :idx, :width, :height);")
@@ -93,6 +94,7 @@ class gallery(QObject):
         self.populaterThread.start()
 
         self.add_folder.emit("Txt2Img", "outputs/txt2img")
+        self.add_folder.emit("Img2Img", "outputs/img2img")
 
         parent.aboutToQuit.connect(self.stop)
 

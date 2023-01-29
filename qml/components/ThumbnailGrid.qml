@@ -8,6 +8,7 @@ GridView {
     property var currentSource: currentItem != null ? currentItem.source : null
     property var currentWidth: currentItem != null ? currentItem.sourceWidth : 0
     property var currentHeight: currentItem != null ? currentItem.sourceHeight : 0
+    property var currentParams: currentItem != null ? currentItem.sourceParams : ""
 
     property int cellSize: 250
     property int padding: 10
@@ -18,6 +19,9 @@ GridView {
     function align() {
         thumbView.positionViewAtIndex(thumbView.currentIndex, GridView.Contain)
     }
+
+    interactive: false
+    boundsBehavior: Flickable.StopAtBounds
 
     onWidthChanged: align()
 
@@ -47,6 +51,7 @@ GridView {
 
         property int sourceWidth: sql_width
         property int sourceHeight: sql_height
+        property var sourceParams: sql_parameters
         source: sql_file
 
         property var thumb_index: index

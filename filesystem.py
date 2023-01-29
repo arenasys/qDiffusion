@@ -61,8 +61,7 @@ class Watcher(QObject):
 
         self.stopping = False
 
-    @pyqtSlot()
-    def stop(self):
+    def wait(self):
         self.stopping = True
         self.pool.waitForDone()
 
