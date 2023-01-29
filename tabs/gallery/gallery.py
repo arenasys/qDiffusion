@@ -20,7 +20,7 @@ class Populater(QObject):
     def started(self):
         self.conn.connect()
         self.conn.doQuery("CREATE TABLE folders(folder TEXT UNIQUE, name TEXT UNIQUE);")
-        self.conn.doQuery("CREATE TABLE images(file TEXT UNIQUE, folder TEXT, parameters TEXT, idx INTEGER, CONSTRAINT unq UNIQUE (folder, idx));")
+        self.conn.doQuery("CREATE TABLE images(file TEXT UNIQUE, folder TEXT, parameters TEXT, idx INTEGER, width INTEGER, height INTEGER, CONSTRAINT unq UNIQUE (folder, idx));")
         self.conn.enableNotifications("folder")
         self.conn.enableNotifications("images")
 
@@ -63,12 +63,16 @@ class Populater(QObject):
         except Exception:
             parameters = ""
 
+        width, height = img.size
+
         q = QSqlQuery(self.conn.db)
-        q.prepare("INSERT OR REPLACE INTO images(file, folder, parameters, idx) VALUES (:file, :folder, :parameters, :idx);")
+        q.prepare("INSERT OR REPLACE INTO images(file, folder, parameters, idx, width, height) VALUES (:file, :folder, :parameters, :idx, :width, :height);")
         q.bindValue(":file", file)
         q.bindValue(":folder", folder)
         q.bindValue(":parameters", parameters)
         q.bindValue(":idx", idx)
+        q.bindValue(":width", width)
+        q.bindValue(":height", height)
         self.conn.doQuery(q)
         
 class gallery(QObject):

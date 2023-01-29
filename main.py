@@ -108,7 +108,7 @@ def start():
 
     engine.load(QUrl('qrc:/Main.qml'))
     
-    sys.exit(app.exec())
+    os._exit(app.exec())
 
 def exceptHook(exc_type, exc_value, exc_tb):
     tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))

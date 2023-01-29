@@ -1,7 +1,7 @@
 import io
 import os
 
-from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject, QMutex, QRunnable, QThreadPool, QUrl, QByteArray, QThread
+from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject, QMutex, QRunnable, QThreadPool, QUrl, QByteArray, QThread, QSize
 from PyQt5.QtSql import QSqlQuery
 from PyQt5.QtQuick import QQuickImageProvider, QQuickAsyncImageProvider, QQuickImageResponse, QQuickTextureFactory
 from PyQt5.QtGui import QImage
@@ -13,14 +13,8 @@ import sql
 
 def get_thumbnail(file, size, quality):
     blob = io.BytesIO()
-    while True:
-        try:
-            image = PIL.Image.open(file)
-            image.thumbnail(size, PIL.Image.ANTIALIAS)
-        except Exception:
-            QThread.msleep(100)
-            continue
-        break
+    image = PIL.Image.open(file)
+    image.thumbnail(size, PIL.Image.ANTIALIAS)
     image.save(blob, "JPEG", quality=quality)
     return blob.getvalue()
 
@@ -68,9 +62,13 @@ class ThumbnailResponseRunnable(QRunnable):
         self.image = None
 
     def run(self):
-        blob = get_thumbnail(self.file, self.size, self.quality)
-        ThumbnailStorage.instance.put(self.file, blob)
-        self.image = QImage.fromData(QByteArray(blob), "JPG")
+        try:
+            blob = get_thumbnail(self.file, self.size, self.quality)
+            ThumbnailStorage.instance.put(self.file, blob)
+            self.image = QImage.fromData(QByteArray(blob), "JPG")
+        except Exception:
+            self.image = QImage()
+
         self.signals.done.emit(self.image)
 
 class ThumbnailResponse(QQuickImageResponse):
@@ -112,10 +110,13 @@ class SyncThumbnailProvider(QQuickImageProvider):
 
     def requestImage(self, path, size):
         file = QUrl(path).path()
-        blob = ThumbnailStorage.instance.get(file)
-        if not blob:
-            blob = get_thumbnail(file, self.size, self.quality)
-            ThumbnailStorage.instance.put(file, blob)
+        try:
+            blob = ThumbnailStorage.instance.get(file)
+            if not blob:
+                blob = get_thumbnail(file, self.size, self.quality)
+                ThumbnailStorage.instance.put(file, blob)
 
-        image = QImage.fromData(QByteArray(blob), "JPG")
-        return image, image.size()
+            image = QImage.fromData(QByteArray(blob), "JPG")
+            return image, image.size()
+        except Exception:
+            return QImage(), QSize(0,0)

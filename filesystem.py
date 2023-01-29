@@ -30,7 +30,7 @@ class WatcherRunnable(QRunnable):
             for i, file in enumerate(files):
                 if self.signals.stopping:
                     return
-                self.signals.result.emit(self.folder, file, i)
+                self.signals.result.emit(self.folder, os.path.abspath(file), i)
             if not self.signals.stopping:
                 self.signals.finished.emit(self.folder, len(files))
         except Exception:
