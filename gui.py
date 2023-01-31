@@ -47,4 +47,4 @@ class GUI(QObject):
 
     @pyqtSlot(str, result=bool)
     def isCached(self, file):
-        return self.thumbnails.has(file)
+        return False# self.thumbnails.has(file)

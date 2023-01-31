@@ -50,6 +50,22 @@ MenuItem {
         }
     }
 
+    arrow: Canvas {
+        x: parent.width - width
+        implicitWidth: 20
+        implicitHeight: 20
+        visible: menuItem.subMenu
+        onPaint: {
+            var ctx = getContext("2d")
+            ctx.fillStyle = menuItem.highlighted ? "#ffffff" : "#aaa"
+            ctx.moveTo(5, 5)
+            ctx.lineTo(width - 5, height / 2)
+            ctx.lineTo(5, height - 5)
+            ctx.closePath()
+            ctx.fill()
+        }
+    }
+
     contentItem: SText {
         leftPadding: menuItem.checkable ? menuItem.indicator.width : 0
         text: menuItem.text

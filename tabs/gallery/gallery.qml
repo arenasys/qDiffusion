@@ -103,14 +103,100 @@ Rectangle {
         anchors.left: galleryDivider.right
         anchors.right: parent.right
         anchors.top: searchDivider.bottom
-        anchors.bottom: parent.bottom
+        anchors.bottom: infoDivider.top
         clip: true
         model: Sql {
+            id: filesSql
             query: "SELECT file, width, height, parameters FROM images WHERE folder = '" + folder.currentValue + "' AND parameters LIKE '%" + search.text + "%' ORDER BY file;"
             onResultsChanged: {
-                gallery.currentIndex = 0
-                gallery.align()
+                gallery.clearSelection()
             }
+        }
+
+        onContextMenu: {
+            galleryContextMenu.files = gallery.getSelectedFiles()
+            if(galleryContextMenu.files.length > 0) {
+                galleryContextMenu.popup()
+            }
+        }
+
+        SContextMenu {
+            property var files: []
+            id: galleryContextMenu
+            width: 100
+
+            Action {
+                text: "Open"
+            }
+
+            SContextMenuSeparator { }
+
+            SContextMenu {
+                title: "Copy to"
+                Action {
+                    text: "Clipboard"
+                }
+                Repeater {
+                    model: foldersSql
+                    SContextMenuItem {
+                        text: modelData
+                    }
+                }
+            }
+
+            SContextMenu {
+                title: "Move to"
+                Repeater {
+                    model: foldersSql
+                    SContextMenuItem {
+                        text: modelData
+                    }
+                }
+            }
+            Action {
+                text: "Delete"
+            }
+        }
+    }
+
+
+    Rectangle {
+        id: infoDivider
+        anchors.left: galleryDivider.right
+        anchors.right: parent.right
+        anchors.bottom: info.top
+        height: 5
+        color: COMMON.bg4
+    }
+
+    Rectangle {
+        id: info
+        anchors.left: galleryDivider.right
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        color: COMMON.bg1
+        height: 20
+
+        SText {
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            anchors.left: parent.left
+            verticalAlignment: Text.AlignVCenter
+            leftPadding: 8
+            topPadding: 0
+            font.pointSize: 9
+            text: gallery.selectedLength > 1 ? gallery.selectedLength + " images selected"  : ""
+        }
+
+        SText {
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            anchors.right: parent.right
+            verticalAlignment: Text.AlignVCenter
+            rightPadding: 8
+            topPadding: 0
+            font.pointSize: 9
+            text: gallery.count + " images"
         }
     }
 
@@ -163,6 +249,7 @@ Rectangle {
         valueRole: "sql_folder"
 
         model: Sql {
+            id: foldersSql
             query: "SELECT name, folder FROM folders;"
         }
 
@@ -222,33 +309,55 @@ Rectangle {
 
     Keys.onPressed: {
         event.accepted = true
+        const prev = gallery.currentIndex
+        switch(event.key) {
+        case Qt.Key_Up:
+            gallery.moveUp(event.modifiers)
+            break;
+        case Qt.Key_Down:
+            gallery.moveDown(event.modifiers)
+            break;
+        case Qt.Key_Left:
+            gallery.moveLeft(event.modifiers)
+            break;
+        case Qt.Key_Right:
+            gallery.moveRight(event.modifiers)
+            break;
+        case Qt.Key_Escape:
+            if(searchInput.activeFocus) {
+                search.text = ""
+                searchInput.text = ""
+                root.releaseFocus()
+            }
+            break;
+        default:
+            event.accepted = false
+            break;
+        }
+        if (event.accepted) {
+            if(prev != gallery.currentIndex) {
+                view.thumbnailOnly = event.isAutoRepeat
+            }
+            return
+        }
+
         if(event.modifiers & Qt.ControlModifier) {
             switch(event.key) {
+            case Qt.Key_Minus:
+                gallery.setCellSize(100)
+                break;
+            case Qt.Key_Equal:
+                gallery.setCellSize(200)
+                break;
             default:
                 event.accepted = false
                 break;
             }
         } else {
-            const prev = gallery.currentIndex
             switch(event.key) {
-            case Qt.Key_Up:
-                gallery.moveCurrentIndexUp()
-                break;
-            case Qt.Key_Down:
-                gallery.moveCurrentIndexDown()
-                break;
-            case Qt.Key_Left:
-                gallery.moveCurrentIndexLeft()
-                break;
-            case Qt.Key_Right:
-                gallery.moveCurrentIndexRight()
-                break;
             default:
                 event.accepted = false
                 break;
-            }
-            if(prev != gallery.currentIndex) {
-                view.thumbnailOnly = event.isAutoRepeat
             }
         }
     }

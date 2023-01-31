@@ -26,7 +26,6 @@ Item {
     }
 
     LoadingSpinner {
-
         height: thumb.height/4
         width: thumb.width/4
         anchors.centerIn: view
@@ -42,7 +41,7 @@ Item {
         maxHeight: Math.min(current.height, view.sourceHeight)
         sourceWidth: view.sourceWidth
         sourceHeight: view.sourceHeight
-        cache: false
+        //cache: false
         fill: true
     }
 
@@ -169,6 +168,11 @@ Item {
         }
     }
 
+    onSourceChanged: {
+        reset()
+    }
+
+
     onSourceHeightChanged: {
         reset()
     }
@@ -197,7 +201,7 @@ Item {
         anchors.fill: current
         hoverEnabled: false
 
-        acceptedButtons: Qt.RightButton
+        acceptedButtons: Qt.LeftButton || Qt.RightButton
 
         drag.target: thumb
 

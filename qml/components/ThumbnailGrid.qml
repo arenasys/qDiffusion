@@ -2,6 +2,8 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtGraphicalEffects 1.15
 
+import "../style"
+
 GridView {
     id: thumbView
 
@@ -10,8 +12,119 @@ GridView {
     property var currentHeight: currentItem != null ? currentItem.sourceHeight : 0
     property var currentParams: currentItem != null ? currentItem.sourceParams : ""
 
-    property int cellSize: 250
+    property int cellSize: 200
     property int padding: 10
+    property int fixedIndex: -1
+    cellWidth: Math.max((thumbView.width-padding)/Math.max(Math.ceil(thumbView.width/cellSize), 1), 50)
+    cellHeight: cellWidth
+    
+    function setCellSize(size) {
+        // force the layout to keep the top left item in view when resizing
+        fixedIndex = indexAt(contentX, contentY)
+        cellSize = size        
+    }
+
+    onContentHeightChanged: {
+        // need to pinpoint the moment when the resize has completed
+        let idx = indexAt(contentX + width/2, contentY + height/2)
+        let cnt = Math.floor((contentHeight*width)/(cellWidth*cellHeight))
+        if(fixedIndex != -1 && idx != -1 && cnt >= count) {
+            positionViewAtIndex(fixedIndex, GridView.Beginning)
+            fixedIndex = -1
+        }
+    }
+
+    property var selected: [0]
+    property var selectedLength: 1
+    
+    function getSelectedFiles() {
+        let files = []
+        for(let i = 0; i < selected.length; i++) {
+            let itm = itemAtIndex(i)
+            if(itm != null) {
+                files.push(itm.sql_file)
+            }
+        }
+        return files
+    }
+
+    function addToSelected(index) {
+        removeFromSelected(index)
+        selected.push(index)
+    }
+
+    function removeFromSelected(index) {
+        var pos = selected.indexOf(index)
+        if(pos !== -1) {
+            selected.splice(pos, 1)
+        }
+    }
+
+    function setSelection(index) {
+        thumbView.currentIndex = index
+        thumbView.selected = [index]
+        thumbView.selectedLength = 1
+    }
+
+    function addSelectionRange(start, end) {
+        let delta = end < start ? -1 : 1
+        for(let i = start; i != end; i += delta) {
+            addToSelected(i)
+        }
+        addToSelected(end)
+    }
+
+    function clearSelection() {
+        thumbView.currentIndex = 0
+        thumbView.selected = [0]
+        thumbView.selectedLength = 1
+        gallery.align()
+    }
+
+    function applySelection() {
+        selectedLength = selected.length
+
+        if(selectedLength > 0 && !selected.includes(currentIndex)) {
+            currentIndex = selected[0]
+        }
+    }
+
+    function movedSelection(modifiers, prev, curr) {
+        if(modifiers & Qt.ControlModifier) {
+            addToSelected(curr)
+            applySelection()
+        } else if(modifiers & Qt.ShiftModifier) {
+            addSelectionRange(prev, curr)
+            applySelection()
+        } else {
+            selected = [curr]
+            applySelection()
+        }
+    }
+
+    function moveUp(modifiers) {
+        let prev = currentIndex
+        moveCurrentIndexUp()
+        movedSelection(modifiers, prev, currentIndex)
+    }
+
+    function moveDown(modifiers) {
+        let prev = currentIndex
+        moveCurrentIndexDown()
+        movedSelection(modifiers, prev, currentIndex)
+    }
+
+    function moveLeft(modifiers) {
+        let prev = currentIndex
+        moveCurrentIndexLeft()
+        movedSelection(modifiers, prev, currentIndex)
+    }
+
+    function moveRight(modifiers) {
+        let prev = currentIndex
+        moveCurrentIndexRight()
+        movedSelection(modifiers, prev, currentIndex)
+    }
 
     signal open()
     signal contextMenu()
@@ -22,9 +135,6 @@ GridView {
 
     interactive: false
     boundsBehavior: Flickable.StopAtBounds
-    
-    cellWidth: Math.max((thumbView.width-padding)/Math.max(Math.ceil(thumbView.width/cellSize), 1), 100)
-    cellHeight: cellWidth
 
     ScrollBar.vertical: ScrollBar {
         id: scrollBar
@@ -54,15 +164,32 @@ GridView {
         property var sourceParams: sql_parameters
         source: sql_file
 
-        property var thumb_index: index
-
-        selected: thumbView.currentIndex === thumb_index
+        selected: thumbView.currentIndex === index || (thumbView.selectedLength <= 0 ? false : thumbView.selected.includes(index))
 
         onSelect: {
-            thumbView.currentIndex = index
+            thumbView.setSelection(index)
+        }
+
+        onControlSelect: {
+            if(thumb.selected){
+                thumbView.removeFromSelected(index)
+                thumbView.applySelection()
+            } else {
+                thumbView.addToSelected(index)
+                thumbView.applySelection()
+            }
+        }
+
+        onShiftSelect: {
+            thumbView.selected = []
+            thumbView.addSelectionRange(thumbView.currentIndex, index)
+            thumbView.applySelection()
         }
 
         onContextMenu: {
+            if(!thumbView.selected.includes(index)) {
+                thumbView.setSelection(index)
+            }
             thumbView.contextMenu()
         }
 

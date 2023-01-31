@@ -3,6 +3,7 @@ import os
 import queue
 import subprocess
 import shutil
+import time
 
 from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, QThread
 from PyQt5.QtWidgets import QApplication
@@ -19,7 +20,8 @@ class LocalInference(QThread):
             shutil.copytree(os.path.join("sd-inference-server", "models"), os.path.join(os.getcwd(), "models"))
 
         sys.path.insert(0, "sd-inference-server")
-
+    
+    def run(self):
         import torch
         import attention, storage, wrapper
 
@@ -35,7 +37,6 @@ class LocalInference(QThread):
         self.current = None
         self.cancelled = set()
 
-    def run(self):
         while not self.stopping:
             try:
                 QThread.msleep(10)

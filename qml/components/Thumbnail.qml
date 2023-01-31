@@ -8,10 +8,13 @@ Item {
 
     property string source
     property bool selected
+    property bool multiSelected
     property int padding
-    property int border: selected ? 2 : 0
+    property int border: selected || multiSelected ? 2 : 0
 
     signal select()
+    signal controlSelect()
+    signal shiftSelect()
     signal open()
     signal contextMenu()
 
@@ -21,7 +24,7 @@ Item {
         glowRadius:  selected ? 6 : 10
         opacity: 0.5
         spread: 0.2
-        color: selected ? "white" : "black"
+        color: selected || multiSelected ? "white" : "black"
         cornerRadius: 10
     }
 
@@ -73,7 +76,15 @@ Item {
             acceptedButtons: Qt.LeftButton | Qt.RightButton
 
             onPressed: {
-                thumb.select()
+                if (mouse.button == Qt.LeftButton) {
+                    if (mouse.modifiers & Qt.ControlModifier) {
+                        thumb.controlSelect()
+                    } else if (mouse.modifiers & Qt.ShiftModifier) {
+                        thumb.shiftSelect()
+                    } else {
+                        thumb.select()
+                    }
+                }
                 if (mouse.button === Qt.RightButton) {
                     thumb.contextMenu()
                     return
