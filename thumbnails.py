@@ -13,7 +13,7 @@ import sql
 
 def get_thumbnail(file, size, quality):
     blob = io.BytesIO()
-    image = PIL.Image.open(file)
+    image = PIL.Image.open(file).convert('RGB')
     image.thumbnail(size, PIL.Image.ANTIALIAS)
     image.save(blob, "JPEG", quality=quality)
     return blob.getvalue()
@@ -66,7 +66,8 @@ class ThumbnailResponseRunnable(QRunnable):
             blob = get_thumbnail(self.file, self.size, self.quality)
             ThumbnailStorage.instance.put(self.file, blob)
             self.image = QImage.fromData(QByteArray(blob), "JPG")
-        except Exception:
+        except Exception as e:
+            #print(e)
             self.image = QImage()
 
         self.signals.done.emit(self.image)
@@ -118,5 +119,6 @@ class SyncThumbnailProvider(QQuickImageProvider):
 
             image = QImage.fromData(QByteArray(blob), "JPG")
             return image, image.size()
-        except Exception:
+        except Exception as e:
+            #print(e)
             return QImage(), QSize(0,0)

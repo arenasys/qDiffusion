@@ -57,9 +57,11 @@ class Populater(QObject):
         if not ext in {"png"}:
             return
         
+        parameters = ""
         try:
             with PIL.Image.open(file) as img:
-                parameters = img.info["parameters"]
+                if "parameters" in img.info:
+                    parameters = img.info["parameters"]
                 width, height = img.size
         except Exception:
             return       

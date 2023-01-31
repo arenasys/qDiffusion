@@ -229,6 +229,7 @@ Rectangle {
                 break;
             }
         } else {
+            const prev = gallery.currentIndex
             switch(event.key) {
             case Qt.Key_Up:
                 gallery.moveCurrentIndexUp()
@@ -246,6 +247,24 @@ Rectangle {
                 event.accepted = false
                 break;
             }
+            if(prev != gallery.currentIndex) {
+                view.thumbnailOnly = event.isAutoRepeat
+            }
+        }
+    }
+    Keys.onReleased: {
+        switch(event.key) {
+            case Qt.Key_Up:
+            case Qt.Key_Down:
+            case Qt.Key_Left:
+            case Qt.Key_Right:
+                if (!event.isAutoRepeat) {
+                    view.thumbnailOnly = false
+                }
+                break;
+            default:
+                event.accepted = false
+                break;
         }
     }
 }

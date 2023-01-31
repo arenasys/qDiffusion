@@ -11,6 +11,8 @@ Item {
     property string source
     property int sourceWidth
     property int sourceHeight
+    property bool thumbnailOnly: false
+
     property var scale: 1.0
 
     signal contextMenu()
@@ -23,9 +25,17 @@ Item {
         target: full.status == Image.Ready ? full : thumb
     }
 
+    LoadingSpinner {
+
+        height: thumb.height/4
+        width: thumb.width/4
+        anchors.centerIn: view
+        running: thumb.status !== Image.Ready
+    }
+
     CenteredImage {
         id: thumb
-        visible: full.status != Image.Ready 
+        visible: thumbnailOnly || full.status != Image.Ready
         source: (GUI.isCached(view.source) ? "image://sync/" : "image://async/") + view.source
         anchors.centerIn: view
         maxWidth: Math.min(current.width, view.sourceWidth)
@@ -40,7 +50,7 @@ Item {
         id: full
         anchors.centerIn: view
         asynchronous: true
-        source: thumb.status != Image.Ready || view.source == "" ? "" : "file:///"  + view.source
+        source: thumbnailOnly || thumb.status != Image.Ready || view.source == "" ? "" : "file:///"  + view.source
         visible: full.status == Image.Ready && thumb.status == Image.Ready
         smooth: view.sourceWidth*2 < width && view.sourceHeight*2 < height ? false : true
         maxWidth: Math.min(view.width, view.sourceWidth)
@@ -48,6 +58,7 @@ Item {
         sourceWidth: view.sourceWidth
         sourceHeight: view.sourceHeight
         fill: true
+        mipmap: true
     }
 
 
@@ -120,7 +131,7 @@ Item {
             if(current == view) {
                 return
             }
-            
+
             current.anchors.centerIn = undefined
 
             d = view.scale * d
@@ -156,10 +167,6 @@ Item {
                 scale(wheel.x, wheel.y, 0.1)
             }
         }
-    }
-
-    onSourceChanged: {
-        reset()
     }
 
     onSourceHeightChanged: {
