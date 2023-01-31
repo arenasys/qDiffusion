@@ -8,6 +8,8 @@ Item {
 
     property string source
     property bool selected
+    property int padding
+    property int border: selected ? 2 : 0
 
     signal select()
     signal open()
@@ -32,12 +34,26 @@ Item {
 
     Image {
         id: img
-        anchors.fill: thumb
+        anchors.top: thumb.top
+        anchors.left: thumb.left
+        anchors.right: thumb.right
+        anchors.bottom: thumb.bottom
+
+        anchors.leftMargin: thumb.padding
+        anchors.topMargin: thumb.padding
+
         asynchronous: false
         source: (GUI.isCached(thumb.source) ? "image://sync/" : "image://async/") + thumb.source
         fillMode: Image.PreserveAspectFit
         mipmap: true
         cache: false
+    }
+
+    Rectangle {
+        anchors.fill:img
+        color: "transparent"
+        border.color: "white"
+        border.width: thumb.border
     }
 
     Rectangle {
@@ -47,7 +63,7 @@ Item {
         y: img.y + Math.max(0, Math.floor((img.height - img.paintedHeight) / 2))
         width: Math.min(img.width, img.paintedWidth)
         height: Math.min(img.height, img.paintedHeight)
-        color: thumbMouse.containsMouse ? "#50ffffff" : "#00000000"
+        color: thumbMouse.containsMouse ? "#30ffffff" : "#00000000"
 
         MouseArea {
             id: thumbMouse

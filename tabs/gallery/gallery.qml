@@ -71,11 +71,13 @@ Rectangle {
         }
     }
 
+    SShadow {
+        anchors.fill: view
+    }
+
     Media {
         id: view
-        
-        color: COMMON.bg0
-        
+
         source: gallery.currentSource
         sourceWidth: gallery.currentWidth
         sourceHeight: gallery.currentHeight
@@ -86,6 +88,7 @@ Rectangle {
         anchors.bottom: imageDivider.top        
     }
 
+    
     Rectangle {
         id: searchDivider
         anchors.left: galleryDivider.right
@@ -106,6 +109,7 @@ Rectangle {
             query: "SELECT file, width, height, parameters FROM images WHERE folder = '" + folder.currentValue + "' AND parameters LIKE '%" + search.text + "%' ORDER BY file;"
             onResultsChanged: {
                 gallery.currentIndex = 0
+                gallery.align()
             }
         }
     }

@@ -1,9 +1,12 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
+import QtGraphicalEffects 1.15
 
 import gui 1.0
 
-Rectangle {
+import "../style"
+
+Item {
     id: view
     property string source
     property int sourceWidth
@@ -15,6 +18,10 @@ Rectangle {
     clip: true
 
     property var current: full.visible ? full : view
+
+    SGlow {
+        target: full.status == Image.Ready ? full : thumb
+    }
 
     CenteredImage {
         id: thumb
@@ -33,7 +40,7 @@ Rectangle {
         id: full
         anchors.centerIn: view
         asynchronous: true
-        source: thumb.status != Image.Ready ? "" : "file:///"  + view.source
+        source: thumb.status != Image.Ready || view.source == "" ? "" : "file:///"  + view.source
         visible: full.status == Image.Ready && thumb.status == Image.Ready
         smooth: view.sourceWidth*2 < width && view.sourceHeight*2 < height ? false : true
         maxWidth: Math.min(view.width, view.sourceWidth)
@@ -42,6 +49,7 @@ Rectangle {
         sourceHeight: view.sourceHeight
         fill: true
     }
+
 
     MouseArea {
         anchors.fill: parent
@@ -67,6 +75,10 @@ Rectangle {
 
         onPositionChanged: {
             if(dragging) {
+                if(current == view) {
+                    return
+                }
+
                 current.anchors.centerIn = undefined
 
                 current.x = posX + (mouseX - startX)
@@ -77,6 +89,10 @@ Rectangle {
         }
 
         function bound() {
+            if(current == view) {
+                return
+            }
+
             var dx = (current.maxWidth - current.width)/2
             var dy = (current.maxHeight - current.height)/2
 
@@ -101,6 +117,10 @@ Rectangle {
         }
 
         function scale(cx, cy, d) {
+            if(current == view) {
+                return
+            }
+            
             current.anchors.centerIn = undefined
 
             d = view.scale * d

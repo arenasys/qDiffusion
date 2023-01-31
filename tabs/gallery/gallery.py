@@ -62,9 +62,7 @@ class Populater(QObject):
                 parameters = img.info["parameters"]
                 width, height = img.size
         except Exception:
-            return
-
-        
+            return       
 
         q = QSqlQuery(self.conn.db)
         q.prepare("INSERT OR REPLACE INTO images(file, folder, parameters, idx, width, height) VALUES (:file, :folder, :parameters, :idx, :width, :height);")

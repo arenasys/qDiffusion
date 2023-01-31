@@ -22,33 +22,33 @@ GridView {
 
     interactive: false
     boundsBehavior: Flickable.StopAtBounds
-
-    onWidthChanged: align()
-
+    
     cellWidth: Math.max((thumbView.width-padding)/Math.max(Math.ceil(thumbView.width/cellSize), 1), 100)
     cellHeight: cellWidth
-    topMargin: padding
-    leftMargin: padding
 
-    ScrollBar.vertical: ScrollBar {    }
+    ScrollBar.vertical: ScrollBar {
+        id: scrollBar
+        stepSize: 1/Math.ceil(thumbView.count / Math.round(thumbView.width/thumbView.cellWidth))
+    }
 
     MouseArea {
         anchors.fill: parent
         acceptedButtons: Qt.NoButton
         onWheel: {
             if(wheel.angleDelta.y < 0) {
-                thumbView.moveCurrentIndexDown()
+                scrollBar.increase()
             } else {
-                thumbView.moveCurrentIndexUp()
+                scrollBar.decrease()
             }
         }
     }
 
     delegate: Thumbnail {
         id: thumb
-        width: cellWidth-padding
-        height: cellHeight-padding
-
+        width: cellWidth
+        height: cellHeight
+        padding: thumbView.padding
+        
         property int sourceWidth: sql_width
         property int sourceHeight: sql_height
         property var sourceParams: sql_parameters
