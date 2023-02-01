@@ -45,10 +45,9 @@ Item {
         anchors.leftMargin: thumb.padding
         anchors.topMargin: thumb.padding
 
-        asynchronous: false
+        asynchronous: true
         source: (GUI.isCached(thumb.source) ? "image://sync/" : "image://async/") + thumb.source
         fillMode: Image.PreserveAspectFit
-        mipmap: true
         cache: false
     }
 

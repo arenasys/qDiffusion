@@ -108,38 +108,56 @@ Rectangle {
         model: Sql {
             id: filesSql
             query: "SELECT file, width, height, parameters FROM images WHERE folder = '" + folder.currentValue + "' AND parameters LIKE '%" + search.text + "%' ORDER BY file;"
+            onQueryChanging: {
+                gallery.positionViewAtBeginning()
+            }
             onResultsChanged: {
                 gallery.clearSelection()
             }
         }
 
         onContextMenu: {
-            galleryContextMenu.files = gallery.getSelectedFiles()
-            if(galleryContextMenu.files.length > 0) {
+            let files = gallery.getSelectedFiles()
+            if(files.length > 0) {
+                galleryContextMenu.folder = folder.currentValue
+                galleryContextMenu.files = files
                 galleryContextMenu.popup()
             }
         }
 
         SContextMenu {
-            property var files: []
             id: galleryContextMenu
             width: 100
 
-            Action {
+            property var files: []
+            property var folder: ""
+
+            Sql {
+                id: destinationsSql
+                query: "SELECT name, folder FROM folders WHERE folder != '" + folder.currentValue + "';"
+            }
+
+            SContextMenuItem {
                 text: "Open"
+                onTriggered: {
+                    GALLERY.doOpen(galleryContextMenu.files)
+                }
             }
 
             SContextMenuSeparator { }
 
             SContextMenu {
                 title: "Copy to"
-                Action {
+                SContextMenuItem {
                     text: "Clipboard"
                 }
                 Repeater {
-                    model: foldersSql
+                    model: destinationsSql
                     SContextMenuItem {
-                        text: modelData
+                        text: sql_name
+                        onTriggered: {
+                            GALLERY.doCopy(sql_folder, galleryContextMenu.files)
+                        }
                     }
                 }
             }
@@ -147,14 +165,20 @@ Rectangle {
             SContextMenu {
                 title: "Move to"
                 Repeater {
-                    model: foldersSql
+                    model: destinationsSql
                     SContextMenuItem {
-                        text: modelData
+                        text: sql_name
+                        onTriggered: {
+                            GALLERY.doMove(sql_folder, galleryContextMenu.files)
+                        }
                     }
                 }
             }
-            Action {
+            SContextMenuItem {
                 text: "Delete"
+                onTriggered: {
+                    GALLERY.doDelete(galleryContextMenu.files)
+                }
             }
         }
     }

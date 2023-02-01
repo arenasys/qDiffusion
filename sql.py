@@ -1,6 +1,7 @@
 import random
 import sys
 from typing import *
+import time
 
 from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, Qt, QObject, QThread, QAbstractListModel, QByteArray, QModelIndex, QTimer, QVariant
 from PyQt5.QtSql import QSqlDatabase, QSqlQuery, QSqlDriver
@@ -59,6 +60,7 @@ class Connection(QObject):
 
 class Sql(QAbstractListModel):
     queryChanged = pyqtSignal()
+    queryChanging = pyqtSignal()
     resultsChanged = pyqtSignal()
     def __init__(self, parent):
         super().__init__(parent)
@@ -86,6 +88,8 @@ class Sql(QAbstractListModel):
         self.setQuery(value)
 
     def setQuery(self, value):
+        if value != self.currentQuery:
+            self.queryChanging.emit()
         self.currentQuery = value
         if not value:
             self.reset()
@@ -127,6 +131,8 @@ class Sql(QAbstractListModel):
             self.resultsChanged.emit()
             return
 
+        totalResults = len(newResults)
+
         changed = False
         i = 0
         while newResults and i < len(self.results):
@@ -162,6 +168,11 @@ class Sql(QAbstractListModel):
             self.results += newResults
             self.endInsertRows()
             changed = True
+        
+        if len(self.results) > totalResults:
+            self.beginRemoveRows(QModelIndex(), totalResults, len(self.results))
+            self.results = self.results[:totalResults]
+            self.endRemoveRows()
 
         if changed:
             self.resultsChanged.emit()
@@ -178,6 +189,18 @@ class Sql(QAbstractListModel):
             if row < len(self.results):
                 value = self.results[row].value(0)
         return value
+
+    @pyqtSlot(int, result='QVariant')
+    def get(self, index):
+        if len(self.results) <= index:
+            return None
+
+        out = {}
+        record = self.results[index]
+        for i in range(len(record)):
+            out[record.fieldName(i)] = record.value(i)
+        return out
+
 
     def updateFieldNames(self, record):
         self.fieldNames = {}

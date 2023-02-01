@@ -40,9 +40,9 @@ GridView {
     function getSelectedFiles() {
         let files = []
         for(let i = 0; i < selected.length; i++) {
-            let itm = itemAtIndex(i)
-            if(itm != null) {
-                files.push(itm.sql_file)
+            let record = thumbView.model.get(selected[i])
+            if(record != null) {
+                files.push(record["file"])
             }
         }
         return files
@@ -78,7 +78,6 @@ GridView {
         thumbView.currentIndex = 0
         thumbView.selected = [0]
         thumbView.selectedLength = 1
-        gallery.align()
     }
 
     function applySelection() {
@@ -128,10 +127,6 @@ GridView {
 
     signal open()
     signal contextMenu()
-
-    function align() {
-        thumbView.positionViewAtIndex(thumbView.currentIndex, GridView.Contain)
-    }
 
     interactive: false
     boundsBehavior: Flickable.StopAtBounds
