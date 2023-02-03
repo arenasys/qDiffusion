@@ -1,8 +1,11 @@
 import PIL.Image
+import shutil
+import os
 
-from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject, QThread, QThreadPool, QRunnable, QFileSystemWatcher
+from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject, QThread, QUrl
 from PyQt5.QtSql import QSqlQuery
-
+from PyQt5.QtQml import qmlRegisterSingletonType
+from PyQt5.QtGui import QDesktopServices
 import sql
 import filesystem
 
@@ -84,6 +87,8 @@ class gallery(QObject):
         self.priority = 3
         self.name = "Gallery"
 
+        qmlRegisterSingletonType(gallery, "gui", 1, 0, "GALLERY", lambda qml, js: self)
+
         self.populater = Populater()
         self.add_folder.connect(self.populater.addFolder)
 
@@ -97,6 +102,32 @@ class gallery(QObject):
         self.add_folder.emit("Img2Img", "outputs/img2img")
 
         parent.aboutToQuit.connect(self.stop)
+
+    @pyqtSlot(list)
+    def doOpenImage(self, files):
+        QDesktopServices.openUrl(QUrl.fromLocalFile(files[0]))
+
+    @pyqtSlot(list)
+    def doOpenFolder(self, files):
+        QDesktopServices.openUrl(QUrl.fromLocalFile(os.path.dirname(files[0])))
+
+    @pyqtSlot(str, list)
+    def doCopy(self, folder, files):
+        for src in files:
+            name = src.split(os.path.sep)[-1]
+            dst = os.path.join(folder, name)
+            shutil.copy(src, dst)
+
+    @pyqtSlot(str, list)
+    def doMove(self, folder, files):
+        for src in files:
+            name = src.split(os.path.sep)[-1]
+            dst = os.path.join(folder, name)
+            shutil.move(src, dst)
+
+    @pyqtSlot(list)
+    def doDelete(self, files):
+        print("DEL", files)
 
     @pyqtSlot()
     def stop(self):

@@ -45,7 +45,6 @@ Item {
         anchors.leftMargin: thumb.padding
         anchors.topMargin: thumb.padding
 
-        asynchronous: true
         source: (GUI.isCached(thumb.source) ? "image://sync/" : "image://async/") + thumb.source
         fillMode: Image.PreserveAspectFit
         cache: false

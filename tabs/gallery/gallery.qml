@@ -140,7 +140,14 @@ Rectangle {
             SContextMenuItem {
                 text: "Open"
                 onTriggered: {
-                    GALLERY.doOpen(galleryContextMenu.files)
+                    GALLERY.doOpenImage(galleryContextMenu.files)
+                }
+            }
+
+            SContextMenuItem {
+                text: "Visit"
+                onTriggered: {
+                    GALLERY.doOpenFolder(galleryContextMenu.files)
                 }
             }
 
@@ -174,13 +181,27 @@ Rectangle {
                     }
                 }
             }
+
+            SContextMenuSeparator { }
+
             SContextMenuItem {
                 text: "Delete"
                 onTriggered: {
+                    dialog.open()
                     GALLERY.doDelete(galleryContextMenu.files)
                 }
             }
         }
+    }
+
+    Dialog {
+        id: dialog
+        title: "Title"
+        anchors.centerIn: parent
+        standardButtons: Dialog.Ok | Dialog.Cancel
+
+        onAccepted: console.log("Ok clicked")
+        onRejected: console.log("Cancel clicked")
     }
 
 

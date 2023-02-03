@@ -41,7 +41,7 @@ Item {
         maxHeight: Math.min(current.height, view.sourceHeight)
         sourceWidth: view.sourceWidth
         sourceHeight: view.sourceHeight
-        //cache: false
+        cache: false
         fill: true
     }
 
@@ -58,6 +58,7 @@ Item {
         sourceHeight: view.sourceHeight
         fill: true
         mipmap: true
+        cache: false
     }
 
 
