@@ -17,60 +17,6 @@ Rectangle {
         parent.releaseFocus()
     }
 
-    Rectangle {
-        id: galleryDivider
-        anchors.top: parent.top
-        anchors.bottom: parent.bottom
-        width: 5
-        property int minX: 5
-        property int maxX: parent.width
-        property int offset: 600
-        x: parent.width - offset
-        color: COMMON.bg4
-
-        MouseArea {
-            anchors.fill: parent
-            hoverEnabled: true
-            onPositionChanged: {
-                if(pressedButtons) {
-                    galleryDivider.offset = Math.min(galleryDivider.maxX, Math.max(galleryDivider.minX, root.width - (galleryDivider.x + mouseX)))
-                }
-            }
-        }
-
-        onMaxXChanged: {
-            if(parent.width > 0 && galleryDivider.x > 0)
-                galleryDivider.offset = Math.min(galleryDivider.maxX, Math.max(galleryDivider.minX, galleryDivider.offset))
-        }
-    }
-
-    Rectangle {
-        id: imageDivider
-        anchors.left: parent.left
-        anchors.right: galleryDivider.left
-        height: 5
-        property int minY: 5
-        property int maxY: parent.height
-        property int offset: 150
-        y: parent.height - offset
-        color: COMMON.bg4
-
-        MouseArea {
-            anchors.fill: parent
-            hoverEnabled: true
-            onPositionChanged: {
-                if(pressedButtons) {
-                    imageDivider.offset = Math.min(imageDivider.maxY, Math.max(imageDivider.minY, root.height - (imageDivider.y + mouseY)))
-                }
-            }
-        }
-
-        onMaxYChanged: {
-            if(parent.height > 0 && imageDivider.y > 0)
-                imageDivider.offset = Math.min(imageDivider.maxY, Math.max(imageDivider.minY, imageDivider.offset))
-        }
-    }
-
     SShadow {
         anchors.fill: view
     }
@@ -94,7 +40,7 @@ Rectangle {
         anchors.left: galleryDivider.right
         anchors.right: parent.right
         anchors.top: search.bottom
-        height: 5
+        height: 3
         color: COMMON.bg4
     }
 
@@ -103,16 +49,22 @@ Rectangle {
         anchors.left: galleryDivider.right
         anchors.right: parent.right
         anchors.top: searchDivider.bottom
-        anchors.bottom: infoDivider.top
+        anchors.bottom: parent.bottom
         clip: true
         model: Sql {
             id: filesSql
             query: "SELECT file, width, height, parameters FROM images WHERE folder = '" + folder.currentValue + "' AND parameters LIKE '%" + search.text + "%' ORDER BY file;"
-            onQueryChanging: {
+            
+            property bool reset: false
+            onQueryChanged: {
                 gallery.positionViewAtBeginning()
+                reset = true
             }
             onResultsChanged: {
-                gallery.clearSelection()
+                if(reset) {
+                    gallery.clearSelection()
+                    reset = false
+                }
             }
         }
 
@@ -188,60 +140,138 @@ Rectangle {
                 text: "Delete"
                 onTriggered: {
                     dialog.open()
-                    GALLERY.doDelete(galleryContextMenu.files)
                 }
             }
         }
     }
 
-    Dialog {
+    SDialog {
         id: dialog
-        title: "Title"
-        anchors.centerIn: parent
+        title: "Confirmation"
         standardButtons: Dialog.Ok | Dialog.Cancel
+        modal: true
 
-        onAccepted: console.log("Ok clicked")
-        onRejected: console.log("Cancel clicked")
-    }
-
-
-    Rectangle {
-        id: infoDivider
-        anchors.left: galleryDivider.right
-        anchors.right: parent.right
-        anchors.bottom: info.top
-        height: 5
-        color: COMMON.bg4
-    }
-
-    Rectangle {
-        id: info
-        anchors.left: galleryDivider.right
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        color: COMMON.bg1
-        height: 20
+        height: 120
 
         SText {
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            anchors.left: parent.left
+            anchors.fill: parent
+            padding: 5
+            text: "Delete " + galleryContextMenu.files.length + " images?"
+            horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            leftPadding: 8
-            topPadding: 0
-            font.pointSize: 9
-            text: gallery.selectedLength > 1 ? gallery.selectedLength + " images selected"  : ""
         }
 
-        SText {
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            anchors.right: parent.right
-            verticalAlignment: Text.AlignVCenter
-            rightPadding: 8
-            topPadding: 0
-            font.pointSize: 9
-            text: gallery.count + " images"
+        onAccepted: {
+            GALLERY.doDelete(galleryContextMenu.files)
+        }
+
+    }
+
+    Rectangle {
+        id: infoRight
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.left: infoRightText.left
+        anchors.rightMargin: -5
+        anchors.bottomMargin: -5
+        radius: 5
+        color: COMMON.bg1
+        opacity: 0.9
+        height: 25
+        visible: infoRightText.text != ""
+    }
+
+    SText {
+        id: infoRightText
+        anchors.bottom: parent.bottom
+        anchors.right: parent.right
+        verticalAlignment: Text.AlignVCenter
+        rightPadding: 8
+        leftPadding: 8
+        topPadding: 8
+        bottomPadding: 1
+        font.pointSize: 9
+        text: gallery.count + " images"
+    }
+
+    Rectangle {
+        id: infoLeft
+        anchors.left: galleryDivider.right
+        anchors.bottom: parent.bottom
+        anchors.right: infoLeftText.right
+        anchors.leftMargin: -5
+        anchors.bottomMargin: -5
+        radius: 5
+        color: COMMON.bg1
+        opacity: 0.9
+        height: 25
+        visible: infoLeftText.text != ""
+    }
+
+    SText {
+        id: infoLeftText
+        anchors.bottom: parent.bottom
+        anchors.left: galleryDivider.right
+        verticalAlignment: Text.AlignVCenter
+        rightPadding: 8
+        leftPadding: 8
+        topPadding: 8
+        bottomPadding: 1
+        font.pointSize: 9
+        text: gallery.selectedLength > 1 ? gallery.selectedLength + " images selected"  : ""
+    }
+
+    Rectangle {
+        id: galleryDivider
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        width: 5
+        property int minX: 5
+        property int maxX: parent.width
+        property int offset: 600
+        x: parent.width - offset
+        color: COMMON.bg4
+
+        MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            onPositionChanged: {
+                if(pressedButtons) {
+                    galleryDivider.offset = Math.min(galleryDivider.maxX, Math.max(galleryDivider.minX, root.width - (galleryDivider.x + mouseX)))
+                }
+            }
+        }
+
+        onMaxXChanged: {
+            if(parent.width > 0 && galleryDivider.x > 0)
+                galleryDivider.offset = Math.min(galleryDivider.maxX, Math.max(galleryDivider.minX, galleryDivider.offset))
+        }
+    }
+
+    Rectangle {
+        id: imageDivider
+        anchors.left: parent.left
+        anchors.right: galleryDivider.left
+        height: 5
+        property int minY: 5
+        property int maxY: parent.height
+        property int offset: 150
+        y: parent.height - offset
+        color: COMMON.bg4
+
+        MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            onPositionChanged: {
+                if(pressedButtons) {
+                    imageDivider.offset = Math.min(imageDivider.maxY, Math.max(imageDivider.minY, root.height - (imageDivider.y + mouseY)))
+                }
+            }
+        }
+
+        onMaxYChanged: {
+            if(parent.height > 0 && imageDivider.y > 0)
+                imageDivider.offset = Math.min(imageDivider.maxY, Math.max(imageDivider.minY, imageDivider.offset))
         }
     }
 
@@ -308,7 +338,7 @@ Rectangle {
         anchors.top: folder.top
         anchors.bottom: folder.bottom
         anchors.right: folder.left
-        width: 5
+        width: 3
         color: COMMON.bg4
     }
 

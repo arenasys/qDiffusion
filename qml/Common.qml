@@ -17,4 +17,5 @@ QtObject {
 
     // fix later lol
     readonly property var bg00: "#1a1a1a"
+    readonly property var bg4_5: "#484848"
 }

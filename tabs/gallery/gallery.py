@@ -1,8 +1,9 @@
 import PIL.Image
 import shutil
 import os
+import send2trash
 
-from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject, QThread, QUrl
+from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject, QThread, QUrl, QFile
 from PyQt5.QtSql import QSqlQuery
 from PyQt5.QtQml import qmlRegisterSingletonType
 from PyQt5.QtGui import QDesktopServices
@@ -127,7 +128,8 @@ class gallery(QObject):
 
     @pyqtSlot(list)
     def doDelete(self, files):
-        print("DEL", files)
+        for f in files:
+            send2trash.send2trash(f)
 
     @pyqtSlot()
     def stop(self):

@@ -60,7 +60,6 @@ class Connection(QObject):
 
 class Sql(QAbstractListModel):
     queryChanged = pyqtSignal()
-    queryChanging = pyqtSignal()
     resultsChanged = pyqtSignal()
     def __init__(self, parent):
         super().__init__(parent)
@@ -88,19 +87,19 @@ class Sql(QAbstractListModel):
         self.setQuery(value)
 
     def setQuery(self, value):
-        if value != self.currentQuery:
-            self.queryChanging.emit()
+        different = (value != self.currentQuery)
+        if different:
+            self.queryChanged.emit()
+
         self.currentQuery = value
         if not value:
             self.reset()
-            self.queryChanged.emit()
             return
 
         q = self.conn.doQuery(self.currentQuery)
         self.errored = q.lastError().isValid()
         if self.errored:
             self.reset()
-            self.queryChanged.emit()
             return
 
         newResults = []
@@ -109,7 +108,6 @@ class Sql(QAbstractListModel):
         q.finish()
 
         self.updateResults(newResults)
-        self.queryChanged.emit()
         self.roleNames()
     
     def updateResults(self, newResults):
