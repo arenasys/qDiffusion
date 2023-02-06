@@ -28,9 +28,8 @@ class Backend(QObject):
     def wait(self):
         self.inference.wait()
     
-    @pyqtSlot(object, result=int)
-    def makeRequest(self, request):
-        id = random.randrange(4294967294)
+    @pyqtSlot(int, object)
+    def makeRequest(self, id, request):
         self.request.emit(id, request)
         return id
 
