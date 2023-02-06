@@ -20,8 +20,7 @@ class LocalInference(QThread):
             shutil.copytree(os.path.join("sd-inference-server", "models"), os.path.join(os.getcwd(), "models"))
 
         sys.path.insert(0, "sd-inference-server")
-    
-    def run(self):
+
         import torch
         import attention, storage, wrapper
 
@@ -36,7 +35,8 @@ class LocalInference(QThread):
         self.requests = queue.Queue()
         self.current = None
         self.cancelled = set()
-
+    
+    def run(self):
         while not self.stopping:
             try:
                 QThread.msleep(10)
