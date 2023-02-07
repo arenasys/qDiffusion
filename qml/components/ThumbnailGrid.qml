@@ -25,7 +25,7 @@ GridView {
     }
 
     onContentHeightChanged: {
-        // need to pinpoint the moment when the resize has completed
+        // try to pinpoint the moment when the resize has completed
         let idx = indexAt(contentX + width/2, contentY + height/2)
         let cnt = Math.floor((contentHeight*width)/(cellWidth*cellHeight))
         if(fixedIndex != -1 && idx != -1 && cnt >= count) {

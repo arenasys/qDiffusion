@@ -10,4 +10,9 @@ import "../../components"
 
 Rectangle {
     color: "#f00"
+
+    Button {
+        text: "Generate"
+        onClicked: GUI.generate()
+    }
 }

@@ -35,6 +35,7 @@ Item {
     CenteredImage {
         id: thumb
         visible: thumbnailOnly || full.status != Image.Ready
+        asynchronous: false
         source: (GUI.isCached(view.source) ? "image://sync/" : "image://async/") + view.source
         anchors.centerIn: view
         maxWidth: Math.min(current.width, view.sourceWidth)
@@ -58,7 +59,6 @@ Item {
         sourceHeight: view.sourceHeight
         fill: true
         mipmap: true
-        cache: false
     }
 
 
@@ -139,6 +139,10 @@ Item {
             var f = ((view.scale + d)/view.scale) -1
 
             if(view.scale + d < 0.1) {
+                return
+            }
+
+            if(view.scale + d > 10) {
                 return
             }
 

@@ -48,3 +48,14 @@ class GUI(QObject):
     @pyqtSlot(str, result=bool)
     def isCached(self, file):
         return self.thumbnails.has(file)
+
+    @pyqtSlot()
+    def generate(self):
+        request = {"type":"txt2img", "data": {
+            "model":"Anything-V3", "sampler":"Euler a", "clip_skip":2,
+            "prompt":"masterpiece, highly detailed, white hair, smug, 1girl, holding big cat",
+            "negative_prompt":"bad", "width":384, "height":384, "seed":2769446625, "steps":20, "scale":7,
+            "hr_factor":2.0, "hr_strength":0.7, "hr_steps":20
+        }}
+        self.backend.makeRequest(1, request)
+
