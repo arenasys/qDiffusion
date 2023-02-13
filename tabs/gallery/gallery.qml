@@ -21,7 +21,7 @@ Rectangle {
         anchors.fill: view
     }
 
-    Media {
+    MovableImage {
         id: view
 
         source: gallery.currentSource

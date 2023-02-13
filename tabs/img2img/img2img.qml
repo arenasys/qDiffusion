@@ -12,65 +12,56 @@ Item {
     id: root
     clip: true
 
-    Media {
-        id: media
+    property var source: "/run/media/pul/ssd/sd-inference-gui/image.png"
+    property var sourceWidth: 768
+    property var sourceHeight: 768
+
+
+    MovableItem {
+        id: movable
         anchors.fill: parent
-        source: "/run/media/pul/ssd/sd-inference-gui/image.png"
-        sourceWidth: 768
-        sourceHeight: 768
-    }
+        itemWidth: root.sourceWidth
+        itemHeight: root.sourceHeight
 
-    Item {
-        id: overlay
-        x: media.current.x
-        y: media.current.y
-        width: media.current.width
-        height: media.current.height
-    }
+        ImageCanvas {
+            id: canvas
+            anchors.fill: parent.item
+            property var mouse_pos: []
+            property var do_reset: true
+            source: "/run/media/pul/ssd/sd-inference-gui/image.png"
+            sourceSize: Qt.size(root.sourceWidth, root.sourceHeight)
+            smooth: root.sourceWidth*2 < width && root.sourceHeight*2 < height ? false : true
+        }
 
-    ImageCanvas {
-        id: canvas
-        anchors.fill: overlay
-        property var mouse_pos: []
-        property var do_reset: true
-        canvasSize: Qt.size(media.sourceWidth, media.sourceHeight)
-        smooth: media.sourceWidth*2 < width && media.sourceHeight*2 < height ? false : true
+        MouseArea {
+            id: mouseArea
+            anchors.fill: canvas
+            hoverEnabled: true
+
+            function getPosition(mouse) {
+                var wf = root.sourceWidth/width
+                var hf = root.sourceHeight/height
+                return Qt.point(mouse.x*wf, mouse.y*hf)
+            }
+
+            onPressed: {
+                canvas.mousePressed(getPosition(mouse))
+            }
+
+            onReleased: {
+                canvas.mouseReleased(getPosition(mouse))
+            }
+
+            onPositionChanged: {
+                if(mouse.buttons) {
+                    canvas.mouseDragged(getPosition(mouse))
+                }
+            }
+        }
     }
 
     Timer {
         interval: 17; running: true; repeat: true
         onTriggered: canvas.update()
-    }
-
-    MouseArea {
-        id: mouseArea
-        anchors.fill: overlay
-        hoverEnabled: true
-
-        onPressed: {
-            var wf = media.sourceWidth/width
-            var hf = media.sourceHeight/height
-            var curr = Qt.point(mouse.x*wf, mouse.y*hf)
-
-            canvas.mousePressed(curr)
-        }
-
-        onReleased: {
-            var wf = media.sourceWidth/width
-            var hf = media.sourceHeight/height
-            var curr = Qt.point(mouse.x*wf, mouse.y*hf)
-
-            canvas.mouseReleased(curr)
-        }
-
-        onPositionChanged: {
-            if(mouse.buttons) {
-                var wf = media.sourceWidth/width
-                var hf = media.sourceHeight/height
-                var curr = Qt.point(mouse.x*wf, mouse.y*hf)
-
-                canvas.mouseDragged(curr)
-            }
-        }
     }
 }

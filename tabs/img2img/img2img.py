@@ -1,7 +1,7 @@
 from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, QObject, Qt, QRectF, QPointF, QSize
 from PyQt5.QtQml import qmlRegisterSingletonType, qmlRegisterType
 from PyQt5.QtQuick import QQuickFramebufferObject
-from PyQt5.QtGui import QFont, QRadialGradient, QPen, QBrush, QColor, QPainter, QPaintDevice, QOpenGLPaintDevice
+from PyQt5.QtGui import QFont, QRadialGradient, QPen, QBrush, QColor, QPainter, QPaintDevice, QOpenGLPaintDevice, QImage
 import math
 import copy
 
@@ -45,10 +45,12 @@ class ImageCanvasStates():
         return color
 
 class ImageCanvasRenderer(QQuickFramebufferObject.Renderer):
-    def __init__(self, parent=None, size=None):
+    def __init__(self, canvas):
         super().__init__()
-        self.size = size
+        self.source = canvas.texturePath
+        self.size = canvas.textureSize
         self.states = None
+        self.initialized = False
     
     def createFramebufferObject(self, size):
         return super().createFramebufferObject(self.size)
@@ -57,6 +59,16 @@ class ImageCanvasRenderer(QQuickFramebufferObject.Renderer):
         self.states = item.states.synchronize()
 
     def render(self):
+        if not self.initialized:
+            source = QImage(self.source)
+            device = QOpenGLPaintDevice(self.size)
+            painter = QPainter(device)
+            painter.beginNativePainting()
+            painter.drawImage(0,0,source)
+            painter.endNativePainting()
+            painter.end()
+            self.initialized = True
+
         if self.states and self.states.strokePositions:
             states = self.states
 
@@ -66,17 +78,16 @@ class ImageCanvasRenderer(QQuickFramebufferObject.Renderer):
 
             while states.strokePositions:
                 p = states.strokePositions.pop(0)
-                p = QPointF(p.x(), self.size.height()-p.y())
 
-                g = QRadialGradient(p.x(), p.y(), states.brushSize/2)
+                gradient = QRadialGradient(p.x(), p.y(), states.brushSize/2)
 
                 steps = states.brushSize//4
                 for i in range(0, steps+1):
                     r = i/steps
-                    g.setColorAt(r, states.getBrushColor(r))
+                    gradient.setColorAt(r, states.getBrushColor(r))
 
                 painter.setPen(Qt.NoPen)
-                painter.setBrush(g)
+                painter.setBrush(gradient)
 
                 painter.drawEllipse(p, states.brushSize, states.brushSize)
 
@@ -85,24 +96,33 @@ class ImageCanvasRenderer(QQuickFramebufferObject.Renderer):
             self.states = None
 
 class ImageCanvas(QQuickFramebufferObject):
-    canvasSizeUpdated = pyqtSignal()
+    sourceUpdated = pyqtSignal()
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setTextureFollowsItemSize(False)
+        self.setMirrorVertically(True)
 
         self.textureSize = QSize(0,0)
         self.states = ImageCanvasStates()
         self.last_pos = None
 
     def createRenderer(self):
-        return ImageCanvasRenderer(self, self.textureSize)
+        return ImageCanvasRenderer(self)
 
-    @pyqtProperty(QSize, notify=canvasSizeUpdated)
-    def canvasSize(self):
+    @pyqtProperty(str, notify=sourceUpdated)
+    def source(self):
+        return self.texturePath
+
+    @source.setter
+    def source(self, path):
+        self.texturePath = path
+
+    @pyqtProperty(QSize, notify=sourceUpdated)
+    def sourceSize(self):
         return self.textureSize
     
-    @canvasSize.setter
-    def canvasSize(self, size):
+    @sourceSize.setter
+    def sourceSize(self, size):
         self.textureSize = size
 
     @pyqtSlot(QPointF)

@@ -1,32 +1,32 @@
 import QtQuick 2.15
 
-Image {
-    id: img
+Item {
+    id: itm
 
     property int maxWidth
     property int maxHeight
-    property int sourceWidth
-    property int sourceHeight
+    property int itemWidth
+    property int itemHeight
 
     property bool fill: false
 
     function sync() {
-        var h = sourceHeight;
-        var w = sourceWidth;
+        var h = itemHeight;
+        var w = itemWidth;
 
         if(h == 0 || w == 0)
             return;
 
         if(fill) {
-            var wr = maxWidth / sourceWidth
-            var hr = maxHeight / sourceHeight
+            var wr = maxWidth / itemWidth
+            var hr = maxHeight / itemHeight
 
             if(hr < wr) {
                 h = maxHeight
-                w = sourceWidth * hr
+                w = itemWidth * hr
             } else {
                 w = maxWidth
-                h = sourceHeight * wr
+                h = itemHeight * wr
             }
         } else {
             var r = 0;
@@ -46,21 +46,11 @@ Image {
         width = parseInt(w)
     }
 
-    asynchronous: true
-
-    onSourceChanged: {
+    onItemWidthChanged: {
         sync()
     }
 
-    onStatusChanged: {
-        sync()
-    }
-
-    onSourceWidthChanged: {
-        sync()
-    }
-
-    onSourceHeightChanged: {
+    onItemHeightChanged: {
         sync()
     }
 
