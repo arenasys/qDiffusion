@@ -2,8 +2,9 @@ import os
 import glob
 import importlib
 
-from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt
-from PyQt5.QtSql import QSqlDriver
+from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent
+from PyQt5.QtQuick import QQuickItem
+from PyQt5.QtQml import qmlRegisterType
 
 import sql
 import filesystem
@@ -59,3 +60,26 @@ class GUI(QObject):
         }}
         self.backend.makeRequest(1, request)
 
+class FocusReleaser(QQuickItem):
+    releaseFocus = pyqtSignal()
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAcceptedMouseButtons(Qt.AllButtons)
+        self.setFlag(QQuickItem.ItemAcceptsInputMethod, True)
+        self.setFiltersChildMouseEvents(True)
+    
+    def onPress(self, source):
+        if not source.hasActiveFocus():
+            self.releaseFocus.emit()
+
+    def childMouseEventFilter(self, child, event):
+        if event.type() == QEvent.MouseButtonPress:
+            self.onPress(child)
+        return False
+
+    def mousePressEvent(self, event):
+        self.onPress(self)
+        event.setAccepted(False)
+
+def registerTypes():
+    qmlRegisterType(FocusReleaser, "gui", 1, 0, "FocusReleaser")

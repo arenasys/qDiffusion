@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import QApplication
 
 import gui
 import sql
+import editor
 
 class Application(QApplication):
         def event(self, e):
@@ -88,7 +89,10 @@ def start():
     signal.signal(signal.SIGINT, lambda sig, frame: app.quit())
     app.startTimer(100)
 
-    qmlRegisterType(sql.Sql, "gui", 1, 0, "Sql")
+    sql.registerTypes()
+    gui.registerTypes()
+    editor.registerTypes()
+
 
     engine = QQmlApplicationEngine()
     engine.quit.connect(app.quit)

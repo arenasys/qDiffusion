@@ -45,7 +45,7 @@ class InferenceProcessThread(threading.Thread):
         self.responses.put((-1, {"type":"status", "data":{"message":"Ready"}}))
         while not self.stopping:
             try:
-                self.current, request = self.requests.get(False, 0.1)
+                self.current, request = self.requests.get(True, 0.01)
                 if request["type"] == "txt2img":
                     self.wrapper.set(**request["data"])
                     self.wrapper.txt2img()

@@ -5,6 +5,7 @@ import time
 
 from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, Qt, QObject, QThread, QAbstractListModel, QByteArray, QModelIndex, QTimer, QVariant
 from PyQt5.QtSql import QSqlDatabase, QSqlQuery, QSqlDriver
+from PyQt5.QtQml import qmlRegisterType
 
 class Database(QObject):
     notification = pyqtSignal(str)
@@ -227,3 +228,6 @@ class Sql(QAbstractListModel):
     @pyqtSlot()
     def reload(self):
         self.setQuery(self.currentQuery)
+
+def registerTypes():
+    qmlRegisterType(Sql, "gui", 1, 0, "Sql")

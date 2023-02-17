@@ -15,86 +15,94 @@ ApplicationWindow {
     title: GUI.title
     color: "#000"
 
-    Rectangle {
-        id: root
+    FocusReleaser {
         anchors.fill: parent
-        color: COMMON.bg0
-    }
 
-    WindowBar {
-        id: windowBar
-        anchors.left: root.left
-        anchors.right: root.right
-    }
+        Rectangle {
+            id: root
+            anchors.fill: parent
+            color: COMMON.bg0
+        }
 
-    TabBar {
-        id: tabBar
-        anchors.left: root.left
-        anchors.right: root.right
-        anchors.top: windowBar.bottom
-    }
+        WindowBar {
+            id: windowBar
+            anchors.left: root.left
+            anchors.right: root.right
+        }
 
-    Rectangle {
-        id: barDivider
-        anchors.left: root.left
-        anchors.right: root.right
-        anchors.top: tabBar.bottom
+        TabBar {
+            id: tabBar
+            anchors.left: root.left
+            anchors.right: root.right
+            anchors.top: windowBar.bottom
+        }
 
-        height: 5
-        color: COMMON.bg4
-    }
+        Rectangle {
+            id: barDivider
+            anchors.left: root.left
+            anchors.right: root.right
+            anchors.top: tabBar.bottom
 
-    StackLayout {
-        id: stackLayout
-        anchors.left: root.left
-        anchors.right: root.right
-        anchors.top: barDivider.bottom
-        anchors.bottom: root.bottom
+            height: 5
+            color: COMMON.bg4
+        }
 
-        currentIndex: GUI.tabNames.indexOf(tabBar.currentTab)
+        StackLayout {
+            id: stackLayout
+            anchors.left: root.left
+            anchors.right: root.right
+            anchors.top: barDivider.bottom
+            anchors.bottom: root.bottom
 
-        function releaseFocus() {
+            currentIndex: GUI.tabNames.indexOf(tabBar.currentTab)
+
+            function releaseFocus() {
+                keyboardFocus.forceActiveFocus()
+            }
+
+            function addTab() {
+                for(var i = 0; i < GUI.tabSources.length; i++) {
+                    var component = Qt.createComponent(GUI.tabSources[i])
+                    if(component.status != Component.Ready) {
+                        console.log("ERROR", component.errorString())
+                    } else {
+                        component.createObject(stackLayout)
+                    }
+                }
+            }
+
+            Component.onCompleted: {
+                addTab()
+            }
+
+            onCurrentIndexChanged: {
+                releaseFocus()
+            }
+        }
+
+        onReleaseFocus: {
             keyboardFocus.forceActiveFocus()
         }
 
-        function addTab() {
-            for(var i = 0; i < GUI.tabSources.length; i++) {
-                var component = Qt.createComponent(GUI.tabSources[i])
-                if(component.status != Component.Ready) {
-                    console.log("ERROR", component.errorString())
+        Item {
+            id: keyboardFocus
+            Keys.onPressed: {
+                event.accepted = true
+                if(event.modifiers & Qt.ControlModifier) {
+                    switch(event.key) {
+                    default:
+                        event.accepted = false
+                        break;
+                    }
                 } else {
-                    component.createObject(stackLayout)
+                    switch(event.key) {
+                    default:
+                        event.accepted = false
+                        break;
+                    }
                 }
             }
+            Keys.forwardTo: [stackLayout.children[stackLayout.currentIndex]]
         }
-
-        Component.onCompleted: {
-            addTab()
-        }
-
-        onCurrentIndexChanged: {
-            releaseFocus()
-        }
-    }
-
-    Item {
-        id: keyboardFocus
-        Keys.onPressed: {
-            event.accepted = true
-            if(event.modifiers & Qt.ControlModifier) {
-                switch(event.key) {
-                default:
-                    event.accepted = false
-                    break;
-                }
-            } else {
-                switch(event.key) {
-                default:
-                    event.accepted = false
-                    break;
-                }
-            }
-        }
-        Keys.forwardTo: [stackLayout.children[stackLayout.currentIndex]]
     }
 }

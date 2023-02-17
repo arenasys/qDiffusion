@@ -14,6 +14,7 @@ Item {
     property var scale: 1.0
     property var item: itm
     property var mouse: itmMouse
+    property var ctrlZoom: false
 
     clip: true
 
@@ -116,6 +117,10 @@ Item {
         }
 
         onWheel: {
+            var ctrl = wheel.modifiers & Qt.ControlModifier
+            if(!ctrl && root.ctrlZoom) {
+                return
+            }
             if(wheel.angleDelta.y < 0) {
                 wheel.accepted = true
                 scale(wheel.x, wheel.y, -0.1)

@@ -221,58 +221,20 @@ Rectangle {
         text: gallery.selectedLength > 1 ? gallery.selectedLength + " images selected"  : ""
     }
 
-    Rectangle {
+    SDividerVR {
         id: galleryDivider
-        anchors.top: parent.top
-        anchors.bottom: parent.bottom
-        width: 5
-        property int minX: 5
-        property int maxX: parent.width
-        property int offset: 600
-        x: parent.width - offset
-        color: COMMON.bg4
-
-        MouseArea {
-            anchors.fill: parent
-            hoverEnabled: true
-            onPositionChanged: {
-                if(pressedButtons) {
-                    galleryDivider.offset = Math.min(galleryDivider.maxX, Math.max(galleryDivider.minX, root.width - (galleryDivider.x + mouseX)))
-                }
-            }
-        }
-
-        onMaxXChanged: {
-            if(parent.width > 0 && galleryDivider.x > 0)
-                galleryDivider.offset = Math.min(galleryDivider.maxX, Math.max(galleryDivider.minX, galleryDivider.offset))
-        }
+        minOffset: 5
+        maxOffset: parent.width
+        offset: 600
     }
 
-    Rectangle {
+    SDividerHB {
         id: imageDivider
         anchors.left: parent.left
         anchors.right: galleryDivider.left
-        height: 5
-        property int minY: 5
-        property int maxY: parent.height
-        property int offset: 150
-        y: parent.height - offset
-        color: COMMON.bg4
-
-        MouseArea {
-            anchors.fill: parent
-            hoverEnabled: true
-            onPositionChanged: {
-                if(pressedButtons) {
-                    imageDivider.offset = Math.min(imageDivider.maxY, Math.max(imageDivider.minY, root.height - (imageDivider.y + mouseY)))
-                }
-            }
-        }
-
-        onMaxYChanged: {
-            if(parent.height > 0 && imageDivider.y > 0)
-                imageDivider.offset = Math.min(imageDivider.maxY, Math.max(imageDivider.minY, imageDivider.offset))
-        }
+        minOffset: 5
+        maxOffset: parent.height
+        offset: 150
     }
 
     Rectangle {
@@ -303,14 +265,6 @@ Rectangle {
             }
         }
 
-    }
-
-    MouseArea {
-        visible: searchInput.activeFocus
-        anchors.fill: parent
-        onClicked: {
-            root.releaseFocus()
-        }
     }
 
     SComboBox {

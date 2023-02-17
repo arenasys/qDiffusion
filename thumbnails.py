@@ -86,11 +86,12 @@ class ThumbnailResponse(QQuickImageResponse):
     
     @pyqtSlot('QImage')
     def onDone(self, image):
-        self.image = image
+        self.image = QImage(image)
         self.finished.emit()
     
     def textureFactory(self):
-        return QQuickTextureFactory.textureFactoryForImage(self.image)
+        self.texture = QQuickTextureFactory.textureFactoryForImage(self.image)
+        return self.texture
 
 class AsyncThumbnailProvider(QQuickAsyncImageProvider):
     def __init__(self, size, quality):

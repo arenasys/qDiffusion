@@ -13,6 +13,7 @@ TextInput {
     font.family: "Cantarell"
     font.pointSize: 10.8
     color: COMMON.fg0
+    selectByMouse: true
 
     Component.onCompleted: {
         if(font.bold) {
