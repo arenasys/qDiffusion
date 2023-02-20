@@ -18,9 +18,7 @@ Item {
         parent.releaseFocus()
     }
 
-    
-
-    MovableImageEditor {
+    ImageEditor {
         id: editor
         anchors.top: parent.top
         anchors.left: parent.left
@@ -28,7 +26,6 @@ Item {
         anchors.bottom: promptDivider.top
 
         source: "image.png"
-//        sourceSize: Qt.size(768, 768)
     }
 
     SDividerVR {

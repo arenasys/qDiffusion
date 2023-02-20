@@ -45,7 +45,7 @@ Item {
         anchors.margins: 5
     }
     
-    TransparencyBackground {
+    TransparencyShader {
         anchors.fill: selectedColor
     }
 
@@ -55,8 +55,8 @@ Item {
         anchors.bottom: parent.bottom
         anchors.margins: 5
         color: colorArea.color
-        width: 25
-        height: 25
+        width: 20
+        height: 20
         border.color: "black"
         border.width: 1.5
     }
@@ -72,16 +72,17 @@ Item {
         anchors.margins: 5
         border.color: "black"
         border.width: 1.5
-        width: 25
+        width: 20
+        property var inset: 10.0/height
         gradient: Gradient {
             GradientStop { position: 0.0; color: lightnessArea.displayA }
-            GradientStop { position: 0.05; color: lightnessArea.displayA }
-            GradientStop { position: 0.95; color: lightnessArea.displayB }
+            GradientStop { position: lightnessArea.inset; color: lightnessArea.displayA }
+            GradientStop { position: 1-lightnessArea.inset; color: lightnessArea.displayB }
             GradientStop { position: 1.0; color: lightnessArea.displayB }
         }
     }
 
-    TransparencyBackground {
+    TransparencyShader {
         anchors.fill: alphaArea
     }
 
@@ -94,12 +95,13 @@ Item {
         anchors.margins: 5
         border.color: "black"
         border.width: 1.5
-        height: 25
+        height: 20
+        property var inset: 10.0/width
         gradient: Gradient {
             orientation: Gradient.Horizontal
             GradientStop { position: 0.0; color: "transparent" }
-            GradientStop { position: 0.05; color: "transparent" }
-            GradientStop { position: 0.95; color: alphaArea.display }
+            GradientStop { position: alphaArea.inset; color: "transparent" }
+            GradientStop { position: 1-alphaArea.inset; color: alphaArea.display }
             GradientStop { position: 1.0; color: alphaArea.display }
         }
     }
@@ -163,7 +165,7 @@ Item {
         anchors.centerIn: lightnessArea
 
         function setSelection(lightness) {
-            var margin = lightnessArea.height * 0.05
+            var margin = lightnessArea.height * lightnessArea.inset
             lightnessSelector.anchors.centerIn = undefined
             lightnessSelector.y = ((lightnessArea.height - 2*margin) * lightness) + margin
             lightnessSelector.x = lightnessArea.x + lightnessArea.width/2 - 5
@@ -176,7 +178,7 @@ Item {
         anchors.fill: lightnessArea
 
         function set(mouse) {
-            var margin = lightnessArea.height * 0.05
+            var margin = lightnessArea.height * lightnessArea.inset
             var lightness = (mouse.y - margin) / (lightnessArea.height - 2*margin)
 
             lightness = Math.min(1, Math.max(0, lightness))
@@ -203,7 +205,7 @@ Item {
         anchors.centerIn: alphaArea
 
         function setSelection(alpha) {
-            var margin = alphaArea.width * 0.05
+            var margin = alphaArea.width * alphaArea.inset
             alphaSelector.anchors.centerIn = undefined
             alphaSelector.selectedAlpha = alpha
             alphaSelector.x = ((alphaArea.width - 2*margin) * alpha) + margin
@@ -216,7 +218,7 @@ Item {
         anchors.fill: alphaArea
 
         function set(mouse) {
-            var margin = alphaArea.width * 0.05
+            var margin = alphaArea.width * alphaArea.inset
             var alpha = (mouse.x - margin) / (alphaArea.width - 2*margin)
 
             alpha = Math.min(1, Math.max(0, alpha))

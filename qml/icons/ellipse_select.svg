@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   height="16"
+   width="16"
+   version="1.1"
+   viewBox="0 0 16 16"
+   data-name="Layer 2"
+   id="Layer_2"
+   sodipodi:docname="elliptical_select.svg"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <defs
+     id="defs2092" />
+  <sodipodi:namedview
+     id="namedview2090"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="24.4375"
+     inkscape:cx="11.212276"
+     inkscape:cy="5.8925831"
+     inkscape:window-width="1920"
+     inkscape:window-height="1011"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="Layer_2" />
+  <metadata
+     id="metadata11">
+    <rdf:RDF>
+      <cc:Work>
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+        <dc:creator>
+          <cc:Agent>
+            <dc:title>Andrei Rudenko</dc:title>
+          </cc:Agent>
+        </dc:creator>
+        <dc:date>2021</dc:date>
+        <cc:license
+           rdf:resource="http://creativecommons.org/licenses/by-sa/4.0/" />
+      </cc:Work>
+      <cc:License
+         rdf:about="http://creativecommons.org/licenses/by-sa/4.0/">
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Reproduction" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Distribution" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Notice" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Attribution" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#ShareAlike" />
+      </cc:License>
+    </rdf:RDF>
+  </metadata>
+  <path
+     style="fill:#000000;fill-opacity:1;stroke-width:0.374649"
+     id="path6"
+     d="M 8.0000007,2.005591 A 5.9944138,5.9944138 0 0 0 6.5463551,2.1854234 L 6.921006,3.6390688 a 4.4733313,4.4733313 0 0 1 2.1804686,0 L 9.4761254,2.1854234 A 5.9944138,5.9944138 0 0 0 8.0000007,2.005591 Z M 4.9166239,2.8597949 5.6884046,4.1448473 A 4.3909081,4.3909081 0 0 0 4.144843,5.6884089 L 2.859791,4.9166281 A 6.0468649,6.0468649 0 0 1 4.9166239,2.8597949 Z M 2.185419,6.5463593 3.639064,6.9210102 a 4.4733313,4.4733313 0 0 0 0,2.1804674 l -1.453645,0.374652 a 5.9644418,5.9644418 0 0 1 0,-2.9072912 z M 2.859791,11.083381 4.144843,10.3116 a 4.3909081,4.3909081 0 0 0 1.5435616,1.543562 L 4.9166239,13.140214 A 6.0468649,6.0468649 0 0 1 2.859791,11.083381 Z M 6.5463551,13.814586 6.921006,12.36094 a 4.4733313,4.4733313 0 0 0 2.1804686,0 l 0.3746508,1.453646 a 5.9644418,5.9644418 0 0 1 -2.9072912,0 z m 4.5370219,-0.674372 -0.77178,-1.285052 A 4.3909081,4.3909081 0 0 0 11.855158,10.3116 l 1.285053,0.771781 a 6.0468649,6.0468649 0 0 1 -2.056834,2.056833 z M 13.814581,9.4536503 12.360936,9.0789992 a 4.4733313,4.4733313 0 0 0 0,-2.180468 l 1.453645,-0.3746509 a 5.9644418,5.9644418 0 0 1 0,2.9072906 z M 13.140211,4.9166281 11.855158,5.6884089 A 4.3909081,4.3909081 0 0 0 10.311597,4.1448473 l 0.77178,-1.2850524 a 6.0468649,6.0468649 0 0 1 2.056834,2.0568332 z" />
+</svg>

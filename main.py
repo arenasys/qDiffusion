@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import QApplication
 
 import gui
 import sql
-import editor
+import canvas
 
 class Application(QApplication):
         def event(self, e):
@@ -91,7 +91,8 @@ def start():
 
     sql.registerTypes()
     gui.registerTypes()
-    editor.registerTypes()
+    canvas.registerTypes()
+    canvas.registerMiscTypes()
 
 
     engine = QQmlApplicationEngine()
