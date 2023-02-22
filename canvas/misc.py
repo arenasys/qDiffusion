@@ -235,25 +235,36 @@ class MarchingAnts(QQuickPaintedItem):
         self._dash = (self._dash + (diff / 500)) % 6.0
         self._last = time.time_ns()
         self._needsUpdate = False
+
+        shapes = self._selection.shapes
+        mask = self._selection.mask
+
+        if not mask.isNull():
+            self._shader = True
+            
+            offset = mask.offset() * self._factor + self._offset
+            mask = mask.scaled(mask.size() * self._factor)
+
+            painter.drawImage(offset, mask)
+        else:
+            self._shader = False
+            for shape in shapes:
+                path = QPainterPath()
+                bound = self.process(shape)
+                if shape.tool == CanvasTool.RECTANGLE_SELECT:
+                    path.addRect(bound)
+                elif shape.tool == CanvasTool.ELLIPSE_SELECT:
+                    path.addEllipse(bound.adjusted(0,0,0,-0.0001))
+                elif shape.tool == CanvasTool.PATH_SELECT and len(bound) >= 3:
+                    path.addPolygon(bound)
+
+                if shape.mode == CanvasSelectionMode.SUBTRACT:
+                    self.subtractPath(painter, path)
+                else:
+                    self.addPath(painter, path)
+
         self.updated.emit()
         
-        shapes = self._selection.shapes
-
-        for shape in shapes:
-            path = QPainterPath()
-            bound = self.process(shape)
-            if shape.tool == CanvasTool.RECTANGLE_SELECT:
-                path.addRect(bound)
-            elif shape.tool == CanvasTool.ELLIPSE_SELECT:
-                path.addEllipse(bound.adjusted(0,0,0,-0.0001))
-            elif shape.tool == CanvasTool.PATH_SELECT and len(bound) >= 3:
-                path.addPolygon(bound)
-
-            if shape.mode == CanvasSelectionMode.SUBTRACT:
-                self.subtractPath(painter, path)
-            else:
-                self.addPath(painter, path)
-
 def registerMiscTypes():
     qmlRegisterType(ImageDisplay, "gui", 1, 0, "ImageDisplay")
     qmlRegisterType(ColorRadial, "gui", 1, 0, "ColorRadial")

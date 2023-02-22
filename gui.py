@@ -44,7 +44,7 @@ class GUI(QObject):
 
     @pyqtProperty('QString', constant=True)
     def title(self):
-        return "SD Inference GUI"
+        return "qDiffusion"
 
     @pyqtSlot(str, result=bool)
     def isCached(self, file):

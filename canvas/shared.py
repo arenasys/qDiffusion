@@ -15,13 +15,18 @@ class CanvasSelectionMode(Enum):
     SUBTRACT = 3
 
 class CanvasOperation(Enum):
-    STROKE = 1
-    SAVE_STATE = 2
-    RESTORE_STATE = 3
-    UPDATE_SELECTION = 4
-    START_MOVE = 5
-    UPDATE_MOVE = 6
-    END_MOVE = 7
+    UPDATE_STROKE = 1
+    STROKE = 2
+    UNDO = 3
+    SET_SELECTION = 4
+    MOVE = 5
+    SET_MOVE = 6
+    UPDATE_MOVE = 7
+    ANCHOR = 8
+    PASTE = 9
+    COPY = 10
+    CUT = 11
+    LOAD = 12
 
 class CanvasChanges():
     def __init__(self):
@@ -34,4 +39,9 @@ class CanvasChanges():
         self.move = QPointF()
         self.selection = []
 
+        self.paste = None
+
         self.operations = set()
+
+def alignQPointF(point):
+    return QPointF(point.toPoint())

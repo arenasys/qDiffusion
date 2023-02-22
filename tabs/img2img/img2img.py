@@ -1,9 +1,5 @@
-from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, QObject, Qt, QRectF, QPointF, QSize
+from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, QObject, Qt
 from PyQt5.QtQml import qmlRegisterSingletonType, qmlRegisterType
-from PyQt5.QtQuick import QQuickFramebufferObject
-from PyQt5.QtGui import QFont, QRadialGradient, QPen, QBrush, QColor, QPainter, QPaintDevice, QOpenGLPaintDevice, QImage, QOpenGLFramebufferObject
-import math
-import copy
 
 class img2img(QObject):
     def __init__(self, parent=None):

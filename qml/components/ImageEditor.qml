@@ -55,7 +55,7 @@ Item {
             id: canvas
             anchors.fill: item
             source: root.source || ""
-            smooth: sourceSize.width*2 < width && sourceSize.height*2 < height ? false : true
+            smooth: sourceSize.width*1.1 < width && sourceSize.height*1.1 < height ? false : true
             brush.color: colorPicker.color
 
             onNeedsUpdateChanged: {
@@ -447,6 +447,15 @@ Item {
             switch(event.key) {
             case Qt.Key_Z:
                 canvas.undo()
+                break;
+            case Qt.Key_C:
+                canvas.copy()
+                break;
+            case Qt.Key_V:
+                canvas.paste()
+                break;
+            case Qt.Key_X:
+                canvas.cut()
                 break;
             default:
                 event.accepted = false
