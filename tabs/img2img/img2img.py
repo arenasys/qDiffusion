@@ -1,6 +1,6 @@
-from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, QObject, Qt
+from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, QObject, Qt, QByteArray
 from PyQt5.QtQml import qmlRegisterSingletonType, qmlRegisterType
-
+from PyQt5.QtGui import QImage
 class img2img(QObject):
     def __init__(self, parent=None):
         super().__init__(parent)

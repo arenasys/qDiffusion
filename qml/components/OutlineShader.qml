@@ -3,9 +3,6 @@ import QtQuick 2.0
 
 ShaderEffect {
     property var fSize: Qt.size(width, height)
-    property real fDashOffset: 0.0
-    property real fDashLength: 6.0
-    property bool fDashStroke: true
     property var fColor: Qt.vector4d(1, 1, 1, 1)
     vertexShader: "
         uniform highp mat4 qt_Matrix;
@@ -21,18 +18,9 @@ ShaderEffect {
         uniform lowp float qt_Opacity;
         varying highp vec2 fCoord;
         uniform highp vec2 fSize;
-        uniform float fDashOffset;
-        uniform float fDashLength;
-        uniform bool fDashStroke;
-        uniform vec4 fColor;
+        uniform highp vec4 fColor;
         void main() {
-            vec4 c;
-            if(fDashStroke) {
-                float f = floor(mod((fDashOffset/2.0) + (fCoord.x + fCoord.y)/fDashLength, 2.0));
-                c = vec4(f,f,f,1.0);
-            } else {
-                c = texture2D(source, fCoord/fSize);
-            }
+            vec4 c = fColor;
 
             bool t0 = texture2D(source, (fCoord + vec2(-1.0, -1.0))/fSize).a >= 0.5;
             bool t1 = texture2D(source, (fCoord + vec2(0.0, -1.0))/fSize).a >= 0.5;
@@ -51,9 +39,9 @@ ShaderEffect {
             if(onEdge) {
                 o = c;
             } else {
-                vec4 o = vec4(0.0, 0.0, 0.0, 0.0);
+                o = texture2D(source, fCoord/fSize);
             }
 
-            gl_FragColor = fColor * o * qt_Opacity;
+            gl_FragColor = o * qt_Opacity;
         }"
 }

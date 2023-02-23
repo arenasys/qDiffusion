@@ -1,10 +1,10 @@
-from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, Qt, QPointF, QRectF
-from PyQt5.QtQuick import QQuickPaintedItem
+from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, Qt, QObject, QPointF, QRectF, QMimeData
+from PyQt5.QtQuick import QQuickItem, QQuickPaintedItem
 from PyQt5.QtGui import QRadialGradient, QColor, QPainter, QPainterPath, QPen, QPolygonF, QImage, QConicalGradient, QRadialGradient
 from PyQt5.QtQml import qmlRegisterType
 import time
 
-from canvas.shared import CanvasSelectionMode
+from canvas.shared import CanvasSelectionMode, MimeData
 from canvas.canvas import CanvasTool, CanvasSelection
 
 class ImageDisplay(QQuickPaintedItem):
@@ -232,7 +232,7 @@ class MarchingAnts(QQuickPaintedItem):
             return
 
         diff = ((time.time_ns() - self._last)//1000000)
-        self._dash = (self._dash + (diff / 500)) % 6.0
+        self._dash = (self._dash + (diff / 500)) % 12.0
         self._last = time.time_ns()
         self._needsUpdate = False
 
@@ -264,8 +264,42 @@ class MarchingAnts(QQuickPaintedItem):
                     self.addPath(painter, path)
 
         self.updated.emit()
+
+class DropArea(QQuickItem):
+    dropped = pyqtSignal(MimeData, arguments=["mimeData"])
+    updated = pyqtSignal()
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFlag(QQuickItem.ItemAcceptsDrops, True)
+        self._containsDrag = False
+    
+    @pyqtProperty(bool, notify=updated)
+    def containsDrag(self):
+        return self._containsDrag
+    
+    def dragEnterEvent(self, enter): 
+        enter.accept()
+        self._containsDrag = True
+        self.updated.emit()
+
+    def dragLeaveEvent(self, leave): 
+        leave.accept()
+        self._containsDrag = False
+        self.updated.emit()
+
+    def dragMoveEvent(self, move):
+        move.accept()
+
+    def dropEvent(self, drop):
+        drop.accept()
+        self._containsDrag = False
+        self.updated.emit()
+        self.dropped.emit(MimeData(drop.mimeData()))
         
+
 def registerMiscTypes():
     qmlRegisterType(ImageDisplay, "gui", 1, 0, "ImageDisplay")
     qmlRegisterType(ColorRadial, "gui", 1, 0, "ColorRadial")
     qmlRegisterType(MarchingAnts, "gui", 1, 0, "MarchingAnts")
+    qmlRegisterType(DropArea, "gui", 1, 0, "AdvancedDropArea")
+    qmlRegisterType(MimeData, "gui", 1, 0, "MimeData")

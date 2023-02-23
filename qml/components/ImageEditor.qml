@@ -34,6 +34,8 @@ Item {
         itemHeight: canvas.sourceSize.height
         ctrlZoom: true
 
+        property color selectColor: canvas.floating ? "#ffff00" : "#ffffff"
+
         Item {
             id: item
             x: Math.floor(parent.item.x)
@@ -78,6 +80,7 @@ Item {
             layer.effect: MarchingAntsShader {
                 fDashStroke: selection.shader
                 fDashOffset: selection.dash
+                fColor: movable.selectColor
             }
 
             Connections {
@@ -116,12 +119,6 @@ Item {
             interval: 100; running: true; repeat: true
             onTriggered: {
                 canvas.update()
-            }
-        }
-
-        Timer {
-            interval: 100; running: true; repeat: true
-            onTriggered: {
                 selection.update()
             }
         }
@@ -327,7 +324,6 @@ Item {
             id: layersList
             model: canvas.layers
             height: Math.min(200, contentHeight)
-            clip: true
 
             delegate: Item {
                 height: 40
@@ -335,12 +331,30 @@ Item {
                 Rectangle {
                     height: 40
                     width: Math.max(40 + thumbnail.width + 24, layersList.width)
-                    color: index == canvas.activeLayer ? Qt.darker(COMMON.bg2, 1.25) : COMMON.bg2
+                    color: modelData.key == canvas.activeLayer ? Qt.darker(COMMON.bg2, 1.25) : COMMON.bg2
 
                     MouseArea {
                         anchors.fill: parent
+                        property var startPosition: Qt.point(0,0)
+                        property bool ready: false
+                        property var image
                         onPressed: {
-                            canvas.activeLayer = index
+                            canvas.activeLayer = modelData.key
+                            startPosition = Qt.point(mouse.x, mouse.y)
+                            ready = false
+                            thumbnail.grabToImage(function(result) {
+                                image = result.image;
+                                ready = true
+                            })
+                        }
+
+                        onPositionChanged: {
+                            if(pressed && ready) {
+                                var delta = Qt.point(mouse.x-startPosition.x, mouse.y-startPosition.y)
+                                if(Math.pow(delta.x*delta.x + delta.y*delta.y, 0.5) > 5) {
+                                    modelData.drag(index, image)
+                                }
+                            }
                         }
                     }
 
@@ -361,42 +375,43 @@ Item {
                         }
                     }
 
-                    TransparencyShader {
-                        anchors.fill: thumbnail
-                        gridSize: 5.0
-                    }
 
-                    ImageDisplay {
+                    Item {
                         id: thumbnail
                         anchors.top: parent.top
                         anchors.bottom: parent.bottom
                         anchors.left: visibleButton.right
                         width: height
-                        image: modelData.thumbnail
-                        centered: true
-                        visible: modelData.visible
-                    }
 
-                    Rectangle {
-                        id: overlay
-                        anchors.fill: thumbnail
-                        color: "#30000000"
-                        visible: false
-                    }
+                        TransparencyShader {
+                            anchors.fill: parent
+                            gridSize: 5.0
+                        }
 
-                    Blend {
-                        visible: !modelData.visible
-                        anchors.fill: thumbnail
-                        source: thumbnail
-                        foregroundSource: overlay
-                        mode: "multiply"
-                    }
+                        ImageDisplay {
+                            id: thumbnailImage
+                            anchors.fill: parent
+                            image: modelData.thumbnail
+                            centered: true
+                        }
 
-                    Rectangle {
-                        anchors.fill: thumbnail
-                        color: "transparent"
-                        border.color: canvas.activeLayer == index ? "white" : COMMON.bg6
-                        border.width: 1
+                        ImageDisplay {
+                            anchors.fill: parent
+                            image: modelData.floatingThumbnail
+                            centered: true
+
+                            layer.enabled: true
+                            layer.effect: OutlineShader {
+                                fColor: Qt.vector4d(movable.selectColor.r, movable.selectColor.g, movable.selectColor.b, 1.0)
+                            }
+                        }
+
+                        Rectangle {
+                            anchors.fill: parent
+                            color: "transparent"
+                            border.color: canvas.activeLayer == modelData.key ? "white" : COMMON.bg6
+                            border.width: 1
+                        }
                     }
 
                     Rectangle {
@@ -432,8 +447,55 @@ Item {
                                 label.selectAll()
                             }
                             onPressed: {
-                                canvas.activeLayer = index
+                                canvas.activeLayer = modelData.key
                             }
+                        }
+                    }
+
+                    AdvancedDropArea {
+                        id: topDrop
+                        anchors.top: parent.top
+                        anchors.topMargin: -20
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        height: 40
+
+                        onDropped: {
+                            canvas.dropped(mimeData, index+1)
+                        }
+
+                        Rectangle {
+                            visible: parent.containsDrag
+                            anchors.top: parent.top
+                            anchors.topMargin: 20
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            height: 1
+                            color: COMMON.fg2
+                        }
+                    }
+
+                    AdvancedDropArea {
+                        id: bottomDrop
+                        enabled: index == 0
+                        anchors.bottom: parent.bottom
+                        anchors.bottomMargin: -20
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        height: 40
+
+                        onDropped: {
+                            canvas.dropped(mimeData, index)
+                        }
+
+                        Rectangle {
+                            visible: parent.containsDrag
+                            anchors.bottom: parent.bottom
+                            anchors.bottomMargin: 20
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            height: 1
+                            color: COMMON.fg2
                         }
                     }
                 }

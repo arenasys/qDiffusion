@@ -1,4 +1,5 @@
-from PyQt5.QtCore import QPointF
+from PyQt5.QtCore import pyqtSlot, pyqtProperty
+from PyQt5.QtCore import QPointF, QObject, QMimeData
 from enum import Enum
 
 class CanvasTool(Enum):
@@ -45,3 +46,12 @@ class CanvasChanges():
 
 def alignQPointF(point):
     return QPointF(point.toPoint())
+
+class MimeData(QObject):
+    def __init__(self, mimeData, parent=None):
+        super().__init__(parent)
+        self._mimeData = mimeData
+
+    @pyqtProperty(QMimeData)
+    def mimeData(self):
+        return self._mimeData
