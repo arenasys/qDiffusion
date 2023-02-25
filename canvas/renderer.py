@@ -5,6 +5,8 @@ import OpenGL.GL as gl
 import copy
 import time
 
+import PIL.ImageDraw
+
 from canvas.shared import *
 
 class CanvasRendererCheckpoint():
@@ -20,24 +22,24 @@ class CanvasRendererCheckpoint():
         self.floatingPosition = floatingPosition
         self.floatingLayer = floatingLayer
 
-class CanvasRendererLayer():
-    def __init__(self, size, fbo):
-        self.fbo = fbo
+class CanvasRendererBuffer():
+    def __init__(self, size, buffer):
+        self.buffer = buffer
         self.size = size
-        self.changed = True
         self.opacity = 1.0
         self.visible = True
         self.source = None
     
     def getImage(self):
-        return self.fbo.toImage()
+        return self.buffer.toImage()
 
     def getThumbnail(self, size=128):
-        self.changed = False
-        return self.getImage().scaledToWidth(size, mode=Qt.SmoothTransformation)
+        img = self.getImage().scaledToWidth(size, mode=Qt.SmoothTransformation)
+        img = PILtoQImage(QImagetoPIL(img))
+        return img
 
     def beginPaint(self):
-        self.fbo.bind()
+        self.buffer.bind()
         self.device = QOpenGLPaintDevice(self.size)
         self.painter = QPainter(self.device)
         self.painter.beginNativePainting()
@@ -47,7 +49,6 @@ class CanvasRendererLayer():
         self.painter.endNativePainting()
         self.painter.end()
         self.device = None
-        self.changed = True
     
 class CanvasRenderer(QQuickFramebufferObject.Renderer):
     def __init__(self, size):
@@ -81,9 +82,21 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
         self.floatingPosition = QPointF(0,0)
         self.floatingOffset = QPointF(0,0)
 
-    def createLayer(self, size):
-        fbo = super().createFramebufferObject(size)
-        return CanvasRendererLayer(size, fbo)
+    def createBuffer(self, size):
+        buffer = super().createFramebufferObject(size)
+        return CanvasRendererBuffer(size, buffer)
+    
+    def resizeBuffer(self, buffer, newSize):
+        newBuffer = super().createFramebufferObject(newSize)
+        oldBuffer = buffer.buffer
+        buffer.buffer = newBuffer
+        buffer.size = newSize
+
+        painter = buffer.beginPaint()
+        gl.glClearColor(0, 0, 0, 0)
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+        painter.drawImage(0,0,oldBuffer.toImage())
+        buffer.endPaint()
     
     def getLayer(self, key):
         return self.layers[key]
@@ -108,7 +121,7 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
         key = self.activeLayer
 
         if not key in self.layers:
-            self.layers[key] = self.createLayer(self.size)
+            self.layers[key] = self.createBuffer(self.size)
         
         painter = self.layers[key].beginPaint()
         gl.glClearColor(0, 0, 0, 0)
@@ -143,13 +156,13 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
         self.restoredOrder =self.layersOrder
         
     def createFramebufferObject(self, size):
-        self.display = self.createLayer(self.size)
-        self.buffer = self.createLayer(self.size)
-        self.mask = self.createLayer(self.size)
+        self.display = self.createBuffer(self.size)
+        self.buffer = self.createBuffer(self.size)
+        self.mask = self.createBuffer(self.size)
 
         self.states = []
 
-        return self.display.fbo
+        return self.display.buffer
     
     def synchronize(self, canvas):
         canvas.synchronize(self)
@@ -189,6 +202,9 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
         self.display.endPaint()
     
     def renderMask(self):
+        if self.mask.size != self.size:
+            self.resizeBuffer(self.mask, self.size)
+
         # opengl backend cant draw self-intersecting polygons
         img = QImage(self.mask.size, QImage.Format_ARGB32_Premultiplied)
         img.fill(0)
@@ -197,6 +213,9 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
         painter.setRenderHint(QPainter.Antialiasing, True)
         painter.setPen(QColor.fromRgbF(1.0, 1.0, 1.0))
         painter.setBrush(QColor.fromRgbF(1.0, 1.0, 1.0))
+        mask = self.changes.selection.mask
+        if not mask.isNull():
+            painter.drawImage(0,0,mask)
         shapes = self.changes.selection.shapes
         if shapes:
             for shape in shapes:
@@ -237,6 +256,7 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
         save = False
         save = save or (CanvasOperation.STROKE in self.changes.operations)
         save = save or (CanvasOperation.CUT in self.changes.operations)
+        save = save or (CanvasOperation.DELETE in self.changes.operations)
         save = save or (CanvasOperation.PASTE in self.changes.operations)
         save = save or (CanvasOperation.LOAD in self.changes.operations)
         save = save or (CanvasOperation.MOVE in self.changes.operations)
@@ -247,7 +267,7 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
         if CanvasOperation.UNDO in self.changes.operations:
             if self.checkpoints:
                 if self.atCheckpoint and len(self.checkpoints) > 1:
-                    self.checkpoints.pop()
+                    self.restoreCheckpoint(self.checkpoints.pop())
                 checkpoint = self.checkpoints[-1]
                 if len(self.checkpoints) > 1:
                     self.checkpoints.pop()
@@ -296,6 +316,9 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
         if CanvasOperation.PASTE in self.changes.operations and self.changes.paste:
             image = self.changes.paste
 
+            if self.mask.size.width() < image.size().width() or self.mask.size.height() < image.size().height():
+                self.resizeBuffer(self.mask, image.size())
+
             pasteSize = QPointF(image.size().width(), image.size().height())
             layerCenter = QPointF(self.mask.size.width(), self.mask.size.height()) / 2
             selectionCenter = self.changes.selection.center()
@@ -331,7 +354,7 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
             if not bound:
                 bound = QRectF(QPointF(0, 0), QSizeF(selection.size()))
 
-            bound.translate(-(self.floatingPosition + self.floatingOffset))
+            #bound.translate(-(self.floatingPosition + self.floatingOffset))
 
             if not self.floating:
                 painter = QPainter()
@@ -339,22 +362,25 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
                 painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
                 painter.drawImage(0,0,self.getLayer(self.activeLayer).getImage())
                 painter.end()
-
-            if CanvasOperation.CUT in self.changes.operations:
-                if not self.floating:
-                    painter = self.getLayer(self.activeLayer).beginPaint()
-                    painter.setCompositionMode(QPainter.CompositionMode_DestinationOut)
-                    painter.drawImage(0, 0, mask)
-                    self.getLayer(self.activeLayer).endPaint()
-                else:
-                    self.renderMask()
-                    self.restoredSelection = self.changes.selection.copy()
-                    self.restoredSelection.applyOffset()
-                    self.resetMoving()
-                    self.floating = False
             
             selection = selection.copy(bound.toAlignedRect())
             QGuiApplication.clipboard().setImage(selection)
+        
+        if CanvasOperation.DELETE in self.changes.operations or CanvasOperation.CUT in self.changes.operations:
+            mask = self.mask.getImage()
+            if not self.floating:
+                painter = self.getLayer(self.activeLayer).beginPaint()
+                painter.setCompositionMode(QPainter.CompositionMode_DestinationOut)
+                painter.drawImage(0,0,mask)
+                self.getLayer(self.activeLayer).endPaint()
+            else:
+                self.getLayer(self.floatingLayer).changed = True
+                self.renderMask()
+                self.restoredSelection = self.changes.selection.copy()
+                self.restoredSelection.applyOffset()
+                self.restoredSelection.clearMask()
+                self.resetMoving()
+                self.floating = False
 
         if CanvasOperation.MOVE in self.changes.operations and not self.floating:
             selection = QImage(self.mask.getImage())
@@ -382,6 +408,10 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
         if CanvasOperation.UPDATE_MOVE in self.changes.operations:
             self.floatingOffset = self.changes.move
 
+        if CanvasOperation.DESELECT in self.changes.operations:
+            if self.floating:
+                self.changes.operations.add(CanvasOperation.ANCHOR)
+
         if CanvasOperation.ANCHOR in self.changes.operations:
             if self.floating:
                 self.checkpoints.append(self.makeCheckpoint())
@@ -402,6 +432,31 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
                 self.restoredSelection = self.changes.selection
 
                 self.floating = False
+
+        if CanvasOperation.DESELECT in self.changes.operations:
+            self.changes.selection.clear()
+            self.restoredSelection = self.changes.selection
+
+        if CanvasOperation.FUZZY in self.changes.operations:
+            source = self.getLayer(self.activeLayer).getImage()
+            source = QImagetoPIL(source).convert('RGB').convert('RGBA')
+            origin = (self.changes.position.x(), self.changes.position.y())
+
+            floodfill(source, origin, (0,0,0,0), thresh=0.08)
+            source = PILtoQImage(source)
+            source.invertPixels(QImage.InvertRgba)
+            source = self.convertMask(source)
+            
+            painter = self.mask.beginPaint()
+            if self.changes.selection._mode in {CanvasSelectionMode.NORMAL}:
+                gl.glClearColor(0,0,0,0)
+                gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+            elif self.changes.selection._mode in {CanvasSelectionMode.SUBTRACT}:
+                painter.setCompositionMode(QPainter.CompositionMode_DestinationOut)
+            painter.drawImage(0,0,source)
+            self.mask.endPaint()
+            self.restoredSelection = self.changes.selection.copy()
+            self.restoredSelection.setMask(self.mask.getImage())
 
         if save:
             self.checkpoints.append(self.makeCheckpoint())
@@ -425,10 +480,47 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
 
     def getFloatingThumbnail(self):
         mask = self.mask.getImage()
-        image = QImage(mask.size(),  QImage.Format_ARGB32_Premultiplied)
+        image = QImage(self.size, QImage.Format_ARGB32_Premultiplied)
         image.fill(0)
         painter = QPainter()
         painter.begin(image)
         painter.drawImage(self.floatingPosition + self.floatingOffset, mask)
         painter.end()
         return image.scaledToWidth(128, mode=Qt.SmoothTransformation)
+
+def color_diff(color1, color2):
+    if isinstance(color2, tuple):
+        return sum(abs(color1[i] - color2[i])/255 for i in range(0, len(color2)))/len(color2)
+    else:
+        return abs(color1 - color2)/255
+
+def floodfill(image, xy, value, thresh=0):
+    pixel = image.load()
+    x, y = xy
+    try:
+        background = pixel[x, y]
+        if color_diff(value, background) <= thresh:
+            return
+        pixel[x, y] = value
+    except (ValueError, IndexError):
+        return
+    edge = {(x, y)}
+    full_edge = set()
+    while edge:
+        new_edge = set()
+        for (x, y) in edge:
+            for (s, t) in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                if (s, t) in full_edge or s < 0 or t < 0:
+                    continue
+                try:
+                    p = pixel[s, t]
+                except (ValueError, IndexError):
+                    pass
+                else:
+                    full_edge.add((s, t))
+                    fill = color_diff(p, background) <= thresh
+                    if fill:
+                        pixel[s, t] = value
+                        new_edge.add((s, t))
+        full_edge = edge
+        edge = new_edge

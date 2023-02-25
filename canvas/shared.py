@@ -1,6 +1,9 @@
-from PyQt5.QtCore import pyqtSlot, pyqtProperty
-from PyQt5.QtCore import QPointF, QObject, QMimeData
+from PyQt5.QtCore import pyqtSlot, pyqtProperty, QPointF, QObject, QMimeData, QBuffer, QIODevice
+from PyQt5.QtGui import QImage
 from enum import Enum
+import io
+
+import PIL.Image
 
 class CanvasTool(Enum):
     BRUSH = 1
@@ -8,7 +11,8 @@ class CanvasTool(Enum):
     RECTANGLE_SELECT = 3
     ELLIPSE_SELECT = 4
     PATH_SELECT = 5
-    MOVE = 6
+    FUZZY_SELECT = 6
+    MOVE = 7
 
 class CanvasSelectionMode(Enum):
     NORMAL = 1
@@ -28,6 +32,9 @@ class CanvasOperation(Enum):
     COPY = 10
     CUT = 11
     LOAD = 12
+    DELETE = 13
+    FUZZY = 14
+    DESELECT = 15
 
 class CanvasChanges():
     def __init__(self):
@@ -38,6 +45,7 @@ class CanvasChanges():
         self.strokes = []
 
         self.move = QPointF()
+        self.position = QPointF()
         self.selection = []
 
         self.paste = None
@@ -46,6 +54,18 @@ class CanvasChanges():
 
 def alignQPointF(point):
     return QPointF(point.toPoint())
+
+def PILtoQImage(pil):
+    data = pil.convert("RGBA").tobytes("raw", "RGBA")
+    img = QImage(data, pil.size[0], pil.size[1], QImage.Format_RGBA8888)
+    img.convertTo(QImage.Format_ARGB32_Premultiplied)
+    return img
+
+def QImagetoPIL(img):
+    img = img.convertToFormat(QImage.Format_RGBA8888)
+    size = (img.size().width(), img.size().height())
+    total = size[0]*size[1]*4
+    return PIL.Image.frombytes("RGBA", size, img.bits().asarray(total), "raw", "RGBA")
 
 class MimeData(QObject):
     def __init__(self, mimeData, parent=None):

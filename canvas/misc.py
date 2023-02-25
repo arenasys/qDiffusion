@@ -1,4 +1,4 @@
-from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, Qt, QObject, QPointF, QRectF, QMimeData
+from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, Qt, QObject, QPointF, QRectF, QMimeData, QSizeF
 from PyQt5.QtQuick import QQuickItem, QQuickPaintedItem
 from PyQt5.QtGui import QRadialGradient, QColor, QPainter, QPainterPath, QPen, QPolygonF, QImage, QConicalGradient, QRadialGradient
 from PyQt5.QtQml import qmlRegisterType
@@ -241,27 +241,25 @@ class MarchingAnts(QQuickPaintedItem):
 
         if not mask.isNull():
             self._shader = True
-            
-            offset = mask.offset() * self._factor + self._offset
-            mask = mask.scaled(mask.size() * self._factor)
-
-            painter.drawImage(offset, mask)
+            z = QRectF(QPointF(0,0), QSizeF(mask.size()))
+            t = QRectF(self._offset + mask.offset() * self._factor, QSizeF(mask.size()) * self._factor)
+            painter.drawImage(t, mask, z)
         else:
             self._shader = False
-            for shape in shapes:
-                path = QPainterPath()
-                bound = self.process(shape)
-                if shape.tool == CanvasTool.RECTANGLE_SELECT:
-                    path.addRect(bound)
-                elif shape.tool == CanvasTool.ELLIPSE_SELECT:
-                    path.addEllipse(bound.adjusted(0,0,0,-0.0001))
-                elif shape.tool == CanvasTool.PATH_SELECT and len(bound) >= 3:
-                    path.addPolygon(bound)
 
-                if shape.mode == CanvasSelectionMode.SUBTRACT:
-                    self.subtractPath(painter, path)
-                else:
-                    self.addPath(painter, path)
+        for shape in shapes:
+            path = QPainterPath()
+            bound = self.process(shape)
+            if shape.tool == CanvasTool.RECTANGLE_SELECT:
+                path.addRect(bound)
+            elif shape.tool == CanvasTool.ELLIPSE_SELECT:
+                path.addEllipse(bound.adjusted(0,0,0,-0.0001))
+            elif shape.tool == CanvasTool.PATH_SELECT and len(bound) >= 3:
+                path.addPolygon(bound)
+            if shape.mode == CanvasSelectionMode.SUBTRACT:
+                self.subtractPath(painter, path)
+            else:
+                self.addPath(painter, path)
 
         self.updated.emit()
 

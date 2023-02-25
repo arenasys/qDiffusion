@@ -117,7 +117,7 @@ class CanvasLayer(QObject):
         self.changed = True
 
     def synchronize(self, layer, renderer, updateThumbnail=False):
-        if updateThumbnail and layer.changed:
+        if updateThumbnail:
             
             self._thumbnail = QImage(layer.getThumbnail())
             self._data = QImage(layer.getImage())
@@ -296,12 +296,16 @@ class CanvasSelection(QObject):
         return selection
 
     def center(self):
+        if self._mask and not self._mask.isNull():
+            return None
         shapes = self.shapes
         if len(shapes) == 0:
             return None
         return sum([shape.center() for shape in shapes], QPointF())/len(shapes)
     
     def boundingRect(self):
+        if self._mask and not self._mask.isNull():
+            return None#QRectF(QPointF(0,0), QSizeF(self._mask.size()))
         shapes = self.shapes
         if len(shapes) == 0:
             return None
@@ -357,10 +361,7 @@ class Canvas(QQuickFramebufferObject):
         self.changes = CanvasChanges()
         self.lastMousePosition = None
 
-        self.thumbnailTimer = QTimer(self)
-        self.thumbnailTimer.timeout.connect(self.updateThumbnails)
-        self.thumbnailTimer.start(250)
-        self.thumbnailsUpdate = False
+        self.thumbnailsNeedUpdate = False
 
         self._toolStart = None
         self._toolActive = False
@@ -379,6 +380,7 @@ class Canvas(QQuickFramebufferObject):
         changes.layer = self._activeLayer
         changes.move = self._moveOffset
         changes.selection = self._selection
+        changes.position = self._toolStart
         self.changes = CanvasChanges()
         return changes
 
@@ -399,14 +401,13 @@ class Canvas(QQuickFramebufferObject):
 
     def synchronizeLayers(self, renderer):
         renderer.layersOrder = self._layersOrder
-    
         for key in renderer.layersOrder:
             if not key in renderer.layers:
-                renderer.layers[key] = renderer.createLayer(self._layers[key]._size)
+                renderer.layers[key] = renderer.createBuffer(self._layers[key]._size)
                 self.layersUpdated.emit()
-            self._layers[key].synchronize(renderer.layers[key], renderer, self.thumbnailsUpdate)
-        self.thumbnailsUpdate = self.changes.reset
-
+            self._layers[key].synchronize(renderer.layers[key], renderer, self.thumbnailsNeedUpdate)
+        self.thumbnailsNeedUpdate = False
+        
     def synchronizeRestore(self, renderer):
         if renderer.restoredSelection != None:
             self._selection.synchronize(renderer.restoredSelection)
@@ -452,7 +453,7 @@ class Canvas(QQuickFramebufferObject):
 
     @pyqtSlot()
     def updateThumbnails(self):
-        self.thumbnailsUpdate = True
+        self.thumbnailsNeedUpdate = True
 
     def createRenderer(self):
         return CanvasRenderer(self._sourceSize)
@@ -489,9 +490,11 @@ class Canvas(QQuickFramebufferObject):
         self._sourceSize = source.size()
         self.sourceUpdated.emit()
 
-        self.insertLayer(0, QImage())
         self._activeLayer = self.insertLayer(0, source)
+        self.insertLayer(1, QImage())
         self.layersUpdated.emit()
+
+        self.thumbnailsNeedUpdate = True
 
         self.changes = CanvasChanges()
         self.changes.operations.add(CanvasOperation.LOAD)
@@ -519,7 +522,7 @@ class Canvas(QQuickFramebufferObject):
             self.changes.strokes.append(position)
             self.lastMousePosition = position
 
-        if self._tool in {CanvasTool.RECTANGLE_SELECT, CanvasTool.ELLIPSE_SELECT, CanvasTool.PATH_SELECT}:
+        if self._tool in {CanvasTool.RECTANGLE_SELECT, CanvasTool.ELLIPSE_SELECT, CanvasTool.PATH_SELECT, CanvasTool.FUZZY_SELECT}:
             
             self._selectPath = [position]
             if modifiers & Qt.ShiftModifier:
@@ -532,6 +535,10 @@ class Canvas(QQuickFramebufferObject):
 
         if self._tool in {CanvasTool.MOVE}:
             self.changes.operations.add(CanvasOperation.MOVE)
+            self._moveOffset = QPointF(0,0)
+
+        if self._tool in {CanvasTool.FUZZY_SELECT}:
+            self.changes.operations.add(CanvasOperation.FUZZY)
             self._moveOffset = QPointF(0,0)
 
     @pyqtSlot(QPointF, int)
@@ -612,6 +619,20 @@ class Canvas(QQuickFramebufferObject):
         self.changes.operations.add(CanvasOperation.CUT)
 
     @pyqtSlot()
+    def delete(self):
+        self.changes.operations.add(CanvasOperation.DELETE)
+
+    @pyqtSlot()
+    def escape(self):
+        self.changes.operations.add(CanvasOperation.DESELECT)
+
+    @pyqtSlot()
+    def selectAll(self):
+        self._selection.clear()
+        self._selection.setCurrent(QRectF(QPointF(0,0), QSizeF(self._sourceSize)))
+        self._selection.addCurrent()
+
+    @pyqtSlot()
     def paste(self):
         if self._toolActive or self._floating:
             return
@@ -669,7 +690,19 @@ class Canvas(QQuickFramebufferObject):
     def floating(self):
         return self._floating
     
+    @pyqtSlot()
+    def addLayer(self):
+        i = self._layersOrder.index(self._activeLayer)+1
+        self.insertLayer(i, QImage())
 
+    @pyqtSlot()
+    def deleteLayer(self):
+        i = self._layersOrder.index(self._activeLayer)
+        self._layersOrder.remove(self._activeLayer)
+        if i > 0:
+            i -= 1
+        self._activeLayer = self._layersOrder[i]
+        self.layersUpdated.emit()
 
 def registerTypes():
     qmlRegisterType(Canvas, "gui", 1, 0, "AdvancedCanvas")

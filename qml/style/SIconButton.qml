@@ -15,6 +15,8 @@ Rectangle {
     property var inset: 10
     property var tooltip: ""
     property var hovered: false
+    property var underscore: false
+    property var sidescore: false
     height: 35
     width: 35
     
@@ -71,4 +73,22 @@ Rectangle {
         source: img
         color: disabled ? Qt.darker(iconColor) : (mouse.containsMouse ? iconHoverColor : iconColor)
     }
+
+    Rectangle {
+        visible: parent.underscore
+        color: COMMON.bg4
+        height: 1
+        anchors.bottom: parent.bottom
+        width: parent.width * 0.6
+        anchors.horizontalCenter: parent.horizontalCenter
+    }
+    Rectangle {
+        visible: parent.sidescore
+        color: COMMON.bg4
+        width: 1
+        anchors.right: parent.right
+        height: parent.height * 0.6
+        anchors.verticalCenter: parent.verticalCenter
+    }
+
 }

@@ -123,6 +123,13 @@ Item {
             }
         }
 
+        Timer {
+            interval: 250; running: true; repeat: true
+            onTriggered: {
+                canvas.updateThumbnails()
+            }
+        }
+
         MouseArea {
             id: mouseArea
             anchors.fill: parent
@@ -165,7 +172,7 @@ Item {
         anchors.left: toolSettingsDivider.right
         anchors.verticalCenter: toolSettingsDivider.verticalCenter
         width: brushButton.width
-        height: brushButton.width * 7
+        height: brushButton.width * 8
 
         SIconButton {
             id: brushButton
@@ -173,6 +180,7 @@ Item {
             anchors.top: parent.top
             iconColor: canvas.tool == 1 ? COMMON.fg2 : COMMON.bg6
             icon: "qrc:/icons/brush.svg"
+            tooltip: "Paintbrush Tool"
             onPressed: {
                 canvas.tool = 1
             }
@@ -184,17 +192,32 @@ Item {
             anchors.top: brushButton.bottom
             iconColor: canvas.tool == 2 ? COMMON.fg2 : COMMON.bg6
             icon: "qrc:/icons/eraser.svg"
+            tooltip: "Eraser Tool"
             onPressed: {
                 canvas.tool = 2
             }
         }
 
         SIconButton {
-            id: rectangleSelectButton
+            id: moveButton
             anchors.left: parent.left
             anchors.top: eraserButton.bottom
+            iconColor: canvas.tool == 7 ? COMMON.fg2 : COMMON.bg6
+            icon: "qrc:/icons/move.svg"
+            tooltip: "Move Tool"
+            onPressed: {
+                canvas.tool = 7
+            }
+            underscore: true
+        }
+
+        SIconButton {
+            id: rectangleSelectButton
+            anchors.left: parent.left
+            anchors.top: moveButton.bottom
             iconColor: canvas.tool == 3 ? COMMON.fg2 : COMMON.bg6
             icon: "qrc:/icons/rectangle_select.svg"
+            tooltip: "Rectangle Select"
             onPressed: {
                 canvas.tool = 3
             }
@@ -206,6 +229,7 @@ Item {
             anchors.top: rectangleSelectButton.bottom
             iconColor: canvas.tool == 4 ? COMMON.fg2 : COMMON.bg6
             icon: "qrc:/icons/ellipse_select.svg"
+            tooltip: "Ellipse Select"
             onPressed: {
                 canvas.tool = 4
             }
@@ -217,25 +241,29 @@ Item {
             anchors.top: ellipseSelectButton.bottom
             iconColor: canvas.tool == 5 ? COMMON.fg2 : COMMON.bg6
             icon: "qrc:/icons/path_select.svg"
+            tooltip: "Path Select"
             onPressed: {
                 canvas.tool = 5
             }
         }
 
         SIconButton {
-            id: moveButton
+            id: fuzzySelectButton
             anchors.left: parent.left
             anchors.top: pathSelectButton.bottom
             iconColor: canvas.tool == 6 ? COMMON.fg2 : COMMON.bg6
-            icon: "qrc:/icons/move.svg"
+            icon: "qrc:/icons/fuzzy_select.svg"
+            tooltip: "Fuzzy Select"
             onPressed: {
                 canvas.tool = 6
             }
+
+            underscore: true
         }
 
         SIconButton {
             anchors.left: parent.left
-            anchors.top: moveButton.bottom
+            anchors.top: fuzzySelectButton.bottom
             icon: "qrc:/icons/refresh.svg"
             onPressed: {
                 canvas.load()
@@ -306,6 +334,43 @@ Item {
             id: layerHeader
             y: Math.floor(parent.height /2)
             text: "Layers"
+            clip: true
+        }
+
+        Item {
+            id: layerButtons
+            anchors.bottom: layerHeader.bottom
+            anchors.right: layerHeader.right
+            width: Math.min(65, layerHeader.width-65)
+            height: 35
+            SIconButton {
+                id: layerAddButton
+                anchors.left: parent.left
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                anchors.topMargin: 5
+                anchors.rightMargin: 5
+                width: height+2
+                icon: "qrc:/icons/plus.svg"
+                tooltip: "Add Layer"
+                onPressed: {
+                    canvas.addLayer()
+                }
+            }
+
+            SIconButton {
+                id: layerDeleteButton
+                anchors.left: layerAddButton.right
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                anchors.topMargin: 5
+                width: height
+                tooltip: "Delete Layer"
+                icon: "qrc:/icons/trash.svg"
+                onPressed: {
+                    canvas.deleteLayer()
+                }
+            }
         }
 
         ListView {
@@ -519,12 +584,21 @@ Item {
             case Qt.Key_X:
                 canvas.cut()
                 break;
+            case Qt.Key_A:
+                canvas.selectAll()
+                break;
             default:
                 event.accepted = false
                 break;
             }
         } else {
             switch(event.key) {
+            case Qt.Key_Escape:
+                canvas.escape()
+                break;
+            case Qt.Key_Delete:
+                canvas.delete()
+                break;
             default:
                 event.accepted = false
                 break;
