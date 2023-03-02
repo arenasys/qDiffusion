@@ -124,11 +124,19 @@ class ColorRadial(QQuickPaintedItem):
             self.update()
     @pyqtProperty(str, notify=updated)
     def hex(self):
-        return self._color.name(QColor.HexArgb)
+        if self._color.alphaF() == 1.0:
+            return self._color.name(QColor.HexRgb)
+        else:
+            return self._color.name(QColor.HexArgb)
     
     @hex.setter
     def hex(self, hex):
-        if hex != self._color.name(QColor.HexArgb):
+        if len(hex) == 7:
+            curr = self._color.name(QColor.HexRgb)
+        else:
+            curr = self._color.name(QColor.HexArgb)
+
+        if hex != curr:
             self.color = QColor(hex)
             self.update()
 

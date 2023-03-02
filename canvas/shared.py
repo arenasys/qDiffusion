@@ -2,6 +2,7 @@ from PyQt5.QtCore import pyqtSlot, pyqtProperty, QPointF, QObject, QMimeData, QB
 from PyQt5.QtGui import QImage
 from enum import Enum
 import io
+import numpy as np
 
 import PIL.Image
 
@@ -67,6 +68,20 @@ def QImagetoPIL(img):
     size = (img.size().width(), img.size().height())
     total = size[0]*size[1]*4
     return PIL.Image.frombytes("RGBA", size, img.bits().asarray(total), "raw", "RGBA")
+
+def QImagetoCV2(img):
+    img = img.convertToFormat(QImage.Format_RGBA8888)
+    size = (img.size().width(), img.size().height())
+    total = size[0]*size[1]*4
+    arr = np.array(img.bits().asarray(total)).reshape(size[1], size[0], 4)
+    return arr
+
+def CV2toQImage(mat):
+    width, height, _ = mat.shape
+    data = mat.tobytes()
+    img = QImage(data, width, height, QImage.Format_RGBA8888)
+    img.convertTo(QImage.Format_ARGB32_Premultiplied)
+    return img
 
 class MimeData(QObject):
     def __init__(self, mimeData, parent=None):

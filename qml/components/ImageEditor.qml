@@ -519,7 +519,12 @@ Item {
                             label: "Mode"
                             width: parent.width
                             height: 30
-                            model: ["Normal", "Erase"]
+                            currentIndex: canvas.brush
+                            model: canvas.brush.modeNames
+                            onCurrentIndexChanged: {
+                                canvas.brush.modeIndex = currentIndex
+                                currentIndex =  Qt.binding(function() { return canvas.brush.modeIndex })
+                            }
                         }
 
                         OSlider {
@@ -676,6 +681,7 @@ Item {
             anchors.top: layerHeader.bottom
             interactive: false
             boundsBehavior: Flickable.StopAtBounds
+            clip:true
 
             ScrollBar.vertical: ScrollBar {
                 id: scrollBar

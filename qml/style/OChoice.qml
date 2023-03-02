@@ -9,6 +9,7 @@ Item {
     property var label: "Label"
     property alias model: control.model
     property var mini: height == 20
+    property alias currentIndex: control.currentIndex
 
     ComboBox {
         id: control

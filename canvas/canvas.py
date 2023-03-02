@@ -21,6 +21,10 @@ class CanvasBrush(QObject):
         self.setColor(QColor())
         self.updated.emit()
 
+        self._mode = QPainter.CompositionMode_SourceOver
+        self._modeValues = [QPainter.CompositionMode_SourceOver, QPainter.CompositionMode_DestinationOut]
+        self._modeNames = ["Normal", "Erase"]
+
     def setColor(self, color):
         self._color = QColor(color)
         self._opacity = self._color.alphaF()
@@ -95,6 +99,25 @@ class CanvasBrush(QObject):
         if opacity != self._opacity:
             self._opacity = opacity
             self.updated.emit()
+
+    @pyqtProperty(int, notify=updated)
+    def mode(self):
+        return self._mode
+    
+    @pyqtProperty(int, notify=updated)
+    def modeIndex(self):
+        return self._modeValues.index(self._mode)
+    
+    @modeIndex.setter
+    def modeIndex(self, mode):
+        if mode != self._mode:
+            self._mode = self._modeValues[mode]
+            self.updated.emit()
+
+    @pyqtProperty(list, constant=True)
+    def modeNames(self):
+        return self._modeNames
+    
 
 class CanvasSelect(QObject):
     updated = pyqtSignal()

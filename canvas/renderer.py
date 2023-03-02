@@ -5,7 +5,9 @@ import OpenGL.GL as gl
 import copy
 import time
 
-import PIL.ImageDraw
+import cv2
+import numpy as np
+np.seterr("ignore")
 
 from canvas.shared import *
 
@@ -29,17 +31,20 @@ class CanvasRendererBuffer():
         self.opacity = 1.0
         self.visible = True
         self.source = None
-    
+        self.cached = None
+
     def getImage(self):
-        return self.buffer.toImage()
+        if self.cached == None:
+            self.cached = self.buffer.toImage()
+        return self.cached
 
     def getThumbnail(self, size=128):
         img = self.getImage().scaledToWidth(size, mode=Qt.SmoothTransformation)
-        img = PILtoQImage(QImagetoPIL(img))
         return img
 
     def beginPaint(self):
         self.buffer.bind()
+        self.cached = None
         self.device = QOpenGLPaintDevice(self.size)
         self.painter = QPainter(self.device)
         self.painter.beginNativePainting()
@@ -187,20 +192,24 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
             if not layer.visible:
                 continue
             layerImage = layer.getImage()
-            layerPainter = QPainter(layerImage)
-            if key == self.activeLayer:
-                layerPainter.setOpacity(self.activeBrush.opacity)
-                if self.activeTool == CanvasTool.ERASE:
-                    layerPainter.setCompositionMode(QPainter.CompositionMode_DestinationOut)
-                layerPainter.drawImage(0,0,self.getMaskedBuffer())
-            if key == self.floatingLayer:
-                layerPainter.drawImage(alignQPointF(self.floatingPosition + self.floatingOffset), self.mask.getImage())
-            layerPainter.end()
+
+            if key == self.activeLayer or key == self.floatingLayer:
+                layerImage = QImage(layerImage)
+                layerPainter = QPainter(layerImage)
+                if key == self.activeLayer:
+                    layerPainter.setOpacity(self.activeBrush.opacity)
+                    if self.activeTool == CanvasTool.ERASE:
+                        layerPainter.setCompositionMode(QPainter.CompositionMode_DestinationOut)
+                    layerPainter.drawImage(0,0,self.getMaskedBuffer())
+                if key == self.floatingLayer:
+                    layerPainter.drawImage(alignQPointF(self.floatingPosition + self.floatingOffset), self.mask.getImage())
+                layerPainter.end()
+            
             painter.setOpacity(layer.opacity)
             painter.drawImage(0,0,layerImage)
-            painter.resetTransform()
+
         self.display.endPaint()
-    
+
     def renderMask(self):
         if self.mask.size != self.size:
             self.resizeBuffer(self.mask, self.size)
@@ -446,12 +455,16 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
 
         if CanvasOperation.FUZZY in self.changes.operations:
             source = self.getLayer(self.activeLayer).getImage()
-            source = QImagetoPIL(source).convert('RGB').convert('RGBA')
-            origin = (self.changes.position.x(), self.changes.position.y())
+            source = QImagetoCV2(source)
+            source = np.ascontiguousarray(source[:,:,:3])
+            origin = (int(self.changes.position.x()), int(self.changes.position.y()))
 
-            floodfill(source, origin, (0,0,0,0), thresh=self.changes.select.threshold)
-            source = PILtoQImage(source)
-            source.invertPixels(QImage.InvertRgba)
+            threshold = (self.changes.select.threshold*2.56,)*3
+
+            source = cv2.floodFill(source, None, origin, (255, 255, 255), threshold, threshold, 4|cv2.FLOODFILL_FIXED_RANGE)[2]
+            source = source[1:-1,1:-1]*255
+            source = np.dstack((source,)*4)
+            source = CV2toQImage(source)
             source = self.convertMask(source)
             
             painter = self.mask.beginPaint()
@@ -494,40 +507,3 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
         painter.drawImage(self.floatingPosition + self.floatingOffset, mask)
         painter.end()
         return image.scaledToWidth(128, mode=Qt.SmoothTransformation)
-
-def color_diff(color1, color2):
-    if isinstance(color2, tuple):
-        return sum(abs(color1[i] - color2[i]) for i in range(0, len(color2)))/len(color2)
-    else:
-        return abs(color1 - color2)
-
-def floodfill(image, xy, value, thresh=0):
-    pixel = image.load()
-    x, y = xy
-    try:
-        background = pixel[x, y]
-        if color_diff(value, background) <= thresh:
-            return
-        pixel[x, y] = value
-    except (ValueError, IndexError):
-        return
-    edge = {(x, y)}
-    full_edge = set()
-    while edge:
-        new_edge = set()
-        for (x, y) in edge:
-            for (s, t) in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
-                if (s, t) in full_edge or s < 0 or t < 0:
-                    continue
-                try:
-                    p = pixel[s, t]
-                except (ValueError, IndexError):
-                    pass
-                else:
-                    full_edge.add((s, t))
-                    fill = color_diff(p, background) <= thresh
-                    if fill:
-                        pixel[s, t] = value
-                        new_edge.add((s, t))
-        full_edge = edge
-        edge = new_edge
