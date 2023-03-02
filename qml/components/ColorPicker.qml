@@ -132,6 +132,7 @@ Item {
     MouseArea {
         id: colorMouse
         anchors.fill: colorArea
+        preventStealing: true
 
         function set(mouse) {
             var center = colorArea.areaCenter
@@ -176,6 +177,7 @@ Item {
     MouseArea {
         id: lightnessMouse
         anchors.fill: lightnessArea
+        preventStealing: true
 
         function set(mouse) {
             var margin = lightnessArea.height * lightnessArea.inset
@@ -216,6 +218,7 @@ Item {
     MouseArea {
         id: alphaMouse
         anchors.fill: alphaArea
+        preventStealing: true
 
         function set(mouse) {
             var margin = alphaArea.width * alphaArea.inset

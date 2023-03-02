@@ -50,8 +50,9 @@ class CanvasBrush(QObject):
     
     @color.setter
     def color(self, color):
-        self.setColor(color)
-        self.updated.emit()
+        if color.name(QColor.HexArgb) != self._color.name(QColor.HexArgb):
+            self.setColor(color)
+            self.updated.emit()
 
     @pyqtProperty(float, notify=updated)
     def size(self):
@@ -59,26 +60,31 @@ class CanvasBrush(QObject):
     
     @size.setter
     def size(self, size):
-        self._size = size
-        self.updated.emit()
+        if size != self._size:
+            self._size = size
+            self.updated.emit()
 
     @pyqtProperty(float, notify=updated)
     def hardness(self):
-        return self._hardness
+        return self._hardness*100
     
     @hardness.setter
     def hardness(self, hardness):
-        self._hardness = hardness
-        self.updated.emit()
+        hardness /= 100
+        if hardness != self._hardness:
+            self._hardness = hardness
+            self.updated.emit()
 
     @pyqtProperty(float, notify=updated)
     def spacing(self):
-        return self._spacing
+        return self._spacing*100
     
     @spacing.setter
     def spacing(self, spacing):
-        self._spacing = spacing
-        self.updated.emit()
+        spacing /= 100
+        if spacing != self._spacing:
+            self._spacing = spacing
+            self.updated.emit()
 
     @pyqtProperty(float, notify=updated)
     def opacity(self):
@@ -86,8 +92,37 @@ class CanvasBrush(QObject):
     
     @opacity.setter
     def opacity(self, opacity):
-        self._opacity = opacity
+        if opacity != self._opacity:
+            self._opacity = opacity
+            self.updated.emit()
+
+class CanvasSelect(QObject):
+    updated = pyqtSignal()
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._threshold = 20
+        self._feather = 0
         self.updated.emit()
+
+    @pyqtProperty(float, notify=updated)
+    def threshold(self):
+        return self._threshold
+    
+    @threshold.setter
+    def threshold(self, threshold):
+        if threshold != self._threshold:
+            self._threshold = threshold
+            self.updated.emit()
+
+    @pyqtProperty(float, notify=updated)
+    def feather(self):
+        return self._feather
+    
+    @feather.setter
+    def feather(self, feather):
+        if feather != self._feather:
+            self._feather = feather
+            self.updated.emit()
 
 class CanvasLayer(QObject):
     updated = pyqtSignal()
@@ -340,7 +375,7 @@ class CanvasSelection(QObject):
 class Canvas(QQuickFramebufferObject):
     sourceUpdated = pyqtSignal()
     layersUpdated = pyqtSignal()
-    brushUpdated = pyqtSignal()
+    toolUpdated = pyqtSignal()
     toolUpdated = pyqtSignal()
     selectionUpdated = pyqtSignal()
     needsUpdated = pyqtSignal()
@@ -353,6 +388,8 @@ class Canvas(QQuickFramebufferObject):
         self._sourceSize = QSize(0,0)
         self._tool = CanvasTool.BRUSH
         self._brush = CanvasBrush()
+        self._select = CanvasSelect()
+
         self._layers = {} # key -> layer
         self._layersOrder = [] # index -> key
         self._activeLayer = -1
@@ -376,6 +413,7 @@ class Canvas(QQuickFramebufferObject):
     def getChanges(self):
         changes = self.changes
         changes.brush = self._brush
+        changes.select = self._select
         changes.tool = self._tool
         changes.layer = self._activeLayer
         changes.move = self._moveOffset
@@ -521,6 +559,7 @@ class Canvas(QQuickFramebufferObject):
         if self._tool in {CanvasTool.BRUSH, CanvasTool.ERASE}:
             self.changes.strokes.append(position)
             self.lastMousePosition = position
+            self.changes.operations.add(CanvasOperation.UPDATE_STROKE)
 
         if self._tool in {CanvasTool.RECTANGLE_SELECT, CanvasTool.ELLIPSE_SELECT, CanvasTool.PATH_SELECT, CanvasTool.FUZZY_SELECT}:
             
@@ -645,9 +684,13 @@ class Canvas(QQuickFramebufferObject):
             self.tool = CanvasTool.MOVE
             self._selection.setVisible(False)
 
-    @pyqtProperty(CanvasBrush, notify=brushUpdated)
+    @pyqtProperty(CanvasBrush, notify=toolUpdated)
     def brush(self):
         return self._brush
+    
+    @pyqtProperty(CanvasSelect, notify=toolUpdated)
+    def select(self):
+        return self._select
 
     @pyqtProperty(int, notify=toolUpdated)
     def tool(self):
@@ -707,5 +750,6 @@ class Canvas(QQuickFramebufferObject):
 def registerTypes():
     qmlRegisterType(Canvas, "gui", 1, 0, "AdvancedCanvas")
     qmlRegisterUncreatableType(CanvasBrush, "gui", 1, 0, "CanvasBrush", "Not a QML type")
+    qmlRegisterUncreatableType(CanvasSelect, "gui", 1, 0, "CanvasBrush", "Not a QML type")
     qmlRegisterUncreatableType(CanvasLayer, "gui", 1, 0, "CanvasLayer", "Not a QML type")
     qmlRegisterUncreatableType(CanvasSelection, "gui", 1, 0, "CanvasSelection", "Not a QML type")

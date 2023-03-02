@@ -282,10 +282,17 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
 
                 gradient = QRadialGradient(p.x(), p.y(), brush.size/2)
 
-                steps = brush.size//4
+                steps = int(brush.size//4)
                 for i in range(0, steps+1):
-                    r = i/steps
-                    gradient.setColorAt(r, brush.getColor(r))
+                    r = i/steps                   
+                    if r == 1.0:
+                        c =  brush.getColor(r)
+                        gradient.setColorAt(0.999,c)
+                        c.setAlphaF(0.0)
+                        gradient.setColorAt(1.0, c)
+                    else:
+                        gradient.setColorAt(r, brush.getColor(r))
+
 
                 painter.setPen(Qt.NoPen)
                 painter.setBrush(gradient)
@@ -442,7 +449,7 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
             source = QImagetoPIL(source).convert('RGB').convert('RGBA')
             origin = (self.changes.position.x(), self.changes.position.y())
 
-            floodfill(source, origin, (0,0,0,0), thresh=0.08)
+            floodfill(source, origin, (0,0,0,0), thresh=self.changes.select.threshold)
             source = PILtoQImage(source)
             source.invertPixels(QImage.InvertRgba)
             source = self.convertMask(source)
@@ -490,9 +497,9 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
 
 def color_diff(color1, color2):
     if isinstance(color2, tuple):
-        return sum(abs(color1[i] - color2[i])/255 for i in range(0, len(color2)))/len(color2)
+        return sum(abs(color1[i] - color2[i]) for i in range(0, len(color2)))/len(color2)
     else:
-        return abs(color1 - color2)/255
+        return abs(color1 - color2)
 
 def floodfill(image, xy, value, thresh=0):
     pixel = image.load()

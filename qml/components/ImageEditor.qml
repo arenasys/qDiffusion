@@ -60,6 +60,15 @@ Item {
             smooth: sourceSize.width*1.1 < width && sourceSize.height*1.1 < height ? false : true
             brush.color: colorPicker.color
 
+            Component.onCompleted: {
+                //brush.color = Qt.binding(function() { return colorPicker.color })
+                brush.size = Qt.binding(function() { return sizeSlider.value })
+                brush.hardness = Qt.binding(function() { return hardnessSlider.value })
+                brush.spacing = Qt.binding(function() { return spacingSlider.value })
+                select.threshold = Qt.binding(function() { return thresholdSlider.value })
+                select.feather = Qt.binding(function() { return featherSlider.value })
+            }
+
             onNeedsUpdateChanged: {
                 if(!cooldown.canvasCooldown) {
                     cooldown.canvasCooldown = true
@@ -174,13 +183,16 @@ Item {
         width: brushButton.width
         height: brushButton.width * 8
 
+        property var names: ["None", "Brush", "Eraser", "Rectangle Select", "Ellipse Select", "Path Select", "Fuzzy Select", "Move"]
+        property var settings: [0, 0, 0, 1, 1, 1, 1, 2]
+
         SIconButton {
             id: brushButton
             anchors.left: parent.left
             anchors.top: parent.top
             iconColor: canvas.tool == 1 ? COMMON.fg2 : COMMON.bg6
             icon: "qrc:/icons/brush.svg"
-            tooltip: "Paintbrush Tool"
+            tooltip: toolBar.names[1]
             onPressed: {
                 canvas.tool = 1
             }
@@ -192,7 +204,7 @@ Item {
             anchors.top: brushButton.bottom
             iconColor: canvas.tool == 2 ? COMMON.fg2 : COMMON.bg6
             icon: "qrc:/icons/eraser.svg"
-            tooltip: "Eraser Tool"
+            tooltip: toolBar.names[2]
             onPressed: {
                 canvas.tool = 2
             }
@@ -204,7 +216,7 @@ Item {
             anchors.top: eraserButton.bottom
             iconColor: canvas.tool == 7 ? COMMON.fg2 : COMMON.bg6
             icon: "qrc:/icons/move.svg"
-            tooltip: "Move Tool"
+            tooltip: toolBar.names[7]
             onPressed: {
                 canvas.tool = 7
             }
@@ -217,7 +229,7 @@ Item {
             anchors.top: moveButton.bottom
             iconColor: canvas.tool == 3 ? COMMON.fg2 : COMMON.bg6
             icon: "qrc:/icons/rectangle_select.svg"
-            tooltip: "Rectangle Select"
+            tooltip: toolBar.names[3]
             onPressed: {
                 canvas.tool = 3
             }
@@ -229,7 +241,7 @@ Item {
             anchors.top: rectangleSelectButton.bottom
             iconColor: canvas.tool == 4 ? COMMON.fg2 : COMMON.bg6
             icon: "qrc:/icons/ellipse_select.svg"
-            tooltip: "Ellipse Select"
+            tooltip: toolBar.names[4]
             onPressed: {
                 canvas.tool = 4
             }
@@ -241,7 +253,7 @@ Item {
             anchors.top: ellipseSelectButton.bottom
             iconColor: canvas.tool == 5 ? COMMON.fg2 : COMMON.bg6
             icon: "qrc:/icons/path_select.svg"
-            tooltip: "Path Select"
+            tooltip: toolBar.names[5]
             onPressed: {
                 canvas.tool = 5
             }
@@ -253,7 +265,7 @@ Item {
             anchors.top: pathSelectButton.bottom
             iconColor: canvas.tool == 6 ? COMMON.fg2 : COMMON.bg6
             icon: "qrc:/icons/fuzzy_select.svg"
-            tooltip: "Fuzzy Select"
+            tooltip: toolBar.names[6]
             onPressed: {
                 canvas.tool = 6
             }
@@ -287,25 +299,143 @@ Item {
 
         width: Math.max(150, toolSettingsDivider.x)
 
-        SHeader {
-            id: colorPickerHeader
-            anchors.top: parent.top
-            hasDivider: false
-            text: "Color Picker"
-        }
+        Flickable {
+            id: toolScroll
+            anchors.fill: parent
 
-        ColorPicker {
-            id: colorPicker
-            anchors.right: parent.right
-            anchors.left: parent.left
-            anchors.top: colorPickerHeader.bottom
-            height: width
-        }
+            contentHeight: toolColumn.height
+            contentWidth: toolSettings.width
+            boundsBehavior: Flickable.StopAtBounds
 
-        SHeader {
-            id: brushSettingsHeader
-            anchors.top: colorPicker.bottom
-            text: "Brush Settings"
+            function position(item) {
+                var yy = toolScroll.mapFromItem(item, 0, item.height).y - toolScroll.height
+                if(yy > 0) {
+                    toolScroll.contentY = yy
+                }
+            }
+
+            Column {
+                id: toolColumn
+                width: toolSettings.width
+
+                SColumn {
+                    id: colorPickerColumn
+                    text: "Color Picker"
+                    width: parent.width
+
+                    onExpanded: {
+                            toolScroll.position(colorPickerColumn)
+                        }
+
+                    ColorPicker {
+                        id: colorPicker
+                        width: parent.width
+                        height: width
+                    }
+                }
+
+                StackLayout {
+                    id: toolSettingsStack
+                    width: toolSettings.width
+                    currentIndex: toolBar.settings[canvas.tool]
+                    height: children[currentIndex].implicitHeight
+
+                    SColumn {
+                        id: brushColumn
+                        text: "Brush Settings"
+                        onExpanded: {
+                            toolScroll.position(brushColumn)
+                        }
+
+                        SChoice {
+                            id: brushMode
+                            label: "Mode"
+                            width: parent.width
+                            height: 30
+                            model: ["Normal", "Erase"]
+                        }
+
+                        SSlider {
+                            id: sizeSlider
+                            label: "Size"
+                            width: parent.width
+                            height: 30
+
+                            value: canvas.brush.size
+                            minValue: 1
+                            maxValue: 500
+                            precValue: 0
+                            incValue: 1
+                        }
+
+                        SSlider {
+                            id: hardnessSlider
+                            label: "Hardness"
+                            width: parent.width
+                            height: 30
+
+                            value: canvas.brush.hardness
+                            minValue: 1
+                            maxValue: 100
+                            precValue: 1
+                            incValue: 1
+                        }
+
+                        SSlider {
+                            id: spacingSlider
+                            label: "Spacing"
+                            width: parent.width
+                            height: 30
+
+                            value: canvas.brush.spacing
+                            minValue: 1
+                            maxValue: 200
+                            precValue: 1
+                            incValue: 1
+                        }
+                    }
+
+                    SColumn {
+                        id: selectColumn
+                        text: "Select Settings"
+                        onExpanded: {
+                            toolScroll.position(selectColumn)
+                        }
+
+                        SSlider {
+                            id: thresholdSlider
+                            visible: canvas.tool == 6
+                            label: "Threshold"
+                            width: parent.width
+                            height: 30
+
+                            value: canvas.select.threshold
+                            minValue: 0
+                            maxValue: 100
+                            precValue: 0
+                            incValue: 1
+                        }
+
+                        SSlider {
+                            id: featherSlider
+                            label: "Feather"
+                            width: parent.width
+                            height: 30
+
+                            value: canvas.select.feather
+                            minValue: 0
+                            maxValue: 100
+                            precValue: 0
+                            incValue: 1
+                        }
+                    }
+
+                    SColumn {
+                        text: "Move Settings"
+                    }
+
+                }
+            }
         }
     }
 

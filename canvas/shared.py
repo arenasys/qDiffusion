@@ -42,6 +42,7 @@ class CanvasChanges():
         self.layer = 1
         self.tool = CanvasTool.ERASE
         self.brush = None
+        self.select = None
         self.strokes = []
 
         self.move = QPointF()

@@ -50,7 +50,7 @@ Item {
         anchors.right: settingsDivider.left
         minOffset: 5
         maxOffset: 300
-        offset: 200
+        offset: 150
     }
 
     Rectangle {
