@@ -8,9 +8,10 @@ Text {
         source: "qrc:/fonts/Cantarell-Regular.ttf"
     }
     FontLoader {
-        source: "qrc:/fonts/Cantarell-Bold.ttf"
+        source: "qrc:/fonts/SourceCodePro-Regular.ttf"
     }
-    font.family: "Cantarell"
+    property var monospace: false
+    font.family: monospace ? "Source Code Pro" : "Cantarell"
     font.pointSize: 10.8
     color: COMMON.fg0
 

@@ -13,7 +13,11 @@ TextArea {
     FontLoader {
         source: "qrc:/fonts/Cantarell-Bold.ttf"
     }
-    font.family: "Cantarell"
+    FontLoader {
+        source: "qrc:/fonts/SourceCodePro-Regular.ttf"
+    }
+    property var monospace: false
+    font.family: monospace ? "Source Code Pro" : "Cantarell"
     font.pointSize: 10.8
     color: COMMON.fg0
 

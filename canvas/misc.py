@@ -52,6 +52,7 @@ class ColorRadial(QQuickPaintedItem):
         super().__init__(parent)
         self._lightness = 1.0
         self._angle = 0.0
+        self._alpha = 1.0
         self._radius = 0.0
         self._color = QColor(0xFFFFFF)
         self.setAntialiasing(True)
@@ -62,8 +63,9 @@ class ColorRadial(QQuickPaintedItem):
     
     @lightness.setter
     def lightness(self, lightness):
-        self._lightness = lightness
-        self.update()
+        if self._lightness != lightness:
+            self._lightness = lightness
+            self.update()
 
     @pyqtProperty(float, notify=updated)
     def angle(self):
@@ -71,8 +73,9 @@ class ColorRadial(QQuickPaintedItem):
 
     @angle.setter
     def angle(self, angle):
-        self._angle = angle
-        self.update()
+        if self._angle != angle:
+            self._angle = angle
+            self.update()
 
     @pyqtProperty(float, notify=updated)
     def radius(self):
@@ -80,8 +83,9 @@ class ColorRadial(QQuickPaintedItem):
 
     @radius.setter
     def radius(self, radius):
-        self._radius = radius
-        self.update()
+        if self._radius != radius:
+            self._radius = radius
+            self.update()
 
     @pyqtProperty(float, notify=updated)
     def alpha(self):
@@ -89,8 +93,20 @@ class ColorRadial(QQuickPaintedItem):
 
     @alpha.setter
     def alpha(self, alpha):
-        self._alpha = alpha
-        self.update()
+        if self._alpha != alpha:
+            self._alpha = alpha
+            self.update()
+
+    @pyqtProperty(float, notify=updated)
+    def opacity(self):
+        # need a duplicate binding spot for QML side
+        return self._alpha
+
+    @opacity.setter
+    def opacity(self, alpha):
+        if self._alpha != alpha:
+            self._alpha = alpha
+            self.update()
 
     @pyqtProperty(QColor, notify=updated)
     def color(self):
@@ -98,8 +114,23 @@ class ColorRadial(QQuickPaintedItem):
 
     @color.setter
     def color(self, color):
-        self._color = color
-        self.update()
+        if self._color.name(QColor.HexArgb) != color.name(QColor.HexArgb):
+            self._color = color
+            self._angle = color.hsvHueF()
+            self._radius = color.hsvSaturationF()
+            self._lightness = color.valueF()
+            self._alpha = color.alphaF()
+            
+            self.update()
+    @pyqtProperty(str, notify=updated)
+    def hex(self):
+        return self._color.name(QColor.HexArgb)
+    
+    @hex.setter
+    def hex(self, hex):
+        if hex != self._color.name(QColor.HexArgb):
+            self.color = QColor(hex)
+            self.update()
 
     def paint(self, painter):
         painter.setPen(Qt.NoPen)

@@ -61,7 +61,6 @@ Item {
             brush.color: colorPicker.color
 
             Component.onCompleted: {
-                //brush.color = Qt.binding(function() { return colorPicker.color })
                 brush.size = Qt.binding(function() { return sizeSlider.value })
                 brush.hardness = Qt.binding(function() { return hardnessSlider.value })
                 brush.spacing = Qt.binding(function() { return spacingSlider.value })
@@ -318,19 +317,187 @@ Item {
                 id: toolColumn
                 width: toolSettings.width
 
-                SColumn {
-                    id: colorPickerColumn
+                OColumn {
+                    id: colorColumn
                     text: "Color Picker"
                     width: parent.width
 
+                    property var advanced: false
+
                     onExpanded: {
-                            toolScroll.position(colorPickerColumn)
+                            toolScroll.position(colorColumn)
                         }
 
                     ColorPicker {
                         id: colorPicker
                         width: parent.width
                         height: width
+
+                        SIconButton {
+                            anchors.bottom: colorPicker.bottom
+                            anchors.right: colorPicker.right
+                            anchors.bottomMargin: 30
+                            anchors.rightMargin: 30
+                            color: "transparent"
+                            width: 20
+                            height: 20
+                            inset: 2
+                            icon: "qrc:/icons/settings.svg"
+                            iconColor: colorColumn.advanced ? COMMON.bg4 : COMMON.bg6
+                            iconHoverColor: colorColumn.advanced ? COMMON.fg3 : COMMON.fg0
+
+                            tooltip: colorColumn.advanced ? "Hide options" : "Show options"
+
+                            onPressed: {
+                                colorColumn.advanced = !colorColumn.advanced
+                            }
+                        }
+
+                        Component.onCompleted: {
+                            trueColor.r = Qt.binding(function() { return redSlider.value })
+                            trueColor.g = Qt.binding(function() { return greenSlider.value })
+                            trueColor.b = Qt.binding(function() { return blueSlider.value })
+                            trueAlpha =  Qt.binding(function() { return alphaSlider.value })
+
+                            trueColor.hsvHue = Qt.binding(function() { return hueSlider.value })
+                            trueColor.hsvSaturation = Qt.binding(function() { return saturationSlider.value })
+                            trueColor.hsvValue = Qt.binding(function() { return valueSlider.value })
+
+                            trueHex = Qt.binding(function() { return hexInput.value })
+                        }
+
+                        onTrueColorChanged: {
+                            redSlider.value = trueColor.r
+                            greenSlider.value = trueColor.g
+                            blueSlider.value = trueColor.b
+
+                            hueSlider.value = trueColor.hsvHue
+                            saturationSlider.value = trueColor.hsvSaturation
+                            valueSlider.value = trueColor.hsvValue
+                        }
+
+                        onTrueAlphaChanged: {
+                            alphaSlider.value = trueAlpha
+                        }
+
+                        onTrueHexChanged: {
+                            hexInput.value = trueHex
+                        }
+                    }
+
+                    Rectangle {
+                        visible: colorColumn.advanced
+                        width: parent.width
+                        height: 2
+                        color: COMMON.bg5
+                    }
+
+                    Column {
+                        visible: colorColumn.advanced
+                        width: parent.width-20
+                        x: 10
+
+                        OSlider {
+                            id: redSlider
+                            label: "R"
+                            width: parent.width
+                            height: 20
+
+                            value: canvas.brush.color.r
+
+                            minValue: 0
+                            maxValue: 1
+                            precValue: 2
+                            incValue: 0.01
+                        }
+
+                        OSlider {
+                            id: greenSlider
+                            label: "G"
+                            width: parent.width
+                            height: 20
+
+                            value: colorPicker.color.g
+                            minValue: 0
+                            maxValue: 1
+                            precValue: 2
+                            incValue: 0.01
+                        }
+
+                        OSlider {
+                            id: blueSlider
+                            label: "B"
+                            width: parent.width
+                            height: 20
+
+                            value: colorPicker.color.b
+                            minValue: 0
+                            maxValue: 1
+                            precValue: 2
+                            incValue: 0.01
+                        }
+
+                        OSlider {
+                            id: hueSlider
+                            label: "H"
+                            width: parent.width
+                            height: 20
+
+                            value: colorPicker.color.hsvHue
+                            minValue: 0
+                            maxValue: 1
+                            precValue: 2
+                            incValue: 0.01
+                        }
+
+                        OSlider {
+                            id: saturationSlider
+                            label: "S"
+                            width: parent.width
+                            height: 20
+
+                            value: colorPicker.color.hsvSaturation
+                            minValue: 0
+                            maxValue: 1
+                            precValue: 2
+                            incValue: 0.01
+                        }
+
+                        OSlider {
+                            id: valueSlider
+                            label: "V"
+                            width: parent.width
+                            height: 20
+
+                            value: colorPicker.color.hsvValue
+                            minValue: 0
+                            maxValue: 1
+                            precValue: 2
+                            incValue: 0.01
+                        }
+
+                        OSlider {
+                            id: alphaSlider
+                            label: "A"
+                            width: parent.width
+                            height: 20
+
+                            value: colorPicker.color.a
+                            minValue: 0
+                            maxValue: 1
+                            precValue: 2
+                            incValue: 0.01
+                        }
+
+                        OTextInput {
+                            id: hexInput
+                            width: parent.width
+                            height: 20
+                            label: "Hex"
+
+                            value: colorPicker.trueHex
+
+                        }
                     }
                 }
 
@@ -340,14 +507,14 @@ Item {
                     currentIndex: toolBar.settings[canvas.tool]
                     height: children[currentIndex].implicitHeight
 
-                    SColumn {
+                    OColumn {
                         id: brushColumn
                         text: "Brush Settings"
                         onExpanded: {
                             toolScroll.position(brushColumn)
                         }
 
-                        SChoice {
+                        OChoice {
                             id: brushMode
                             label: "Mode"
                             width: parent.width
@@ -355,7 +522,7 @@ Item {
                             model: ["Normal", "Erase"]
                         }
 
-                        SSlider {
+                        OSlider {
                             id: sizeSlider
                             label: "Size"
                             width: parent.width
@@ -368,7 +535,7 @@ Item {
                             incValue: 1
                         }
 
-                        SSlider {
+                        OSlider {
                             id: hardnessSlider
                             label: "Hardness"
                             width: parent.width
@@ -381,7 +548,7 @@ Item {
                             incValue: 1
                         }
 
-                        SSlider {
+                        OSlider {
                             id: spacingSlider
                             label: "Spacing"
                             width: parent.width
@@ -395,14 +562,14 @@ Item {
                         }
                     }
 
-                    SColumn {
+                    OColumn {
                         id: selectColumn
                         text: "Select Settings"
                         onExpanded: {
                             toolScroll.position(selectColumn)
                         }
 
-                        SSlider {
+                        OSlider {
                             id: thresholdSlider
                             visible: canvas.tool == 6
                             label: "Threshold"
@@ -416,7 +583,7 @@ Item {
                             incValue: 1
                         }
 
-                        SSlider {
+                        OSlider {
                             id: featherSlider
                             label: "Feather"
                             width: parent.width
@@ -430,7 +597,7 @@ Item {
                         }
                     }
 
-                    SColumn {
+                    OColumn {
                         text: "Move Settings"
                     }
 

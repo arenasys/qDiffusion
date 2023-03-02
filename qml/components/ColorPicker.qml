@@ -6,17 +6,23 @@ import gui 1.0
 
 Item {
     property var color: colorArea.color
+    property alias trueColor: colorArea.color
+    property alias trueAlpha: colorArea.opacity
+    property alias trueHex: colorArea.hex
+    
+
+    onTrueColorChanged: {
+        setColor(color)
+    }
 
     onWidthChanged: setColor(color)
     onHeightChanged: setColor(color)
-
 
     function setColor(color) {
         var angle = (color.hsvHue+0.75) * 2*Math.PI
         var radius = color.hsvSaturation
         var lightness = color.hsvValue
         var alpha = color.a
-
         colorSelector.setSelection(radius, angle)
         lightnessSelector.setSelection(lightness)
         alphaSelector.setSelection(alpha)
@@ -25,7 +31,6 @@ Item {
     Component.onCompleted: {
         setColor(Qt.rgba(1,1,1,1))
     }
-
 
     ColorRadial {
         id: colorArea
