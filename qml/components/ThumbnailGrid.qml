@@ -131,7 +131,7 @@ GridView {
     interactive: false
     boundsBehavior: Flickable.StopAtBounds
 
-    ScrollBar.vertical: ScrollBar {
+    ScrollBar.vertical: SScrollBar {
         id: scrollBar
         stepSize: 1/Math.ceil(thumbView.count / Math.round(thumbView.width/thumbView.cellWidth))
     }

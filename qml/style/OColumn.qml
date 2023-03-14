@@ -6,6 +6,7 @@ import gui 1.0
 Item {
     id: root
     required property var text
+    property var collapsable: true
     property var isCollapsed: false
     property var hasDivider: true
     property var hasSides: false
@@ -49,6 +50,7 @@ Item {
             anchors.bottom: parent.bottom
             anchors.right: parent.right
             width: height
+            visible: root.collapsable
             onPaint: {
                 var context = getContext("2d");
                 var ox = width/2
@@ -69,6 +71,9 @@ Item {
                 id: canvasMouseArea
                 anchors.fill: parent
                 onPressed: {
+                    if(!root.collapsable) {
+                        return;
+                    }
                     root.isCollapsed = !root.isCollapsed
                     if(root.isCollapsed) {
                         root.collapsed()

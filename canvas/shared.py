@@ -37,6 +37,10 @@ class CanvasOperation(Enum):
     FUZZY = 14
     DESELECT = 15
 
+class CanvasLayerRole(Enum):
+    IMAGE = 1
+    MASK = 2
+
 class CanvasChanges():
     def __init__(self):
         self.reset = False

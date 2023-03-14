@@ -96,7 +96,7 @@ Item {
                 anchors.right: parent.right
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
-                rightPadding: 5
+                rightPadding: 7
 
                 text: control.displayText
                 font.pointSize: root.mini ? 7.7 : 9.6

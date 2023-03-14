@@ -68,6 +68,23 @@ Item {
                 select.feather = Qt.binding(function() { return featherSlider.value })
             }
 
+            property var currentLayer: null
+            onActiveLayerChanged: {
+                if(currentLayer != null) {
+                    currentLayer.role = currentLayer.role
+                    currentLayer.opacity = currentLayer.opacity
+                }
+                if(activeLayer != -1) {
+                    currentLayer = layers[activeLayer]
+                }
+                if(currentLayer != null) {
+                    layerRole.currentIndex = currentLayer.role-1
+                    layerOpacity.value = currentLayer.opacity
+                    currentLayer.role = Qt.binding(function() { return layerRole.currentIndex+1 })
+                    currentLayer.opacity = Qt.binding(function() { return layerOpacity.value })
+                }
+            }
+
             onNeedsUpdateChanged: {
                 if(!cooldown.canvasCooldown) {
                     cooldown.canvasCooldown = true
@@ -617,260 +634,339 @@ Item {
         minOffset: 5
         maxOffset: 300
     }
-    
     Rectangle {
-        id: layers
-        color: COMMON.bg2
+        id: layerSettings
+        color: COMMON.bg0_5
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         anchors.left: layersDivider.right
-        width: layersDivider.offset
 
-        SHeader {
-            anchors.top: layers.top
-            text: "Current Layer"
-            hasDivider: false
-        }
+        width: Math.max(150, layersDivider.offset)
+        Column {
+            id: layersColumn
+            anchors.fill: parent
+            anchors.rightMargin: 5
 
-        SHeader {
-            id: layerHeader
-            y: Math.floor(parent.height /2)
-            text: "Layers"
-            clip: true
-        }
-
-        Item {
-            id: layerButtons
-            anchors.bottom: layerHeader.bottom
-            anchors.right: layerHeader.right
-            width: Math.min(65, layerHeader.width-65)
-            height: 35
-            SIconButton {
-                id: layerAddButton
-                anchors.left: parent.left
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
-                anchors.topMargin: 5
-                anchors.rightMargin: 5
-                width: height+2
-                icon: "qrc:/icons/plus.svg"
-                tooltip: "Add Layer"
-                onPressed: {
-                    canvas.addLayer()
-                }
-            }
-
-            SIconButton {
-                id: layerDeleteButton
-                anchors.left: layerAddButton.right
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
-                anchors.topMargin: 5
-                width: height
-                tooltip: "Delete Layer"
-                icon: "qrc:/icons/trash.svg"
-                onPressed: {
-                    canvas.deleteLayer()
-                }
-            }
-        }
-
-        ListView {
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: layerHeader.bottom
-            interactive: false
-            boundsBehavior: Flickable.StopAtBounds
-            clip:true
-
-            ScrollBar.vertical: ScrollBar {
-                id: scrollBar
-            }
-
-            verticalLayoutDirection: ListView.BottomToTop
-            
-            id: layersList
-            model: canvas.layers
-            height: Math.min(200, contentHeight)
-
-            delegate: Item {
-                height: 40
+            OColumn {
+                id: currentLayerColumn
+                text: "Layer Settings"
                 width: parent.width
-                Rectangle {
-                    height: 40
-                    width: Math.max(40 + thumbnail.width + 24, layersList.width)
-                    color: modelData.key == canvas.activeLayer ? Qt.darker(COMMON.bg2, 1.25) : COMMON.bg2
+                collapsable: false
 
-                    MouseArea {
-                        anchors.fill: parent
-                        property var startPosition: Qt.point(0,0)
-                        property bool ready: false
-                        property var image
-                        onPressed: {
-                            canvas.activeLayer = modelData.key
-                            startPosition = Qt.point(mouse.x, mouse.y)
-                            ready = false
-                            thumbnail.grabToImage(function(result) {
-                                image = result.image;
-                                ready = true
-                            })
+                OChoice {
+                    id: layerRole
+                    label: "Role"
+                    width: parent.width
+                    height: 25
+                    currentIndex: canvas.currentLayer != null ? canvas.currentLayer.role-1 : 0
+                    model: ["Image", "Mask"]
+                }
+
+                OSlider {
+                    id: layerOpacity
+                    label: "Opacity"
+                    width: parent.width
+                    height: 25
+                    
+                    value: canvas.currentLayer != null ? canvas.currentLayer.opacity : 0
+                    minValue: 0
+                    maxValue: 100
+                    precValue: 0
+                    incValue: 1
+                }
+            }
+
+            OColumn {
+                text: "Layers"
+                id: layerListColumn
+                width: parent.width
+                collapsable: false
+
+                Item {
+                    width: parent.width
+                    height: 2
+                }
+
+                Rectangle {
+                    x: 2
+                    width: parent.width-4
+                    height: layersColumn.height - (currentLayerColumn.height + 35 + 27)
+                    color: "transparent"
+                    border.color: COMMON.bg4
+                    border.width: 1
+
+                    ListView {
+                        id: layerListView
+                        y: 1
+                        x: 1
+                        width: parent.width-2
+                        interactive: false
+                        boundsBehavior: Flickable.StopAtBounds
+                        clip:true
+
+                        ScrollBar.vertical: ScrollBar {
+                            id: scrollBar
                         }
 
-                        onPositionChanged: {
-                            if(pressed && ready) {
-                                var delta = Qt.point(mouse.x-startPosition.x, mouse.y-startPosition.y)
-                                if(Math.pow(delta.x*delta.x + delta.y*delta.y, 0.5) > 5) {
-                                    modelData.drag(index, image)
+                        verticalLayoutDirection: ListView.BottomToTop
+                        
+                        model: canvas.layers
+                        height: Math.min(contentHeight, parent.height-2)
+
+                        delegate: Item {
+                            height: 40
+                            width: parent.width
+                            Rectangle {
+                                height: 40
+                                width: Math.max(40 + thumbnail.width + 24, layerListView.width)
+                                color: index == canvas.activeLayer ? COMMON.bg2 : Qt.darker(COMMON.bg2, 1.25) 
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    property var startPosition: Qt.point(0,0)
+                                    property bool ready: false
+                                    property var image
+                                    onPressed: {
+                                        canvas.activeLayer = index
+                                        startPosition = Qt.point(mouse.x, mouse.y)
+                                        ready = false
+                                        thumbnail.grabToImage(function(result) {
+                                            image = result.image;
+                                            ready = true
+                                        })
+                                    }
+
+                                    onPositionChanged: {
+                                        if(pressed && ready) {
+                                            var delta = Qt.point(mouse.x-startPosition.x, mouse.y-startPosition.y)
+                                            if(Math.pow(delta.x*delta.x + delta.y*delta.y, 0.5) > 5) {
+                                                modelData.drag(index, image)
+                                            }
+                                        }
+                                    }
+                                }
+
+                                SIconButton {
+                                    id: visibleButton
+                                    anchors.left: parent.left
+                                    anchors.top: parent.top
+                                    anchors.bottom: parent.bottom
+                                    anchors.topMargin: 7
+                                    anchors.bottomMargin: 7
+                                    width: 40
+                                    color: "transparent"
+                                    icon: "qrc:/icons/eye.svg"
+                                    iconColor: modelData.visible ? COMMON.bg6 : COMMON.bg4
+
+                                    onPressed: {
+                                        modelData.visible = !modelData.visible
+                                    }
+                                }
+
+
+                                Item {
+                                    id: thumbnail
+                                    anchors.top: parent.top
+                                    anchors.bottom: parent.bottom
+                                    anchors.left: visibleButton.right
+                                    width: height
+
+                                    TransparencyShader {
+                                        anchors.fill: parent
+                                        gridSize: 5.0
+                                    }
+
+                                    ImageDisplay {
+                                        id: thumbnailImage
+                                        anchors.fill: parent
+                                        image: modelData.thumbnail
+                                        centered: true
+                                    }
+
+                                    ImageDisplay {
+                                        anchors.fill: parent
+                                        image: modelData.floatingThumbnail
+                                        centered: true
+
+                                        layer.enabled: true
+                                        layer.effect: OutlineShader {
+                                            fColor: Qt.vector4d(movable.selectColor.r, movable.selectColor.g, movable.selectColor.b, 1.0)
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        color: "transparent"
+                                        border.color: canvas.activeLayer == index ? "white" : COMMON.bg6
+                                        border.width: 1
+                                    }
+                                }
+
+                                Rectangle {
+                                    id: labelBackground
+                                    anchors.top: parent.top
+                                    anchors.bottom: parent.bottom
+                                    anchors.left: thumbnail.right
+                                    anchors.right: roleButton.left
+                                    anchors.leftMargin: 7
+                                    anchors.topMargin: 7
+                                    anchors.bottomMargin: 7
+                                    anchors.rightMargin: 3
+
+                                    clip: true
+
+                                    color: label.activeFocus ? Qt.darker(parent.color, 1.15) : "transparent"
+                                    border.color: label.activeFocus ? Qt.lighter(parent.color, 1.15) : "transparent"
+                                    border.width: 1.5
+
+                                    STextInput {
+                                        id: label
+                                        color: modelData.visible ? COMMON.fg0 : COMMON.fg2
+                                        activeFocusOnPress: false
+                                        anchors.fill: parent
+                                        leftPadding: 5
+                                        rightPadding: 5
+                                        verticalAlignment: Text.AlignVCenter
+                                        text: modelData.name
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        visible: !label.activeFocus
+                                        onDoubleClicked: {
+                                            label.forceActiveFocus()
+                                            label.selectAll()
+                                        }
+                                        onPressed: {
+                                            canvas.activeLayer = index
+                                        }
+                                    }
+                                }
+
+                                SIconButton {
+                                    id: roleButton
+                                    anchors.right: parent.right
+                                    anchors.top: parent.top
+                                    anchors.bottom: parent.bottom
+                                    anchors.topMargin: 5
+                                    anchors.bottomMargin: 5
+                                    anchors.rightMargin: 10
+                                    visible: modelData.role != 1 
+                                    width: visible ? 30 : 0
+                                    color: "transparent"
+                                    icon: "qrc:/icons/mask.svg"
+                                    iconColor: COMMON.bg6
+                                    iconHoverColor: COMMON.bg6
+                                }
+
+
+                                AdvancedDropArea {
+                                    id: topDrop
+                                    anchors.top: parent.top
+                                    anchors.topMargin: -20
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    height: 40
+
+                                    onDropped: {
+                                        canvas.dropped(mimeData, index+1)
+                                    }
+
+                                    Rectangle {
+                                        visible: parent.containsDrag
+                                        anchors.top: parent.top
+                                        anchors.topMargin: 20
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        height: 1
+                                        color: COMMON.fg2
+                                    }
+                                }
+
+                                AdvancedDropArea {
+                                    id: bottomDrop
+                                    enabled: index == 0
+                                    anchors.bottom: parent.bottom
+                                    anchors.bottomMargin: -20
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    height: 40
+
+                                    onDropped: {
+                                        canvas.dropped(mimeData, index)
+                                    }
+
+                                    Rectangle {
+                                        visible: parent.containsDrag
+                                        anchors.bottom: parent.bottom
+                                        anchors.bottomMargin: 20
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        height: 1
+                                        color: COMMON.fg2
+                                    }
                                 }
                             }
                         }
                     }
+                }
+            }
+        }
+        
+        Rectangle {
+            anchors.bottom: parent.bottom
+            width: parent.width
+            height: 27
+            color: COMMON.bg3
 
-                    SIconButton {
-                        id: visibleButton
-                        anchors.left: parent.left
-                        anchors.top: parent.top
-                        anchors.bottom: parent.bottom
-                        anchors.topMargin: 7
-                        anchors.bottomMargin: 7
-                        width: 40
-                        color: "transparent"
-                        icon: "qrc:/icons/eye.svg"
-                        iconColor: modelData.visible ? COMMON.bg6 : COMMON.bg4
+            Rectangle {
+                anchors.top: parent.top
+                width: parent.width
+                height: 2
+                color: COMMON.bg4
+            }
 
-                        onPressed: {
-                            modelData.visible = !modelData.visible
-                        }
+            Row {
+                anchors.left: parent.left
+                y:2
+                height: 25
+
+                SIconButton {
+                    height: parent.height
+                    width: height
+                    tooltip: "Add layer"
+                    icon: "qrc:/icons/plus.svg"
+
+                    onPressed: {
+                        canvas.addLayer()
                     }
-
-
-                    Item {
-                        id: thumbnail
-                        anchors.top: parent.top
-                        anchors.bottom: parent.bottom
-                        anchors.left: visibleButton.right
-                        width: height
-
-                        TransparencyShader {
-                            anchors.fill: parent
-                            gridSize: 5.0
-                        }
-
-                        ImageDisplay {
-                            id: thumbnailImage
-                            anchors.fill: parent
-                            image: modelData.thumbnail
-                            centered: true
-                        }
-
-                        ImageDisplay {
-                            anchors.fill: parent
-                            image: modelData.floatingThumbnail
-                            centered: true
-
-                            layer.enabled: true
-                            layer.effect: OutlineShader {
-                                fColor: Qt.vector4d(movable.selectColor.r, movable.selectColor.g, movable.selectColor.b, 1.0)
-                            }
-                        }
-
-                        Rectangle {
-                            anchors.fill: parent
-                            color: "transparent"
-                            border.color: canvas.activeLayer == modelData.key ? "white" : COMMON.bg6
-                            border.width: 1
-                        }
-                    }
-
-                    Rectangle {
-                        id: labelBackground
-                        anchors.top: parent.top
-                        anchors.bottom: parent.bottom
-                        anchors.left: thumbnail.right
-                        anchors.right: parent.right
-                        anchors.margins: 7
-
-                        clip: true
-
-                        color: label.activeFocus ? Qt.darker(parent.color, 1.15) : "transparent"
-                        border.color: label.activeFocus ? Qt.lighter(parent.color, 1.15) : "transparent"
-                        border.width: 1.5
-
-                        STextInput {
-                            id: label
-                            color: modelData.visible ? COMMON.fg0 : COMMON.fg2
-                            activeFocusOnPress: false
-                            anchors.fill: parent
-                            leftPadding: 5
-                            rightPadding: 5
-                            verticalAlignment: Text.AlignVCenter
-                            text: modelData.name
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            visible: !label.activeFocus
-                            onDoubleClicked: {
-                                label.forceActiveFocus()
-                                label.selectAll()
-                            }
-                            onPressed: {
-                                canvas.activeLayer = modelData.key
-                            }
-                        }
-                    }
-
-                    AdvancedDropArea {
-                        id: topDrop
-                        anchors.top: parent.top
-                        anchors.topMargin: -20
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        height: 40
-
-                        onDropped: {
-                            canvas.dropped(mimeData, index+1)
-                        }
-
-                        Rectangle {
-                            visible: parent.containsDrag
-                            anchors.top: parent.top
-                            anchors.topMargin: 20
-                            anchors.left: parent.left
-                            anchors.right: parent.right
-                            height: 1
-                            color: COMMON.fg2
-                        }
-                    }
-
-                    AdvancedDropArea {
-                        id: bottomDrop
-                        enabled: index == 0
-                        anchors.bottom: parent.bottom
-                        anchors.bottomMargin: -20
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        height: 40
-
-                        onDropped: {
-                            canvas.dropped(mimeData, index)
-                        }
-
-                        Rectangle {
-                            visible: parent.containsDrag
-                            anchors.bottom: parent.bottom
-                            anchors.bottomMargin: 20
-                            anchors.left: parent.left
-                            anchors.right: parent.right
-                            height: 1
-                            color: COMMON.fg2
-                        }
+                }
+            }
+            Row {
+                anchors.right: parent.right
+                anchors.rightMargin: 5
+                y:2
+                height: 25
+                SIconButton {
+                    height: parent.height
+                    width: height
+                    inset: 8
+                    tooltip: "Merge layer"
+                    icon: "qrc:/icons/down.svg"
+                }
+                SIconButton {
+                    height: parent.height
+                    width: height
+                    inset: 8
+                    tooltip: "Delete layer"
+                    icon: "qrc:/icons/cross.svg"
+                    onPressed: {
+                        canvas.deleteLayer()
                     }
                 }
             }
         }
     }
-
     Keys.onPressed: {
         event.accepted = true
         if(event.modifiers & Qt.ControlModifier) {

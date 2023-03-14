@@ -15,7 +15,7 @@ class CanvasRendererCheckpoint():
     def __init__(self, active, order, layers, selection, mask, floating, floatingPosition, floatingLayer):
         self.active = active
         self.order = copy.copy(order)
-        self.restore = layers[active].getImage()
+        self.restore = {key:layers[key].getImage() for key in layers}
         self.mask = mask.getImage()
         self.selection = selection.copy()
         self.time = time.time()
@@ -128,11 +128,13 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
         if not key in self.layers:
             self.layers[key] = self.createBuffer(self.size)
         
-        painter = self.layers[key].beginPaint()
-        gl.glClearColor(0, 0, 0, 0)
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
-        painter.drawImage(0,0,checkpoint.restore)
-        self.layers[key].endPaint()
+        for key in self.layers:
+            if key in checkpoint.restore:
+                painter = self.layers[key].beginPaint()
+                gl.glClearColor(0, 0, 0, 0)
+                gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+                painter.drawImage(0,0,checkpoint.restore[key])
+                self.layers[key].endPaint()
 
         if self.floatingLayer != -1:
             self.getLayer(self.floatingLayer).changed = True
@@ -198,8 +200,7 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
                 layerPainter = QPainter(layerImage)
                 if key == self.activeLayer:
                     layerPainter.setOpacity(self.activeBrush.opacity)
-                    if self.activeTool == CanvasTool.ERASE:
-                        layerPainter.setCompositionMode(QPainter.CompositionMode_DestinationOut)
+                    layerPainter.setCompositionMode(self.activeBrush.mode)
                     layerPainter.drawImage(0,0,self.getMaskedBuffer())
                 if key == self.floatingLayer:
                     layerPainter.drawImage(alignQPointF(self.floatingPosition + self.floatingOffset), self.mask.getImage())
@@ -313,8 +314,7 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
         if CanvasOperation.STROKE in self.changes.operations:
             painter = self.getLayer(self.activeLayer).beginPaint()
             painter.setOpacity(self.activeBrush.opacity)
-            if self.activeTool == CanvasTool.ERASE:
-                painter.setCompositionMode(QPainter.CompositionMode_DestinationOut)
+            painter.setCompositionMode(self.activeBrush.mode)
             painter.drawImage(0,0,self.getMaskedBuffer())
             painter.setOpacity(1.0)
             painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
@@ -370,7 +370,7 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
             if not bound:
                 bound = QRectF(QPointF(0, 0), QSizeF(selection.size()))
 
-            #bound.translate(-(self.floatingPosition + self.floatingOffset))
+            bound.translate(-(self.floatingPosition + self.floatingOffset))
 
             if not self.floating:
                 painter = QPainter()

@@ -174,11 +174,12 @@ Rectangle {
         anchors.left: infoRightText.left
         anchors.rightMargin: -5
         anchors.bottomMargin: -5
-        radius: 5
-        color: COMMON.bg1
         opacity: 0.9
         height: 25
         visible: infoRightText.text != ""
+        color: "#e0101010"
+        border.width: 1
+        border.color: COMMON.bg3
     }
 
     SText {
@@ -201,11 +202,12 @@ Rectangle {
         anchors.right: infoLeftText.right
         anchors.leftMargin: -5
         anchors.bottomMargin: -5
-        radius: 5
-        color: COMMON.bg1
         opacity: 0.9
         height: 25
         visible: infoLeftText.text != ""
+        color: "#e0101010"
+        border.width: 1
+        border.color: COMMON.bg3
     }
 
     SText {

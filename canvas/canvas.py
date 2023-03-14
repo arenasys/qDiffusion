@@ -150,7 +150,7 @@ class CanvasSelect(QObject):
 class CanvasLayer(QObject):
     updated = pyqtSignal()
     globalKey = 0
-    def __init__(self, name, size, parent=None):
+    def __init__(self, name, size, role, parent=None):
         super().__init__(parent)
         self._name = name
         self._thumbnail = QImage()
@@ -164,6 +164,7 @@ class CanvasLayer(QObject):
         self._key = CanvasLayer.globalKey
         self._data = QByteArray()
         self._dragging = False
+        self._role = role
         CanvasLayer.globalKey += 1
 
         self.changed = False
@@ -218,20 +219,34 @@ class CanvasLayer(QObject):
 
     @pyqtProperty(float, notify=updated)
     def opacity(self):
-        return self._opacity
+        return self._opacity*100
 
     @opacity.setter
     def opacity(self, opacity):
-        self._opacity = opacity
-        self.changed = True
+        opacity /= 100
+        if opacity != self._opacity:
+            self._opacity = opacity
+            self.updated.emit()
+            self.changed = True
 
     @pyqtProperty(bool, notify=updated)
     def visible(self):
+        if self._opacity == 0.0:
+            return False
         return self._visible
 
     @visible.setter
     def visible(self, visible):
         self._visible = visible
+        self.changed = True
+
+    @pyqtProperty(int, notify=updated)
+    def role(self):
+        return self._role.value
+
+    @role.setter
+    def role(self, role):
+        self._role = CanvasLayerRole(role)
         self.changed = True
 
     @pyqtProperty(QImage, notify=updated)
@@ -495,8 +510,14 @@ class Canvas(QQuickFramebufferObject):
 
         self.layersUpdated.emit()
 
-    def insertLayer(self, index, source):
-        layer = CanvasLayer(f"Layer {len(self._layersOrder)}", self._sourceSize, self)
+    def insertLayer(self, index, source, role):
+        prefix = ["", "Layer", "Mask"][role.value]
+        idx = 1
+        for key in self._layersOrder:
+            if self._layers[key].role == role.value:
+                idx += 1
+            
+        layer = CanvasLayer(f"{prefix} {idx}", self._sourceSize, role, self)
         layer.setSource(source)
         self._layers[layer.key] = layer
         self._layersOrder.insert(index, layer.key)
@@ -525,11 +546,13 @@ class Canvas(QQuickFramebufferObject):
 
     @pyqtProperty(int, notify=layersUpdated)
     def activeLayer(self):
-        return self._activeLayer
+        if self._activeLayer == -1:
+            return -1
+        return self._layersOrder.index(self._activeLayer)
 
     @activeLayer.setter
     def activeLayer(self, layer):
-        self._activeLayer = layer
+        self._activeLayer = self._layersOrder[layer]
         self.layersUpdated.emit()
 
     @pyqtProperty(str, notify=sourceUpdated)
@@ -551,8 +574,8 @@ class Canvas(QQuickFramebufferObject):
         self._sourceSize = source.size()
         self.sourceUpdated.emit()
 
-        self._activeLayer = self.insertLayer(0, source)
-        self.insertLayer(1, QImage())
+        self._activeLayer = self.insertLayer(0, source, CanvasLayerRole.IMAGE)
+        self.insertLayer(1, QImage(), CanvasLayerRole.MASK)
         self.layersUpdated.emit()
 
         self.thumbnailsNeedUpdate = True
@@ -759,7 +782,8 @@ class Canvas(QQuickFramebufferObject):
     @pyqtSlot()
     def addLayer(self):
         i = self._layersOrder.index(self._activeLayer)+1
-        self.insertLayer(i, QImage())
+        self.insertLayer(i, QImage(), CanvasLayerRole.IMAGE)
+
 
     @pyqtSlot()
     def deleteLayer(self):
