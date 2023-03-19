@@ -8,32 +8,40 @@ Dialog {
     id: dialog
     anchors.centerIn: parent
     width: 300
-    dim: false
+    dim: true
 
     padding: 5
 
     background: Item {
-        SGlow {
-            target: bg
-            cornerRadius: 2
-            glowRadius: 15
-            spread: 0.05
+        RectangularGlow {
+            anchors.fill: bg
+            glowRadius: 5
+            opacity: 0.75
+            spread: 0.2
+            color: "black"
+            cornerRadius: 10
         }
 
         Rectangle {
             id: bg
             anchors.fill: parent
-            color: COMMON.bg4_5
+            anchors.margins: -1
+            color: COMMON.bg3
+            border.width: 1
+            border.color: COMMON.bg4
+        }
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: -2
+            color: "transparent"
+            border.width: 1
+            border.color: COMMON.bg0
         }
     }
 
     header: Item {
         
         implicitHeight: 20
-        Rectangle {
-            anchors.fill: parent
-            color: COMMON.bg4
-        }
         SText {
             color: COMMON.fg2
             anchors.fill: parent
@@ -46,7 +54,9 @@ Dialog {
     }
 
     contentItem: Rectangle {
-        color: COMMON.bg5
+        color: COMMON.bg4
+        border.width: 1
+        border.color: COMMON.bg5
     }
 
     spacing: 0
@@ -55,11 +65,11 @@ Dialog {
     footer: Rectangle {
         implicitWidth: parent.width
         implicitHeight: 35
-        color: COMMON.bg4
+        color: COMMON.bg3
         DialogButtonBox {
             anchors.centerIn: parent
             standardButtons: dialog.standardButtons
-
+            alignment: Qt.AlignHCenter
             spacing: 5
 
             background: Item {
@@ -79,8 +89,9 @@ Dialog {
                 }
 
                 background: Rectangle {
-                    radius: 1
+                    radius: 0
                     color: COMMON.bg5
+                    border.color: COMMON.bg6
                 }
             }
 

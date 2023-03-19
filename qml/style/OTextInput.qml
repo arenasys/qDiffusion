@@ -8,7 +8,35 @@ Item {
     id: root
     property var label: "Label"
     property var value: ""
+    property var defaultValue: null
     property var mini: height == 20
+    property var validator: RegExpValidator { regExp: /.*/ }
+    property var disabled: false
+
+    property variant bindMap: null
+    property var bindKey: null
+
+    Connections {
+        target: bindMap
+        function onUpdated() {
+            var v = root.bindMap.get(root.bindKey)
+            if(v != root.value) {
+                root.value = v
+            }
+        }
+    }
+
+    Component.onCompleted: {
+        if(root.bindMap != null && root.bindKey != null) {
+            root.value = root.bindMap.get(root.bindKey)
+        }
+    }
+
+    onValueChanged: {
+        if(root.bindMap != null && root.bindKey != null) {
+            root.bindMap.set(root.bindKey, root.value)
+        }
+    }
 
     Rectangle {
         anchors.fill: parent
@@ -43,7 +71,7 @@ Item {
             font.pointSize: root.mini ? 7.85 : 9.8
             color: COMMON.fg1
             monospace: true
-            validator: RegExpValidator { regExp: /(#[0-9A-Fa-f]{8})|(#[0-9A-Fa-f]{6})/ }
+            validator: root.validator
             
             onEditingFinished: {
                 root.value = text
@@ -58,6 +86,19 @@ Item {
                     }
 
                     valueText.text = Qt.binding(function() { return root.value; })
+                }
+            }
+
+            Keys.onPressed: {
+                switch(event.key) {
+                    case Qt.Key_Escape:
+                        if(root.defaultValue != null) {
+                            root.value = root.defaultValue
+                            text = defaultValue
+                        }
+                    default:
+                        event.accepted = false
+                        break;
                 }
             }
 

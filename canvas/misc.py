@@ -4,47 +4,9 @@ from PyQt5.QtGui import QRadialGradient, QColor, QPainter, QPainterPath, QPen, Q
 from PyQt5.QtQml import qmlRegisterType
 import time
 
-from canvas.shared import CanvasSelectionMode, MimeData
+from canvas.shared import CanvasSelectionMode
 from canvas.canvas import CanvasTool, CanvasSelection
-
-class ImageDisplay(QQuickPaintedItem):
-    imageUpdated = pyqtSignal()
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self._image = None
-        self._centered = False
-
-    @pyqtProperty(QImage, notify=imageUpdated)
-    def image(self):
-        return self._image
-    
-    @image.setter
-    def image(self, image):
-        self._image = image
-
-        self.setImplicitHeight(image.height())
-        self.setImplicitWidth(image.width())
-        self.imageUpdated.emit()
-        self.update()
-
-    @pyqtProperty(bool, notify=imageUpdated)
-    def centered(self):
-        return self._centered
-    
-    @centered.setter
-    def centered(self, centered):
-        self._centered = centered
-        self.imageUpdated.emit()
-        self.update()
-
-    def paint(self, painter):
-        if self._image and not self._image.isNull():
-            img = self._image.scaled(int(self.width()), int(self.height()), Qt.KeepAspectRatio)
-            x, y = 0, 0
-            if self.centered:
-                x = int((self.width() - img.width())/2)
-                y = int((self.height() - img.height())//2)
-            painter.drawImage(x,y,img)
+from gui import MimeData
 
 class ColorRadial(QQuickPaintedItem):
     updated = pyqtSignal()
@@ -179,7 +141,7 @@ class MarchingAnts(QQuickPaintedItem):
         self._shader = False
         self._needsUpdate = False
         self._pathOffset = QPointF()
-    
+        
     @pyqtProperty(CanvasSelection, notify=updated)
     def selection(self):
         return self._selection
@@ -221,7 +183,7 @@ class MarchingAnts(QQuickPaintedItem):
     @pyqtProperty(bool, notify=updated)
     def needsUpdate(self):
         return self._needsUpdate
-    
+
     @pyqtSlot()
     def requestUpdate(self):
         self._needsUpdate = True
@@ -302,41 +264,6 @@ class MarchingAnts(QQuickPaintedItem):
 
         self.updated.emit()
 
-class DropArea(QQuickItem):
-    dropped = pyqtSignal(MimeData, arguments=["mimeData"])
-    updated = pyqtSignal()
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setFlag(QQuickItem.ItemAcceptsDrops, True)
-        self._containsDrag = False
-    
-    @pyqtProperty(bool, notify=updated)
-    def containsDrag(self):
-        return self._containsDrag
-    
-    def dragEnterEvent(self, enter): 
-        enter.accept()
-        self._containsDrag = True
-        self.updated.emit()
-
-    def dragLeaveEvent(self, leave): 
-        leave.accept()
-        self._containsDrag = False
-        self.updated.emit()
-
-    def dragMoveEvent(self, move):
-        move.accept()
-
-    def dropEvent(self, drop):
-        drop.accept()
-        self._containsDrag = False
-        self.updated.emit()
-        self.dropped.emit(MimeData(drop.mimeData()))
-        
-
 def registerMiscTypes():
-    qmlRegisterType(ImageDisplay, "gui", 1, 0, "ImageDisplay")
     qmlRegisterType(ColorRadial, "gui", 1, 0, "ColorRadial")
     qmlRegisterType(MarchingAnts, "gui", 1, 0, "MarchingAnts")
-    qmlRegisterType(DropArea, "gui", 1, 0, "AdvancedDropArea")
-    qmlRegisterType(MimeData, "gui", 1, 0, "MimeData")

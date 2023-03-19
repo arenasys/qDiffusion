@@ -10,7 +10,7 @@ ComboBox {
     delegate: ItemDelegate {
         id: item
         width: control.width
-        height: 30
+        height: 25
         hoverEnabled: true
 
         contentItem: SText {

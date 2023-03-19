@@ -20,7 +20,7 @@ TabButton {
         Rectangle {
             height: 25
             opacity: enabled ? 1 : 0.3
-            color: control.down ? COMMON.bg0 : (selected ? COMMON.bg4 : COMMON.bg2)
+            color: control.down ? COMMON.bg4 : (selected ? COMMON.bg4 : COMMON.bg1_5)
             anchors.bottom: parent.bottom
             anchors.left: parent.left
             anchors.right: parent.right

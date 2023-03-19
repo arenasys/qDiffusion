@@ -47,6 +47,35 @@ ApplicationWindow {
             color: COMMON.bg4
         }
 
+        SDialog {
+            id: dialog
+            title: "Error"
+            standardButtons: Dialog.Ok
+            modal: true
+            dim: true
+
+            height: 120
+
+            SText {
+                anchors.fill: parent
+                padding: 5
+                text: "Error while " + GUI.errorStatus + ".\n" + GUI.errorText
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+            }
+
+            onAccepted: {
+                GUI.clearError()
+            }
+
+            Connections {
+                target: GUI
+                function onErrorTextChanged() {
+                    dialog.open()
+                }
+            }
+        }
+
         StackLayout {
             id: stackLayout
             anchors.left: root.left

@@ -6,6 +6,7 @@ import math
 
 from canvas.renderer import *
 from canvas.shared import *
+from gui import MimeData
 
 MIME_LAYER = "application/x-qd-layer"
 
@@ -162,7 +163,7 @@ class CanvasLayer(QObject):
         self._visible = True
         self._offset = QPoint(0,0)
         self._key = CanvasLayer.globalKey
-        self._data = QByteArray()
+        self._image = QImage()
         self._dragging = False
         self._role = role
         CanvasLayer.globalKey += 1
@@ -177,9 +178,7 @@ class CanvasLayer(QObject):
 
     def synchronize(self, layer, renderer, updateThumbnail=False):
         if updateThumbnail:
-            
             self._thumbnail = QImage(layer.getThumbnail())
-            self._data = QImage(layer.getImage())
             self._floating = renderer.floating and renderer.floatingLayer == self._key
             if self._floating:
                 self._floatingThumbnail = renderer.getFloatingThumbnail()
@@ -187,13 +186,16 @@ class CanvasLayer(QObject):
                 self._floatingThumbnail = QImage()
             self.updated.emit()
 
+        self._image = QImage(layer.getImage())
+
         if not self.changed:
             return False
-
+        
         layer.opacity = self._opacity
         layer.visible = self._visible
         layer.mode = self._mode
         if self.source:
+            print("APPLY")
             layer.source = QImage(self.source)
             self.source = None
         self.updated.emit()
@@ -252,6 +254,10 @@ class CanvasLayer(QObject):
     @pyqtProperty(QImage, notify=updated)
     def thumbnail(self):
         return self._thumbnail
+    
+    @pyqtProperty(QImage, notify=updated)
+    def image(self):
+        return self._image
     
     @pyqtProperty(QImage, notify=updated)
     def floatingThumbnail(self):
@@ -414,19 +420,24 @@ class Canvas(QQuickFramebufferObject):
     sourceUpdated = pyqtSignal()
     layersUpdated = pyqtSignal()
     toolUpdated = pyqtSignal()
-    toolUpdated = pyqtSignal()
     selectionUpdated = pyqtSignal()
     needsUpdated = pyqtSignal()
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setTextureFollowsItemSize(False)
         self.setMirrorVertically(True)
+        self.setup()
 
-        self._source = ""
-        self._sourceSize = QSize(0,0)
         self._tool = CanvasTool.BRUSH
         self._brush = CanvasBrush()
+        self._firstSetup = True
+
+    def setup(self):
+        self._source = ""
+        self._sourceSize = QSize(1,1)
+
         self._select = CanvasSelect()
+        self._keepHistory = True
 
         self._layers = {} # key -> layer
         self._layersOrder = [] # index -> key
@@ -448,6 +459,8 @@ class Canvas(QQuickFramebufferObject):
 
         self._needsUpdate = False
 
+        self._setup = True
+
     def getChanges(self):
         changes = self.changes
         changes.brush = self._brush
@@ -461,11 +474,22 @@ class Canvas(QQuickFramebufferObject):
         return changes
 
     def synchronize(self, renderer):
+        if renderer.display == None or self._sourceSize == QSize(0,0):
+            return False
+
+        if self._setup:
+            renderer.setup(self._sourceSize)
+            self.update()
+            self._setup = False
+            return False
+
         self.synchronizeRestore(renderer)
         self.synchronizeLayers(renderer)
         self.synchronizeSelection(renderer)    
         
         self._needsUpdate = False
+
+        return True
 
     def synchronizeSelection(self, renderer):
         if renderer.floating != self._floating:
@@ -500,7 +524,6 @@ class Canvas(QQuickFramebufferObject):
             renderer.restoredOrder = None
 
         self.layersUpdated.emit()
-
 
     def moveLayer(self, source, destination):
         key = self._layersOrder.pop(source)
@@ -538,6 +561,7 @@ class Canvas(QQuickFramebufferObject):
         self.thumbnailsNeedUpdate = True
 
     def createRenderer(self):
+        print("CREATE CANVAS", self._sourceSize)
         return CanvasRenderer(self._sourceSize)
 
     @pyqtProperty(list, notify=layersUpdated)
@@ -555,22 +579,14 @@ class Canvas(QQuickFramebufferObject):
         self._activeLayer = self._layersOrder[layer]
         self.layersUpdated.emit()
 
-    @pyqtProperty(str, notify=sourceUpdated)
-    def source(self):
-        return self._source
-
-    @source.setter
-    def source(self, path):
-        self._source = path
-        self.sourceUpdated.emit()
-
     @pyqtProperty(QSize, notify=sourceUpdated)
     def sourceSize(self):
         return self._sourceSize
 
-    @pyqtSlot()
-    def load(self):
-        source = QImage(self._source)
+    @pyqtSlot(str)
+    def setupEditor(self, path):
+        self.setup()
+        source = QImage(path)
         self._sourceSize = source.size()
         self.sourceUpdated.emit()
 
@@ -584,7 +600,33 @@ class Canvas(QQuickFramebufferObject):
         self.changes.operations.add(CanvasOperation.LOAD)
         self.changes.operations.add(CanvasOperation.SET_SELECTION)
         self.changes.reset = True
-    
+
+    @pyqtSlot(QImage, QImage)
+    def setupBasic(self, image, bg):
+        self.setup()
+        if not bg.isNull() and image.size() != bg.size():
+            image = image.scaled(bg.size(), Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+            dx = int((image.width()-bg.width())//2)
+            dy = int((image.height()-bg.height())//2)
+            image = image.copy(dx, dy, bg.size().width(), bg.size().height())
+
+        self._sourceSize = image.size()
+        self.sourceUpdated.emit()
+        self._layers = {}
+        self._layersOrder = []
+        if not bg.isNull():
+            self.insertLayer(0, bg, CanvasLayerRole.IMAGE)
+            self._activeLayer = self.insertLayer(1, image, CanvasLayerRole.IMAGE)
+            self._layers[self._activeLayer].opacity = 70
+        else:
+            self._activeLayer = self.insertLayer(0, image, CanvasLayerRole.IMAGE)
+        self.layersUpdated.emit()
+
+        self.changes = CanvasChanges()
+        self.changes.operations.add(CanvasOperation.LOAD)
+        self.changes.operations.add(CanvasOperation.SET_SELECTION)
+        self.changes.reset = True
+
     def getLayer(self, position):
         return self._layers[self._layersOrder[position]]
 
@@ -655,7 +697,7 @@ class Canvas(QQuickFramebufferObject):
                 v = QPointF(position.x()-last.x(), position.y()-last.y())
                 m = (v.x()*v.x() + v.y()*v.y())**0.5
                 r = m/s
-                if r < 1:
+                if r < 1 or not r:
                     return
                 
                 for i in range(1, int(r)+1):
@@ -749,7 +791,13 @@ class Canvas(QQuickFramebufferObject):
         
         if self._tool == CanvasTool.MOVE:
             self.changes.operations.add(CanvasOperation.ANCHOR)
-                    
+
+        if tool == CanvasTool.BRUSH.value:
+            self._brush.modeIndex = 0
+
+        if tool == CanvasTool.ERASE.value:
+            self._brush.modeIndex = 1
+
         self.requestUpdate()
         self._tool = CanvasTool(tool)
         self.toolUpdated.emit()
@@ -784,7 +832,6 @@ class Canvas(QQuickFramebufferObject):
         i = self._layersOrder.index(self._activeLayer)+1
         self.insertLayer(i, QImage(), CanvasLayerRole.IMAGE)
 
-
     @pyqtSlot()
     def deleteLayer(self):
         i = self._layersOrder.index(self._activeLayer)
@@ -793,6 +840,10 @@ class Canvas(QQuickFramebufferObject):
             i -= 1
         self._activeLayer = self._layersOrder[i]
         self.layersUpdated.emit()
+
+    @pyqtSlot(result=QImage)
+    def getImage(self):
+        return self._layers[self._activeLayer].image
 
 def registerTypes():
     qmlRegisterType(Canvas, "gui", 1, 0, "AdvancedCanvas")

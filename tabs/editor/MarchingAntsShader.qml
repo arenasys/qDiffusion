@@ -7,6 +7,7 @@ ShaderEffect {
     property real fDashLength: 6.0
     property bool fDashStroke: true
     property var fColor: Qt.vector4d(1, 1, 1, 1)
+
     vertexShader: "
         uniform highp mat4 qt_Matrix;
         attribute highp vec4 qt_Vertex;
@@ -51,7 +52,7 @@ ShaderEffect {
             if(onEdge) {
                 o = c;
             } else {
-                vec4 o = vec4(0.0, 0.0, 0.0, 0.0);
+                o = vec4(0.0, 0.0, 0.0, 0.0);
             }
 
             gl_FragColor = fColor * o * qt_Opacity;

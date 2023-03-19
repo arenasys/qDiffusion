@@ -10,6 +10,7 @@ Item {
     property var isCollapsed: false
     property var hasDivider: true
     property var hasSides: false
+    property var padding: true
     signal expanded()
     signal collapsed()
 
@@ -18,9 +19,11 @@ Item {
     }
 
     default property alias content: column.children
-    implicitHeight: header.height + column.height + (hasDivider ? 5 : 0) - (isCollapsed ? 2 : 0)
+    implicitHeight: header.height + column.height + (padding ? (hasDivider ? 5 : 0) - (isCollapsed ? 2 : 0) : 3)
 
     property var contentMargin: hasSides ? 3 : 0
+
+    property alias input: inputLoader.sourceComponent
 
     Rectangle {
         id: header
@@ -30,6 +33,7 @@ Item {
         anchors.left: parent.left
         anchors.top: parent.top
         SText {
+            id: labelText
             text: root.text
             font.pointSize: 11
             leftPadding: 8
@@ -42,6 +46,14 @@ Item {
             anchors.left: parent.left
             anchors.top: parent.top
             anchors.bottom: parent.bottom
+        }
+
+        Loader {
+            id: inputLoader
+            anchors.right: indicator.left
+            anchors.top: parent.top
+
+            sourceComponent: Item {}
         }
 
         Canvas {

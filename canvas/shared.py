@@ -1,4 +1,4 @@
-from PyQt5.QtCore import pyqtSlot, pyqtProperty, QPointF, QObject, QMimeData, QBuffer, QIODevice
+from PyQt5.QtCore import pyqtSlot, pyqtProperty, QPointF, QSize
 from PyQt5.QtGui import QImage
 from enum import Enum
 import io
@@ -58,6 +58,8 @@ class CanvasChanges():
 
         self.operations = set()
 
+        self.setup = QSize()
+
 def alignQPointF(point):
     return QPointF(point.toPoint())
 
@@ -86,12 +88,3 @@ def CV2toQImage(mat):
     img = QImage(data, width, height, QImage.Format_RGBA8888)
     img.convertTo(QImage.Format_ARGB32_Premultiplied)
     return img
-
-class MimeData(QObject):
-    def __init__(self, mimeData, parent=None):
-        super().__init__(parent)
-        self._mimeData = mimeData
-
-    @pyqtProperty(QMimeData)
-    def mimeData(self):
-        return self._mimeData

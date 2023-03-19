@@ -70,7 +70,7 @@ MenuItem {
         leftPadding: menuItem.checkable ? menuItem.indicator.width : 0
         text: menuItem.text
         font: menuItem.font
-        color: COMMON.fg0
+        color: COMMON.fg1
         horizontalAlignment: Text.AlignLeft
         verticalAlignment: Text.AlignVCenter
     }
@@ -78,6 +78,6 @@ MenuItem {
     background: Rectangle {
         implicitWidth: 150
         implicitHeight: menuItemSize
-        color: menuItem.hovered ? COMMON.bg5 : "transparent"
+        color: menuItem.hovered ? COMMON.bg4 : "transparent"
     }
 }

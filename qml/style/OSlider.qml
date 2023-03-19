@@ -9,13 +9,51 @@ Item {
     property var mini: height == 20
 
     property var label: "Label"
-    property var value: 50
-    property var minValue: 0
-    property var maxValue: 100
-    property var precValue: 0
-    property var incValue: 1
+    property double value: 0
+    property var defaultValue: null
+    property double minValue: 0
+    property double maxValue: 100
+    property double precValue: 0
+    property double incValue: 1
+    property var snapValue: null
     property var labelWidth: 70
-    property var valueWidth: mini ? 30 : 40
+    property var bounded: true
+
+    property variant bindMap: null
+    property var bindKey: null
+
+    Connections {
+        target: bindMap
+        function onUpdated() {
+            var v = root.bindMap.get(root.bindKey)
+            if(v != root.value) {
+                root.value = v
+            }
+        }
+    }
+
+    Component.onCompleted: {
+        if(root.bindMap != null && root.bindKey != null) {
+            root.value = root.bindMap.get(root.bindKey)
+        }
+
+        if(root.defaultValue == null) {
+            root.defaultValue = root.value;
+        }
+    }
+
+    onValueChanged: {
+        if(root.snapValue != null) {
+            var v = Math.round(root.value/root.snapValue) * root.snapValue;
+            if(v != root.value) {
+                root.value = v;
+            }
+        }
+
+        if(root.bindMap != null && root.bindKey != null) {
+            root.bindMap.set(root.bindKey, root.value)
+        }
+    }
 
     function update(pos) {
         var value = pos*(root.maxValue-root.minValue) + root.minValue
@@ -63,7 +101,7 @@ Item {
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             color: COMMON.bg5
-            width: (mouseArea.width) * (root.value - root.minValue)/(root.maxValue-root.minValue)
+            width: Math.min((mouseArea.width) * (root.value - root.minValue)/(root.maxValue-root.minValue), parent.width)
         }
 
         SText {
@@ -82,40 +120,50 @@ Item {
 
         Rectangle {
             id: valueArea
+            color: valueInput.activeFocus ? "#40000000" : "transparent"
+            border.color: valueInput.activeFocus ? "#10ffffff" : "transparent"
+            border.width: 1.5
+        }
+
+        STextInput {
             anchors.right: spinnerControls.left
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             anchors.margins: 2
-            width: root.valueWidth
+            width: contentWidth + 10
 
-            clip: true
-
-            color: valueInput.activeFocus ? "#40000000" : "transparent"
-            border.color: valueInput.activeFocus ? "#10ffffff" : "transparent"
-            border.width: 1.5
-
-            STextInput {
-                id: valueInput
-                color: COMMON.fg1
-                font.pointSize: root.mini ? 7.7 : 9.6
-                activeFocusOnPress: false
-                anchors.fill: parent
-                leftPadding: 5
-                rightPadding: 5
-                verticalAlignment: Text.AlignVCenter
-                horizontalAlignment: Text.AlignRight
-                text: root.value.toFixed(root.precValue)
-                validator:  DoubleValidator {
-                    bottom: root.minValue
-                    top: root.maxValue
+            id: valueInput
+            color: COMMON.fg1
+            font.pointSize: root.mini ? 7.7 : 9.6
+            activeFocusOnPress: false
+            leftPadding: 5
+            rightPadding: 5
+            verticalAlignment: Text.AlignVCenter
+            horizontalAlignment: Text.AlignRight
+            text: root.value.toFixed(root.precValue)
+            validator: DoubleValidator {
+                bottom: root.minValue
+                top: bounded ? root.maxValue : 2147483647.0
+            }
+            onEditingFinished: {
+                root.value = parseFloat(text)
+            }
+            onActiveFocusChanged: {
+                if(!activeFocus) {
+                    valueInput.text =  Qt.binding(function() { return root.value.toFixed(root.precValue) })
                 }
-                onEditingFinished: {
-                    root.value = parseFloat(text)
-                }
-                onActiveFocusChanged: {
-                    if(!activeFocus) {
-                        valueInput.text =  Qt.binding(function() { return root.value.toFixed(root.precValue) })
-                    }
+            }
+            
+            Keys.onPressed: {
+                switch(event.key) {
+                    case Qt.Key_Escape:
+                        if(root.defaultValue != null) {
+                            root.value = root.defaultValue
+                            text = root.defaultValue.toFixed(root.precValue)
+                        }
+                    default:
+                        event.accepted = false
+                        break;
                 }
             }
 

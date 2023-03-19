@@ -2,7 +2,8 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtGraphicalEffects 1.15
 
-import "../style"
+import "../../style"
+import "../../components"
 
 GridView {
     id: thumbView
@@ -131,7 +132,7 @@ GridView {
     interactive: false
     boundsBehavior: Flickable.StopAtBounds
 
-    ScrollBar.vertical: SScrollBar {
+    ScrollBar.vertical: SScrollBarV {
         id: scrollBar
         stepSize: 1/Math.ceil(thumbView.count / Math.round(thumbView.width/thumbView.cellWidth))
     }

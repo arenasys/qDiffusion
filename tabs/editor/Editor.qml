@@ -32,16 +32,21 @@ Item {
         id: settingsDivider
         minOffset: 5
         maxOffset: 300
-        offset: 200
+        offset: 210
     }
 
     Rectangle {
         id: settings
-        color: COMMON.bg2
+        color: COMMON.bg1
         anchors.left: settingsDivider.right
         anchors.right: parent.right
         anchors.top: parent.top
         anchors.bottom: parent.bottom
+
+        Parameters {
+            anchors.fill: parent
+            binding: EDITOR.parameters
+        }
     }
 
     SDividerHB {
@@ -55,7 +60,7 @@ Item {
 
     Rectangle {
         id: prompt
-        color: COMMON.bg2
+        color: COMMON.bg1
         anchors.left: parent.left
         anchors.right: settingsDivider.left
         anchors.bottom: parent.bottom

@@ -2,6 +2,7 @@ import os
 import shutil
 import sys
 import subprocess
+import traceback
 
 import queue
 import threading
@@ -42,7 +43,7 @@ class InferenceProcessThread(threading.Thread):
         self.wrapper.callback = self.onResponse
     
     def run(self):
-        self.responses.put((-1, {"type":"status", "data":{"message":"Ready"}}))
+        self.requests.put((-1, {"type":"options"}))
         while not self.stopping:
             try:
                 self.current, request = self.requests.get(True, 0.01)
@@ -52,13 +53,26 @@ class InferenceProcessThread(threading.Thread):
                 elif request["type"] == "img2img":
                     self.wrapper.set(**request["data"])
                     self.wrapper.img2img()
+                elif request["type"] == "options":
+                    self.wrapper.options()
                 self.requests.task_done()
             except queue.Empty:
                 pass
             except RuntimeError:
                 pass
             except Exception as e:
-                self.responses.put((self.current, {"type":"error", "data":{"message":str(e)}}))
+                additional = ""
+                try:
+                    s = traceback.extract_tb(e.__traceback__).format()
+                    s = [e for e in s if not "site-packages" in e][-1]
+                    s = s.split(", ")
+                    file = s[0].split(os.path.sep)[-1][:-1]
+                    line = s[1].split(" ")[1]
+                    additional = f" ({file}:{line})"
+                except Exception:
+                    pass
+
+                self.responses.put((self.current, {"type":"error", "data":{"message":str(e) + additional}}))
 
     def onResponse(self, response):
         self.responses.put((self.current, response))
@@ -141,5 +155,4 @@ class LocalInference(QThread):
         self.requests.put((id, {"type": "cancel", "data":{}}))
 
     def onResponse(self, id, response):
-        print(id, response)
         self.response.emit(id, response)

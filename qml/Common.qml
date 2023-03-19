@@ -21,4 +21,10 @@ QtObject {
     readonly property var bg00: "#1a1a1a"
     readonly property var bg4_5: "#484848"
     readonly property var bg0_5: "#202020"
+    readonly property var bg000: "#0f0f0f"
+    readonly property var bg1_5: "#272727"
+
+    function accent(hue) {
+        return Qt.hsva(hue, 0.65, 0.55, 1.0)
+    }
 }

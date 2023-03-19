@@ -15,6 +15,7 @@ from PyQt5.QtWidgets import QApplication
 import gui
 import sql
 import canvas
+import parameters
 
 class Application(QApplication):
         def event(self, e):
@@ -67,10 +68,11 @@ def loadTabs(app, backend):
     tabs = []
     for tab in glob.glob(os.path.join("tabs", "*")):
         tab_name = tab.split(os.path.sep)[-1]
+        tab_name_c = tab_name.capitalize()
         tab_module = importlib.import_module(f"tabs.{tab_name}.{tab_name}")
-        tab_class = getattr(tab_module, tab_name)
+        tab_class = getattr(tab_module, tab_name_c)
         tab_instance = tab_class(parent=app)
-        tab_instance.source = f"qrc:/tabs/{tab_name}/{tab_name}.qml"
+        tab_instance.source = f"qrc:/tabs/{tab_name}/{tab_name_c}.qml"
         tabs += [tab_instance]
     for tab in tabs:
         if not hasattr(tab, "priority"):
@@ -93,7 +95,7 @@ def start():
     gui.registerTypes()
     canvas.registerTypes()
     canvas.registerMiscTypes()
-
+    parameters.registerTypes()
 
     engine = QQmlApplicationEngine()
     engine.quit.connect(app.quit)

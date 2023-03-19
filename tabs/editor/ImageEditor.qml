@@ -6,7 +6,8 @@ import QtQuick.Dialogs 1.0
 
 import gui 1.0
 
-import "../style"
+import "../../style"
+import "../../components"
 
 Item {
     id: root
@@ -56,7 +57,6 @@ Item {
         AdvancedCanvas {
             id: canvas
             anchors.fill: item
-            source: root.source || ""
             smooth: sourceSize.width*1.1 < width && sourceSize.height*1.1 < height ? false : true
             brush.color: colorPicker.color
 
@@ -100,7 +100,7 @@ Item {
             factor: canvas.width/canvas.sourceSize.width
             selection: canvas.selection
             antialiasing: false
-
+            
             layer.enabled: true
             layer.effect: MarchingAntsShader {
                 fDashStroke: selection.shader
@@ -294,7 +294,7 @@ Item {
             anchors.top: fuzzySelectButton.bottom
             icon: "qrc:/icons/refresh.svg"
             onPressed: {
-                canvas.load()
+                canvas.setupEditor(root.source)
             }
         }
     }
@@ -342,8 +342,8 @@ Item {
                     property var advanced: false
 
                     onExpanded: {
-                            toolScroll.position(colorColumn)
-                        }
+                        toolScroll.position(colorColumn)
+                    }
 
                     ColorPicker {
                         id: colorPicker
@@ -513,7 +513,8 @@ Item {
                             label: "Hex"
 
                             value: colorPicker.trueHex
-
+                            defaultValue: "#ffffff"
+                            validator: RegExpValidator { regExp: /(#[0-9A-Fa-f]{8})|(#[0-9A-Fa-f]{6})/ }
                         }
                     }
                 }
@@ -704,7 +705,7 @@ Item {
                         boundsBehavior: Flickable.StopAtBounds
                         clip:true
 
-                        ScrollBar.vertical: ScrollBar {
+                        ScrollBar.vertical: SScrollBarV {
                             id: scrollBar
                         }
 

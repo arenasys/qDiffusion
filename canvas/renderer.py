@@ -58,11 +58,20 @@ class CanvasRendererBuffer():
 class CanvasRenderer(QQuickFramebufferObject.Renderer):
     def __init__(self, size):
         super().__init__()
-        self.size = size
-
+        self.changes = None
         self.display = None
         self.buffer = None
         self.mask = None
+        self.size = None
+        self.setup(size)
+    
+    def setup(self, size):
+        if self.size and self.size != size:
+            print("INVALIDATE")
+            self.invalidateFramebufferObject()
+
+        self.size = size
+
         self.layers = {}
         self.layersOrder = []
 
@@ -79,8 +88,6 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
         self.restoredSelection = None
         self.restoredActive = None
         self.restoredOrder = None
-
-        self.changes = None
 
         self.floating = False
         self.floatingLayer = -1
@@ -163,6 +170,7 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
         self.restoredOrder =self.layersOrder
         
     def createFramebufferObject(self, size):
+        print("CREATE", self.size)
         self.display = self.createBuffer(self.size)
         self.buffer = self.createBuffer(self.size)
         self.mask = self.createBuffer(self.size)
@@ -172,11 +180,14 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
         return self.display.buffer
     
     def synchronize(self, canvas):
-        canvas.synchronize(self)
-        self.changes = canvas.getChanges()
+        if canvas.synchronize(self):
+            self.changes = canvas.getChanges()
 
     def render(self):
-        if not self.layersOrder:
+        gl.glClearColor(0, 0, 0, 0)
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+        
+        if not self.layersOrder or not self.display:
             return
 
         if self.changes.operations:
@@ -271,7 +282,8 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
         save = save or (CanvasOperation.LOAD in self.changes.operations)
         save = save or (CanvasOperation.MOVE in self.changes.operations)
 
-        if CanvasOperation.LOAD in self.changes.operations: 
+        if CanvasOperation.LOAD in self.changes.operations:
+            print("LOAD")
             self.applySources()
 
         if CanvasOperation.UNDO in self.changes.operations:
@@ -292,7 +304,7 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
 
                 gradient = QRadialGradient(p.x(), p.y(), brush.size/2)
 
-                steps = int(brush.size//4)
+                steps = max(int(brush.size//4), 3)
                 for i in range(0, steps+1):
                     r = i/steps                   
                     if r == 1.0:
@@ -319,6 +331,7 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
             painter.setOpacity(1.0)
             painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
             self.getLayer(self.activeLayer).endPaint()
+            
             self.buffer.beginPaint()
             gl.glClearColor(0, 0, 0, 0)
             gl.glClear(gl.GL_COLOR_BUFFER_BIT)

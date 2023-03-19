@@ -80,7 +80,7 @@ class Populater(QObject):
         q.bindValue(":height", height)
         self.conn.doQuery(q)
         
-class gallery(QObject):
+class Gallery(QObject):
     add_folder = pyqtSignal(str, str)
 
     def __init__(self, parent=None):
@@ -88,7 +88,7 @@ class gallery(QObject):
         self.priority = 3
         self.name = "Gallery"
 
-        qmlRegisterSingletonType(gallery, "gui", 1, 0, "GALLERY", lambda qml, js: self)
+        qmlRegisterSingletonType(Gallery, "gui", 1, 0, "GALLERY", lambda qml, js: self)
 
         self.populater = Populater()
         self.add_folder.connect(self.populater.addFolder)

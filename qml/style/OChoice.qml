@@ -10,6 +10,43 @@ Item {
     property alias model: control.model
     property var mini: height == 20
     property alias currentIndex: control.currentIndex
+    property var disabled: false
+
+    property variant bindMap: null
+    property var bindKeyCurrent: null
+    property var bindKeyModel: null
+
+    Connections {
+        target: bindMap
+        function onUpdated() {
+            var m = root.bindMap.get(root.bindKeyModel);
+            var c = root.bindMap.get(root.bindKeyCurrent);
+            if(m != root.model) {
+                root.model = m;
+            }
+            root.currentIndex = root.model.indexOf(c);
+        }
+    }
+
+    Component.onCompleted: {
+        if(root.bindMap != null && root.bindKeyCurrent != null && root.bindKeyModel != null) {
+            var m = root.bindMap.get(root.bindKeyModel);
+            var c = root.bindMap.get(root.bindKeyCurrent);
+            root.model = m;
+            root.currentIndex = m.indexOf(c);
+        }
+    }
+
+    onCurrentIndexChanged: {
+        if(root.bindMap != null && root.bindKeyCurrent != null && root.bindKeyModel != null) {
+            var m = root.bindMap.get(root.bindKeyModel);
+            root.bindMap.set(root.bindKeyCurrent, m[root.currentIndex]);
+        }
+    }
+
+    signal tryEnter()
+    signal enter()
+    signal exit()
 
     ComboBox {
         id: control
@@ -19,15 +56,15 @@ Item {
         focusPolicy: Qt.NoFocus
 
         delegate: Rectangle {
-            width: control.width
-            height: 20
+            width: control.popup.width
+            height: 22
             color: delegateMouse.containsMouse ?  COMMON.bg4 : COMMON.bg3
             SText {
-                width: control.width
-                height: 20
+                width: control.popup.width
+                height: 22
                 text: modelData
                 color: COMMON.fg0
-                font.pointSize:  7.7
+                font.pointSize:  8.5
                 leftPadding: 5
                 elide: Text.ElideRight
 
@@ -81,6 +118,7 @@ Item {
 
         contentItem: Item {
             SText {
+                id: labelText
                 anchors.left: parent.left
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
@@ -94,6 +132,7 @@ Item {
             
             SText {
                 anchors.right: parent.right
+                anchors.left: labelText.right
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
                 rightPadding: 7
@@ -101,6 +140,7 @@ Item {
                 text: control.displayText
                 font.pointSize: root.mini ? 7.7 : 9.6
                 color: COMMON.fg0
+                horizontalAlignment: Text.AlignRight
                 verticalAlignment: Text.AlignVCenter
                 elide: Text.ElideRight
             }
@@ -115,9 +155,17 @@ Item {
 
         popup: Popup {
             y: control.height
-            width: control.width
+            width: Math.max(100, control.width)
             implicitHeight: contentItem.implicitHeight+2
             padding: 2
+
+            onOpenedChanged: {
+                if(opened) {
+                    root.enter()
+                } else {
+                    root.exit()
+                }
+            }
 
             contentItem: ListView {
                 clip: true
@@ -144,12 +192,19 @@ Item {
         preventStealing: true
         onPressed: {
             root.forceActiveFocus()
+            root.tryEnter()
             if(control.popup.opened) {
                 control.popup.close()
-            } else {
+            } else if (!root.disabled) {
                 control.popup.open()
             }
         }
+    }
+
+    Rectangle {
+        anchors.fill: control
+        visible: root.disabled
+        color: "#90101010"
     }
     
     Keys.onPressed: {

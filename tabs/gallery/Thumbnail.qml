@@ -3,6 +3,9 @@ import QtGraphicalEffects 1.15
 
 import gui 1.0
 
+import "../../style"
+import "../../components"
+
 Item {
     id: thumb
 
@@ -24,7 +27,7 @@ Item {
         glowRadius:  selected ? 6 : 10
         opacity: 0.5
         spread: 0.2
-        color: selected || multiSelected ? "white" : "black"
+        color: "black"//selected || multiSelected ? "white" : "black"
         cornerRadius: 10
     }
 

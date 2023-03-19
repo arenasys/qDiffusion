@@ -257,10 +257,8 @@ Rectangle {
                 anchors.fill: parent
                 contentWidth: width
                 clip: true
-                STextSelectable {
+                STextArea {
                     width: parameters.width
-                    padding: 5
-                    wrapMode: Text.WordWrap
                     text: gallery.currentParams
                     color: COMMON.fg1
                 }

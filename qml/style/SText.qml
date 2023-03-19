@@ -8,6 +8,9 @@ Text {
         source: "qrc:/fonts/Cantarell-Regular.ttf"
     }
     FontLoader {
+        source: "qrc:/fonts/Cantarell-Bold.ttf"
+    }
+    FontLoader {
         source: "qrc:/fonts/SourceCodePro-Regular.ttf"
     }
     property var monospace: false
