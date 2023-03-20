@@ -7,6 +7,7 @@ import gui 1.0
 Item {
     id: root
     property var label: "Label"
+    property var tooltip: ""
     property var value: ""
     property var defaultValue: null
     property var mini: height == 20
@@ -58,6 +59,31 @@ Item {
             color: COMMON.fg1
         }
 
+        MouseArea {
+            id: mouseArea
+            anchors.fill: labelText
+            hoverEnabled: true
+        }
+
+        SToolTip {
+            id: infoToolTip
+            x: 0
+            visible: !disabled && tooltip != "" && mouseArea.containsMouse
+            delay: 100
+            text: tooltip
+        }
+
+        Rectangle {
+            visible: valueText.activeFocus
+            width: valueText.implicitWidth + 5
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            anchors.margins: root.mini ? 1 : 3
+            border.color: COMMON.bg4
+            color: COMMON.bg1
+        }
+
         STextInput {
             id: valueText
             text: root.value
@@ -74,6 +100,7 @@ Item {
             validator: root.validator
             
             onEditingFinished: {
+                console.log("SET")
                 root.value = text
             }
 
@@ -101,7 +128,6 @@ Item {
                         break;
                 }
             }
-
         }
     }
 }

@@ -4,9 +4,10 @@ import QtGraphicalEffects 1.15
 
 import gui 1.0
 
+import "../style"
+
 Item {
     id: root
-    property var label: "Label"
     property var tooltip: ""
     property alias model: control.model
     property var mini: height == 20
@@ -71,17 +72,37 @@ Item {
             width: control.popup.width
             height: 22
             color: delegateMouse.containsMouse ?  COMMON.bg4 : COMMON.bg3
-            SText {
-                width: control.popup.width
-                height: 22
-                text: modelData
-                color: COMMON.fg0
-                font.pointSize:  8.5
-                leftPadding: 5
-                elide: Text.ElideRight
 
+            SText {
+                anchors.right: typeText.left
+                anchors.left: parent.left
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                leftPadding: 7
+
+                text: modelData.name
+                font.pointSize: root.mini ? 7.7 : 9.6
+                color: COMMON.fg0
+                horizontalAlignment: Text.AlignLeft
                 verticalAlignment: Text.AlignVCenter
+                elide: Text.ElideRight
             }
+
+            SText {
+                id: typeText
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                rightPadding: 7
+
+                text:  modelData.type
+                font.pointSize: root.mini ? 7.7 : 9.6
+                color: COMMON.fg2
+                horizontalAlignment: Text.AlignRight
+                verticalAlignment: Text.AlignVCenter
+                elide: Text.ElideRight
+            }
+
             MouseArea {
                 id: delegateMouse
                 anchors.fill: parent
@@ -128,31 +149,32 @@ Item {
             }
         }
 
-        contentItem: Item {
+        contentItem: Item {            
             SText {
-                id: labelText
+                anchors.right: typeText.left
                 anchors.left: parent.left
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
-                leftPadding: 5
-                text: root.label
-                font.pointSize: root.mini ? 7.85 : 9.8
+                leftPadding: 7
+
+                text: control.currentValue == undefined ? "" : control.currentValue.name
+                font.pointSize: root.mini ? 7.7 : 9.6
                 color: COMMON.fg0
+                horizontalAlignment: Text.AlignLeft
                 verticalAlignment: Text.AlignVCenter
                 elide: Text.ElideRight
             }
-            
+
             SText {
+                id: typeText
                 anchors.right: parent.right
-                anchors.left: labelText.right
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
-                leftPadding: 5
                 rightPadding: 7
 
-                text: control.displayText
+                text: control.currentValue == undefined ? "" : control.currentValue.type
                 font.pointSize: root.mini ? 7.7 : 9.6
-                color: COMMON.fg0
+                color: COMMON.fg2
                 horizontalAlignment: Text.AlignRight
                 verticalAlignment: Text.AlignVCenter
                 elide: Text.ElideRight

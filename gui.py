@@ -41,6 +41,7 @@ class GUI(QObject):
         self._statusMode = StatusMode.STARTING
         self._statusText = "Disconnected"
         self._statusProgress = -1.0
+        self._statusInfo = ""
 
         self._errorStatus = ""
         self._errorText = ""
@@ -84,6 +85,10 @@ class GUI(QObject):
     def statusMode(self):
         return self._statusMode.value
     
+    @pyqtProperty('QString', notify=statusUpdated)
+    def statusInfo(self):
+        return self._statusInfo
+    
     @pyqtProperty(float, notify=statusUpdated)
     def statusProgress(self):
         return self._statusProgress
@@ -97,14 +102,14 @@ class GUI(QObject):
         return self._errorStatus
     
     def makeRequest(self, request):
-        self._id += 1
+        self._id += 1024
         self.backend.makeRequest(self._id, request)
         return self._id
     
     @pyqtSlot(int, object)
     def onResponse(self, id, response):
         if response["type"] == "result":
-            print({"type": "result"})
+            print({"type": "result", "data": {"metadata": response["data"]["metadata"]}})
         else:
             print(response)
         
@@ -121,10 +126,11 @@ class GUI(QObject):
         if response["type"] == "options":
             self._options = response["data"]
             self.optionsUpdated.emit()
-            self._statusMode = StatusMode.IDLE
-            self._statusText = "Ready"
-            self._statusProgress = -1.0
-            self.statusUpdated.emit()
+            if self._statusText == "Initializing":
+                self._statusMode = StatusMode.IDLE
+                self._statusText = "Ready"
+                self._statusProgress = -1.0
+                self.statusUpdated.emit()
 
         if response["type"] == "error":
             self._errorStatus = self._statusText
@@ -136,6 +142,9 @@ class GUI(QObject):
 
         if response["type"] == "progress":
             self._statusProgress = response["data"]["current"]/response["data"]["total"]
+            self._statusInfo = ""
+            if response['data']['rate']:
+                self._statusInfo = f"{response['data']['rate']:.2f}it/s"
             self.statusUpdated.emit()
 
         if response["type"] == "result":
@@ -148,6 +157,7 @@ class GUI(QObject):
 
             self._statusMode = StatusMode.IDLE
             self._statusText = "Ready"
+            self._statusInfo = ""
             self._statusProgress = -1.0
             self.statusUpdated.emit()
 

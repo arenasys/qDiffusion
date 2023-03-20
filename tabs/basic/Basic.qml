@@ -55,7 +55,7 @@ Item {
         id: statusDivider
         anchors.left: settings.left
         anchors.right: parent.right
-        minOffset: 5
+        minOffset: 50
         maxOffset: 100
         offset: 50
     }

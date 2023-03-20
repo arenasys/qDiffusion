@@ -67,7 +67,7 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
     
     def setup(self, size):
         if self.size and self.size != size:
-            print("INVALIDATE")
+            #print("INVALIDATE")
             self.invalidateFramebufferObject()
 
         self.size = size
@@ -170,7 +170,7 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
         self.restoredOrder =self.layersOrder
         
     def createFramebufferObject(self, size):
-        print("CREATE", self.size)
+        #print("CREATE", self.size)
         self.display = self.createBuffer(self.size)
         self.buffer = self.createBuffer(self.size)
         self.mask = self.createBuffer(self.size)
@@ -283,7 +283,7 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
         save = save or (CanvasOperation.MOVE in self.changes.operations)
 
         if CanvasOperation.LOAD in self.changes.operations:
-            print("LOAD")
+            #print("LOAD")
             self.applySources()
 
         if CanvasOperation.UNDO in self.changes.operations:

@@ -195,7 +195,7 @@ class CanvasLayer(QObject):
         layer.visible = self._visible
         layer.mode = self._mode
         if self.source:
-            print("APPLY")
+            #print("APPLY")
             layer.source = QImage(self.source)
             self.source = None
         self.updated.emit()
@@ -561,7 +561,7 @@ class Canvas(QQuickFramebufferObject):
         self.thumbnailsNeedUpdate = True
 
     def createRenderer(self):
-        print("CREATE CANVAS", self._sourceSize)
+        #print("CREATE CANVAS", self._sourceSize)
         return CanvasRenderer(self._sourceSize)
 
     @pyqtProperty(list, notify=layersUpdated)

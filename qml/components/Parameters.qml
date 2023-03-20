@@ -35,6 +35,7 @@ Item {
             progress: GUI.statusProgress
             working: GUI.statusMode == 2
             disabled: GUI.statusMode != 1
+            info: GUI.statusInfo
 
             onPressed: {
                 root.generate()
@@ -127,6 +128,7 @@ Item {
                         maxValue: 100
                         precValue: 0
                         incValue: 1
+                        snapValue: 5
                         bounded: false
                     }
                     OSlider {
@@ -142,6 +144,7 @@ Item {
                         maxValue: 20
                         precValue: 1
                         incValue: 1
+                        snapValue: 0.5
                         bounded: false
                     }
                     OSlider {
@@ -157,7 +160,7 @@ Item {
                         maxValue: 1
                         precValue: 2
                         incValue: 0.01
-                        bounded: false
+                        snapValue: 0.05
                     }
                     OTextInput {
                         id: seedInput
@@ -168,7 +171,7 @@ Item {
                         bindMap: root.binding.values
                         bindKey: "seed"
 
-                        validator: IntValidator{ 
+                        validator: IntValidator { 
                             bottom: -1
                             top: 2147483646
                         }
@@ -187,6 +190,7 @@ Item {
                     input: OChoice {
                         id: samplerInput
                         label: ""
+                        tooltip: "Sampler"
                         height: 28
                         width: samplerColumn.width - 100
 
@@ -208,8 +212,8 @@ Item {
                         maxValue: 1
                         precValue: 2
                         incValue: 0.01
+                        snapValue: 0.05
                     }
-
                 }
                 OColumn {
                     id: modelColumn
@@ -245,8 +249,10 @@ Item {
                         label: "UNET"
                         width: parent.width
                         height: 25
-                        currentIndex: 0
-                        model: ["Anything V3"]
+                        
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "UNET"
+                        bindKeyModel: "UNETs"
 
                         disabled: !modelColumn.componentMode
                         onTryEnter: {
@@ -258,8 +264,10 @@ Item {
                         label: "VAE"
                         width: parent.width
                         height: 25
-                        currentIndex: 0
-                        model: ["Anything V3"]
+
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "VAE"
+                        bindKeyModel: "VAEs"
                         
                         disabled: !modelColumn.componentMode
                         onTryEnter: {
@@ -271,8 +279,10 @@ Item {
                         label: "CLIP"
                         width: parent.width
                         height: 25
-                        currentIndex: 0
-                        model: ["Anything V3"]
+
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "CLIP"
+                        bindKeyModel: "CLIPs"
 
                         disabled: !modelColumn.componentMode
                         onTryEnter: {
@@ -301,10 +311,192 @@ Item {
                             color: "transparent"
                             border.color: COMMON.bg4
                             border.width: 1
+
+                            Item {
+                                anchors.top: parent.top
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.margins: 1
+                                id: netAdd
+                                height: 27
+
+                                Rectangle {
+                                    anchors.fill: parent
+                                    color: COMMON.bg2
+                                }
+
+                                ParametersNetChoice {
+                                    id: netChoice
+                                    anchors.top: parent.top
+                                    anchors.bottom: parent.bottom
+                                    anchors.left: addButton.right
+                                    anchors.right: parent.right
+                                    anchors.margins: 0
+                                    anchors.topMargin: -1
+                                    padded: false
+                                    model: root.binding.availableNetworks
+                                }
+
+                                SIconButton {
+                                    id: addButton
+                                    anchors.top: parent.top
+                                    anchors.bottom: parent.bottom
+                                    anchors.left: parent.left
+                                    width: height
+                                    icon: "qrc:/icons/plus.svg"
+                                    color: COMMON.bg4
+                                    iconColor: COMMON.bg6
+
+                                    onPressed: {
+                                        root.binding.addNetwork(netChoice.currentIndex)
+                                    }
+                                }
+                            }
+
+                            ListView {
+                                id: netList
+                                anchors.top: netAdd.bottom
+                                anchors.bottom: parent.bottom
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.margins:1
+                                clip: true
+                                model: root.binding.activeNetworks
+
+                                boundsBehavior: Flickable.StopAtBounds
+
+                                ScrollBar.vertical: SScrollBarV {
+                                    id: scrollBar
+                                    policy: netList.contentHeight > netList.height ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+                                }
+
+                                delegate: Item {
+                                    width: netList.width
+                                    height: 25
+
+                                    property var selected: false
+
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        color: selected ? COMMON.bg2 : Qt.darker(COMMON.bg2, 1.25) 
+                                    }
+
+                                    ParametersNetSlider {
+                                        anchors.fill: parent
+                                        anchors.rightMargin: scrollBar.policy == ScrollBar.AlwaysOn ? 8 : 0
+                                        label: modelData.name
+                                        type:  modelData.type
+
+                                        onDeactivate: {
+                                            root.binding.deleteNetwork(index)
+                                        }
+
+                                        value: modelData.strength
+                                        onValueChanged: {
+                                            if(modelData.strength != value) {
+                                                modelData.strength = value
+                                                value = Qt.binding(function() {return modelData.strength;})
+                                            }
+                                        }
+
+                                        minValue: 0
+                                        maxValue: 2
+                                        precValue: 2
+                                        incValue: 0.01
+                                        snapValue: 0.05
+                                        bounded: false
+                                    }
+                                }
+                            }
                         }
                     }
+                }
+                OColumn {
+                    id: miscColumn
+                    text: "Misc"
+                    width: parent.width
 
+                    onExpanded: {
+                        paramScroll.position(miscColumn)
+                    }
 
+                    OSlider {
+                        label: "CLIP Skip"
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKey: "clip_skip"
+
+                        minValue: 0
+                        maxValue: 4
+                        precValue: 0
+                        incValue: 1
+                        snapValue: 1
+                        bounded: false
+                    }
+                    OSlider {
+                        label: "Batch Size"
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKey: "batch_size"
+
+                        minValue: 1
+                        maxValue: 32
+                        precValue: 0
+                        incValue: 1
+                        snapValue: 2
+                        bounded: false
+                    }
+                    OChoice {
+                        label: "Upscaler"
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "img2img_upscaler"
+                        bindKeyModel: "img2img_upscalers"
+                    }
+                    OSlider {
+                        label: "HR Factor"
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKey: "hr_factor"
+
+                        minValue: 1.0
+                        maxValue: 4.0
+                        precValue: 2
+                        incValue: 0.25
+                        snapValue: 0.25
+                        bounded: false
+                    }
+                    OSlider {
+                        label: "HR Strength"
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKey: "hr_strength"
+
+                        minValue: 0
+                        maxValue: 1
+                        precValue: 2
+                        incValue: 0.01
+                        snapValue: 0.05
+                    }
+                    OChoice {
+                        label: "HR Upscaler"
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "hr_upscaler"
+                        bindKeyModel: "hr_upscalers"
+                    }
                 }
             }
         }

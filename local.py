@@ -47,6 +47,7 @@ class InferenceProcessThread(threading.Thread):
         while not self.stopping:
             try:
                 self.current, request = self.requests.get(True, 0.01)
+                self.wrapper.reset()
                 if request["type"] == "txt2img":
                     self.wrapper.set(**request["data"])
                     self.wrapper.txt2img()
@@ -57,8 +58,6 @@ class InferenceProcessThread(threading.Thread):
                     self.wrapper.options()
                 self.requests.task_done()
             except queue.Empty:
-                pass
-            except RuntimeError:
                 pass
             except Exception as e:
                 additional = ""

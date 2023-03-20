@@ -32,6 +32,7 @@ Rectangle {
             width: parent.width
             height: Math.max(contentHeight+10, root.height)
             padding: 5
+            leftPadding: 5
             wrapMode: TextArea.Wrap
             selectByMouse: true
     

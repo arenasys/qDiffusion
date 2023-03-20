@@ -159,7 +159,7 @@ Item {
         anchors.fill: itm
         hoverEnabled: false
 
-        acceptedButtons: Qt.LeftButton || Qt.RightButton
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
 
         drag.target: itm
 

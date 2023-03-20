@@ -1,14 +1,21 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
+import QtGraphicalEffects 1.15
 
 import gui 1.0
+
+import "../style"
 
 Item {
     id: root
     height: 30
     property var mini: height == 20
 
+    signal deactivate()
+
     property var label: "Label"
+    property var type: ""
+
     property var tooltip: ""
     property double value: 0
     property var defaultValue: null
@@ -81,13 +88,20 @@ Item {
             anchors.leftMargin: 0
             hoverEnabled: true
             preventStealing: true
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
 
             function update() {
                 root.update(Math.min(width, Math.max(0, mouseX))/width)
             }
 
+
             onPressed: {
-                mouseArea.update()
+                if (mouse.button === Qt.LeftButton) {
+                    root.forceActiveFocus()
+                    mouseArea.update()
+                } else if (mouse.button === Qt.RightButton) {
+                    root.deactivate()
+                }
             }
 
             onPositionChanged: {
@@ -122,10 +136,26 @@ Item {
             anchors.bottom: parent.bottom
             leftPadding: 5
             rightPadding: 5
-            width: root.labelWidth
+            width: contentWidth+5
             verticalAlignment: Text.AlignVCenter
             font.pointSize: root.mini ? 7.85 : 9.8
             color: COMMON.fg1
+        }
+
+        SText {
+            id: typeText
+            text: root.type
+            anchors.left: labelText.right
+            anchors.right: valueInput.left
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            leftPadding: 5
+            rightPadding: 5
+
+            verticalAlignment: Text.AlignVCenter
+            elide: Text.ElideRight
+            font.pointSize: root.mini ? 7.85 : 9.8
+            color: COMMON.fg3
         }
 
         Rectangle {
@@ -268,6 +298,28 @@ Item {
                     }
                 }
             }
+        }
+    }
+
+    Rectangle {
+        visible: root.activeFocus
+        anchors.fill: parent
+        anchors.margins: 2
+        anchors.bottomMargin: 0
+
+        color: "transparent"
+        border.color: COMMON.bg7
+    }
+
+    Keys.onPressed: {
+        event.accepted = true
+        switch(event.key) {
+        case Qt.Key_Delete:
+            root.deactivate()
+            break;
+        default:
+            event.accepted = false
+            break;
         }
     }
 }

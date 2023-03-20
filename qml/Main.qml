@@ -54,9 +54,11 @@ ApplicationWindow {
             modal: true
             dim: true
 
+            width: errorText.implicitWidth + 50
             height: 120
 
             SText {
+                id: errorText
                 anchors.fill: parent
                 padding: 5
                 text: "Error while " + GUI.errorStatus + ".\n" + GUI.errorText
@@ -64,7 +66,7 @@ ApplicationWindow {
                 verticalAlignment: Text.AlignVCenter
             }
 
-            onAccepted: {
+            onClosed: {
                 GUI.clearError()
             }
 

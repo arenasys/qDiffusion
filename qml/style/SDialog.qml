@@ -81,6 +81,7 @@ Dialog {
                 implicitHeight: 25
 
                 contentItem: SText {
+                    id: contentText
                     color: COMMON.fg1
                     text: control.text
                     font.pointSize: 9
@@ -90,7 +91,7 @@ Dialog {
 
                 background: Rectangle {
                     radius: 0
-                    color: COMMON.bg5
+                    color: control.down ? COMMON.bg6 : COMMON.bg5
                     border.color: COMMON.bg6
                 }
             }

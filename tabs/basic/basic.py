@@ -2,11 +2,13 @@ from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, QObject, QUrl, QMim
 from PyQt5.QtQml import qmlRegisterSingletonType
 from PyQt5.QtGui import QImage, QDrag, QPixmap, QSyntaxHighlighter, QTextCharFormat, QFont
 from PyQt5.QtQuick import QQuickTextDocument
+from PyQt5.QtSql import QSqlQuery
 from enum import Enum
 
 import parameters
 import re
 from gui import MimeData
+import sql
 
 MIME_BASIC_INPUT = "application/x-qd-basic-input"
 MIME_BASIC_OUTPUT = "application/x-qd-basic-output"
@@ -167,14 +169,14 @@ class BasicOutput(QObject):
         return f"{self._image.width()}x{self._image.height()}"
 
     @pyqtSlot(int, QImage)
-    def drag(self, index, image):
+    def drag(self, id, image):
         if self._dragging:
             return
         self._dragging = True
         drag = QDrag(self)
         drag.setPixmap(QPixmap.fromImage(image).scaledToWidth(50, Qt.SmoothTransformation))
         mimeData = QMimeData()
-        mimeData.setData(MIME_BASIC_OUTPUT, QByteArray(f"{index}".encode()))
+        mimeData.setData(MIME_BASIC_OUTPUT, QByteArray(f"{id}".encode()))
         drag.setMimeData(mimeData)
         drag.exec()
         self._dragging = False
@@ -210,7 +212,7 @@ class Basic(QObject):
         self.name = "Basic"
         self._parameters = parameters.Parameters(parent)
         self._inputs = []
-        self._outputs = []
+        self._outputs = {}
         self._links = {}
         self._id = -1
 
@@ -219,42 +221,77 @@ class Basic(QObject):
 
         qmlRegisterSingletonType(Basic, "gui", 1, 0, "BASIC", lambda qml, js: self)
 
+        self.conn = sql.Connection(self)
+        self.conn.connect()
+        self.conn.doQuery("CREATE TABLE outputs(id INTEGER);")
+        self.conn.enableNotifications("outputs")
+
     @pyqtSlot(str, str)
     def generate(self, positive, negative):
-        request = {"data": {}}
+        request = {}
+        data = {}
 
         if self._inputs:
             request["type"] = "img2img"
-            request["data"]["image"] = []
-            request["data"]["mask"] = []
+            data["image"] = []
+            data["mask"] = []
             for i in self._inputs:
                 img = i._image
                 if img.isNull():
                     continue
-
-                if i._role == BasicInputRole.MASK:
-                    img.save("BASIC.png")
                     
                 ba = QByteArray()
                 bf = QBuffer(ba)
                 bf.open(QIODevice.WriteOnly)
                 img.save(bf, "PNG")
-                data = ba.data()
+                img_data = ba.data()
 
                 if i._role == BasicInputRole.IMAGE:
-                    request["data"]["image"] += [data]
+                    data["image"] += [img_data]
                 if i._role == BasicInputRole.MASK and i._linked:
-                    request["data"]["mask"] += [data]
+                    data["mask"] += [img_data]
                 
         else:
             request["type"] = "txt2img"
 
         for k, v in self._parameters._values._map.items():
-            if not k in ["models", "samplers"]:
-                request["data"][k] = v
-        request["data"]["prompt"] = positive
-        request["data"]["negative_prompt"] = negative
-        request["data"]["seed"] = 102
+            if not k in self._parameters._readonly:
+                data[k] = v
+        del data["SR"]
+                
+        data["prompt"] = positive
+        data["negative_prompt"] = negative
+
+        if len({data["UNET"], data["CLIP"], data["VAE"]}) == 1:
+            del data["UNET"]
+            del data["CLIP"]
+            del data["VAE"]
+        else:
+            del data["model"]
+
+        data["LoRA"] = []
+        data["LoRA_strength"] = []
+        data["HN"] = []
+        data["HN_strength"] = []
+        for net in self._parameters._activeNetworks:
+            data[net.type] += [net.name]
+            data[net.type+"_strength"] += [net.strength]
+
+        if not data["LoRA"] and not data["HN"]:
+            del data["LoRA"]
+            del data["LoRA_strength"]
+            del data["HN"]
+            del data["HN_strength"]
+
+        if data["hr_factor"] == 1.0:
+            del data["hr_factor"]
+            del data["hr_strength"]
+
+
+        data = {k.lower():v for k,v in data.items()}
+        request["data"] = data
+
+        print("REQUEST", request)
 
         self._id = self.gui.makeRequest(request)
 
@@ -262,8 +299,13 @@ class Basic(QObject):
     def result(self, id):
         if self._id != id:
             return
-        for r in self.gui._results:
-            self._outputs = [BasicOutput(self, r)] + self._outputs
+        for r in self.gui._results[::-1]:
+            self._outputs[id] = BasicOutput(self, r)
+            q = QSqlQuery(self.conn.db)
+            q.prepare("INSERT INTO outputs(id) VALUES (:id);")
+            q.bindValue(":id", id)
+            self.conn.doQuery(q)
+            id += 1
         self.updated.emit()
 
     @pyqtProperty(parameters.Parameters, notify=updated)
@@ -274,9 +316,9 @@ class Basic(QObject):
     def inputs(self):
         return self._inputs
 
-    @pyqtProperty(list, notify=updated)
-    def outputs(self):
-        return self._outputs
+    @pyqtSlot(int, result=BasicOutput)
+    def outputs(self, id):
+        return self._outputs[id]
 
     @pyqtSlot()
     def addImage(self):
@@ -341,8 +383,12 @@ class Basic(QObject):
         self.updated.emit()
 
     @pyqtSlot(int)
-    def deleteOutput(self, index):
-        self._outputs.pop(index)
+    def deleteOutput(self, id):
+        q = QSqlQuery(self.conn.db)
+        q.prepare("DELETE FROM outputs WHERE id = :id;")
+        q.bindValue(":id", id)
+        self.conn.doQuery(q)
+        del self._outputs[id]
         self.updated.emit()
 
     @pyqtSlot(QQuickTextDocument)

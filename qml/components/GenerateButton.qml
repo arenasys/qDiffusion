@@ -9,6 +9,7 @@ Rectangle {
     id: root
     property var working: false
     property var progress: -1
+    property var info: ""
     property var hue: 0.0
     property var label: null
     property var isHovered: mouseArea.containsMouse && !working && !disabled
@@ -121,7 +122,7 @@ Rectangle {
 
     SText {
         anchors.fill: parent
-        text: root.label == null ? (root.working ? "Working..." : "Generate") : root.label
+        text: root.working ? (mouseArea.containsMouse && root.info != "" ? root.info : "Working...") : "Generate"
         color: Qt.lighter(COMMON.fg0, mouseArea.containsPress ? 0.85 : 1.0)
         font.bold: true
         horizontalAlignment: Text.AlignHCenter
