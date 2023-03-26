@@ -53,18 +53,30 @@ Rectangle {
         clip: true
         model: Sql {
             id: filesSql
-            query: "SELECT file, width, height, parameters FROM images WHERE folder = '" + folder.currentValue + "' AND parameters LIKE '%" + search.text + "%' ORDER BY file;"
+            query: "SELECT file, width, height, parameters FROM images WHERE folder = '" + folder.currentValue + "' AND parameters LIKE '%" + search.text + "%' ORDER BY file DESC;"
             
             property bool reset: false
-            onQueryChanged: {
+
+            function refresh() {
+                // item are sometimes missing signals, so invalidate them manually
+                gallery.positionViewAtEnd()
                 gallery.positionViewAtBeginning()
+                gallery.setSelection(0)
+            }
+
+            onQueryChanged: {
+                filesSql.refresh()
                 reset = true
+            }
+            onBigChange: {
+                filesSql.refresh()
             }
             onResultsChanged: {
                 if(reset) {
-                    gallery.clearSelection()
+                    filesSql.refresh()
                     reset = false
                 }
+                gallery.applySelection()
             }
         }
 
@@ -106,11 +118,9 @@ Rectangle {
             SContextMenuSeparator { }
 
             SContextMenu {
+                id: copyToMenu
                 title: "Copy to"
-                SContextMenuItem {
-                    text: "Clipboard"
-                }
-                Repeater {
+                Instantiator {
                     model: destinationsSql
                     SContextMenuItem {
                         text: sql_name
@@ -118,12 +128,15 @@ Rectangle {
                             GALLERY.doCopy(sql_folder, galleryContextMenu.files)
                         }
                     }
+                    onObjectAdded: copyToMenu.insertItem(index, object)
+                    onObjectRemoved: copyToMenu.removeItem(object)
                 }
             }
 
             SContextMenu {
+                id: moveToMenu
                 title: "Move to"
-                Repeater {
+                Instantiator {
                     model: destinationsSql
                     SContextMenuItem {
                         text: sql_name
@@ -131,6 +144,8 @@ Rectangle {
                             GALLERY.doMove(sql_folder, galleryContextMenu.files)
                         }
                     }
+                    onObjectAdded: moveToMenu.insertItem(index, object)
+                    onObjectRemoved: moveToMenu.removeItem(object)
                 }
             }
 
@@ -142,6 +157,10 @@ Rectangle {
                     dialog.open()
                 }
             }
+        }
+
+        onDrag: {
+            GALLERY.doDrag(gallery.getSelectedFiles())
         }
     }
 
@@ -240,31 +259,46 @@ Rectangle {
     }
 
     Rectangle {
-        id: metadata
+    id: metadata
         anchors.left: parent.left
         anchors.right: galleryDivider.left
         anchors.top: imageDivider.bottom
         anchors.bottom: parent.bottom
-        color: COMMON.bg1
+        anchors.margins: 5
+        border.width: 1
+        border.color: COMMON.bg4
+        color: "transparent"
 
         Rectangle {
-            id: parameters
-            anchors.fill: parent
-            anchors.margins: 10
+            id: headerParams
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: 25
+            border.width: 1
+            border.color: COMMON.bg4
             color: COMMON.bg3
-
-            ScrollView {
+            SText {
                 anchors.fill: parent
-                contentWidth: width
-                clip: true
-                STextArea {
-                    width: parameters.width
-                    text: gallery.currentParams
-                    color: COMMON.fg1
-                }
+                text: "Parameters"
+                leftPadding: 5
+                verticalAlignment: Text.AlignVCenter
             }
         }
 
+        STextArea {
+            id: parameters
+            color: COMMON.bg1
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: headerParams.bottom
+            anchors.bottom: parent.bottom
+            anchors.margins: 1
+
+            readOnly: true
+
+            text: gallery.currentParams
+        }
     }
 
     SComboBox {
@@ -372,6 +406,12 @@ Rectangle {
 
         if(event.modifiers & Qt.ControlModifier) {
             switch(event.key) {
+            case Qt.Key_C:
+                var selected = gallery.getSelectedFiles()
+                if(gallery.currentSource != null) {
+                    GALLERY.doClipboard(gallery.getSelectedFiles())
+                }
+                break;
             case Qt.Key_Minus:
                 gallery.setCellSize(100)
                 break;

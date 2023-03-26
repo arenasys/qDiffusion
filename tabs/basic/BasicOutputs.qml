@@ -8,12 +8,13 @@ import "../../style"
 import "../../components"
 
 Item {
-    id: outputArea
+    id: area
+
     ListView {
         anchors.left: parent.left
         anchors.top: parent.top
         anchors.bottom: parent.bottom
-        id: outputListView
+        id: listView
         interactive: false
         boundsBehavior: Flickable.StopAtBounds
         clip:true
@@ -25,14 +26,30 @@ Item {
         }
         ScrollBar.horizontal: SScrollBarH { }
 
+        Connections {
+            target: BASIC
+            function onOpenedUpdated() {
+                if(BASIC.openedArea == "output") {
+                    listView.currentIndex = BASIC.outputIDToIndex(BASIC.openedIndex)
+                    listView.positionViewAtIndex(listView.currentIndex, ListView.Center)
+                }
+            }
+        }
+
         delegate: Item {
-            id: itemOutput
-            height: outputListView.height
+            id: item
+            height: listView.height
             width: height-9
             property var modelObj: BASIC.outputs(sql_id) 
 
+            onActiveFocusChanged: {
+                if(activeFocus) {
+                    itemFrame.forceActiveFocus()
+                }
+            }
+
             RectangularGlow {
-                anchors.fill: outputItemFrame
+                anchors.fill: itemFrame
                 glowRadius: 5
                 opacity: 0.4
                 spread: 0.2
@@ -41,22 +58,23 @@ Item {
             }
 
             Rectangle {
-                id: outputItemFrame
+                id: itemFrame
                 anchors.fill: parent
                 anchors.margins: 9
                 anchors.leftMargin: 0
                 color: COMMON.bg00
+                clip: true
 
-                property var highlight: activeFocus || outputContextMenu.opened
+                property var highlight: activeFocus || contextMenu.opened
                 
                 TransparencyShader {
-                    anchors.centerIn: outputItemImage
-                    width: outputItemImage.trueWidth
-                    height: outputItemImage.trueHeight
+                    anchors.centerIn: itemImage
+                    width: itemImage.trueWidth
+                    height: itemImage.trueHeight
                 }
 
                 ImageDisplay {
-                    id: outputItemImage
+                    id: itemImage
                     visible: !modelObj.empty
                     anchors.fill: parent
                     anchors.margins: 1
@@ -65,8 +83,8 @@ Item {
                 }
 
                 Rectangle {
-                    visible: outputSizeLabel.text != ""
-                    anchors.fill: outputSizeLabel
+                    visible: sizeLabel.text != ""
+                    anchors.fill: sizeLabel
                     height: 22
                     color: "#e0101010"
                     border.width: 1
@@ -74,7 +92,7 @@ Item {
                 }
 
                 SText {
-                    id: outputSizeLabel
+                    id: sizeLabel
                     text: modelObj.size
                     anchors.top: parent.top
                     anchors.right: parent.right
@@ -100,21 +118,22 @@ Item {
                     property var image
                     onPressed: {
                         if (mouse.button == Qt.LeftButton) {
-                            outputItemFrame.forceActiveFocus()
+                            listView.currentIndex = index
+                            itemFrame.forceActiveFocus()
                             startPosition = Qt.point(mouse.x, mouse.y)
                             ready = false
-                            outputItemFrame.grabToImage(function(result) {
+                            itemFrame.grabToImage(function(result) {
                                 image = result.image;
                                 ready = true
                             })
                         }
                         if (mouse.button == Qt.RightButton) {
-                            outputContextMenu.popup()
+                            contextMenu.popup()
                         }
                     }
 
                     onDoubleClicked: {
-                        canvas.open(modelObj)
+                        BASIC.open(sql_id, "output")
                     }
 
                     onPositionChanged: {
@@ -128,15 +147,25 @@ Item {
 
                     SContextMenu {
                         y: 35
-                        id: outputContextMenu
+                        id: contextMenu
                         width: 100
                         SContextMenuItem {
-                            text: "Delete"
+                            text: "Clear"
                             onPressed: {
                                 BASIC.deleteOutput(sql_id)
                             }
                         }
+                        SContextMenuItem {
+                            text: "Clear to right"
+                            onPressed: {
+                                BASIC.deleteOutputAfter(sql_id)
+                            }
+                        }
                     }
+                }
+
+                AdvancedDropArea {
+                    anchors.fill: parent
                 }
 
                 Keys.onPressed: {

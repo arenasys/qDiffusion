@@ -218,7 +218,7 @@ Item {
     Rectangle {
         anchors.fill: control
         visible: root.disabled
-        color: "#90101010"
+        color: "#a0101010"
     }
     
     Keys.onPressed: {

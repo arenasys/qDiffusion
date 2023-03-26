@@ -20,6 +20,7 @@ Item {
     property var labelWidth: 70
     property var bounded: true
     property var disabled: false
+    property var overlay: root.disabled
 
     property variant bindMap: null
     property var bindKey: null
@@ -55,15 +56,18 @@ Item {
         value = parseFloat(value.toFixed(root.precValue))
 
         if(root.snapValue != null) {
-            value = Math.round(value/root.snapValue) * root.snapValue;
+            if(value != root.minValue) {
+                value = Math.round(value/root.snapValue) * root.snapValue;
+            }
         }
 
-        if(value != root.value) {
+        if(value != root.value && !root.disabled) {
             root.value = value
         }
     }
 
     Rectangle {
+        id: control
         anchors.fill: parent
         anchors.margins: 2
         anchors.bottomMargin: 0
@@ -269,5 +273,10 @@ Item {
                 }
             }
         }
+    }
+    Rectangle {
+        anchors.fill: control
+        visible: root.overlay
+        color: "#a0101010"
     }
 }

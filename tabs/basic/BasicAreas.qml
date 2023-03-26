@@ -39,10 +39,4 @@ Item {
             }
         }
     }
-
-    BasicFull {
-        id: canvas
-    }
-
-    Keys.forwardTo: [canvas]
 }

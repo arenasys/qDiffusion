@@ -25,15 +25,32 @@ Item {
             id: scrollBar
         }
 
+        Connections {
+            target: BASIC
+            function onOpenedUpdated() {
+                if(BASIC.openedArea == "input") {
+                    inputListView.currentIndex = BASIC.openedIndex
+                    inputListView.positionViewAtIndex(inputListView.currentIndex, ListView.Center)
+                }
+            }
+        }
+
         delegate: Item {
             id: item
-            height: parent.height
+            height: inputListView.height
             width: height-9
 
             property var image: modelData.image
             property var role: modelData.role
             property var empty: modelData.empty
             property var size: modelData.size
+            property var extent: modelData.extent
+
+            onActiveFocusChanged: {
+                if(activeFocus) {
+                    itemFrame.forceActiveFocus()
+                }
+            }
 
             RectangularGlow {
                 anchors.fill: itemFrame
@@ -66,6 +83,26 @@ Item {
                     anchors.margins: 1
                     image: item.image
                     centered: true
+                }
+
+                Item {
+                    visible: itemImage.visible
+                    anchors.centerIn: itemImage
+                    width: itemImage.trueWidth
+                    height: itemImage.trueHeight
+
+                    Rectangle {
+                        visible: itemImage.sourceWidth > 0
+                        property var factor: parent.width/itemImage.sourceWidth
+                        border.color: "red"
+                        border.width: 1
+                        color: "transparent"
+
+                        x: item.extent.x*factor
+                        y: item.extent.y*factor
+                        width: item.extent.width*factor
+                        height: item.extent.height*factor
+                    }
                 }
 
                 Rectangle {
@@ -123,6 +160,7 @@ Item {
                     property var image
                     onPressed: {
                         if (mouse.button == Qt.LeftButton) {
+                            inputListView.currentIndex = index
                             itemFrame.forceActiveFocus()
                             startPosition = Qt.point(mouse.x, mouse.y)
                             ready = false
@@ -137,7 +175,7 @@ Item {
                     }
 
                     onDoubleClicked: {
-                        canvas.open(modelData)
+                        BASIC.open(index, "input")
                     }
 
                     onPositionChanged: {
@@ -227,7 +265,7 @@ Item {
                     anchors.left: parent.left
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
-                    width: parent.width/4
+                    width: parent.width/4 + 5
                     anchors.leftMargin: -5
 
                     onDropped: {
@@ -262,7 +300,7 @@ Item {
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
                     anchors.rightMargin: -5
-                    width: parent.width/4
+                    width: parent.width/4 + 5
 
                     onDropped: {
                         BASIC.addDrop(mimeData, index+1)
@@ -292,17 +330,31 @@ Item {
 
                 Keys.onPressed: {
                     event.accepted = true
-                    switch(event.key) {
-                    case Qt.Key_Delete:
-                        if(modelData.empty) {
-                            BASIC.deleteInput(index)
-                        } else {
-                            modelData.clearImage()
+                    if(event.modifiers & Qt.ControlModifier) {
+                        switch(event.key) {
+                        case Qt.Key_C:
+                            BASIC.copyItem(index, "input")
+                            break;
+                        case Qt.Key_V:
+                            BASIC.pasteItem(index, "input")
+                            break;
+                        default:
+                            event.accepted = false
+                            break;
                         }
-                        break;
-                    default:
-                        event.accepted = false
-                        break;
+                    } else {
+                        switch(event.key) {
+                        case Qt.Key_Delete:
+                            if(modelData.empty) {
+                                BASIC.deleteInput(index)
+                            } else {
+                                modelData.clearImage()
+                            }
+                            break;
+                        default:
+                            event.accepted = false
+                            break;
+                        }
                     }
                 }
             }
@@ -317,12 +369,13 @@ Item {
             height: parent.height
             width: height-9
             Rectangle {
+                id: itmFooter
                 anchors.fill: parent
                 anchors.margins: 9
                 anchors.leftMargin: 0
                 color: "transparent"
                 border.width: 1
-                border.color: addDrop.containsDrag ? COMMON.bg6 : "transparent"
+                border.color: (itmFooter.activeFocus || addDrop.containsDrag) ? COMMON.bg6 : "transparent"
 
                 RectangularGlow {
                     anchors.fill: addButton
@@ -338,6 +391,13 @@ Item {
                     border.color: COMMON.bg4
                     border.width: 1
                     color: COMMON.bg1
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onPressed: {
+                        itmFooter.forceActiveFocus()
+                    }
                 }
 
                 SIconButton {
@@ -377,6 +437,20 @@ Item {
 
                     onDropped: {
                         BASIC.addDrop(mimeData, -1)
+                    }
+                }
+
+                Keys.onPressed: {
+                    event.accepted = true
+                    if(event.modifiers & Qt.ControlModifier) {
+                        switch(event.key) {
+                        case Qt.Key_V:
+                            BASIC.pasteItem(-1, "input")
+                            break;
+                        default:
+                            event.accepted = false
+                            break;
+                        }
                     }
                 }
             }

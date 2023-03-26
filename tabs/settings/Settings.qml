@@ -9,5 +9,20 @@ import "../../style"
 import "../../components"
 
 Rectangle {
-    color: "#fa0"
+    color: "#101010"
+    MouseArea {
+        anchors.fill: parent
+        hoverEnabled: true
+        acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+    }
+
+    SText {
+        anchors.fill: parent
+        font.pointSize: 20
+        font.bold: true
+        color: COMMON.fg1
+        verticalAlignment: Text.AlignVCenter
+        horizontalAlignment: Text.AlignHCenter
+        text: "Not ready"
+    }
 }

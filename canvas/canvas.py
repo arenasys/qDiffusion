@@ -402,7 +402,8 @@ class CanvasSelection(QObject):
             shapes = self._shapes + [self._current]
         else:
             shapes = self._shapes
-        return [shape.transform(self._offset) for shape in shapes]
+        a = [shape.transform(self._offset) for shape in shapes]
+        return a
     
     @pyqtProperty(bool, notify=updated)
     def visible(self):
@@ -422,6 +423,7 @@ class Canvas(QQuickFramebufferObject):
     toolUpdated = pyqtSignal()
     selectionUpdated = pyqtSignal()
     needsUpdated = pyqtSignal()
+    changed = pyqtSignal()
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setTextureFollowsItemSize(False)
@@ -461,6 +463,11 @@ class Canvas(QQuickFramebufferObject):
 
         self._setup = True
 
+        self.sourceUpdated.emit()
+        self.layersUpdated.emit()
+        self.toolUpdated.emit()
+        self.selectionUpdated.emit()
+
     def getChanges(self):
         changes = self.changes
         changes.brush = self._brush
@@ -482,6 +489,10 @@ class Canvas(QQuickFramebufferObject):
             self.update()
             self._setup = False
             return False
+
+        if renderer.changed:
+            self.changed.emit()
+            renderer.changed = False
 
         self.synchronizeRestore(renderer)
         self.synchronizeLayers(renderer)
@@ -589,7 +600,8 @@ class Canvas(QQuickFramebufferObject):
         source = QImage(path)
         self._sourceSize = source.size()
         self.sourceUpdated.emit()
-
+        self._layers = {}
+        self._layersOrder = []
         self._activeLayer = self.insertLayer(0, source, CanvasLayerRole.IMAGE)
         self.insertLayer(1, QImage(), CanvasLayerRole.MASK)
         self.layersUpdated.emit()
@@ -617,7 +629,7 @@ class Canvas(QQuickFramebufferObject):
         if not bg.isNull():
             self.insertLayer(0, bg, CanvasLayerRole.IMAGE)
             self._activeLayer = self.insertLayer(1, image, CanvasLayerRole.IMAGE)
-            self._layers[self._activeLayer].opacity = 70
+            self._layers[self._activeLayer].opacity = 80
         else:
             self._activeLayer = self.insertLayer(0, image, CanvasLayerRole.IMAGE)
         self.layersUpdated.emit()
@@ -626,6 +638,16 @@ class Canvas(QQuickFramebufferObject):
         self.changes.operations.add(CanvasOperation.LOAD)
         self.changes.operations.add(CanvasOperation.SET_SELECTION)
         self.changes.reset = True
+
+    @pyqtSlot(result=bool)
+    def forceSync(self):
+        if self._toolActive:
+            if self._tool in {CanvasTool.BRUSH, CanvasTool.ERASE}:
+                self.requestUpdate()
+                self.changes.operations.add(CanvasOperation.STROKE)
+                self._toolActive = False
+                return True
+        return False
 
     def getLayer(self, position):
         return self._layers[self._layersOrder[position]]

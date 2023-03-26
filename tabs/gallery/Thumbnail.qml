@@ -20,6 +20,7 @@ Item {
     signal shiftSelect()
     signal open()
     signal contextMenu()
+    signal drag()
 
     RectangularGlow {
         anchors.fill: overlay
@@ -75,6 +76,7 @@ Item {
             hoverEnabled: true
             preventStealing: true
             acceptedButtons: Qt.LeftButton | Qt.RightButton
+            property var startPosition: null
 
             onPressed: {
                 if (mouse.button == Qt.LeftButton) {
@@ -83,6 +85,7 @@ Item {
                     } else if (mouse.modifiers & Qt.ShiftModifier) {
                         thumb.shiftSelect()
                     } else {
+                        startPosition = Qt.point(mouse.x, mouse.y)
                         thumb.select()
                     }
                 }
@@ -92,6 +95,20 @@ Item {
                 }
                 if(mouse.flags === Qt.MouseEventCreatedDoubleClick && count > 0) {
                     thumb.open()
+                }
+            }
+
+            onReleased: {
+                startPosition = null
+            }
+
+            onPositionChanged: {
+                if(pressed && startPosition) {
+                    var delta = Qt.point(mouse.x-startPosition.x, mouse.y-startPosition.y)
+                    if(Math.pow(delta.x*delta.x + delta.y*delta.y, 0.5) > 5) {
+                        thumb.drag()
+                        startPosition = null
+                    }
                 }
             }
         }

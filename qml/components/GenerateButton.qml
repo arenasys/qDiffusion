@@ -10,11 +10,14 @@ Rectangle {
     property var working: false
     property var progress: -1
     property var info: ""
+
+
     property var hue: 0.0
     property var label: null
     property var isHovered: mouseArea.containsMouse && !working && !disabled
-    property var isPressed: mouseArea.containsPress && !working && !disabled
+    property var isPressed: mouseArea.down && !working && !disabled
     property var disabled: false
+    property var indeterminate: root.working && root.progress < 0.0
 
     signal pressed();
     signal contextMenu();
@@ -49,7 +52,7 @@ Rectangle {
     }
 
     Rectangle {
-        visible: root.working && root.progress < 0.0
+        visible: root.indeterminate
         id: genWorking
         property var offset: root.width
         x: offset-25
@@ -123,7 +126,7 @@ Rectangle {
     SText {
         anchors.fill: parent
         text: root.working ? (mouseArea.containsMouse && root.info != "" ? root.info : "Working...") : "Generate"
-        color: Qt.lighter(COMMON.fg0, mouseArea.containsPress ? 0.85 : 1.0)
+        color: Qt.lighter(COMMON.fg0, mouseArea.down ? 0.85 : 1.0)
         font.bold: true
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
@@ -131,7 +134,7 @@ Rectangle {
 
     Rectangle {
         anchors.fill: parent
-        color: root.disabled && !root.working ? "#90101010" : "transparent"
+        color: root.disabled && !root.working ? "#a0101010" : "transparent"
     }
 
     MouseArea {
@@ -139,13 +142,19 @@ Rectangle {
         anchors.fill: parent
         hoverEnabled: true
         acceptedButtons: Qt.LeftButton | Qt.RightButton
+        property var down: false
         onPressed: {
-            if(root.disabled)
-                return
-            if (mouse.button === Qt.LeftButton) {
+            if (!root.disabled && mouse.button === Qt.LeftButton) {
+                mouseArea.down = true
                 root.pressed()
-            } else {
+            }
+            if (mouse.button === Qt.RightButton) {
                 root.contextMenu()
+            }
+        }
+        onReleased: {
+            if (mouse.button === Qt.LeftButton) {
+                mouseArea.down = false
             }
         }
     }

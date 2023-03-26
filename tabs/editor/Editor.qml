@@ -41,12 +41,28 @@ Item {
         anchors.left: settingsDivider.right
         anchors.right: parent.right
         anchors.top: parent.top
-        anchors.bottom: parent.bottom
+        anchors.bottom: statusDivider.top
 
         Parameters {
             anchors.fill: parent
             binding: EDITOR.parameters
         }
+    }
+
+    SDividerHB {
+        id: statusDivider
+        anchors.left: settings.left
+        anchors.right: parent.right
+        minOffset: 50
+        maxOffset: 100
+        offset: 50
+    }
+
+    Status {
+        anchors.top: statusDivider.bottom
+        anchors.bottom: parent.bottom
+        anchors.left: statusDivider.left
+        anchors.right: parent.right
     }
 
     SDividerHB {
@@ -58,14 +74,41 @@ Item {
         offset: 150
     }
 
-    Rectangle {
-        id: prompt
-        color: COMMON.bg1
+    Prompts {
+        id: prompts
         anchors.left: parent.left
         anchors.right: settingsDivider.left
         anchors.bottom: parent.bottom
         anchors.top: promptDivider.bottom
+
+        onPositivePromptChanged: {
+            BASIC.parameters.values.set("prompt", positivePrompt)
+        }
+        onNegativePromptChanged: {
+            BASIC.parameters.values.set("negative_prompt", negativePrompt)
+        }
     }
 
-    Keys.forwardTo: [editor]
+    Rectangle {
+        visible: true
+        anchors.fill: parent
+        color: "#b0101010"
+        MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+        }
+
+        SText {
+            anchors.fill: parent
+            font.pointSize: 20
+            font.bold: true
+            color: COMMON.fg1
+            verticalAlignment: Text.AlignVCenter
+            horizontalAlignment: Text.AlignHCenter
+            text: "Not ready"
+        }
+    }
+
+    //Keys.forwardTo: [editor]
 }

@@ -2,10 +2,11 @@
 import QtQuick 2.0
 
 Item {
+    id: root
     property real gridSize: 10.0
-    ShaderEffect {
-        property real gridSize: parent.gridSize
-        anchors.fill: parent
+    layer.enabled: true
+    layer.effect: ShaderEffect {
+        property real gridSize: root.gridSize
         vertexShader: "
             uniform highp mat4 qt_Matrix;
             attribute highp vec4 qt_Vertex;

@@ -133,7 +133,8 @@ class Watcher(QObject):
 
     @pyqtSlot(str, int)
     def onWatcherFinished(self, folder, total):
-        del self.running[folder]
+        if folder in self.running:
+            del self.running[folder]
         self.finished.emit(folder, total)
 
     @pyqtSlot(str, str, int)

@@ -62,6 +62,7 @@ class Connection(QObject):
 class Sql(QAbstractListModel):
     queryChanged = pyqtSignal()
     resultsChanged = pyqtSignal()
+    bigChange = pyqtSignal()
     def __init__(self, parent):
         super().__init__(parent)
 
@@ -123,14 +124,22 @@ class Sql(QAbstractListModel):
         else:
             self.fieldNames = {}
         
-        if len(self.results) == 0 or len(newResults) == 0:
+        if len(self.results) == 0 and len(newResults) != 0:
             self.beginResetModel()
             self.results = newResults
             self.endResetModel()
             self.resultsChanged.emit()
             return
 
+        if len(self.results) != 0 and len(newResults) == 0:
+            self.beginRemoveRows(QModelIndex(), 0, len(self.results))
+            self.results = []
+            self.endRemoveRows()
+            self.resultsChanged.emit()
+            return
+
         totalResults = len(newResults)
+        delta = abs(len(newResults)-len(self.results))
 
         changed = False
         i = 0
@@ -172,9 +181,13 @@ class Sql(QAbstractListModel):
             self.beginRemoveRows(QModelIndex(), totalResults, len(self.results))
             self.results = self.results[:totalResults]
             self.endRemoveRows()
+            changed = True
 
         if changed:
             self.resultsChanged.emit()
+        
+        if delta > 9:
+            self.bigChange.emit()
 
     def data(self, index, role):
         value = QVariant()
@@ -199,7 +212,19 @@ class Sql(QAbstractListModel):
         for i in range(len(record)):
             out[record.fieldName(i)] = record.value(i)
         return out
-
+    
+    @pyqtProperty(int, notify=resultsChanged)
+    def length(self):
+        return len(self.results)
+    
+    @pyqtSlot()
+    def debug(self):
+        def pr(r):
+            out = {}
+            for i in range(len(r)):
+               out[r.fieldName(i)] = r.field(i).value()
+            return out
+        print(len(self.results))
 
     def updateFieldNames(self, record):
         self.fieldNames = {}

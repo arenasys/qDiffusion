@@ -9,15 +9,41 @@ import "../../components"
 
 Item {
     id: root
-    anchors.fill: parent
     property var editing: false
     visible: false
 
-    property var target
+    function getTarget(index, area) {
+        if(index == -1) {
+            return null
+        }
+        if(area == "input") {
+            return BASIC.inputs[index]
+        }
+        if(area == "output") {
+            return BASIC.outputs(index)
+        }
+    }
 
-    function open(target) {
+    Connections {
+        target: BASIC
+        function onOpenedUpdated() {
+            if(root.target == null) {
+                root.forceActiveFocus()
+            }
+            root.target = getTarget(BASIC.openedIndex, BASIC.openedArea)
+        }
+    }
+
+    property var target: null
+    property var changing: ""
+
+    onTargetChanged: {
+        if(target == null) {
+            root.visible = false
+            return
+        }
+
         root.editing = target.role == 2 && !target.empty && target.linked
-        root.target = target
 
         if(root.editing) {
             canvas.setupBasic(root.target.image, root.target.linkedImage)
@@ -34,23 +60,56 @@ Item {
         canvas.update()
 
         root.visible = true
-        root.forceActiveFocus()
+    }
+
+    function sync() {
+        if(root.editing) {
+            root.target.setImageData(canvas.getImage())
+        }
+    }
+
+    function change() {
+        switch(root.changing) {
+        case "left":
+            BASIC.left();
+            break;
+        case "right":
+            BASIC.right()
+            break;
+        case "close":
+            BASIC.close()
+            break;
+        case "delete":
+            BASIC.delete()
+            break;
+        }
+        root.changing = ""
     }
 
     function close() {
         if(root.editing) {
-            root.target.setImageData(canvas.getImage())
+            changing = "close"
+            if(!canvas.forceSync()) {
+                root.change()
+            }
+        } else {
+            BASIC.close()
         }
-        root.visible = false
     }
 
     Rectangle {
         anchors.fill: parent
-        color: "#90000000"
+        color: "#b0000000"
     }
 
     MouseArea {
         anchors.fill: parent
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
+        onPressed: {
+            if(mouse.button == Qt.LeftButton) {
+                root.close()
+            }
+        }
     }
 
     MovableItem {
@@ -79,6 +138,7 @@ Item {
         ImageDisplay {
             id: bg
             anchors.fill: item
+            smooth: implicitWidth*1.25 < width && implicitHeight*1.25 < height ? false : true
         }
 
         AdvancedCanvas {
@@ -86,6 +146,31 @@ Item {
             anchors.fill: item
             smooth: sourceSize.width*1.1 < width && sourceSize.height*1.1 < height ? false : true
             brush.color: "#ffffff"
+            brush.hardness: 99.9
+
+            onChanged: {
+                root.sync()
+                root.change()
+            }
+        }
+
+        Item {
+            id: extent
+            visible: root.editing
+            anchors.fill: item
+
+            Rectangle {
+                property var factor: (canvas.width/canvas.sourceSize.width)
+                border.color: "red"
+                border.width: 1
+                color: "transparent"
+                property var show: root.target != null && root.target.extent != undefined
+
+                x: show ? root.target.extent.x*factor : 0
+                y: show ? root.target.extent.y*factor : 0
+                width: show ? root.target.extent.width*factor : 0
+                height: show ? root.target.extent.height*factor : 0
+            }
         }
 
         Item {
@@ -196,8 +281,45 @@ Item {
     Keys.onPressed: {
             event.accepted = true
             switch(event.key) {
+            case Qt.Key_Left:
+                if(root.editing) {
+                    changing = "left"
+                    if(!canvas.forceSync()) {
+                        root.change()
+                    }
+                } else {
+                    BASIC.left()
+                }
+                break;
+            case Qt.Key_Right:
+                if(root.editing) {
+                    changing = "right"
+                    if(!canvas.forceSync()) {
+                        root.change()
+                    }
+                } else {
+                    BASIC.right()
+                }
+                break;
             case Qt.Key_Escape:
-                root.close()
+                if(root.editing) {
+                    changing = "close"
+                    if(!canvas.forceSync()) {
+                        root.change()
+                    }
+                } else {
+                    BASIC.close()
+                }
+                break;
+            case Qt.Key_Delete:
+                if(root.editing) {
+                    changing = "delete"
+                    if(!canvas.forceSync()) {
+                        root.change()
+                    }
+                } else {
+                    BASIC.delete()
+                }
                 break;
             default:
                 event.accepted = false

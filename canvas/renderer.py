@@ -89,6 +89,8 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
         self.restoredActive = None
         self.restoredOrder = None
 
+        self.changed = False
+
         self.floating = False
         self.floatingLayer = -1
         self.floatingPosition = QPointF(0,0)
@@ -294,6 +296,7 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
                 if len(self.checkpoints) > 1:
                     self.checkpoints.pop()
                 self.restoreCheckpoint(checkpoint)
+                self.changed = True
 
         if CanvasOperation.UPDATE_STROKE in self.changes.operations and self.changes.strokes:
             painter = self.buffer.beginPaint()
@@ -336,6 +339,7 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
             gl.glClearColor(0, 0, 0, 0)
             gl.glClear(gl.GL_COLOR_BUFFER_BIT)
             self.buffer.endPaint()
+            self.changed = True
 
         if CanvasOperation.SET_SELECTION in self.changes.operations:
             self.floatingOffset = QPointF(0,0)
@@ -374,6 +378,7 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
             self.floatingLayer = self.activeLayer
             self.floatingPosition = offset
             self.getLayer(self.floatingLayer).changed = True
+            self.changed = True
 
         if CanvasOperation.COPY in self.changes.operations or CanvasOperation.CUT in self.changes.operations:
             mask = self.mask.getImage()
@@ -410,6 +415,7 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
                 self.restoredSelection.clearMask()
                 self.resetMoving()
                 self.floating = False
+            self.changed = True
 
         if CanvasOperation.MOVE in self.changes.operations and not self.floating:
             selection = QImage(self.mask.getImage())
@@ -428,6 +434,7 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
             self.floating = True
             self.floatingLayer = self.activeLayer
             self.getLayer(self.floatingLayer).changed = True
+            self.changed = True
 
         if CanvasOperation.SET_MOVE in self.changes.operations:
             self.getLayer(self.floatingLayer).changed = True
@@ -461,6 +468,7 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
                 self.restoredSelection = self.changes.selection
 
                 self.floating = False
+                self.changed = True
 
         if CanvasOperation.DESELECT in self.changes.operations:
             self.changes.selection.clear()

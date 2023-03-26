@@ -21,6 +21,7 @@ MovableItem {
     clip: true
 
     SGlow {
+        visible: root.item.width > 0
         target: root.item
     }
 
@@ -48,6 +49,7 @@ MovableItem {
         visible: full.status == Image.Ready && thumb.status == Image.Ready
         smooth: root.sourceWidth*2 < width && root.sourceHeight*2 < height ? false : true
         mipmap: true
+        cache: false
     }
 
     onSourceChanged: {

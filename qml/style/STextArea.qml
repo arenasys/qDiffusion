@@ -8,6 +8,15 @@ Rectangle {
 
     property alias text: textArea.text
     property alias font: textArea.font
+    property alias readOnly: textArea.readOnly 
+
+    onActiveFocusChanged: {
+        if(root.activeFocus) {
+            textArea.forceActiveFocus()
+        }
+    }
+    
+    signal tab()
 
     color: "transparent"
 
@@ -20,6 +29,7 @@ Rectangle {
         clip: true
 
         ScrollBar.vertical: SScrollBarV {
+            id: scrollBar
             parent: control
             anchors.top: control.top
             anchors.right: control.right
@@ -33,6 +43,7 @@ Rectangle {
             height: Math.max(contentHeight+10, root.height)
             padding: 5
             leftPadding: 5
+            rightPadding: 10
             wrapMode: TextArea.Wrap
             selectByMouse: true
     
@@ -50,6 +61,22 @@ Rectangle {
                 }
                 if(y >= control.contentY + control.height - 5) {
                     control.contentY = y - control.height + cursorRectangle.height + 5
+                }
+            }
+
+            Keys.onPressed: {
+                event.accepted = true
+                if(event.modifiers == 0) {
+                    switch(event.key) {
+                    case Qt.Key_Tab:
+                        root.tab()
+                        break;
+                    default:
+                        event.accepted = false
+                        break;
+                    }
+                } else {
+                    event.accepted = false
                 }
             }
         }

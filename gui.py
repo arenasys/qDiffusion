@@ -1,12 +1,11 @@
 import os
-import glob
-import importlib
 
-from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent, QMimeData
+from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent, QMimeData, QUrl
 from PyQt5.QtQuick import QQuickItem, QQuickPaintedItem
-from PyQt5.QtGui import QImage, QColor
+from PyQt5.QtGui import QImage, QColor, QDrag
 from PyQt5.QtQml import qmlRegisterType
-from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtWidgets import QApplication
+from PyQt5.QtNetwork import QNetworkRequest, QNetworkReply, QNetworkAccessManager
 from enum import Enum
 
 import sql
@@ -26,6 +25,7 @@ class GUI(QObject):
     optionsUpdated = pyqtSignal()
     result = pyqtSignal(int)
     aboutToQuit = pyqtSignal()
+    networkReply = pyqtSignal(QNetworkReply)
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -34,6 +34,8 @@ class GUI(QObject):
         self.db = sql.Database(self)
         self.watcher = filesystem.Watcher()
         self.thumbnails = thumbnails.ThumbnailStorage((256, 256), 75, self)
+        self.network = QNetworkAccessManager(self)
+        self.requestProgress = 0.0
         self.tabs = []
 
         self._id = 0
@@ -48,9 +50,16 @@ class GUI(QObject):
 
         self._options = {}
 
+        self._modelFolders = [os.path.join("models", f) for f in ["SD", "LoRA", "HN", "SR", "TI"]]
+        for folder in self._modelFolders:
+            self.watcher.watchFolder(folder)
+        self._trashFolder = os.path.join("models", "TRASH")
+
         parent.aboutToQuit.connect(self.stop)
 
         self.backend.response.connect(self.onResponse)
+        self.watcher.finished.connect(self.onFolderChanged)
+        self.network.finished.connect(self.onNetworkReply)
 
     @pyqtSlot()
     def stop(self):
@@ -79,10 +88,14 @@ class GUI(QObject):
     
     @pyqtProperty('QString', notify=statusUpdated)
     def statusText(self):
+        if self.requestProgress > 0:
+            return "Downloading"
         return self._statusText
     
     @pyqtProperty(int, notify=statusUpdated)
     def statusMode(self):
+        if self.requestProgress > 0:
+            return StatusMode.WORKING.value
         return self._statusMode.value
     
     @pyqtProperty('QString', notify=statusUpdated)
@@ -91,6 +104,8 @@ class GUI(QObject):
     
     @pyqtProperty(float, notify=statusUpdated)
     def statusProgress(self):
+        if self.requestProgress > 0:
+            return self.requestProgress
         return self._statusProgress
     
     @pyqtProperty('QString', notify=errorUpdated)
@@ -105,14 +120,19 @@ class GUI(QObject):
         self._id += 1024
         self.backend.makeRequest(self._id, request)
         return self._id
+
+    def cancelRequest(self, id):
+        self.backend.cancelRequest(id)
+
+    def setReady(self):
+        self._statusMode = StatusMode.IDLE
+        self._statusInfo = ""
+        self._statusText = "Ready"
+        self._statusProgress = -1.0
+        self.statusUpdated.emit()
     
     @pyqtSlot(int, object)
-    def onResponse(self, id, response):
-        if response["type"] == "result":
-            print({"type": "result", "data": {"metadata": response["data"]["metadata"]}})
-        else:
-            print(response)
-        
+    def onResponse(self, id, response):       
         if response["type"] == "status":
             self._statusText = response["data"]["message"]
             if self._statusText == "Initializing":
@@ -120,6 +140,7 @@ class GUI(QObject):
             elif self._statusText == "Ready":
                 self._statusMode = StatusMode.IDLE
             else:
+                self._statusProgress = -1.0
                 self._statusMode = StatusMode.WORKING
             self.statusUpdated.emit()
         
@@ -127,10 +148,7 @@ class GUI(QObject):
             self._options = response["data"]
             self.optionsUpdated.emit()
             if self._statusText == "Initializing":
-                self._statusMode = StatusMode.IDLE
-                self._statusText = "Ready"
-                self._statusProgress = -1.0
-                self.statusUpdated.emit()
+                self.setReady()
 
         if response["type"] == "error":
             self._errorStatus = self._statusText
@@ -139,6 +157,9 @@ class GUI(QObject):
             self._statusMode = StatusMode.ERRORED
             self.statusUpdated.emit()
             self.errorUpdated.emit()
+
+        if response["type"] == "aborted":
+            self.setReady()
 
         if response["type"] == "progress":
             self._statusProgress = response["data"]["current"]/response["data"]["total"]
@@ -149,17 +170,20 @@ class GUI(QObject):
 
         if response["type"] == "result":
             self._results = []
-            for bytes in response["data"]["images"]:
+            for i, bytes in enumerate(response["data"]["images"]):
                 img = QImage()
                 img.loadFromData(bytes, "png")
-                self._results += [img]
+                self._results += [{"image": img, "metadata": response["data"]["metadata"][i]}]
             self.result.emit(id)
-
-            self._statusMode = StatusMode.IDLE
-            self._statusText = "Ready"
-            self._statusInfo = ""
-            self._statusProgress = -1.0
-            self.statusUpdated.emit()
+            self.setReady()
+    
+    @pyqtSlot(str, int)
+    def onFolderChanged(self, folder, total):
+        if folder in self._modelFolders:
+            if folder == self._modelFolders[0]:
+                self.backend.makeRequest(-1, {"type":"convert", "data":{"model_folder": self._modelFolders[0], "trash_folder":self._trashFolder}})
+            self.backend.makeRequest(-1, {"type":"options"})
+            return
 
     @pyqtSlot()
     def clearError(self):
@@ -168,8 +192,44 @@ class GUI(QObject):
         self._statusProgress = -1.0
         self.statusUpdated.emit()
 
+    @pyqtSlot(QNetworkRequest)
+    def makeNetworkRequest(self, request):
+        reply = self.network.get(request)
+        reply.downloadProgress.connect(self.onNetworkProgress)
+        self.requestProgress = 0.001
+        self.statusUpdated.emit()
+
+    @pyqtSlot(QNetworkReply)
+    def onNetworkReply(self, reply):
+        self.networkReply.emit(reply)
+        self.requestProgress = 0.0
+        self.statusUpdated.emit()
+
+    @pyqtSlot('qint64', 'qint64')
+    def onNetworkProgress(self, current, total):
+        self.requestProgress = max(self.requestProgress, current/total)
+        self.statusUpdated.emit()
+
+    def getFilesMimeData(self, files):
+        urls = [QUrl.fromLocalFile(os.path.abspath(file)) for file in files]
+        mimedata = QMimeData()
+        mimedata.setUrls(urls)
+
+        gnome = "copy\n"+'\n'.join(["file://"+url.toLocalFile() for url in urls])
+        mimedata.setData("x-special/gnome-copied-files", gnome.encode("utf-8"))
+        return mimedata
+
+    def copyFiles(self, files):
+        QApplication.clipboard().setMimeData(self.getFilesMimeData(files))
+
+    def dragFiles(self, files):
+        drag = QDrag(self)
+        drag.setMimeData(self.getFilesMimeData(files))
+        drag.exec()
+
 class FocusReleaser(QQuickItem):
     releaseFocus = pyqtSignal()
+    dropped = pyqtSignal()
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setAcceptedMouseButtons(Qt.AllButtons)
@@ -205,15 +265,23 @@ class ImageDisplay(QQuickPaintedItem):
     
     @image.setter
     def image(self, image):
+        self._last = None
         self._image = image
 
         self.setImplicitHeight(image.height())
         self.setImplicitWidth(image.width())
         self.imageUpdated.emit()
 
-        self._trueWidth = 0
-        self._trueHeight = 0
-        self.sizeUpdated.emit()
+        if self._image and not self._image.isNull():
+            img = self._image.scaled(int(self.width()), int(self.height()), Qt.KeepAspectRatio)
+            if self._trueWidth != img.width() or self._trueHeight != img.height():
+                self._trueWidth = img.width()
+                self._trueHeight = img.height()
+                self.sizeUpdated.emit()
+        else:
+            self._trueWidth = 0
+            self._trueHeight = 0
+            self.sizeUpdated.emit()
 
         self.update()
 
@@ -235,12 +303,30 @@ class ImageDisplay(QQuickPaintedItem):
     def trueHeight(self):
         return self._trueHeight
 
+    @pyqtProperty(int, notify=imageUpdated)
+    def sourceWidth(self):
+        if self._image:
+            return self._image.width()
+        return 0
+    
+    @pyqtProperty(int, notify=imageUpdated)
+    def sourceHeight(self):
+        if self._image:
+            return self._image.height()
+        return 0
+
     def paint(self, painter):
         if self._image and not self._image.isNull():
-            img = self._image.scaled(int(self.width()), int(self.height()), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            self._trueWidth = img.width()
-            self._trueHeight = img.height()
-            self.sizeUpdated.emit()
+            transform = Qt.SmoothTransformation
+            if not self.smooth():
+                transform = Qt.FastTransformation
+
+            # FIX THIS CRAP
+            img = self._image.scaled(int(self.width()), int(self.height()), Qt.KeepAspectRatio, transform)
+            if self._trueWidth != img.width() or self._trueHeight != img.height():
+                self._trueWidth = img.width()
+                self._trueHeight = img.height()
+                self.sizeUpdated.emit()
             x, y = 0, 0
             if self.centered:
                 x = int((self.width() - img.width())/2)

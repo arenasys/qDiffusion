@@ -3,10 +3,11 @@ import shutil
 import os
 import send2trash
 
-from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject, QThread, QUrl, QFile
+from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject, QThread, QUrl, QMimeData
 from PyQt5.QtSql import QSqlQuery
 from PyQt5.QtQml import qmlRegisterSingletonType
 from PyQt5.QtGui import QDesktopServices
+from PyQt5.QtWidgets import QApplication
 import sql
 import filesystem
 
@@ -85,6 +86,7 @@ class Gallery(QObject):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.gui = parent
         self.priority = 3
         self.name = "Gallery"
 
@@ -101,6 +103,7 @@ class Gallery(QObject):
 
         self.add_folder.emit("Txt2Img", "outputs/txt2img")
         self.add_folder.emit("Img2Img", "outputs/img2img")
+        self.add_folder.emit("Favourites", "outputs/favourites")
 
         parent.aboutToQuit.connect(self.stop)
 
@@ -130,6 +133,15 @@ class Gallery(QObject):
     def doDelete(self, files):
         for f in files:
             send2trash.send2trash(f)
+        self.gui.thumbnails.removeAll(files)
+
+    @pyqtSlot(list)
+    def doClipboard(self, files):
+        self.gui.copyFiles(files)
+
+    @pyqtSlot(list)
+    def doDrag(self, files):
+        self.gui.dragFiles(files)
 
     @pyqtSlot()
     def stop(self):

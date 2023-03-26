@@ -55,7 +55,7 @@ ApplicationWindow {
             dim: true
 
             width: errorText.implicitWidth + 50
-            height: 120
+            height: errorText.contentHeight + 80
 
             SText {
                 id: errorText

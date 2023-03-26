@@ -48,6 +48,12 @@ class ThumbnailStorage(QObject):
         if file in self.cache:
             del self.cache[file]
         self.guard.unlock()
+    def removeAll(self, files):
+        self.guard.lock()
+        for file in files:
+            if file in self.cache:
+                del self.cache[file]
+        self.guard.unlock()
 
 class ThumbnailResponseRunnableSignals(QObject):
     done = pyqtSignal('QImage')

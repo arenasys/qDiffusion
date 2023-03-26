@@ -35,35 +35,56 @@ GridView {
         }
     }
 
-    property var selected: [0]
+    property var selected: []
     property var selectedLength: 1
     
-    function getSelectedFiles() {
-        let files = []
-        for(let i = 0; i < selected.length; i++) {
-            let record = thumbView.model.get(selected[i])
-            if(record != null) {
-                files.push(record["file"])
+    function getFile(idx) {
+        var record = thumbView.model.get(idx)
+        if(record == null) {
+            return null
+        } else {
+            return record["file"]
+        }
+    }
+
+    function getIndex(file) {
+        for(var i = 0; i < thumbView.model.length; i++) {
+            if(thumbView.model.get(i)["file"] == file) {
+                return i
             }
         }
-        return files
+        return -1
+    }
+
+    function getSelectedFiles() {
+        var current = getFile(currentIndex)
+        var pos = selected.indexOf(current)
+        if(pos == -1) {
+            selected.push(current)
+        }
+        return selected
     }
 
     function addToSelected(index) {
+        var id = getFile(index)
         removeFromSelected(index)
-        selected.push(index)
+        selected.push(id)
+        selectedLength = selected.length
     }
 
     function removeFromSelected(index) {
-        var pos = selected.indexOf(index)
+        var id = getFile(index)
+        var pos = selected.indexOf(id)
         if(pos !== -1) {
             selected.splice(pos, 1)
         }
+        selectedLength = selected.length
     }
 
     function setSelection(index) {
+        var id = getFile(index)
         thumbView.currentIndex = index
-        thumbView.selected = [index]
+        thumbView.selected = [id]
         thumbView.selectedLength = 1
     }
 
@@ -77,15 +98,36 @@ GridView {
 
     function clearSelection() {
         thumbView.currentIndex = 0
-        thumbView.selected = [0]
+        thumbView.selected = []
         thumbView.selectedLength = 1
     }
 
     function applySelection() {
-        selectedLength = selected.length
+        if(thumbView.model.length == 0) {
+            selected = []
+            selectedLength = 0
+            return;
+        }
 
-        if(selectedLength > 0 && !selected.includes(currentIndex)) {
-            currentIndex = selected[0]
+        var remaining = []
+        for(var i = 0; i < selected.length; i++) {
+            if(getIndex(selected[i]) != -1) {
+                remaining.push(selected[i])
+            }
+        }
+        selected = remaining
+        selectedLength = remaining.length
+
+        var currentID = getFile(currentIndex)
+
+        if(selectedLength > 0 && !selected.includes(currentID)) {
+            var idx = getIndex(selected[0])
+            if(idx != -1) {
+                currentIndex = idx
+            } else {
+                selected = [getFile(currentIndex)]
+                selectedLength = 1
+            }
         }
     }
 
@@ -97,7 +139,7 @@ GridView {
             addSelectionRange(prev, curr)
             applySelection()
         } else {
-            selected = [curr]
+            selected = [getFile(curr)]
             applySelection()
         }
     }
@@ -126,8 +168,8 @@ GridView {
         movedSelection(modifiers, prev, currentIndex)
     }
 
-    signal open()
     signal contextMenu()
+    signal drag()
 
     interactive: false
     boundsBehavior: Flickable.StopAtBounds
@@ -160,10 +202,12 @@ GridView {
         property var sourceParams: sql_parameters
         source: sql_file
 
-        selected: thumbView.currentIndex === index || (thumbView.selectedLength <= 0 ? false : thumbView.selected.includes(index))
+        selected: thumbView.currentIndex === index || (thumbView.selectedLength <= 0 ? false : thumbView.selected.includes(sql_file))
 
         onSelect: {
-            thumbView.setSelection(index)
+            if(!selected) {
+                thumbView.setSelection(index)
+            }
         }
 
         onControlSelect: {
@@ -183,14 +227,18 @@ GridView {
         }
 
         onContextMenu: {
-            if(!thumbView.selected.includes(index)) {
+            if(!thumbView.selected.includes(sql_file)) {
                 thumbView.setSelection(index)
             }
             thumbView.contextMenu()
         }
 
         onOpen: {
-            thumbView.open()
+            thumbView.setSelection(index)
+        }
+
+        onDrag: {
+            thumbView.drag()
         }
     }
 }

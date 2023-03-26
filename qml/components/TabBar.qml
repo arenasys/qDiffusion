@@ -48,6 +48,9 @@ Item {
                 onPressed: {
                     root.currentTab = modelData
                 }
+                onDragEnter: {
+                    root.currentTab = modelData
+                }
             }
         }
     }

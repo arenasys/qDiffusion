@@ -240,6 +240,8 @@ class MarchingAnts(QQuickPaintedItem):
         shapes = self._selection.shapes
         mask = self._selection.mask
 
+        #print("PAINT", shapes)
+
         if not mask.isNull():
             self._shader = True
             z = QRectF(QPointF(0,0), QSizeF(mask.size()))

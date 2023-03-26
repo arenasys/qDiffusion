@@ -3,13 +3,15 @@ import shutil
 import sys
 import subprocess
 import traceback
-
+import io
 import queue
 import threading
 import multiprocessing
 
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QThread
 from PyQt5.QtWidgets import QApplication
+
+from parameters import save_image
 
 class InferenceProcessThread(threading.Thread):
     def __init__(self, requests, responses):
@@ -56,10 +58,16 @@ class InferenceProcessThread(threading.Thread):
                     self.wrapper.img2img()
                 elif request["type"] == "options":
                     self.wrapper.options()
+                elif request["type"] == "convert":
+                    self.wrapper.set(**request["data"])
+                    self.wrapper.convert()
                 self.requests.task_done()
             except queue.Empty:
                 pass
             except Exception as e:
+                if str(e) == "Aborted":
+                    self.responses.put((self.current, {"type":"aborted", "data":{}}))
+                    continue
                 additional = ""
                 try:
                     s = traceback.extract_tb(e.__traceback__).format()
@@ -144,6 +152,7 @@ class LocalInference(QThread):
         self.requests.put((-1, {"type": "stop", "data":{}}))
         self.stopping = True
         self.inference.join()
+        print("STOPPED")
 
     @pyqtSlot(int, object)
     def onRequest(self, id, request):
@@ -154,4 +163,11 @@ class LocalInference(QThread):
         self.requests.put((id, {"type": "cancel", "data":{}}))
 
     def onResponse(self, id, response):
+        if response["type"] == "result":
+            self.saveResults(response["data"]["images"], response["data"]["metadata"])
+
         self.response.emit(id, response)
+
+    def saveResults(self, images, metadata):
+        for i in range(len(images)):
+            save_image(images[i], metadata[i])

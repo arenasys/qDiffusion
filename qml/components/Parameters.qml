@@ -13,6 +13,8 @@ Item {
     anchors.fill: parent
 
     signal generate()
+    signal cancel()
+    property var forever: false
 
     property var binding
 
@@ -31,14 +33,60 @@ Item {
             anchors.margins: 2
             height: 40
 
+            Timer {
+                id: genButtonTimer
+                interval: 100
+                onTriggered: {
+                    genButton.progress = GUI.statusProgress
+                    genButton.working = GUI.statusMode == 2
+                }
+            }
+            Connections {
+                target: GUI
+                function onStatusProgressChanged() {
+                    genButtonTimer.restart()
+                }
+                function onStatusModeChanged() {
+                    genButtonTimer.restart()
+                }
+            }
 
-            progress: GUI.statusProgress
-            working: GUI.statusMode == 2
-            disabled: GUI.statusMode != 1
+
+            progress: -1
+            working: false
+            disabled: GUI.statusMode == 0 || GUI.statusMode == 3
             info: GUI.statusInfo
 
             onPressed: {
-                root.generate()
+                if(GUI.statusMode == 1) {
+                    root.generate()
+                }
+                if(GUI.statusMode == 2) {
+                    root.cancel()
+                }
+            }
+
+            onContextMenu: {
+                genContextMenu.popup()
+            }
+
+            SContextMenu {
+                id: genContextMenu
+                SContextMenuItem {
+                    text: "Generate Forever"
+                    checkable: true
+                    onCheckedChanged: {
+                        root.forever = checked
+                    }
+                }
+                SContextMenuItem {
+                    height: visible ? 25 : 0
+                    visible: GUI.statusMode == 2
+                    text: "Cancel"
+                    onPressed: {
+                        root.cancel()
+                    }
+                }
             }
         }
         
@@ -296,6 +344,7 @@ Item {
                     text: "Networks"
                     width: parent.width
                     padding: false
+                    isCollapsed: true
 
                     onExpanded: {
                         paramScroll.position(netColumn)
@@ -303,7 +352,7 @@ Item {
 
                     Item {
                         width: parent.width
-                        height: Math.max(100, paramScroll.height-(netColumn.y+33))
+                        height: Math.min(200, 32+(netList.contentHeight == 0 ? 0 : netList.contentHeight+3))
 
                         Rectangle {
                             anchors.fill: parent
@@ -360,6 +409,7 @@ Item {
                                 anchors.left: parent.left
                                 anchors.right: parent.right
                                 anchors.margins:1
+                                anchors.topMargin: 0
                                 clip: true
                                 model: root.binding.activeNetworks
 
@@ -381,7 +431,7 @@ Item {
                                         color: selected ? COMMON.bg2 : Qt.darker(COMMON.bg2, 1.25) 
                                     }
 
-                                    ParametersNetSlider {
+                                    ParametersNetItem {
                                         anchors.fill: parent
                                         anchors.rightMargin: scrollBar.policy == ScrollBar.AlwaysOn ? 8 : 0
                                         label: modelData.name
@@ -390,21 +440,6 @@ Item {
                                         onDeactivate: {
                                             root.binding.deleteNetwork(index)
                                         }
-
-                                        value: modelData.strength
-                                        onValueChanged: {
-                                            if(modelData.strength != value) {
-                                                modelData.strength = value
-                                                value = Qt.binding(function() {return modelData.strength;})
-                                            }
-                                        }
-
-                                        minValue: 0
-                                        maxValue: 2
-                                        precValue: 2
-                                        incValue: 0.01
-                                        snapValue: 0.05
-                                        bounded: false
                                     }
                                 }
                             }
@@ -412,9 +447,117 @@ Item {
                     }
                 }
                 OColumn {
+                    id: ipColumn
+                    text: "Inpainting"
+                    width: parent.width
+                    isCollapsed: true
+
+                    onExpanded: {
+                        paramScroll.position(ipColumn)
+                    }
+
+                    OChoice {
+                        label: "Upscaler"
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "img2img_upscaler"
+                        bindKeyModel: "img2img_upscalers"
+                    }
+                    OSlider {
+                        label: "Padding"
+                        width: parent.width
+                        height: 30
+                        overlay: value == -1
+
+                        bindMap: root.binding.values
+                        bindKey: "padding"
+
+                        minValue: -1
+                        maxValue: 512
+                        precValue: 0
+                        incValue: 8
+                        snapValue: 16
+                        bounded: false
+                    }
+                    OSlider {
+                        label: "Mask Blur"
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKey: "mask_blur"
+
+                        minValue: 0
+                        maxValue: 10
+                        precValue: 0
+                        incValue: 1
+                        snapValue: 4
+                        bounded: false
+                    }
+                }
+                OColumn {
+                    id: hrColumn
+                    text: "Highres"
+                    width: parent.width
+                    isCollapsed: true
+
+                    onExpanded: {
+                        paramScroll.position(hrColumn)
+                    }
+
+                    OSlider {
+                        id: hrFactorInput
+                        label: "HR Factor"
+                        width: parent.width
+                        height: 30
+
+                        overlay: hrFactorInput.value == 1.0
+
+                        bindMap: root.binding.values
+                        bindKey: "hr_factor"
+
+                        minValue: 1.0
+                        maxValue: 4.0
+                        precValue: 2
+                        incValue: 0.25
+                        snapValue: 0.25
+                        bounded: false
+                    }
+                    OSlider {
+                        label: "HR Strength"
+                        width: parent.width
+                        height: 30
+
+                        disabled: hrFactorInput.value == 1.0
+
+                        bindMap: root.binding.values
+                        bindKey: "hr_strength"
+
+                        minValue: 0
+                        maxValue: 1
+                        precValue: 2
+                        incValue: 0.01
+                        snapValue: 0.05
+                    }
+                    OChoice {
+                        label: "HR Upscaler"
+                        width: parent.width
+                        height: 30
+
+                        disabled: hrFactorInput.value == 1.0
+
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "hr_upscaler"
+                        bindKeyModel: "hr_upscalers"
+                    }
+                }
+                OColumn {
                     id: miscColumn
                     text: "Misc"
                     width: parent.width
+                    isCollapsed: true
 
                     onExpanded: {
                         paramScroll.position(miscColumn)
@@ -435,6 +578,7 @@ Item {
                         snapValue: 1
                         bounded: false
                     }
+
                     OSlider {
                         label: "Batch Size"
                         width: parent.width
@@ -450,52 +594,39 @@ Item {
                         snapValue: 2
                         bounded: false
                     }
-                    OChoice {
-                        label: "Upscaler"
-                        width: parent.width
-                        height: 30
-
-                        bindMap: root.binding.values
-                        bindKeyCurrent: "img2img_upscaler"
-                        bindKeyModel: "img2img_upscalers"
-                    }
+                    
                     OSlider {
-                        label: "HR Factor"
+                        id: subseedStrInput
+                        label: "Subseed strength"
                         width: parent.width
                         height: 30
-
+                        overlay: subseedStrInput.value == 0.0
+                        
                         bindMap: root.binding.values
-                        bindKey: "hr_factor"
-
-                        minValue: 1.0
-                        maxValue: 4.0
-                        precValue: 2
-                        incValue: 0.25
-                        snapValue: 0.25
-                        bounded: false
-                    }
-                    OSlider {
-                        label: "HR Strength"
-                        width: parent.width
-                        height: 30
-
-                        bindMap: root.binding.values
-                        bindKey: "hr_strength"
+                        bindKey: "subseed_strength"
 
                         minValue: 0
-                        maxValue: 1
-                        precValue: 2
-                        incValue: 0.01
-                        snapValue: 0.05
+                        maxValue: 0.25
+                        precValue: 3
+                        incValue: 0.001
+                        snapValue: 0.005
+                        bounded: false
                     }
-                    OChoice {
-                        label: "HR Upscaler"
+
+                    OTextInput {
+                        id: subseedInput
+                        label: "Subseed"
                         width: parent.width
                         height: 30
+                        disabled: subseedStrInput.overlay
 
                         bindMap: root.binding.values
-                        bindKeyCurrent: "hr_upscaler"
-                        bindKeyModel: "hr_upscalers"
+                        bindKey: "subseed"
+
+                        validator: IntValidator { 
+                            bottom: -1
+                            top: 2147483646
+                        }
                     }
                 }
             }

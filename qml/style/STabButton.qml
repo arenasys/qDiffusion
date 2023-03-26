@@ -9,9 +9,11 @@ TabButton {
     width: implicitWidth
     property var selected: false
 
+    signal dragEnter()
+
 
     contentItem: Item {
-
+        
     }
 
     background: Item {
@@ -57,6 +59,23 @@ TabButton {
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment:  Text.AlignVCenter
                 elide: Text.ElideRight
+            }
+        }
+
+        DropArea {
+            anchors.fill: parent
+            Timer {
+                id: dragTimer
+                interval: 200
+                onTriggered: {
+                    control.dragEnter()
+                }
+            }
+            onEntered: {
+                dragTimer.start()
+            }
+            onExited: {
+                dragTimer.stop()
             }
         }
     }

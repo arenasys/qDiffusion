@@ -5,7 +5,7 @@ import QtGraphicalEffects 1.15
 import gui 1.0
 
 Item {
-    id: root
+    id: control
     property var label: "Label"
     property var tooltip: ""
     property var value: ""
@@ -13,6 +13,7 @@ Item {
     property var mini: height == 20
     property var validator: RegExpValidator { regExp: /.*/ }
     property var disabled: false
+    property var overlay: disabled
 
     property variant bindMap: null
     property var bindKey: null
@@ -20,22 +21,25 @@ Item {
     Connections {
         target: bindMap
         function onUpdated() {
-            var v = root.bindMap.get(root.bindKey)
-            if(v != root.value) {
-                root.value = v
+            var v = control.bindMap.get(control.bindKey)
+            if(v != control.value) {
+                control.value = v
             }
         }
     }
 
     Component.onCompleted: {
-        if(root.bindMap != null && root.bindKey != null) {
-            root.value = root.bindMap.get(root.bindKey)
+        if(control.bindMap != null && control.bindKey != null) {
+            control.value = control.bindMap.get(control.bindKey)
+        }
+        if(control.defaultValue == null) {
+            control.defaultValue = control.value;
         }
     }
 
     onValueChanged: {
-        if(root.bindMap != null && root.bindKey != null) {
-            root.bindMap.set(root.bindKey, root.value)
+        if(control.bindMap != null && control.bindKey != null) {
+            control.bindMap.set(control.bindKey, control.value)
         }
     }
 
@@ -49,13 +53,13 @@ Item {
 
         SText {
             id: labelText
-            text: root.label
+            text: control.label
             anchors.left: parent.left
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             leftPadding: 5
             verticalAlignment: Text.AlignVCenter
-            font.pointSize: root.mini ? 7.85 : 9.8
+            font.pointSize: control.mini ? 7.85 : 9.8
             color: COMMON.fg1
         }
 
@@ -79,14 +83,14 @@ Item {
             anchors.right: parent.right
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            anchors.margins: root.mini ? 1 : 3
+            anchors.margins: control.mini ? 1 : 3
             border.color: COMMON.bg4
             color: COMMON.bg1
         }
 
         STextInput {
             id: valueText
-            text: root.value
+            text: control.value
             anchors.left: labelText.left
             anchors.right: parent.right
             anchors.top: parent.top
@@ -94,40 +98,48 @@ Item {
             rightPadding: 5
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignRight
-            font.pointSize: root.mini ? 7.85 : 9.8
+            font.pointSize: control.mini ? 7.85 : 9.8
             color: COMMON.fg1
             monospace: true
-            validator: root.validator
+            validator: control.validator
+            readOnly: control.disabled
             
             onEditingFinished: {
-                console.log("SET")
-                root.value = text
+                control.value = text
             }
 
             onActiveFocusChanged: {
                 if(!activeFocus) {
                     if(acceptableInput) {
-                        root.value = text
+                        control.value = text
                     } else {
-                        text = root.value
+                        text = control.value
                     }
 
-                    valueText.text = Qt.binding(function() { return root.value; })
+                    valueText.text = Qt.binding(function() { return control.value; })
+                } else {
+                    valueText.selectAll()
                 }
             }
 
             Keys.onPressed: {
                 switch(event.key) {
                     case Qt.Key_Escape:
-                        if(root.defaultValue != null) {
-                            root.value = root.defaultValue
+                        if(control.defaultValue != null) {
+                            control.value = control.defaultValue
                             text = defaultValue
                         }
+                        break;
                     default:
                         event.accepted = false
                         break;
                 }
             }
+        }
+        Rectangle {
+            anchors.fill: parent
+            visible: control.overlay
+            color: "#a0101010"
         }
     }
 }
