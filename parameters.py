@@ -440,7 +440,7 @@ class Parameters(QObject):
         if data["padding"] == -1:
             del data["padding"]
         
-        if data["subseed"] != 0.0:
+        if data["subseed_strength"] != 0.0:
             data["subseed"] = (data["subseed"], data["subseed_strength"])
         else:
             del data["subseed"]

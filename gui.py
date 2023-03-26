@@ -12,11 +12,19 @@ import sql
 import filesystem
 import thumbnails
 import backend
+import config
+from parameters import VariantMap
 
 class StatusMode(Enum):
     STARTING = 0
     IDLE = 1
     WORKING = 2
+    ERRORED = 3
+
+class RemoteStatusMode(Enum):
+    INACTIVE = 0
+    CONNECTING = 1
+    CONNECTED = 2
     ERRORED = 3
 
 class GUI(QObject):
@@ -26,11 +34,10 @@ class GUI(QObject):
     result = pyqtSignal(int)
     aboutToQuit = pyqtSignal()
     networkReply = pyqtSignal(QNetworkReply)
+    remoteUpdated = pyqtSignal()
 
     def __init__(self, parent):
         super().__init__(parent)
-
-        self.backend = backend.Backend(self)
         self.db = sql.Database(self)
         self.watcher = filesystem.Watcher()
         self.thumbnails = thumbnails.ThumbnailStorage((256, 256), 75, self)
@@ -48,6 +55,11 @@ class GUI(QObject):
         self._errorStatus = ""
         self._errorText = ""
 
+        self._config = config.Config(self, "config.json", {"endpoint": ""})
+        self._remoteStatus = RemoteStatusMode.INACTIVE
+
+        self.backend = backend.Backend(self, self._config._values.get("endpoint"))
+
         self._options = {}
 
         self._modelFolders = [os.path.join("models", f) for f in ["SD", "LoRA", "HN", "SR", "TI"]]
@@ -60,6 +72,8 @@ class GUI(QObject):
         self.backend.response.connect(self.onResponse)
         self.watcher.finished.connect(self.onFolderChanged)
         self.network.finished.connect(self.onNetworkReply)
+    
+
 
     @pyqtSlot()
     def stop(self):
@@ -135,15 +149,21 @@ class GUI(QObject):
     def onResponse(self, id, response):       
         if response["type"] == "status":
             self._statusText = response["data"]["message"]
-            if self._statusText == "Initializing":
+            if self._statusText == "Initializing" or self._statusText == "Connecting":
+                self._remoteStatus = RemoteStatusMode.CONNECTING
                 self._statusMode = StatusMode.STARTING
-            elif self._statusText == "Ready":
+            elif self._statusText == "Ready" or self._statusText == "Connected":
+                self._statusText = "Ready"
+                self._remoteStatus = RemoteStatusMode.CONNECTED
                 self._statusMode = StatusMode.IDLE
             else:
                 self._statusProgress = -1.0
                 self._statusMode = StatusMode.WORKING
             self.statusUpdated.emit()
-        
+
+        if response["type"] == "done":
+            self.setReady()
+
         if response["type"] == "options":
             self._options = response["data"]
             self.optionsUpdated.emit()
@@ -153,8 +173,8 @@ class GUI(QObject):
         if response["type"] == "error":
             self._errorStatus = self._statusText
             self._errorText = response["data"]["message"]
-            self._statusText = "Errored"
-            self._statusMode = StatusMode.ERRORED
+            #self._statusText = "Errored"
+            #self._statusMode = StatusMode.ERRORED
             self.statusUpdated.emit()
             self.errorUpdated.emit()
 
@@ -187,8 +207,6 @@ class GUI(QObject):
 
     @pyqtSlot()
     def clearError(self):
-        self._statusMode = StatusMode.IDLE
-        self._statusText = "Ready"
         self._statusProgress = -1.0
         self.statusUpdated.emit()
 
@@ -226,6 +244,29 @@ class GUI(QObject):
         drag = QDrag(self)
         drag.setMimeData(self.getFilesMimeData(files))
         drag.exec()
+    
+    @pyqtProperty(VariantMap, notify=remoteUpdated)
+    def config(self):
+        return self._config._values
+    
+    @pyqtProperty(str, notify=remoteUpdated)
+    def remoteEndpoint(self):
+        endpoint = self._config._values.get("endpoint")
+        if not endpoint:
+            return "Local"
+        return endpoint
+    
+    @pyqtSlot()
+    def restartBackend(self):
+        endpoint = self._config._values.get("endpoint")
+        self.remoteUpdated.emit()
+
+        self._statusMode = StatusMode.STARTING
+        self._statusProgress = -1
+        self._statusText = "Restarting"
+        self.backend.stop()
+        self.backend.wait()
+        self.backend.setEndpoint(endpoint)
 
 class FocusReleaser(QQuickItem):
     releaseFocus = pyqtSignal()

@@ -9,6 +9,7 @@ Item {
     property var label: "Label"
     property var tooltip: ""
     property var value: ""
+    property var placeholder: ""
     property var defaultValue: null
     property var mini: height == 20
     property var validator: RegExpValidator { regExp: /.*/ }
@@ -136,6 +137,23 @@ Item {
                 }
             }
         }
+
+        SText {
+            id: placeholderText
+            anchors.left: labelText.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            rightPadding: 5
+            verticalAlignment: Text.AlignVCenter
+            horizontalAlignment: Text.AlignRight
+            font.pointSize: control.mini ? 7.85 : 9.8
+            color: COMMON.fg2
+            monospace: true
+            text: control.placeholder
+            visible: control.value == "" && !valueText.activeFocus
+        }
+
         Rectangle {
             anchors.fill: parent
             visible: control.overlay

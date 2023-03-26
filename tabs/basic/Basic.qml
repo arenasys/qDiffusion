@@ -78,7 +78,7 @@ Item {
         anchors.left: settings.left
         anchors.right: parent.right
         minOffset: 50
-        maxOffset: 100
+        maxOffset: 70
         offset: 50
     }
 

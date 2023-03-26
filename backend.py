@@ -5,25 +5,37 @@ from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, QThread
 from PyQt5.QtWidgets import QApplication
 
 import local
+import remote
 
 class Backend(QObject):
     request = pyqtSignal(int, object)
     response = pyqtSignal(int, object)
     cancel = pyqtSignal(int)
+    stopping = pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent, endpoint=""):
         super().__init__(parent)
-
-        self.inference = local.LocalInference()
         self.responses = queue.Queue()
 
-        self.inference.start()
+        self.setEndpoint(endpoint)
+        
+        parent.aboutToQuit.connect(self.stop)
 
+    def setEndpoint(self, endpoint):
+        if endpoint == "":
+            self.inference = local.LocalInference()
+        else:
+            self.inference = remote.RemoteInference(endpoint)
+
+        self.inference.start()
         self.request.connect(self.inference.onRequest)
         self.cancel.connect(self.inference.onCancel)
         self.inference.response.connect(self.onResponse)
-        
-        parent.aboutToQuit.connect(self.inference.stop)
+        self.stopping.connect(self.inference.stop)
+
+    @pyqtSlot()
+    def stop(self):
+        self.stopping.emit()
 
     def wait(self):
         self.inference.wait()
