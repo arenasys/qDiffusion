@@ -382,7 +382,7 @@ class Parameters(QObject):
             if k in self.gui._options["CLIP"] and k in self.gui._options["VAE"]:
                 models += [k]
         self._values.set("models", models)
-        if models and not self._values.get("model") or not self._values.get("model") in models:
+        if models and (not self._values.get("model") or not self._values.get("model") in models):
             self._values.set("model", models[0])
 
         self._availableNetworks = [ParametersNetwork(self, name, "LoRA") for name in self._values.get("LoRAs")]

@@ -1,6 +1,5 @@
 torch==1.13.1
 torchvision==0.14.1
-basicsr==1.4.2
 diffusers==0.12.1
 einops==0.6.0
 k_diffusion==0.0.12
@@ -13,6 +12,9 @@ transformers==4.26.0
 simple_websocket_server==0.4.2
 websocket_client==1.5.0
 bson==0.5.10
+Send2Trash==1.8.0
+PyOpenGL==3.1.6
+opencv-python-headless==4.7.0.72
 PyQt5==5.15.7
 PyQt5-Qt5==5.15.2
 PyQt5-sip==12.11.0
