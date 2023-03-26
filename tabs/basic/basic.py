@@ -574,6 +574,10 @@ class Basic(QObject):
     @pyqtSlot(MimeData)
     def pasteDrop(self, mimedata):
         self.pasteMimedata(mimedata._mimeData)
+
+    @pyqtSlot(str)
+    def pasteText(self, params):
+        self.pastedText.emit(params)
         
     def pasteMimedata(self, mimedata):
         if mimedata.hasText():

@@ -114,6 +114,10 @@ Item {
             BASIC.parameters.promptsChanged()
         }
 
+        onInspect: {
+            BASIC.pasteText(positivePrompt)
+        }
+
     }
 
     Rectangle {

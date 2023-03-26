@@ -14,6 +14,8 @@ Item {
 
     property variant bindMap: null
 
+    signal inspect()
+
     Connections {
         target: bindMap
         function onUpdated() {
@@ -79,6 +81,22 @@ Item {
                 }
 
                 SIconButton {
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.right: showButton.visible ? showButton.left : parent.right
+                    anchors.margins: 1
+                    height: 23
+                    width: 23
+                    tooltip: "Inspect"
+                    icon: "qrc:/icons/search.svg"
+                    inset: 8
+                    onPressed: {
+                        root.inspect()
+                    }
+                }
+
+                SIconButton {
+                    id: showButton
                     visible: promptDivider.offset == 5
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom

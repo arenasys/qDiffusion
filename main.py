@@ -17,6 +17,9 @@ import sql
 import canvas
 import parameters
 
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning) 
+
 class Application(QApplication):
         def event(self, e):
             return QApplication.event(self, e)
