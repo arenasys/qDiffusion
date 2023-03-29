@@ -7,11 +7,17 @@ import io
 import queue
 import threading
 import multiprocessing
+import traceback
+import datetime
 
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QThread
 from PyQt5.QtWidgets import QApplication
 
 from parameters import save_image
+
+def log_traceback(tb):
+    with open("crash.log", "a") as f:
+        f.write(f"{datetime.datetime.now()}\nLOCAL\n{tb}\n")
 
 class InferenceProcessThread(threading.Thread):
     def __init__(self, requests, responses):
@@ -71,6 +77,7 @@ class InferenceProcessThread(threading.Thread):
                 additional = ""
                 try:
                     s = traceback.extract_tb(e.__traceback__).format()
+                    log_traceback((''.join(s)).replace("\\n", "\n"))
                     s = [e for e in s if not "site-packages" in e][-1]
                     s = s.split(", ")
                     file = s[0].split(os.path.sep)[-1][:-1]
