@@ -24,6 +24,15 @@ Item {
             bindMap: GUI.config
             bindKey: "endpoint"
         }
+        OTextInput {
+            id: passwordInput
+            width: 300
+            height: 30
+            label: "Password"
+            placeholder: "None"
+            bindMap: GUI.config
+            bindKey: "password"
+        }
         Item {
             width: 300
             height: 30
@@ -44,7 +53,7 @@ Item {
                 }
 
                 SText {
-                    text: endpointInput.value == "" ? "Start" : "Connect"
+                    text: "Restart"
                     verticalAlignment: Text.AlignVCenter
                     horizontalAlignment: Text.AlignHCenter
                     anchors.fill: parent

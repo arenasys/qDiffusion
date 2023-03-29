@@ -13,19 +13,19 @@ class Backend(QObject):
     cancel = pyqtSignal(int)
     stopping = pyqtSignal()
 
-    def __init__(self, parent, endpoint=""):
+    def __init__(self, parent, endpoint="", password=""):
         super().__init__(parent)
         self.responses = queue.Queue()
 
-        self.setEndpoint(endpoint)
+        self.setEndpoint(endpoint, password)
         
         parent.aboutToQuit.connect(self.stop)
 
-    def setEndpoint(self, endpoint):
+    def setEndpoint(self, endpoint, password):
         if endpoint == "":
             self.inference = local.LocalInference()
         else:
-            self.inference = remote.RemoteInference(endpoint)
+            self.inference = remote.RemoteInference(endpoint, password)
 
         self.inference.start()
         self.request.connect(self.inference.onRequest)

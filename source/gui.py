@@ -55,10 +55,10 @@ class GUI(QObject):
         self._errorStatus = ""
         self._errorText = ""
 
-        self._config = config.Config(self, "config.json", {"endpoint": ""})
+        self._config = config.Config(self, "config.json", {"endpoint": "", "password": ""})
         self._remoteStatus = RemoteStatusMode.INACTIVE
 
-        self.backend = backend.Backend(self, self._config._values.get("endpoint"))
+        self.backend = backend.Backend(self, self._config._values.get("endpoint"), self._config._values.get("password"))
 
         self._options = {}
 
@@ -260,6 +260,7 @@ class GUI(QObject):
     @pyqtSlot()
     def restartBackend(self):
         endpoint = self._config._values.get("endpoint")
+        password = self._config._values.get("password")
         self.remoteUpdated.emit()
 
         self._statusMode = StatusMode.STARTING
@@ -267,7 +268,7 @@ class GUI(QObject):
         self._statusText = "Restarting"
         self.backend.stop()
         self.backend.wait()
-        self.backend.setEndpoint(endpoint)
+        self.backend.setEndpoint(endpoint, password)
 
 class FocusReleaser(QQuickItem):
     releaseFocus = pyqtSignal()

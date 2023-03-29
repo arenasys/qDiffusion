@@ -1,11 +1,4 @@
-import os
-import shutil
-import sys
-import subprocess
-import traceback
-import io
 import queue
-import threading
 import multiprocessing
 import websocket as ws_client
 import bson
@@ -15,9 +8,27 @@ from PyQt5.QtWidgets import QApplication
 
 from parameters import save_image
 
+import base64
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.fernet import Fernet, InvalidToken
+
+def get_scheme(password):
+    password = password.encode("utf8")
+    h = hashes.Hash(hashes.SHA256())
+    h.update(password)
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=h.finalize()[:16], #lol
+        iterations=480000,
+    )
+    key = base64.urlsafe_b64encode(kdf.derive(password))
+    return Fernet(key)
+
 class RemoteInference(QThread):
     response = pyqtSignal(int, object)
-    def __init__(self, endpoint):
+    def __init__(self, endpoint, password=None):
         super().__init__()
 
         self.stopping = False
@@ -25,6 +36,10 @@ class RemoteInference(QThread):
         self.responses = multiprocessing.Queue(16)
         self.endpoint = endpoint
         self.client = ws_client.WebSocket()
+
+        self.scheme = None
+        if password:
+            self.scheme = get_scheme(password)
 
     def connect(self):
         if self.client.connected:
@@ -35,8 +50,9 @@ class RemoteInference(QThread):
             try:
                 self.client.connect(self.endpoint)
             except Exception as e:
-                QApplication.processEvents()
-                QThread.msleep(10)
+                for _ in range(100):
+                    QApplication.processEvents()
+                    QThread.msleep(10)
                 pass
         self.onResponse(-1, {"type": "status", "data": {"message": "Connected"}})
         self.requests.put((-1, {"type":"options"}))
@@ -55,10 +71,15 @@ class RemoteInference(QThread):
                 if requesting:
                     self.id, request = self.requests.get(False)
                     requesting = False
-                    self.client.send_binary(bson.dumps(request))
+                    data = bson.dumps(request)
+                    if self.scheme:
+                        data = self.scheme.encrypt(data)
+                    self.client.send_binary(data)
                 else:
-                    response = self.client.recv()
-                    response = bson.loads(response)
+                    data = self.client.recv()
+                    if self.scheme:
+                        data = self.scheme.decrypt(data)
+                    response = bson.loads(data)
                     self.onResponse(self.id, response)
                     if not response["type"] in {"progress", "status"}:
                         requesting = True
@@ -67,10 +88,12 @@ class RemoteInference(QThread):
             except Exception as e:
                 if str(e) in {"socket is already closed.", "[Errno 32] Broken pipe"}:
                     continue
-
-                if not self.client.connected:
+                if type(e) == InvalidToken:
+                    self.onResponse(-1, {"type": "error", "data": {"message": "Incorrect password"}})
                     requesting = True
+                elif not self.client.connected:
                     self.onResponse(-1, {"type": "error", "data": {"message": str(e)}})
+                    requesting = True
                 else:
                     raise e
             
