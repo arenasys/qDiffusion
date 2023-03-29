@@ -15,9 +15,11 @@ from PyQt5.QtWidgets import QApplication
 
 from parameters import save_image
 
-def log_traceback(tb):
+def log_traceback(label):
+    exc_type, exc_value, exc_tb = sys.exc_info()
+    tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
     with open("crash.log", "a") as f:
-        f.write(f"{datetime.datetime.now()}\nLOCAL\n{tb}\n")
+        f.write(f"{label} {datetime.datetime.now()}\n{tb}\n")
 
 class InferenceProcessThread(threading.Thread):
     def __init__(self, requests, responses):
@@ -76,8 +78,8 @@ class InferenceProcessThread(threading.Thread):
                     continue
                 additional = ""
                 try:
+                    log_traceback("LOCAL THREAD")
                     s = traceback.extract_tb(e.__traceback__).format()
-                    log_traceback((''.join(s)).replace("\\n", "\n"))
                     s = [e for e in s if not "site-packages" in e][-1]
                     s = s.split(", ")
                     file = s[0].split(os.path.sep)[-1][:-1]
@@ -108,6 +110,7 @@ class InferenceProcess(multiprocessing.Process):
         try:
             self.inference = InferenceProcessThread(inference_requests, self.responses)
         except Exception as e:
+            log_traceback("LOCAL PROCESS")
             self.responses.put((-1, {"type":"error", "data":{"message":str(e)}}))
             return
 

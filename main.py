@@ -125,7 +125,7 @@ def start():
 def exceptHook(exc_type, exc_value, exc_tb):
     tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
     with open("crash.log", "a") as f:
-        f.write(f"{datetime.datetime.now()}\n{tb}\n")
+        f.write(f"GUI {datetime.datetime.now()}\n{tb}\n")
     print(tb)
     print("TRACEBACK SAVED: crash.log")
     QApplication.quit()

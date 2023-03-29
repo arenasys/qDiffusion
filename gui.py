@@ -173,8 +173,6 @@ class GUI(QObject):
         if response["type"] == "error":
             self._errorStatus = self._statusText
             self._errorText = response["data"]["message"]
-            #self._statusText = "Errored"
-            #self._statusMode = StatusMode.ERRORED
             self.statusUpdated.emit()
             self.errorUpdated.emit()
 
@@ -207,6 +205,9 @@ class GUI(QObject):
 
     @pyqtSlot()
     def clearError(self):
+        if self._statusMode != StatusMode.STARTING:
+            self._statusText = "Ready"
+            self._statusMode = StatusMode.IDLE
         self._statusProgress = -1.0
         self.statusUpdated.emit()
 

@@ -16,5 +16,5 @@ if not exist .\venv\ (
 	call .\venv\Scripts\activate.bat
 )
 
-start pythonw .\main.py
+start python .\main.py
 exit
