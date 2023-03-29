@@ -31,16 +31,18 @@ class InferenceProcessThread(threading.Thread):
         self.current = None
         self.cancelled = set()
 
-        if not os.path.exists("sd-inference-server"):
+        sd_path = os.path.join("source", "sd-inference-server")
+
+        if not os.path.exists(sd_path):
             self.responses.put((-1, {"type":"status", "data":{"message":"Downloading"}}))
-            ret = subprocess.run(["git", "clone", "https://github.com/arenatemp/sd-inference-server/"], capture_output=True)
+            ret = subprocess.run(["git", "clone", "https://github.com/arenatemp/sd-inference-server/", sd_path], capture_output=True)
             if ret.returncode:
                 raise RuntimeError(ret.stderr.decode("utf-8").split("fatal: ", 1)[1])
 
         if not os.path.exists("models"):
-            shutil.copytree(os.path.join("sd-inference-server", "models"), os.path.join(os.getcwd(), "models"))
+            shutil.copytree(os.path.join(sd_path, "models"), os.path.join(os.getcwd(), "models"))
 
-        sys.path.insert(0, "sd-inference-server")
+        sys.path.insert(0, sd_path)
 
         self.responses.put((-1, {"type":"status", "data":{"message":"Initializing"}}))
         import torch

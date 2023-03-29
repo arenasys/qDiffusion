@@ -1,10 +1,10 @@
-qml/tabs
-qml/qml_rc.py
-qml/qml.rc
+source/qml/tabs
+source/qml/qml_rc.py
+source/qml/qml.rc
 *.log
 .vscode
 __pycache__
 */__pycache__
 models
 outputs
-sd-inference-server
+source/sd-inference-server

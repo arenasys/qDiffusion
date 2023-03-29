@@ -25,28 +25,29 @@ class Application(QApplication):
             return QApplication.event(self, e)
 
 def buildQMLRc():
-    qml_rc = os.path.join("qml", "qml.qrc")
+    qml_path = os.path.join("source", "qml")
+    qml_rc = os.path.join(qml_path, "qml.qrc")
     if os.path.exists(qml_rc):
         os.remove(qml_rc)
 
     items = []
 
-    tabs = glob.glob(os.path.join("tabs", "*"))
+    tabs = glob.glob(os.path.join("source", "tabs", "*"))
     for tab in tabs:
         for src in glob.glob(os.path.join(tab, "*.*")):
             if src.split(".")[-1] in {"qml","svg"}:
-                dst = os.path.join("qml", src)
+                dst = os.path.join(qml_path, os.path.relpath(src, "source"))
                 os.makedirs(os.path.dirname(dst), exist_ok=True)
                 shutil.copy(src, dst)
                 items += [dst]
 
-    items += glob.glob(os.path.join("qml", "*.qml"))
-    items += glob.glob(os.path.join("qml", "components", "*.qml"))
-    items += glob.glob(os.path.join("qml", "style", "*.qml"))
-    items += glob.glob(os.path.join("qml", "fonts", "*.ttf"))
-    items += glob.glob(os.path.join("qml", "icons", "*.svg"))
+    items += glob.glob(os.path.join(qml_path, "*.qml"))
+    items += glob.glob(os.path.join(qml_path, "components", "*.qml"))
+    items += glob.glob(os.path.join(qml_path, "style", "*.qml"))
+    items += glob.glob(os.path.join(qml_path, "fonts", "*.ttf"))
+    items += glob.glob(os.path.join(qml_path, "icons", "*.svg"))
 
-    items = ''.join([f"\t\t<file>{os.path.relpath(f, 'qml')}</file>\n" for f in items])
+    items = ''.join([f"\t\t<file>{os.path.relpath(f, qml_path )}</file>\n" for f in items])
 
     contents = f"""<RCC>\n\t<qresource prefix="/">\n{items}\t</qresource>\n</RCC>"""
 
@@ -54,8 +55,9 @@ def buildQMLRc():
         f.write(contents)
 
 def buildQMLPy():
-    qml_py = os.path.join("qml", "qml_rc.py")
-    qml_rc = os.path.join("qml", "qml.qrc")
+    qml_path = os.path.join("source", "qml")
+    qml_py = os.path.join(qml_path, "qml_rc.py")
+    qml_rc = os.path.join(qml_path, "qml.qrc")
 
     if os.path.exists(qml_py):
         os.remove(qml_py)
@@ -64,12 +66,12 @@ def buildQMLPy():
     if status.returncode != 0:
         raise Exception(status.stderr.decode("utf-8"))
 
-    shutil.rmtree(os.path.join("qml", "tabs"))
+    shutil.rmtree(os.path.join(qml_path, "tabs"))
     os.remove(qml_rc)
 
 def loadTabs(app, backend):
     tabs = []
-    for tab in glob.glob(os.path.join("tabs", "*")):
+    for tab in glob.glob(os.path.join("source", "tabs", "*")):
         tab_name = tab.split(os.path.sep)[-1]
         tab_name_c = tab_name.capitalize()
         tab_module = importlib.import_module(f"tabs.{tab_name}.{tab_name}")
@@ -131,6 +133,9 @@ def exceptHook(exc_type, exc_value, exc_tb):
     QApplication.quit()
 
 if __name__ == "__main__":
+    if not os.path.exists("source"):
+        os.chdir('..')
+
     sys.excepthook = exceptHook
     buildQMLRc()
     buildQMLPy()

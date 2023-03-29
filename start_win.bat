@@ -7,7 +7,7 @@ if not exist .\venv\ (
 	call .\venv\Scripts\activate.bat
 	start /wait /b pip install wheel
 	start /wait /b pip install torch torchvision --index-url https://download.pytorch.org/whl/cu117
-	start /wait /b pip install -r .\requirements.txt
+	start /wait /b pip install -r source\requirements.txt
 	start /wait /b pip install xformers
 	start /wait /b pip install basicsr
 	start /wait /b pip uninstall --yes opencv-python
