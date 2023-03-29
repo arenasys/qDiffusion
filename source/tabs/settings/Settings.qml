@@ -12,11 +12,11 @@ Item {
 
     Column {
         anchors.centerIn: parent
-        height: 62
-        width: 300
+        height: parent.height-100
+        width: parent.width/2
         OTextInput {
             id: endpointInput
-            width: 300
+            width: parent.width
             height: 30
             label: "Endpoint"
             placeholder: "Local"
@@ -26,15 +26,16 @@ Item {
         }
         OTextInput {
             id: passwordInput
-            width: 300
+            width: parent.width
             height: 30
             label: "Password"
             placeholder: "None"
             bindMap: GUI.config
             bindKey: "password"
         }
+
         Item {
-            width: 300
+            width: parent.width
             height: 30
             Rectangle {
                 anchors.fill: parent
@@ -64,19 +65,60 @@ Item {
         }
 
         Item {
-            width: 300
+            width: parent.width
             height: 30
-            Item {
+        }
+
+
+        Item {
+            width: parent.width
+            height: 30
+            OChoice {
+                anchors.left: parent.left
+                anchors.top: parent.top
+                id: modelTypeInput
+                width: 120
+                height: 30
+                label: "Type"
+                model: ["SD", "LoRA", "HN", "TI", "SR"]
+            }
+            OTextInput {
+                anchors.leftMargin: -2
+                anchors.left: modelTypeInput.right
+                anchors.right: parent.right
+                anchors.top: parent.top
+                id: modelUrlInput
+                height: 30
+                label: ""
+                placeholder: "URL"
+            }
+        }
+        Item {
+            width: parent.width
+            height: 30
+            Rectangle {
                 anchors.fill: parent
                 anchors.margins: 2
+                color: mouseArea2.containsPress ? COMMON.bg4 : COMMON.bg3
+                border.color: mouseArea2.containsMouse ? COMMON.bg5 : COMMON.bg4
+
+                MouseArea {
+                    id: mouseArea2
+                    anchors.fill: parent
+                    hoverEnabled: true
+
+                    onPressed: {
+                        SETTINGS.download(modelTypeInput.model[modelTypeInput.currentIndex], modelUrlInput.value)
+                    }
+                }
 
                 SText {
-                    text: GUI.statusText
+                    text: "Download"
                     verticalAlignment: Text.AlignVCenter
                     horizontalAlignment: Text.AlignHCenter
                     anchors.fill: parent
                     font.pointSize: 9.8
-                    color: COMMON.fg2
+                    color: COMMON.fg1
                 }
             }
         }

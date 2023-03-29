@@ -15,3 +15,7 @@ class Settings(QObject):
     @pyqtSlot()
     def restart(self):
         self.gui.restartBackend()
+
+    @pyqtSlot(str, str)
+    def download(self, type, url):
+        self.gui.remoteDownload(type, url)

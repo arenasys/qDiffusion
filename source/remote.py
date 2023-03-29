@@ -111,7 +111,10 @@ class RemoteInference(QThread):
     @pyqtSlot(int)
     def onCancel(self, id):
         if self.client.connected:
-            self.client.send_binary(bson.dumps({"type": "cancel", "data":{}}))
+            data = bson.dumps({"type": "cancel", "data":{}})
+            if self.scheme:
+                data = self.scheme.encrypt(data)
+            self.client.send_binary(data)
 
     def onResponse(self, id, response):
         if response["type"] == "result":

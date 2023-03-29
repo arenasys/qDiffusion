@@ -270,6 +270,13 @@ class GUI(QObject):
         self.backend.wait()
         self.backend.setEndpoint(endpoint, password)
 
+    @pyqtSlot(str, str)
+    def remoteDownload(self, type, url):
+        if self._remoteStatus != RemoteStatusMode.CONNECTED:
+            return
+        
+        self.backend.makeRequest(-1, {"type":"download", "data":{"type": type, "url":url}})
+
 class FocusReleaser(QQuickItem):
     releaseFocus = pyqtSignal()
     dropped = pyqtSignal()
