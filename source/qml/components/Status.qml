@@ -26,8 +26,10 @@ Item {
             anchors.top: parent.top
             height: 25
             topPadding: 8
+            leftPadding: 8
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignHCenter
+            elide: Text.ElideRight
             text: GUI.remoteEndpoint
             font.bold: true
             color: COMMON.fg2

@@ -39,6 +39,7 @@ class RemoteInference(QThread):
                 QThread.msleep(10)
                 pass
         self.onResponse(-1, {"type": "status", "data": {"message": "Connected"}})
+        self.requests.put((-1, {"type":"options"}))
 
     def run(self):
         self.id = -1
@@ -46,6 +47,7 @@ class RemoteInference(QThread):
         
         while not self.stopping:
             self.connect()
+            
             try:
                 QApplication.processEvents()
                 QThread.msleep(10)

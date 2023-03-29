@@ -48,6 +48,7 @@ Item {
         anchors.fill: parent
         anchors.margins: 2
         anchors.bottomMargin: 0
+        clip: true
 
         color: COMMON.bg3
         border.color: COMMON.bg4
@@ -80,7 +81,7 @@ Item {
 
         Rectangle {
             visible: valueText.activeFocus
-            width: valueText.implicitWidth + 5
+            width: Math.min(container.width+3, valueText.implicitWidth + 5)
             anchors.right: parent.right
             anchors.top: parent.top
             anchors.bottom: parent.bottom
@@ -89,54 +90,64 @@ Item {
             color: COMMON.bg1
         }
 
-        STextInput {
-            id: valueText
-            text: control.value
-            anchors.left: labelText.left
+        Item {
+            id: container
+            anchors.left: labelText.right
             anchors.right: parent.right
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            rightPadding: 5
-            verticalAlignment: Text.AlignVCenter
-            horizontalAlignment: Text.AlignRight
-            font.pointSize: control.mini ? 7.85 : 9.8
-            color: COMMON.fg1
-            monospace: true
-            validator: control.validator
-            readOnly: control.disabled
-            
-            onEditingFinished: {
-                control.value = text
-            }
+            anchors.leftMargin: 10
+            anchors.rightMargin: control.mini ? 3 : 5
+            clip: true
 
-            onActiveFocusChanged: {
-                if(!activeFocus) {
-                    if(acceptableInput) {
-                        control.value = text
-                    } else {
-                        text = control.value
-                    }
-
-                    valueText.text = Qt.binding(function() { return control.value; })
-                } else {
-                    valueText.selectAll()
+            STextInput {
+                id: valueText
+                text: control.value
+                anchors.fill: parent
+                rightPadding: 5
+                verticalAlignment: Text.AlignVCenter
+                horizontalAlignment: Text.AlignRight
+                font.pointSize: control.mini ? 7.85 : 9.8
+                color: COMMON.fg1
+                monospace: true
+                validator: control.validator
+                readOnly: control.disabled
+                
+                onEditingFinished: {
+                    control.value = text
                 }
-            }
 
-            Keys.onPressed: {
-                switch(event.key) {
-                    case Qt.Key_Escape:
-                        if(control.defaultValue != null) {
-                            control.value = control.defaultValue
-                            text = defaultValue
+                onActiveFocusChanged: {
+                    if(!activeFocus) {
+                        if(acceptableInput) {
+                            control.value = text
+                        } else {
+                            text = control.value
                         }
-                        break;
-                    default:
-                        event.accepted = false
-                        break;
+
+                        valueText.text = Qt.binding(function() { return control.value; })
+                    } else {
+                        valueText.selectAll()
+                    }
+                }
+
+                Keys.onPressed: {
+                    switch(event.key) {
+                        case Qt.Key_Escape:
+                            if(control.defaultValue != null) {
+                                control.value = control.defaultValue
+                                text = defaultValue
+                            }
+                            break;
+                        default:
+                            event.accepted = false
+                            break;
+                    }
                 }
             }
         }
+
+        
 
         SText {
             id: placeholderText
