@@ -14,3 +14,4 @@ Send2Trash==1.8.0
 PyOpenGL==3.1.6
 PyQt5==5.15.7
 psutil==5.9.2
+cryptography==38.0.1
