@@ -32,6 +32,7 @@ class GUI(QObject):
     errorUpdated = pyqtSignal()
     optionsUpdated = pyqtSignal()
     result = pyqtSignal(int)
+    response = pyqtSignal(int, object)
     aboutToQuit = pyqtSignal()
     networkReply = pyqtSignal(QNetworkReply)
     remoteUpdated = pyqtSignal()
@@ -146,7 +147,7 @@ class GUI(QObject):
         self.statusUpdated.emit()
     
     @pyqtSlot(int, object)
-    def onResponse(self, id, response):       
+    def onResponse(self, id, response):
         if response["type"] == "status":
             self._statusText = response["data"]["message"]
             if self._statusText == "Initializing" or self._statusText == "Connecting":
@@ -194,6 +195,8 @@ class GUI(QObject):
                 self._results += [{"image": img, "metadata": response["data"]["metadata"][i]}]
             self.result.emit(id)
             self.setReady()
+
+        self.response.emit(id, response)
     
     @pyqtSlot(str, int)
     def onFolderChanged(self, folder, total):
@@ -276,6 +279,13 @@ class GUI(QObject):
             return
         
         self.backend.makeRequest(-1, {"type":"download", "data":{"type": type, "url":url}})
+
+    @pyqtSlot(str, str)
+    def remoteUpload(self, type, file):
+        if self._remoteStatus != RemoteStatusMode.CONNECTED:
+            return
+        
+        self.backend.makeRequest(-1, {"type":"upload", "data":{"type": type, "file":file}})
 
 class FocusReleaser(QQuickItem):
     releaseFocus = pyqtSignal()

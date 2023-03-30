@@ -147,8 +147,6 @@ Item {
             }
         }
 
-        
-
         SText {
             id: placeholderText
             anchors.left: labelText.left

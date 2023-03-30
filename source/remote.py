@@ -2,6 +2,9 @@ import queue
 import multiprocessing
 import websocket as ws_client
 import bson
+import select
+import os
+import time
 
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QThread
 from PyQt5.QtWidgets import QApplication
@@ -25,6 +28,32 @@ def get_scheme(password):
     )
     key = base64.urlsafe_b64encode(kdf.derive(password))
     return Fernet(key)
+
+class RemoteInferenceUpload(QThread):
+    done = pyqtSignal()
+    def __init__(self, queue, type, file):
+        super().__init__()
+        self.queue = queue
+        self.type = type
+        self.file = file
+        self.name = file.rsplit(os.path.sep, 1)[-1]
+
+    def run(self):
+        with open(self.file, 'rb') as f:
+            i = 0
+            while True:
+                chunk = f.read(1024*1024)
+                if not chunk:
+                    break
+                request = {"type":"chunk", "data": {"type":self.type, "name": self.name, "chunk":chunk, "index":i}}
+
+                while not self.queue.empty():
+                    QThread.msleep(10)
+                self.queue.put((-1, request))
+                i += 1
+
+        self.queue.put((-1, {"type":"chunk", "data": {"type":self.type, "name": self.name}}))
+        self.done.emit()
 
 class RemoteInference(QThread):
     response = pyqtSignal(int, object)
@@ -51,49 +80,58 @@ class RemoteInference(QThread):
                 self.client.connect(self.endpoint)
             except Exception as e:
                 for _ in range(100):
+                    if self.stopping:
+                        return
                     QApplication.processEvents()
                     QThread.msleep(10)
                 pass
+        if self.stopping:
+            return
         self.onResponse(-1, {"type": "status", "data": {"message": "Connected"}})
         self.requests.put((-1, {"type":"options"}))
 
     def run(self):
         self.id = -1
-        requesting = True
         
         while not self.stopping:
             self.connect()
             
             try:
                 QApplication.processEvents()
-                QThread.msleep(10)
-
-                if requesting:
+                if not self.requests.empty():
                     self.id, request = self.requests.get(False)
-                    requesting = False
+
+
+
+                    if request["type"] == "upload":
+                        thread = RemoteInferenceUpload(self.requests, request["data"]["type"], request["data"]["file"])
+                        thread.start()
+                        continue
+                    
                     data = bson.dumps(request)
                     if self.scheme:
-                        data = self.scheme.encrypt(data)
+                        data = base64.urlsafe_b64decode(self.scheme.encrypt(data))
                     self.client.send_binary(data)
                 else:
+                    rd, _, _ = select.select([self.client], [], [], 0)
+                    if not rd:
+                        QThread.msleep(10)
+                        continue
                     data = self.client.recv()
                     if self.scheme:
-                        data = self.scheme.decrypt(data)
+                        data = self.scheme.decrypt(base64.urlsafe_b64encode(data))
                     response = bson.loads(data)
                     self.onResponse(self.id, response)
-                    if not response["type"] in {"progress", "status"}:
-                        requesting = True
             except queue.Empty:
+                self.client.ping()
                 pass
             except Exception as e:
                 if str(e) in {"socket is already closed.", "[Errno 32] Broken pipe"}:
                     continue
                 if type(e) == InvalidToken:
                     self.onResponse(-1, {"type": "error", "data": {"message": "Incorrect password"}})
-                    requesting = True
                 elif not self.client.connected:
                     self.onResponse(-1, {"type": "error", "data": {"message": str(e)}})
-                    requesting = True
                 else:
                     raise e
             

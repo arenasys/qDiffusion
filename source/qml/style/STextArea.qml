@@ -8,7 +8,8 @@ Rectangle {
 
     property alias text: textArea.text
     property alias font: textArea.font
-    property alias readOnly: textArea.readOnly 
+    property alias readOnly: textArea.readOnly
+    property alias area: textArea
 
     onActiveFocusChanged: {
         if(root.activeFocus) {
@@ -19,6 +20,28 @@ Rectangle {
     signal tab()
 
     color: "transparent"
+
+    SContextMenu {
+        id: contextMenu
+        SContextMenuItem {
+            text: "Cut"
+            onPressed: {
+                textArea.cut()
+            }
+        }
+        SContextMenuItem {
+            text: "Copy"
+            onPressed: {
+                textArea.copy()
+            }
+        }
+        SContextMenuItem {
+            text: "Paste"
+            onPressed: {
+                textArea.paste()
+            }
+        }
+    }
 
     Flickable {
         id: control
@@ -46,7 +69,7 @@ Rectangle {
             rightPadding: 10
             wrapMode: TextArea.Wrap
             selectByMouse: true
-    
+            persistentSelection: true
             FontLoader {
                 source: "qrc:/fonts/Cantarell-Regular.ttf"
             }
@@ -78,6 +101,14 @@ Rectangle {
                 } else {
                     event.accepted = false
                 }
+            }
+        }
+
+        MouseArea {
+            anchors.fill: textArea
+            acceptedButtons: Qt.RightButton
+            onPressed: {
+                contextMenu.popup()
             }
         }
     }

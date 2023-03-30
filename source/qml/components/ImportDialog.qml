@@ -10,9 +10,10 @@ import "../components"
 Dialog {
     id: dialog
     anchors.centerIn: parent
-    width: 400
+    width: raw ? Math.max(parent.width - 200, 400) : 400
     dim: true
     property alias parser: parser
+    property var raw: false
 
     height: paramList.contentHeight + 77
 
@@ -84,6 +85,19 @@ Dialog {
             font.pointSize: 9
             font.bold: true
         }
+        SIconButton {
+            color: "transparent"
+            icon: "qrc:/icons/eye.svg"
+            tooltip: dialog.raw ? "Show parsed parameters" : "Show raw parameters"
+            anchors.top: parent.top
+            anchors.right: parent.right
+            height: 20
+            width: 20
+
+            onPressed: {
+                dialog.raw = !dialog.raw
+            }
+        }
     }
 
     contentItem: Rectangle {
@@ -92,6 +106,7 @@ Dialog {
         border.color: COMMON.bg5
 
         ListView {
+            visible: !dialog.raw
             id: paramList
             model: parser.parameters
             anchors.left: parent.left
@@ -220,6 +235,14 @@ Dialog {
                     lastItem.checked = mode
                 }
             }
+        }
+
+
+        STextArea {
+            visible: dialog.raw
+            anchors.fill: parent
+            readOnly: true
+            text: parser.formatted
         }
     }
 

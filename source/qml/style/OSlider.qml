@@ -87,7 +87,11 @@ Item {
             preventStealing: true
 
             function update() {
-                root.update(Math.min(width, Math.max(0, mouseX))/width)
+                var pos = Math.max(0, mouseX)
+                if(root.bounded) {
+                    pos = Math.min(width, pos)
+                }
+                root.update(pos/width)
             }
 
             onPressed: {
