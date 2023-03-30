@@ -57,8 +57,15 @@ Item {
     Rectangle {
         anchors.fill:img
         color: "transparent"
-        border.color: "white"
+        border.color: "black"
         border.width: thumb.border
+    }
+
+    Rectangle {
+        anchors.fill:img
+        color: "transparent"
+        border.color: "white"
+        border.width: thumb.border/2
     }
 
     Rectangle {

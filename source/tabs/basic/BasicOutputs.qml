@@ -24,7 +24,23 @@ Item {
             id: foldersSql
             query: "SELECT id FROM outputs ORDER BY id DESC;"
         }
-        ScrollBar.horizontal: SScrollBarH { }
+        ScrollBar.horizontal: SScrollBarH { 
+            id: scrollBar
+            stepSize: 1/(4*Math.ceil(foldersSql.length))
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.NoButton
+            onWheel: {
+                if(wheel.angleDelta.y < 0) {
+                    scrollBar.increase()
+                } else {
+                    scrollBar.decrease()
+                }
+            }
+        }
+
 
         Connections {
             target: BASIC
@@ -77,7 +93,6 @@ Item {
                     id: itemImage
                     visible: !modelObj.empty
                     anchors.fill: parent
-                    anchors.margins: 1
                     image: modelObj.image
                     centered: true
                 }
@@ -101,13 +116,6 @@ Item {
                     rightPadding: 3
                     bottomPadding: 3
                     font.pointSize: 9.8
-                }
-
-                Rectangle {
-                    anchors.fill: parent
-                    border.color: parent.highlight ? COMMON.fg2 : COMMON.bg4
-                    border.width: 1
-                    color: "transparent"
                 }
 
                 MouseArea {
@@ -179,6 +187,12 @@ Item {
                         break;
                     }
                 }
+            }
+            Rectangle {
+                anchors.fill: itemFrame
+                border.color: itemFrame.highlight ? COMMON.fg2 : COMMON.bg4
+                border.width: 1
+                color: "transparent"
             }
         }
 
