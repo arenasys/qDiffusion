@@ -1,0 +1,4 @@
+go.sum
+*.exe
+*.syso
+!.gitignore

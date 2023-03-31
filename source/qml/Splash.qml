@@ -10,6 +10,7 @@ ApplicationWindow {
     height: 600
     color: "#1a1a1a"
     title: "qDiffusion"
+    flags: Qt.Window | Qt.WindowStaysOnTopHint
 
     Image {
         opacity: 0.5
@@ -32,6 +33,8 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
+        root.flags = Qt.Window
+        root.requestActivate()
         COORDINATOR.load()
     }
 
@@ -42,7 +45,7 @@ ApplicationWindow {
             if(component.status != Component.Ready) {
                 console.log("ERROR", component.errorString())
             } else {
-                component.createObject(root)
+                component.incubateObject(root)
             }
         }
     }

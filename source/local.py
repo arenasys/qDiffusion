@@ -10,6 +10,9 @@ import multiprocessing
 import traceback
 import datetime
 
+import platform
+IS_WIN = platform.system() == 'Windows'
+
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QThread
 from PyQt5.QtWidgets import QApplication
 
@@ -35,7 +38,7 @@ class InferenceProcessThread(threading.Thread):
 
         if not os.path.exists(sd_path):
             self.responses.put((-1, {"type":"status", "data":{"message":"Downloading"}}))
-            ret = subprocess.run(["git", "clone", "https://github.com/arenatemp/sd-inference-server/", sd_path], capture_output=True)
+            ret = subprocess.run(["git", "clone", "https://github.com/arenatemp/sd-inference-server/", sd_path], capture_output=True, shell=IS_WIN)
             if ret.returncode:
                 raise RuntimeError(ret.stderr.decode("utf-8").split("fatal: ", 1)[1])
 

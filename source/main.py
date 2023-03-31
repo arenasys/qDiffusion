@@ -8,6 +8,9 @@ import glob
 import shutil
 import importlib
 
+import platform
+IS_WIN = platform.system() == 'Windows'
+
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, QObject, QUrl, QCoreApplication, Qt, QElapsedTimer, QThread
 from PyQt5.QtQml import QQmlApplicationEngine, qmlRegisterSingletonType, qmlRegisterType
 from PyQt5.QtWidgets import QApplication
@@ -62,7 +65,7 @@ def buildQMLPy():
     if os.path.exists(qml_py):
         os.remove(qml_py)
 
-    status = subprocess.run(["pyrcc5", "-o", qml_py, qml_rc], capture_output=True)
+    status = subprocess.run(["pyrcc5", "-o", qml_py, qml_rc], capture_output=True, shell=IS_WIN)
     if status.returncode != 0:
         raise Exception(status.stderr.decode("utf-8"))
 
@@ -95,7 +98,6 @@ class Builder(QThread):
     def run(self):
         buildQMLRc()
         buildQMLPy()
-        prestart()
 
 class Coordinator(QObject):
     ready = pyqtSignal()
@@ -108,6 +110,7 @@ class Coordinator(QObject):
 
     @pyqtSlot()
     def load(self):
+        self.app.setWindowIcon(QIcon("source/qml/icons/placeholder.svg"))
         self.builder.start()
 
     @pyqtSlot()
@@ -116,15 +119,20 @@ class Coordinator(QObject):
         self.ready.emit()
     
 def launch():
-    import setproctitle
-    setproctitle.setproctitle(NAME)
+    try:
+        import setproctitle
+        setproctitle.setproctitle(NAME)
+        import ctypes
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(NAME)
+    except:
+        pass
+
     QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
     QCoreApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
     app = Application([NAME])
     signal.signal(signal.SIGINT, lambda sig, frame: app.quit())
     app.startTimer(100)
-    app.setWindowIcon(QIcon("source/qml/icons/placeholder.svg"))
     
     engine = QQmlApplicationEngine()
     engine.quit.connect(app.quit)
@@ -132,16 +140,9 @@ def launch():
     coordinator = Coordinator(app, engine)
     qmlRegisterSingletonType(Coordinator, "gui", 1, 0, "COORDINATOR", lambda qml, js: coordinator)
 
-    engine.load(QUrl('file:source/qml/Launcher.qml'))
+    engine.load(QUrl('file:source/qml/Splash.qml'))
 
     os._exit(app.exec())
-
-def prestart():
-    import qml.qml_rc
-    import gui
-    import sql
-    import canvas
-    import parameters
 
 def start(engine, app):
     import qml.qml_rc

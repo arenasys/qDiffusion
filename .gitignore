@@ -8,3 +8,4 @@ __pycache__
 models
 outputs
 source/sd-inference-server
+config.json
