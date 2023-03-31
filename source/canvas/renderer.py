@@ -5,9 +5,9 @@ import OpenGL.GL as gl
 import copy
 import time
 
-import cv2
-import numpy as np
-np.seterr("ignore")
+#import cv2
+#import numpy as np
+#np.seterr("ignore")
 
 from canvas.shared import *
 
@@ -475,29 +475,30 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
             self.restoredSelection = self.changes.selection
 
         if CanvasOperation.FUZZY in self.changes.operations:
-            source = self.getLayer(self.activeLayer).getImage()
-            source = QImagetoCV2(source)
-            source = np.ascontiguousarray(source[:,:,:3])
-            origin = (int(self.changes.position.x()), int(self.changes.position.y()))
+            pass
+            #source = self.getLayer(self.activeLayer).getImage()
+            #source = QImagetoCV2(source)
+            #source = np.ascontiguousarray(source[:,:,:3])
+            #origin = (int(self.changes.position.x()), int(self.changes.position.y()))
 
-            threshold = (self.changes.select.threshold*2.56,)*3
+            #threshold = (self.changes.select.threshold*2.56,)*3
 
-            source = cv2.floodFill(source, None, origin, (255, 255, 255), threshold, threshold, 4|cv2.FLOODFILL_FIXED_RANGE)[2]
-            source = source[1:-1,1:-1]*255
-            source = np.dstack((source,)*4)
-            source = CV2toQImage(source)
-            source = self.convertMask(source)
+            #source = cv2.floodFill(source, None, origin, (255, 255, 255), threshold, threshold, 4|cv2.FLOODFILL_FIXED_RANGE)[2]
+            #source = source[1:-1,1:-1]*255
+            #source = np.dstack((source,)*4)
+            #source = CV2toQImage(source)
+            #source = self.convertMask(source)
             
-            painter = self.mask.beginPaint()
-            if self.changes.selection._mode in {CanvasSelectionMode.NORMAL}:
-                gl.glClearColor(0,0,0,0)
-                gl.glClear(gl.GL_COLOR_BUFFER_BIT)
-            elif self.changes.selection._mode in {CanvasSelectionMode.SUBTRACT}:
-                painter.setCompositionMode(QPainter.CompositionMode_DestinationOut)
-            painter.drawImage(0,0,source)
-            self.mask.endPaint()
-            self.restoredSelection = self.changes.selection.copy()
-            self.restoredSelection.setMask(self.mask.getImage())
+            #painter = self.mask.beginPaint()
+            #if self.changes.selection._mode in {CanvasSelectionMode.NORMAL}:
+            #    gl.glClearColor(0,0,0,0)
+            #    gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+            #elif self.changes.selection._mode in {CanvasSelectionMode.SUBTRACT}:
+            #    painter.setCompositionMode(QPainter.CompositionMode_DestinationOut)
+            #painter.drawImage(0,0,source)
+            #self.mask.endPaint()
+            #self.restoredSelection = self.changes.selection.copy()
+            #self.restoredSelection.setMask(self.mask.getImage())
 
         if save:
             self.checkpoints.append(self.makeCheckpoint())

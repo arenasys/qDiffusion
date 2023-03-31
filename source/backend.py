@@ -29,10 +29,9 @@ class Backend(QObject):
     def setEndpoint(self, endpoint, password):
         self.inference = None
         if endpoint == "":
-            if HAVE_TORCH and False:
+            if HAVE_TORCH:
                 self.inference = local.LocalInference()
             else:
-                print("HHERE")
                 self.response.emit(-1, {"type": "remote_only"})
                 return
         else:
