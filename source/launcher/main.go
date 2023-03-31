@@ -19,6 +19,7 @@ func Start(args ...string) (p *os.Process, err error) {
 }
 
 func main() {
+
 	if proc, err := Start(".\\venv\\Scripts\\pythonw", "source\\main.py"); err == nil {
 		proc.Wait()
 	}

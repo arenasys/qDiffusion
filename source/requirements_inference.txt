@@ -5,3 +5,5 @@ lark==1.1.5
 safetensors==0.2.8
 tqdm==4.64.1
 transformers==4.26.0
+opencv-python-headless==4.7.0.72
+basicsr==1.3.3.11

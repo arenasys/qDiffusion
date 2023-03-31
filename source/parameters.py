@@ -183,8 +183,7 @@ class VariantMap(QObject):
     
     @pyqtSlot(str, 'QVariant')
     def set(self, key, value):
-        if key in self._map:
-            self._map[key] = value
+        self._map[key] = value
         self.updated.emit(key)
 
 class ParametersItem(QObject):

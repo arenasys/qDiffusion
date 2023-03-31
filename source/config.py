@@ -19,7 +19,7 @@ class Config(QObject):
         try:
             with open(self._file, 'r', encoding="utf-8") as f:
                 data = json.load(f)
-        except Exception:
+        except Exception as e:
             return
         for k, v in data.items():
             self._values.set(k,v)

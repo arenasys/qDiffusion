@@ -3,7 +3,7 @@ import math
 from PyQt5.QtCore import pyqtProperty, pyqtSignal, QObject, pyqtSlot, QUrl
 from PyQt5.QtQml import qmlRegisterSingletonType
 
-from gui import MimeData
+from misc import MimeData
 
 class Settings(QObject):
     updated = pyqtSignal()

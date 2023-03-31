@@ -9,7 +9,7 @@ from enum import Enum
 
 import parameters
 import re
-from gui import MimeData
+from misc import MimeData
 from canvas.shared import PILtoQImage, QImagetoPIL
 import sql
 

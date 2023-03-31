@@ -40,7 +40,17 @@ ApplicationWindow {
 
     Connections {
         target: COORDINATOR
-        function onReady() {
+        property var installer: null
+        function onShow() {
+            var component = Qt.createComponent("qrc:/Installer.qml")
+            if(component.status != Component.Ready) {
+                console.log("ERROR", component.errorString())
+            } else {
+                installer = component.incubateObject(root)
+            }
+        }
+
+        function onProceed() {
             var component = Qt.createComponent("qrc:/Main.qml")
             if(component.status != Component.Ready) {
                 console.log("ERROR", component.errorString())

@@ -6,7 +6,7 @@ import time
 
 from canvas.shared import CanvasSelectionMode
 from canvas.canvas import CanvasTool, CanvasSelection
-from gui import MimeData
+from misc import MimeData
 
 class ColorRadial(QQuickPaintedItem):
     updated = pyqtSignal()

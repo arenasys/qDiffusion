@@ -6,7 +6,7 @@ import math
 
 from canvas.renderer import *
 from canvas.shared import *
-from gui import MimeData
+from misc import MimeData
 
 MIME_LAYER = "application/x-qd-layer"
 

@@ -5,6 +5,7 @@ source/qml/qml.rc
 .vscode
 __pycache__
 */__pycache__
+venv
 models
 outputs
 source/sd-inference-server
