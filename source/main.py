@@ -125,7 +125,7 @@ class Installer(QThread):
             args = ["pip", "install", "-U", p]
             if p[:5] == "torch":
                 args += ["--index-url", "https://download.pytorch.org/whl/" + p.rsplit("+",1)[-1]]
-            self.proc = subprocess.Popen(args)
+            self.proc = subprocess.Popen(args, shell=IS_WIN)
             if self.proc.wait():
                 if self.stopping:
                     return
@@ -327,10 +327,10 @@ class Coordinator(QObject):
     
 def launch():
     try:
-        import setproctitle
-        setproctitle.setproctitle(NAME)
         import ctypes
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(NAME)
+        import setproctitle
+        setproctitle.setproctitle(NAME)
     except:
         pass
 
