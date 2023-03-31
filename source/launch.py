@@ -7,7 +7,7 @@ IS_WIN = platform.system() == 'Windows'
 QT_VER = "PyQt5==5.15.7"
 VENV_DIR = os.path.join(os.getcwd(), "venv")
 
-INSIDE_VENV = VENV_DIR in sys.executable
+INSIDE_VENV = VENV_DIR in sys.executable and VENV_DIR in os.environ["PATH"]
 MISSING_VENV = not os.path.exists("venv")
 MISSING_QT = False
 
@@ -26,9 +26,10 @@ def get_env():
     return env
 
 def restart():
-    print("DONE. PLEASE RELAUNCH.")
-    print("CLOSING...")
-    time.sleep(3)
+    if IS_WIN:
+        subprocess.Popen(("venv\\Scripts\\pythonw source\\launch.py").split(' '), env=get_env(), creationflags=0x00000008)
+    else:
+        subprocess.Popen(("venv/bin/python source/launch.py").split(' '), env=get_env())
     exit()
 
 def install_venv():
@@ -46,9 +47,9 @@ if not INSIDE_VENV:
     if MISSING_VENV:
         install_venv()
         install_qt()
+        print("DONE.")
     restart()
-
-if INSIDE_VENV and MISSING_QT:
+elif INSIDE_VENV and MISSING_QT:
     install_qt()
 
 import main
