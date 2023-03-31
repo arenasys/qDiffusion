@@ -11,6 +11,9 @@ import importlib
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, QObject, QUrl, QCoreApplication, Qt, QElapsedTimer, QThread
 from PyQt5.QtQml import QQmlApplicationEngine, qmlRegisterSingletonType, qmlRegisterType
 from PyQt5.QtWidgets import QApplication
+from PyQt5.QtGui import QIcon
+
+NAME = "qDiffusion"
 
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning) 
@@ -92,7 +95,7 @@ class Builder(QThread):
     def run(self):
         buildQMLRc()
         buildQMLPy()
-
+        prestart()
 
 class Coordinator(QObject):
     ready = pyqtSignal()
@@ -113,12 +116,15 @@ class Coordinator(QObject):
         self.ready.emit()
     
 def launch():
+    import setproctitle
+    setproctitle.setproctitle(NAME)
     QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
     QCoreApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
-    app = Application(sys.argv)
+    app = Application([NAME])
     signal.signal(signal.SIGINT, lambda sig, frame: app.quit())
     app.startTimer(100)
+    app.setWindowIcon(QIcon("source/qml/icons/placeholder.svg"))
     
     engine = QQmlApplicationEngine()
     engine.quit.connect(app.quit)
@@ -129,6 +135,13 @@ def launch():
     engine.load(QUrl('file:source/qml/Launcher.qml'))
 
     os._exit(app.exec())
+
+def prestart():
+    import qml.qml_rc
+    import gui
+    import sql
+    import canvas
+    import parameters
 
 def start(engine, app):
     import qml.qml_rc

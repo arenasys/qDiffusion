@@ -15,6 +15,8 @@ import backend
 import config
 from parameters import VariantMap
 
+NAME = "qDiffusion"
+
 class StatusMode(Enum):
     STARTING = 0
     IDLE = 1
@@ -95,8 +97,8 @@ class GUI(QObject):
     @pyqtProperty('QString', notify=statusUpdated)
     def title(self):
         if self._remoteStatus != RemoteStatusMode.INACTIVE:
-            return "qDiffusion: Remote"
-        return "qDiffusion"
+            return NAME + ": Remote"
+        return NAME
 
     @pyqtSlot(str, result=bool)
     def isCached(self, file):
