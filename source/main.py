@@ -8,24 +8,19 @@ import glob
 import shutil
 import importlib
 
-from PyQt5.QtCore import QUrl, QCoreApplication, Qt, QElapsedTimer
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, QObject, QUrl, QCoreApplication, Qt, QElapsedTimer, QThread
 from PyQt5.QtQml import QQmlApplicationEngine, qmlRegisterSingletonType, qmlRegisterType
 from PyQt5.QtWidgets import QApplication
-
-import gui
-import sql
-import canvas
-import parameters
 
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning) 
 
 class Application(QApplication):
-        t = QElapsedTimer()
-        
-        def event(self, e):
-            return QApplication.event(self, e)
+    t = QElapsedTimer()
 
+    def event(self, e):
+        return QApplication.event(self, e)
+        
 def buildQMLRc():
     qml_path = os.path.join("source", "qml")
     qml_rc = os.path.join(qml_path, "qml.qrc")
@@ -88,24 +83,65 @@ def loadTabs(app, backend):
     tabs.sort(key=lambda tab: tab.priority)
     backend.registerTabs(tabs)
 
-def start():
-    import qml.qml_rc
+class Builder(QThread):
+    def __init__(self, app, engine):
+        super().__init__()
+        self.app = app
+        self.engine = engine
+    
+    def run(self):
+        buildQMLRc()
+        buildQMLPy()
 
+
+class Coordinator(QObject):
+    ready = pyqtSignal()
+    def __init__(self, app, engine):
+        super().__init__(app)
+        self.app = app
+        self.engine = engine
+        self.builder = Builder(app, engine)
+        self.builder.finished.connect(self.done)
+
+    @pyqtSlot()
+    def load(self):
+        self.builder.start()
+
+    @pyqtSlot()
+    def done(self):
+        start(self.engine, self.app)
+        self.ready.emit()
+    
+def launch():
     QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
     QCoreApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
     app = Application(sys.argv)
     signal.signal(signal.SIGINT, lambda sig, frame: app.quit())
     app.startTimer(100)
+    
+    engine = QQmlApplicationEngine()
+    engine.quit.connect(app.quit)
+
+    coordinator = Coordinator(app, engine)
+    qmlRegisterSingletonType(Coordinator, "gui", 1, 0, "COORDINATOR", lambda qml, js: coordinator)
+
+    engine.load(QUrl('file:source/qml/Launcher.qml'))
+
+    os._exit(app.exec())
+
+def start(engine, app):
+    import qml.qml_rc
+    import gui
+    import sql
+    import canvas
+    import parameters
 
     sql.registerTypes()
     gui.registerTypes()
     canvas.registerTypes()
     canvas.registerMiscTypes()
     parameters.registerTypes()
-
-    engine = QQmlApplicationEngine()
-    engine.quit.connect(app.quit)
 
     qmlRegisterSingletonType(QUrl("qrc:/Common.qml"), "gui", 1, 0, "COMMON")
 
@@ -122,10 +158,6 @@ def start():
     
     loadTabs(backend, backend)
 
-    engine.load(QUrl('qrc:/Main.qml'))
-    
-    os._exit(app.exec())
-
 def exceptHook(exc_type, exc_value, exc_tb):
     tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
     with open("crash.log", "a") as f:
@@ -139,6 +171,4 @@ if __name__ == "__main__":
         os.chdir('..')
 
     sys.excepthook = exceptHook
-    buildQMLRc()
-    buildQMLPy()
-    start()
+    launch()

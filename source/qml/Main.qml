@@ -8,13 +8,8 @@ import gui 1.0
 import "style"
 import "components"
 
-ApplicationWindow {
-    visible: true
-    width: 1100
-    height: 600
-    title: GUI.title
-    color: "#000"
-
+Item {
+    anchors.fill: parent
     FocusReleaser {
         anchors.fill: parent
 
