@@ -7,3 +7,4 @@ PyOpenGL==3.1.6
 PyQt5==5.15.7
 psutil==5.9.2
 cryptography==38.0.1
+numpy==1.24.1

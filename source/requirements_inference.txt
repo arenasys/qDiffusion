@@ -2,7 +2,6 @@ diffusers==0.12.1
 einops==0.6.0
 k_diffusion==0.0.12
 lark==1.1.5
-numpy==1.24.1
 safetensors==0.2.8
 tqdm==4.64.1
 transformers==4.26.0
