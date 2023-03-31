@@ -7,23 +7,34 @@ from PyQt5.QtWidgets import QApplication
 import local
 import remote
 
+HAVE_TORCH = False
+try:
+    import torch
+    HAVE_TORCH = True
+except ImportError as e:
+    pass
+
 class Backend(QObject):
     request = pyqtSignal(int, object)
     response = pyqtSignal(int, object)
     cancel = pyqtSignal(int)
     stopping = pyqtSignal()
 
-    def __init__(self, parent, endpoint="", password=""):
+    def __init__(self, parent):
         super().__init__(parent)
         self.responses = queue.Queue()
-
-        self.setEndpoint(endpoint, password)
-        
+        self.inference = None
         parent.aboutToQuit.connect(self.stop)
 
     def setEndpoint(self, endpoint, password):
+        self.inference = None
         if endpoint == "":
-            self.inference = local.LocalInference()
+            if HAVE_TORCH and False:
+                self.inference = local.LocalInference()
+            else:
+                print("HHERE")
+                self.response.emit(-1, {"type": "remote_only"})
+                return
         else:
             self.inference = remote.RemoteInference(endpoint, password)
 
@@ -38,7 +49,8 @@ class Backend(QObject):
         self.stopping.emit()
 
     def wait(self):
-        self.inference.wait()
+        if self.inference:
+            self.inference.wait()
     
     @pyqtSlot(int, object)
     def makeRequest(self, id, request):

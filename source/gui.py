@@ -20,6 +20,7 @@ class StatusMode(Enum):
     IDLE = 1
     WORKING = 2
     ERRORED = 3
+    INACTIVE = 4
 
 class RemoteStatusMode(Enum):
     INACTIVE = 0
@@ -35,7 +36,6 @@ class GUI(QObject):
     response = pyqtSignal(int, object)
     aboutToQuit = pyqtSignal()
     networkReply = pyqtSignal(QNetworkReply)
-    remoteUpdated = pyqtSignal()
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -49,7 +49,7 @@ class GUI(QObject):
         self._id = 0
 
         self._statusMode = StatusMode.STARTING
-        self._statusText = "Disconnected"
+        self._statusText = "Inactive"
         self._statusProgress = -1.0
         self._statusInfo = ""
 
@@ -59,7 +59,9 @@ class GUI(QObject):
         self._config = config.Config(self, "config.json", {"endpoint": "", "password": ""})
         self._remoteStatus = RemoteStatusMode.INACTIVE
 
-        self.backend = backend.Backend(self, self._config._values.get("endpoint"), self._config._values.get("password"))
+        self.backend = backend.Backend(self)
+        self.backend.response.connect(self.onResponse)
+        self.backend.setEndpoint(self._config._values.get("endpoint"), self._config._values.get("password"))
 
         self._options = {}
 
@@ -70,11 +72,8 @@ class GUI(QObject):
 
         parent.aboutToQuit.connect(self.stop)
 
-        self.backend.response.connect(self.onResponse)
         self.watcher.finished.connect(self.onFolderChanged)
         self.network.finished.connect(self.onNetworkReply)
-    
-
 
     @pyqtSlot()
     def stop(self):
@@ -93,8 +92,10 @@ class GUI(QObject):
     def tabNames(self): 
         return [tab.name for tab in self.tabs]
 
-    @pyqtProperty('QString', constant=True)
+    @pyqtProperty('QString', notify=statusUpdated)
     def title(self):
+        if self._remoteStatus != RemoteStatusMode.INACTIVE:
+            return "qDiffusion: Remote"
         return "qDiffusion"
 
     @pyqtSlot(str, result=bool)
@@ -151,15 +152,23 @@ class GUI(QObject):
         if response["type"] == "status":
             self._statusText = response["data"]["message"]
             if self._statusText == "Initializing" or self._statusText == "Connecting":
-                self._remoteStatus = RemoteStatusMode.CONNECTING
+                if self._statusText == "Connecting":
+                    self._remoteStatus = RemoteStatusMode.CONNECTING
                 self._statusMode = StatusMode.STARTING
             elif self._statusText == "Ready" or self._statusText == "Connected":
+                if self._statusText == "Connected":
+                    self._remoteStatus = RemoteStatusMode.CONNECTED
                 self._statusText = "Ready"
-                self._remoteStatus = RemoteStatusMode.CONNECTED
                 self._statusMode = StatusMode.IDLE
             else:
                 self._statusProgress = -1.0
                 self._statusMode = StatusMode.WORKING
+            self.statusUpdated.emit()
+
+        if response["type"] == "remote_only":
+            self._statusText = "Inactive"
+            self._statusProgress = -1.0
+            self._statusMode = StatusMode.INACTIVE
             self.statusUpdated.emit()
 
         if response["type"] == "done":
@@ -249,26 +258,58 @@ class GUI(QObject):
         drag.setMimeData(self.getFilesMimeData(files))
         drag.exec()
     
-    @pyqtProperty(VariantMap, notify=remoteUpdated)
+    @pyqtProperty(VariantMap, constant=True)
     def config(self):
         return self._config._values
     
-    @pyqtProperty(str, notify=remoteUpdated)
+    @pyqtProperty(str, notify=statusUpdated)
     def remoteEndpoint(self):
         endpoint = self._config._values.get("endpoint")
         if not endpoint:
             return "Local"
         return endpoint
     
+    @pyqtProperty(int, notify=statusUpdated)
+    def remoteStatus(self):
+        return self._remoteStatus.value
+    
+    @pyqtProperty(str, notify=statusUpdated)
+    def remoteInfo(self):
+        endpoint = self._config._values.get("endpoint")
+        
+        mode = ""
+        status = ""
+        if endpoint:
+            mode = "Remote"
+            if self._remoteStatus == RemoteStatusMode.CONNECTING:
+                status = "Connecting"
+            else:
+                status = "Connected"
+        else:
+            mode = "Local"
+            if self._statusMode == StatusMode.STARTING:
+                status = "Initializing"
+            elif self._statusMode == StatusMode.INACTIVE:
+                status = "Inactive"
+            else:
+                status = "Ready"
+
+        return mode + ", " + status
+    
     @pyqtSlot()
     def restartBackend(self):
         endpoint = self._config._values.get("endpoint")
         password = self._config._values.get("password")
-        self.remoteUpdated.emit()
+
+        if endpoint:
+            self._remoteStatus = RemoteStatusMode.CONNECTING
+        else:
+            self._remoteStatus = RemoteStatusMode.INACTIVE
 
         self._statusMode = StatusMode.STARTING
         self._statusProgress = -1
         self._statusText = "Restarting"
+        self.statusUpdated.emit()
         self.backend.stop()
         self.backend.wait()
         self.backend.setEndpoint(endpoint, password)

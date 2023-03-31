@@ -8,7 +8,7 @@ import glob
 import shutil
 import importlib
 
-from PyQt5.QtCore import QUrl, QCoreApplication, Qt
+from PyQt5.QtCore import QUrl, QCoreApplication, Qt, QElapsedTimer
 from PyQt5.QtQml import QQmlApplicationEngine, qmlRegisterSingletonType, qmlRegisterType
 from PyQt5.QtWidgets import QApplication
 
@@ -21,6 +21,8 @@ import warnings
 warnings.filterwarnings("ignore", category=UserWarning) 
 
 class Application(QApplication):
+        t = QElapsedTimer()
+        
         def event(self, e):
             return QApplication.event(self, e)
 

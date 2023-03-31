@@ -7,6 +7,18 @@ from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, Qt, QObject, QThrea
 from PyQt5.QtSql import QSqlDatabase, QSqlQuery, QSqlDriver
 from PyQt5.QtQml import qmlRegisterType
 
+class NotificationDelay(QTimer):
+    notification = pyqtSignal(str)
+    def __init__(self, parent, table, interval=100):
+        super().__init__(parent)
+        self.table = table
+        self.setInterval(interval)
+        self.timeout.connect(self.onTimeout)
+
+    @pyqtSlot()
+    def onTimeout(self):
+        self.notification.emit(self.table)
+
 class Database(QObject):
     notification = pyqtSignal(str)
     instance = None
@@ -18,8 +30,20 @@ class Database(QObject):
         self.db.open()
         Database.instance = self
 
+        self.timers = {}
+
     @pyqtSlot(str)
     def onNotification(self, table):
+        if not table in self.timers:
+            timer = NotificationDelay(None, table)
+            timer.notification.connect(self.onDelayNotification)
+            self.timers[table] = timer
+
+        if not self.timers[table].isActive():
+            self.notification.emit(table)
+            self.timers[table].start()
+
+    def onDelayNotification(self, table):
         self.notification.emit(table)
 
 class Connection(QObject):
@@ -187,6 +211,8 @@ class Sql(QAbstractListModel):
             self.resultsChanged.emit()
         
         if delta > 9:
+            self.beginResetModel()
+            self.endResetModel()
             self.bigChange.emit()
 
     def data(self, index, role):

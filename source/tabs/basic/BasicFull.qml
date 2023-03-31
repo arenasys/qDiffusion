@@ -161,7 +161,7 @@ Item {
 
             Rectangle {
                 property var factor: (canvas.width/canvas.sourceSize.width)
-                border.color: "red"
+                border.color: show ? (root.target.extentWarning ? "red" : "#00ff00") : "#00ff00"
                 border.width: 1
                 color: "transparent"
                 property var show: root.target != null && root.target.extent != undefined

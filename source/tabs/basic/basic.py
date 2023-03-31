@@ -31,6 +31,7 @@ class BasicInput(QObject):
         self._linked = None
         self._dragging = False
         self._extent = QRect()
+        self._extentWarning = False
 
         parent.parameters._values.updated.connect(self.updateExtent)
 
@@ -113,6 +114,10 @@ class BasicInput(QObject):
     def extent(self):
         return self._extent
     
+    @pyqtProperty(bool, notify=extentUpdated)
+    def extentWarning(self):
+        return self._extentWarning
+    
     @pyqtSlot(QUrl)
     def setImageFile(self, path):
         self._image = QImage(path.toLocalFile())
@@ -167,6 +172,8 @@ class BasicInput(QObject):
         
         x1,y1,x2,y2 = parameters.get_extent(bound, padding, source, working)
         self._extent = QRect(x1,y1,x2-x1,y2-y1)
+        print((x2-x1), working[0], (y2-y1), working[1])
+        self._extentWarning = (x2-x1) > working[0] or (y2-y1) > working[1]
         self.extentUpdated.emit()
 
     @pyqtSlot()

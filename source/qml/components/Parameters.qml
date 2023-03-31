@@ -571,7 +571,7 @@ Item {
                         bindMap: root.binding.values
                         bindKey: "clip_skip"
 
-                        minValue: 0
+                        minValue: 1
                         maxValue: 4
                         precValue: 0
                         incValue: 1
@@ -593,6 +593,16 @@ Item {
                         incValue: 1
                         snapValue: 2
                         bounded: false
+                    }
+                    
+                    OChoice {
+                        label: "Attention"
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "attention"
+                        bindKeyModel: "attentions"
                     }
                     
                     OSlider {

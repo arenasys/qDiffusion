@@ -17,12 +17,13 @@ class Populater(QObject):
         super().__init__()
         self.paths = []
 
-        self.conn = sql.Connection(self)
+        self.conn = None
         self.watcher = filesystem.Watcher.instance
         self.folders = set()
 
     @pyqtSlot()
     def started(self):
+        self.conn = sql.Connection(self)
         self.conn.connect()
         self.conn.doQuery("CREATE TABLE folders(folder TEXT UNIQUE, name TEXT UNIQUE);")
         self.conn.doQuery("CREATE TABLE images(file TEXT UNIQUE, folder TEXT, parameters TEXT, idx INTEGER, width INTEGER, height INTEGER, CONSTRAINT unq UNIQUE (folder, idx));")

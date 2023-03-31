@@ -58,8 +58,6 @@ Rectangle {
             property bool reset: false
 
             function refresh() {
-                // item are sometimes missing signals, so invalidate them manually
-                gallery.positionViewAtEnd()
                 gallery.positionViewAtBeginning()
                 gallery.setSelection(0)
             }

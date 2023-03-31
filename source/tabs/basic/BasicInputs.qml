@@ -40,12 +40,6 @@ Item {
             height: inputListView.height
             width: height-9
 
-            property var image: modelData.image
-            property var role: modelData.role
-            property var empty: modelData.empty
-            property var size: modelData.size
-            property var extent: modelData.extent
-
             onActiveFocusChanged: {
                 if(activeFocus) {
                     itemFrame.forceActiveFocus()
@@ -78,10 +72,9 @@ Item {
 
                 ImageDisplay {
                     id: itemImage
-                    visible: !item.empty
+                    visible: !modelData.empty
                     anchors.fill: parent
-                    anchors.margins: 1
-                    image: item.image
+                    image: modelData.image
                     centered: true
                 }
 
@@ -94,14 +87,14 @@ Item {
                     Rectangle {
                         visible: itemImage.sourceWidth > 0
                         property var factor: parent.width/itemImage.sourceWidth
-                        border.color: "red"
+                        border.color: modelData.extentWarning ? "red" : "#00ff00"
                         border.width: 1
                         color: "transparent"
 
-                        x: item.extent.x*factor
-                        y: item.extent.y*factor
-                        width: item.extent.width*factor
-                        height: item.extent.height*factor
+                        x: modelData.extent.x*factor
+                        y: modelData.extent.y*factor
+                        width: modelData.extent.width*factor
+                        height: modelData.extent.height*factor
                     }
                 }
 
@@ -115,7 +108,7 @@ Item {
 
                 SText {
                     id: roleLabel
-                    text: ["", "Image", "Mask"][item.role]
+                    text: ["", "Image", "Mask"][modelData.role]
                     anchors.top: parent.top
                     anchors.left: parent.left
                     leftPadding: 3
@@ -135,7 +128,7 @@ Item {
 
                 SText {
                     id: sizeLabel
-                    text: item.size
+                    text: modelData.size
                     anchors.top: parent.top
                     anchors.right: parent.right
                     leftPadding: 3
@@ -225,7 +218,7 @@ Item {
                     spacing: 5
 
                     SIconButton {
-                        visible: item.empty
+                        visible: modelData.empty
                         id: uploadButton
                         icon: "qrc:/icons/folder.svg"
                         onPressed: {
@@ -238,7 +231,7 @@ Item {
                     }
 
                     SIconButton {
-                        visible: item.empty && modelData.role == 2
+                        visible: modelData.empty && modelData.role == 2
                         id: paintButton
                         icon: "qrc:/icons/paint.svg"
                         onPressed: {
@@ -265,7 +258,7 @@ Item {
                     anchors.left: parent.left
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
-                    width: parent.width/4 + 5
+                    width: 10 + 5
                     anchors.leftMargin: -5
 
                     onDropped: {
@@ -287,7 +280,7 @@ Item {
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
                     anchors.horizontalCenter: parent.horizontalCenter
-                    width: parent.width/2
+                    width: parent.width - 20
 
                     onDropped: {
                         modelData.setImageDrop(mimeData, index)
@@ -300,7 +293,7 @@ Item {
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
                     anchors.rightMargin: -5
-                    width: parent.width/4 + 5
+                    width: 10 + 5
 
                     onDropped: {
                         BASIC.addDrop(mimeData, index+1)

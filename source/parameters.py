@@ -306,9 +306,10 @@ class Parameters(QObject):
 
         self._readonly = ["models", "samplers", "upscalers", "UNETs", "CLIPs", "VAEs", "SRs", "LoRAs", "HNs", "hr_upscalers", "img2img_upscalers"]
         self._values = VariantMap(self, {"prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7, "strength": 0.75, "seed": -1, "eta": 1.0,
-            "hr_factor": 1.0, "hr_strength":  0.7, "clip_skip": 2, "batch_size": 1, "padding": -1, "mask_blur": 4, "subseed":-1, "subseed_strength": 0.0,
+            "hr_factor": 1.0, "hr_strength":  0.7, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "subseed":-1, "subseed_strength": 0.0,
             "model":"", "models":[], "sampler":"Euler a", "samplers":[], "hr_upscaler":"Latent (nearest)", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[], "upscalers":[],
-            "UNET":"", "UNETs":"", "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "SR":"", "SRs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[]})
+            "UNET":"", "UNETs":"", "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "SR":"", "SRs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[],
+            "attention":"", "attentions":[]})
         self._values.updated.connect(self.mapsUpdated)
         self._availableNetworks = []
         self._activeNetworks = []
