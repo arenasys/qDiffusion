@@ -160,6 +160,9 @@ class Coordinator(QObject):
         self._installing = ""
 
         self.modes = ["nvidia", "amd", "remote"]
+        if IS_WIN:
+            self.modes = ["nvidia", "remote"]
+
         self._mode = 0
         self.in_venv = "VIRTUAL_ENV" in os.environ and os.path.join(os.getcwd(), "venv") == os.environ["VIRTUAL_ENV"]
         self.override = False
@@ -184,6 +187,7 @@ class Coordinator(QObject):
     def find_needed(self):
         self.torch_version = ""
         self.torchvision_version = ""
+        self.xformers_version = ""
 
         try:
             self.torch_version = str(pkg_resources.get_distribution("torch"))
@@ -195,11 +199,18 @@ class Coordinator(QObject):
         except:
             pass
 
+        try:
+            self.xformers_version = str(pkg_resources.get_distribution("xformers"))
+        except:
+            pass
+
         self.nvidia_torch_version = "2.0.0+cu117"
         self.nvidia_torchvision_version = "0.15.1+cu117"
 
         self.amd_torch_version = "2.0.0+rocm5.4.2"
         self.amd_torchvision_version = "0.15.1+rocm5.4.2"
+
+        self.xformers_version = "0.0.18"
         
         self.required_need = check(self.required)
         self.optional_need = check(self.optional)
@@ -240,6 +251,8 @@ class Coordinator(QObject):
                 needed += ["torch=="+self.nvidia_torch_version]
             if not "+cu" in self.torchvision_version:
                 needed += ["torchvision=="+self.nvidia_torchvision_version]
+            if not self.xformers_version:
+                needed += ["xformers=="+self.xformers_version]
             needed += self.optional_need
         if self._mode == 1:
             if not "+rocm" in self.torch_version:
