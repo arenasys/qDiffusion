@@ -77,6 +77,7 @@ class RemoteInference(QThread):
         self.responses = multiprocessing.Queue(16)
         self.endpoint = endpoint
         self.client = ws_client.WebSocket()
+        self.client.settimeout(5)
 
         self.scheme = None
         if password:
@@ -140,9 +141,7 @@ class RemoteInference(QThread):
                 if type(e) == InvalidToken or type(e) == IndexError:
                     self.onResponse(-1, {"type": "error", "data": {"message": "Incorrect password"}})
                 elif not self.client.connected:
-                    self.connect(once=True)
-                    if not self.client.connected:
-                        self.onResponse(-1, {"type": "error", "data": {"message": str(e)}})
+                    self.onResponse(-1, {"type": "error", "data": {"message": str(e)}})
                 else:
                     raise e
             
