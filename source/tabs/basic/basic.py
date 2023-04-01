@@ -362,7 +362,8 @@ class Basic(QObject):
 
     @pyqtSlot(int, result=BasicOutput)
     def outputs(self, id):
-        return self._outputs[id]
+        if id in self._outputs:
+            return self._outputs[id]
 
     @pyqtSlot()
     def addImage(self):

@@ -161,7 +161,7 @@ class Coordinator(QObject):
 
         self.modes = ["nvidia", "amd", "remote"]
         self._mode = 0
-        self.in_venv = os.path.join(os.getcwd(), "venv") == os.environ["VIRTUAL_ENV"]
+        self.in_venv = "VIRTUAL_ENV" in os.environ and os.path.join(os.getcwd(), "venv") == os.environ["VIRTUAL_ENV"]
         self.override = False
 
         try:
@@ -264,10 +264,10 @@ class Coordinator(QObject):
         ready()
         self.ready.emit()
         
-        if not self.override and (not self.in_venv or not self.packages):
-            self.done()
-        else:
+        if self.override or (self.in_venv and self.packages):
             self.show.emit()
+        else:
+            self.done()
         
     @pyqtSlot()
     def done(self):
