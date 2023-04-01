@@ -212,8 +212,8 @@ class GUI(QObject):
     @pyqtSlot(str, int)
     def onFolderChanged(self, folder, total):
         if folder in self._modelFolders:
-            if folder == self._modelFolders[0]:
-                self.backend.makeRequest(-1, {"type":"convert", "data":{"model_folder": self._modelFolders[0], "trash_folder":self._trashFolder}})
+            #if folder == self._modelFolders[0]:
+            #    self.backend.makeRequest(-1, {"type":"convert", "data":{"model_folder": self._modelFolders[0], "trash_folder":self._trashFolder}})
             self.backend.makeRequest(-1, {"type":"options"})
             return
 
