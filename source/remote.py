@@ -82,7 +82,7 @@ class RemoteInference(QThread):
         if password:
             self.scheme = get_scheme(password)
 
-    def connect(self):
+    def connect(self, once=False):
         if self.client.connected:
             return
         
@@ -97,10 +97,13 @@ class RemoteInference(QThread):
                     QApplication.processEvents()
                     QThread.msleep(10)
                 pass
+            if once:
+                break
         if self.stopping:
-            return
-        self.onResponse(-1, {"type": "status", "data": {"message": "Connected"}})
-        self.requests.put((-1, {"type":"options"}))
+            return 
+        if self.client.connected:
+            self.onResponse(-1, {"type": "status", "data": {"message": "Connected"}})
+            self.requests.put((-1, {"type":"options"}))
 
     def run(self):
         self.id = -1
@@ -137,7 +140,9 @@ class RemoteInference(QThread):
                 if type(e) == InvalidToken or type(e) == IndexError:
                     self.onResponse(-1, {"type": "error", "data": {"message": "Incorrect password"}})
                 elif not self.client.connected:
-                    self.onResponse(-1, {"type": "error", "data": {"message": str(e)}})
+                    self.connect(once=True)
+                    if not self.client.connected:
+                        self.onResponse(-1, {"type": "error", "data": {"message": str(e)}})
                 else:
                     raise e
             
