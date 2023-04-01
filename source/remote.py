@@ -29,6 +29,18 @@ def get_scheme(password):
     key = base64.urlsafe_b64encode(kdf.derive(password))
     return Fernet(key)
 
+def encrypt(scheme, obj):
+    data = bson.dumps(obj)
+    if scheme:
+        data = base64.urlsafe_b64decode(scheme.encrypt(data))
+    return data
+
+def decrypt(scheme, data):
+    if scheme:
+        data = scheme.decrypt(base64.urlsafe_b64encode(data))
+    obj = bson.loads(data)
+    return obj
+
 class RemoteInferenceUpload(QThread):
     done = pyqtSignal()
     def __init__(self, queue, type, file):
@@ -101,16 +113,12 @@ class RemoteInference(QThread):
                 if not self.requests.empty():
                     self.id, request = self.requests.get(False)
 
-
-
                     if request["type"] == "upload":
                         thread = RemoteInferenceUpload(self.requests, request["data"]["type"], request["data"]["file"])
                         thread.start()
                         continue
                     
-                    data = bson.dumps(request)
-                    if self.scheme:
-                        data = base64.urlsafe_b64decode(self.scheme.encrypt(data))
+                    data = encrypt(self.scheme, request)
                     self.client.send_binary(data)
                 else:
                     rd, _, _ = select.select([self.client], [], [], 0)
@@ -118,9 +126,7 @@ class RemoteInference(QThread):
                         QThread.msleep(10)
                         continue
                     data = self.client.recv()
-                    if self.scheme:
-                        data = self.scheme.decrypt(base64.urlsafe_b64encode(data))
-                    response = bson.loads(data)
+                    response = decrypt(self.scheme, data)
                     self.onResponse(self.id, response)
             except queue.Empty:
                 self.client.ping()
@@ -128,7 +134,7 @@ class RemoteInference(QThread):
             except Exception as e:
                 if str(e) in {"socket is already closed.", "[Errno 32] Broken pipe"}:
                     continue
-                if type(e) == InvalidToken:
+                if type(e) == InvalidToken or type(e) == IndexError:
                     self.onResponse(-1, {"type": "error", "data": {"message": "Incorrect password"}})
                 elif not self.client.connected:
                     self.onResponse(-1, {"type": "error", "data": {"message": str(e)}})
@@ -149,9 +155,7 @@ class RemoteInference(QThread):
     @pyqtSlot(int)
     def onCancel(self, id):
         if self.client.connected:
-            data = bson.dumps({"type": "cancel", "data":{}})
-            if self.scheme:
-                data = self.scheme.encrypt(data)
+            data = encrypt(self.scheme, {"type": "cancel", "data":{}})
             self.client.send_binary(data)
 
     def onResponse(self, id, response):
