@@ -52,10 +52,11 @@ Item {
     signal tryEnter()
     signal enter()
     signal exit()
+    signal contextMenu()
 
     SToolTip {
         id: infoToolTip
-        visible: !disabled && tooltip != "" && mouse.containsMouse && mouse.mouseX < root.width/3
+        visible: !disabled && tooltip != "" && mouseArea.containsMouse && mouseArea.mouseX < root.width/3
         delay: 100
         text: tooltip
     }
@@ -200,17 +201,22 @@ Item {
     }
 
     MouseArea {
-        id: mouse
+        id: mouseArea
         anchors.fill: parent
         hoverEnabled: true
         preventStealing: true
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
         onPressed: {
-            root.forceActiveFocus()
-            root.tryEnter()
-            if(control.popup.opened) {
-                control.popup.close()
-            } else if (!root.disabled) {
-                control.popup.open()
+            if(mouse.button == Qt.RightButton) {
+                root.contextMenu()
+            } else {
+                root.forceActiveFocus()
+                root.tryEnter()
+                if(control.popup.opened) {
+                    control.popup.close()
+                } else if (!root.disabled) {
+                    control.popup.open()
+                }
             }
         }
     }

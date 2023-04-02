@@ -290,6 +290,20 @@ Item {
                         onTryEnter: {
                             modelColumn.componentMode = false
                         }
+
+                        onContextMenu: {
+                            modelsContextMenu.popup()
+                        }
+
+                        SContextMenu {
+                            id: modelsContextMenu
+                            SContextMenuItem {
+                                text: "Force Refresh"
+                                onPressed: {
+                                    GUI.refreshModels()
+                                }
+                            }
+                        }
                     }
 
                     OChoice {
@@ -594,7 +608,7 @@ Item {
                         snapValue: 2
                         bounded: false
                     }
-                    
+
                     OChoice {
                         label: "Attention"
                         width: parent.width

@@ -101,27 +101,12 @@ Item {
             OTextInput {
                 anchors.leftMargin: -2
                 anchors.left: modelTypeInput.right
-                anchors.right: downloadFileButton.left
+                anchors.right: parent.right
                 anchors.top: parent.top
                 id: modelUrlInput
                 height: 30
                 label: ""
                 placeholder: "URL"
-            }
-            SIconButton {
-                id: downloadFileButton
-                height: 28
-                width: 28
-                anchors.top: parent.top
-                anchors.right: parent.right
-                anchors.margins: 2
-                tooltip: "Refresh remote"
-                icon: "qrc:/icons/refresh.svg"
-                border.color: COMMON.bg4
-
-                onPressed: {
-                    SETTINGS.refresh()
-                }
             }
         }
         SButton {
