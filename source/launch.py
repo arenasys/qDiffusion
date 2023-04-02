@@ -27,7 +27,7 @@ def get_env():
 
 def restart():
     if IS_WIN:
-        subprocess.Popen(("venv\\Scripts\\pythonw source\\launch.py").split(' '), env=get_env(), creationflags=0x00000008)
+        subprocess.Popen(("venv\\Scripts\\pythonw source\\launch.py").split(' '), env=get_env(), creationflags=0x00000008|0x00000200)
     else:
         subprocess.Popen(("venv/bin/python source/launch.py").split(' '), env=get_env())
     exit()
@@ -43,14 +43,15 @@ def install_qt():
     else:
         subprocess.run(("venv/bin/pip install "+QT_VER).split(' '), env=get_env())
 
-if not INSIDE_VENV:
-    if MISSING_VENV:
-        install_venv()
+if __name__ == "__main__":
+    if not INSIDE_VENV:
+        if MISSING_VENV:
+            install_venv()
+            install_qt()
+            print("DONE.")
+        restart()
+    elif INSIDE_VENV and MISSING_QT:
         install_qt()
-        print("DONE.")
-    restart()
-elif INSIDE_VENV and MISSING_QT:
-    install_qt()
 
-import main
-main.main()
+    import main
+    main.main()
