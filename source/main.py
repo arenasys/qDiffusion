@@ -341,7 +341,10 @@ class Coordinator(QObject):
         self.find_needed()
         if not self.packages:
             self.done()
-        elif all([p in self._installed for p in self.packages]):
+            return
+        self.installer = None
+        self.installedUpdated.emit()
+        if all([p in self._installed for p in self.packages]):
             self._needRestart = True
             self.updated.emit()
     
