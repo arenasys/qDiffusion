@@ -8,4 +8,4 @@ else
     source venv/bin/activate
 fi
 
-python source/main.py
+python source/launch.py

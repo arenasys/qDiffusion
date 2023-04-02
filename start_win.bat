@@ -9,5 +9,5 @@ if not exist .\venv\ (
 	call .\venv\Scripts\activate.bat
 )
 
-start python source\main.py
+start python source\launch.py
 exit
