@@ -159,9 +159,9 @@ class Coordinator(QObject):
         self._installed = []
         self._installing = ""
 
-        self.modes = ["nvidia", "amd", "remote"]
+        self._modes = ["nvidia", "amd", "remote"]
         if IS_WIN:
-            self.modes = ["nvidia", "remote"]
+            self._modes = ["nvidia", "remote"]
 
         self._mode = 0
         self.in_venv = "VIRTUAL_ENV" in os.environ and os.path.join(os.getcwd(), "venv") == os.environ["VIRTUAL_ENV"]
@@ -171,7 +171,7 @@ class Coordinator(QObject):
             with open("config.json", "r", encoding="utf-8") as f:
                 cfg = json.load(f)
                 self.override = 'show' in cfg
-                mode = self.modes.index(cfg['mode'].lower())
+                mode = self._modes.index(cfg['mode'].lower())
                 self._mode = mode
         except Exception:
             pass
@@ -215,6 +215,13 @@ class Coordinator(QObject):
         self.required_need = check(self.required)
         self.optional_need = check(self.optional)
     
+    @pyqtProperty(list, constant=True)
+    def modes(self):
+        if IS_WIN:
+            return ["Nvidia", "Remote"]
+        else:
+            return ["Nvidia", "AMD", "Remote"]
+
     @pyqtProperty(int, notify=updated)
     def mode(self):
         return self._mode
@@ -245,8 +252,9 @@ class Coordinator(QObject):
         return self._needRestart
 
     def get_needed(self):
+        mode = self._modes[self._mode]
         needed = []
-        if self._mode == 0:
+        if mode == "nvidia":
             if not "+cu" in self.torch_version:
                 needed += ["torch=="+self.nvidia_torch_version]
             if not "+cu" in self.torchvision_version:
@@ -254,7 +262,7 @@ class Coordinator(QObject):
             if not self.xformers_version:
                 needed += ["xformers=="+self.xformers_version]
             needed += self.optional_need
-        if self._mode == 1:
+        if mode == "amd":
             if not "+rocm" in self.torch_version:
                 needed += ["torch=="+self.amd_torch_version]
             if not "+rocm" in self.torchvision_version:
@@ -323,7 +331,7 @@ class Coordinator(QObject):
                 cfg = json.load(f)
         except Exception as e:
             pass
-        cfg['mode'] = self.modes[self._mode]
+        cfg['mode'] = self._modes[self._mode]
         with open("config.json", "w", encoding="utf-8") as f:
             json.dump(cfg, f)
 

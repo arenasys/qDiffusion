@@ -36,7 +36,7 @@ FocusReleaser {
                 label: "Mode"
                 disabled: COORDINATOR.disable
                 currentIndex: COORDINATOR.mode
-                model: ["Nvidia", "AMD", "Remote"]
+                model: COORDINATOR.modes
                 onCurrentIndexChanged: {
                     currentIndex = currentIndex
                     COORDINATOR.mode = currentIndex
