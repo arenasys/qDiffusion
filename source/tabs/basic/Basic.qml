@@ -70,6 +70,9 @@ Item {
             onForeverChanged: {
                 BASIC.forever = params.forever
             }
+            function drop(mimeData) {
+                BASIC.sizeDrop(mimeData)
+            }
         }
     }
 

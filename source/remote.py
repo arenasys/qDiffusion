@@ -16,6 +16,8 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.fernet import Fernet, InvalidToken
 
+DEFAULT_PASSWORD = "qDiffusion"
+
 def get_scheme(password):
     password = password.encode("utf8")
     h = hashes.Hash(hashes.SHA256())
@@ -80,8 +82,9 @@ class RemoteInference(QThread):
         self.client.settimeout(5)
 
         self.scheme = None
-        if password:
-            self.scheme = get_scheme(password)
+        if not password:
+            password = DEFAULT_PASSWORD
+        self.scheme = get_scheme(password)
 
     def connect(self, once=False):
         if self.client.connected:
@@ -140,6 +143,7 @@ class RemoteInference(QThread):
                     continue
                 if type(e) == InvalidToken or type(e) == IndexError:
                     self.onResponse(-1, {"type": "error", "data": {"message": "Incorrect password"}})
+                    break
                 elif not self.client.connected:
                     self.onResponse(-1, {"type": "error", "data": {"message": str(e)}})
                 else:

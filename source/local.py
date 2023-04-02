@@ -23,6 +23,7 @@ def log_traceback(label):
     tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
     with open("crash.log", "a") as f:
         f.write(f"{label} {datetime.datetime.now()}\n{tb}\n")
+    print(tb)
 
 class InferenceProcessThread(threading.Thread):
     def __init__(self, requests, responses):

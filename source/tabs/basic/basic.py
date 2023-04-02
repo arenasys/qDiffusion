@@ -14,7 +14,6 @@ from canvas.shared import PILtoQImage, QImagetoPIL
 import sql
 
 MIME_BASIC_INPUT = "application/x-qd-basic-input"
-MIME_BASIC_OUTPUT = "application/x-qd-basic-output"
 
 class BasicInputRole(Enum):
     IMAGE = 1
@@ -136,9 +135,6 @@ class BasicInput(QObject):
             source = int(str(mimeData.data(MIME_BASIC_INPUT), 'utf-8'))
             destination = index
             self.parent().swapItem(source, destination)
-        elif MIME_BASIC_OUTPUT in mimeData.formats():
-            source = int(str(mimeData.data(MIME_BASIC_OUTPUT), 'utf-8'))
-            self._image = QImage(self.parent()._outputs[source]._image)
         else:
             source = mimeData.imageData()
             if source and not source.isNull():
@@ -172,7 +168,6 @@ class BasicInput(QObject):
         
         x1,y1,x2,y2 = parameters.get_extent(bound, padding, source, working)
         self._extent = QRect(x1,y1,x2-x1,y2-y1)
-        print((x2-x1), working[0], (y2-y1), working[1])
         self._extentWarning = (x2-x1) > working[0] or (y2-y1) > working[1]
         self.extentUpdated.emit()
 
@@ -407,9 +402,6 @@ class Basic(QObject):
             source = int(str(mimeData.data(MIME_BASIC_INPUT), 'utf-8'))
             destination = index
             self.moveItem(source, destination)
-        elif MIME_BASIC_OUTPUT in mimeData.formats():
-            source = int(str(mimeData.data(MIME_BASIC_OUTPUT), 'utf-8'))
-            self._inputs.insert(index, BasicInput(self, QImage(self._outputs[source]._image), BasicInputRole.IMAGE))
         else:
             source = mimeData.imageData()
             if source and not source.isNull():
@@ -420,6 +412,27 @@ class Basic(QObject):
                     self._inputs.insert(index, BasicInput(self, source, BasicInputRole.IMAGE))
         self.updated.emit()
 
+    @pyqtSlot(MimeData)
+    def sizeDrop(self, mimeData):
+        mimeData = mimeData.mimeData
+        width,height = None,None
+        if MIME_BASIC_INPUT in mimeData.formats():
+            source = int(str(mimeData.data(MIME_BASIC_INPUT), 'utf-8'))
+            width,height = self._inputs[source].width, self._inputs[source].height
+        else:
+            source = mimeData.imageData()
+            if source and not source.isNull():
+                width, height = source.width(), source.height()
+            for url in mimeData.urls():
+                if url.isLocalFile():
+                    source = QImage(url.toLocalFile())
+                    width, height = source.width(), source.height()
+                    break
+
+        if width and height:
+            self._parameters._values.set("width", width)
+            self._parameters._values.set("height", height)
+            
     @pyqtSlot(int)
     def deleteInput(self, index):
         self._inputs.pop(index)

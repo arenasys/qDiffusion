@@ -108,12 +108,16 @@ class GUI(QObject):
     def statusText(self):
         if self.requestProgress > 0:
             return "Downloading"
+        if self._remoteStatus == RemoteStatusMode.ERRORED:
+            return "Errored"
         return self._statusText
     
     @pyqtProperty(int, notify=statusUpdated)
     def statusMode(self):
         if self.requestProgress > 0:
             return StatusMode.WORKING.value
+        if self._remoteStatus == RemoteStatusMode.ERRORED:
+            return StatusMode.ERRORED.value
         return self._statusMode.value
     
     @pyqtProperty('QString', notify=statusUpdated)
@@ -185,9 +189,11 @@ class GUI(QObject):
         if response["type"] == "error":
             self._errorStatus = self._statusText
             self._errorText = response["data"]["message"]
+            if self._errorText == "Incorrect password":
+                self._remoteStatus = RemoteStatusMode.ERRORED
             self.statusUpdated.emit()
             self.errorUpdated.emit()
-
+            
         if response["type"] == "aborted":
             self.setReady()
 
@@ -289,6 +295,8 @@ class GUI(QObject):
             mode = "Remote"
             if self._remoteStatus == RemoteStatusMode.CONNECTING:
                 status = "Connecting"
+            elif self._remoteStatus == RemoteStatusMode.ERRORED:
+                status = "Errored"
             else:
                 status = "Connected"
         else:

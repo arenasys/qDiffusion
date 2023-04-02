@@ -136,16 +136,16 @@ def get_extent(bound, padding, src, wrk):
 
     if wrk_w/rw < wrk_h/rh:
         w = rw
-        h = w/ar
+        h = int(w/ar)
         if h > src_h:
             h = src_h
-            w = h*ar
+            w = int(h*ar)
     else:
         h = rh
         w = int(h*ar)
         if w > src_w:
             w = src_w
-            h = w/ar
+            h = int(w/ar)
 
     x1 = cx - w//2
     x2 = cx + w - (w//2)

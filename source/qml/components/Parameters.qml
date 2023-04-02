@@ -14,6 +14,12 @@ Item {
 
     signal generate()
     signal cancel()
+
+
+    function drop(mimedata) {
+        
+    }
+
     property var forever: false
 
     property var binding
@@ -146,6 +152,14 @@ Item {
                         incValue: 8
                         snapValue: 64
                         bounded: false
+
+                        AdvancedDropArea {
+                            anchors.fill: parent
+
+                            onDropped: {
+                                root.drop(mimeData)
+                            }
+                        }
                     }
                     OSlider {
                         id: heightInput
@@ -162,6 +176,14 @@ Item {
                         incValue: 8
                         snapValue: 64
                         bounded: false
+
+                        AdvancedDropArea {
+                            anchors.fill: parent
+
+                            onDropped: {
+                                root.drop(mimeData)
+                            }
+                        }
                     }
                     OSlider {
                         id: stepsInput
