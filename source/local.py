@@ -49,6 +49,14 @@ class InferenceProcessThread(threading.Thread):
         sys.path.insert(0, sd_path)
 
         self.responses.put((-1, {"type":"status", "data":{"message":"Initializing"}}))
+        
+        if sys.stdout == None:
+            sys.stdout = open(os.devnull, 'w')
+            sys.__stdout__ = sys.stdout
+        if sys.stderr == None:
+            sys.stderr = open(os.devnull, 'w')
+            sys.__stderr__ = sys.stderr
+
         import torch
         import attention, storage, wrapper
 
