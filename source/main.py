@@ -335,7 +335,6 @@ class Coordinator(QObject):
         with open("config.json", "w", encoding="utf-8") as f:
             json.dump(cfg, f)
 
-        self.installer = None
         self._installing = ""
         self.installedUpdated.emit()
         self.find_needed()
@@ -344,6 +343,8 @@ class Coordinator(QObject):
         elif all([p in self._installed for p in self.packages]):
             self._needRestart = True
             self.updated.emit()
+            self.installer = None
+            self.installedUpdated.emit()
     
 def launch():
     try:
