@@ -1,16 +1,9 @@
 if [ ! -d "venv" ] 
 then
-	pip install --upgrade pip
+	echo INITIALIZING...
 	python -m venv venv
 	source venv/bin/activate
-	pip install wheel
-	pip install torch torchvision
-	pip install -r source/requirements_gui.txt
-	pip install -r source/requirements_inference.txt
-	pip install basicsr
-	pip uninstall --yes opencv-python
-	pip install opencv-python-headless
-	pip install xformers
+	pip install PyQt5==5.15.7
 else
     source venv/bin/activate
 fi
