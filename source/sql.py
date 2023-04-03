@@ -211,8 +211,6 @@ class Sql(QAbstractListModel):
             self.resultsChanged.emit()
         
         if delta > 9:
-            self.beginResetModel()
-            self.endResetModel()
             self.bigChange.emit()
 
     def data(self, index, role):
@@ -268,6 +266,11 @@ class Sql(QAbstractListModel):
         self.beginResetModel()
         self.fieldNames = {}
         self.results = []
+        self.endResetModel()
+
+    @pyqtSlot()
+    def forceReset(self):
+        self.beginResetModel()
         self.endResetModel()
 
     @pyqtSlot(str)

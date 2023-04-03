@@ -67,6 +67,7 @@ Rectangle {
                 reset = true
             }
             onBigChange: {
+                filesSql.forceReset()
                 filesSql.refresh()
             }
             onResultsChanged: {

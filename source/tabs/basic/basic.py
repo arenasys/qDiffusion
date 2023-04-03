@@ -460,13 +460,12 @@ class Basic(QObject):
         for i in list(self._outputs.keys()):
             if i < id:
                 del self._outputs[i]
-
-        self.updated.emit()
-
+        
         q = QSqlQuery(self.conn.db)
-        q.prepare("DELETE FROM outputs WHERE id < :id;")
-        q.bindValue(":id", id)
+        q.prepare("DELETE FROM outputs WHERE id < :idx;")
+        q.bindValue(":idx", id)
         self.conn.doQuery(q)
+        self.updated.emit()
 
     @pyqtSlot(QQuickTextDocument)
     def setHighlighting(self, doc):

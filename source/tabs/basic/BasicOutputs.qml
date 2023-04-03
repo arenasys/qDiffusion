@@ -21,12 +21,12 @@ Item {
         orientation: Qt.Horizontal
         width: Math.min(contentWidth, parent.width)
         model: Sql {
-            id: foldersSql
+            id: outputsSql
             query: "SELECT id FROM outputs ORDER BY id DESC;"
         }
         ScrollBar.horizontal: SScrollBarH { 
             id: scrollBar
-            stepSize: 1/(4*Math.ceil(foldersSql.length))
+            stepSize: 1/(4*Math.ceil(outputsSql.length))
         }
 
         MouseArea {

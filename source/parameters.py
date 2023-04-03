@@ -303,11 +303,11 @@ class Parameters(QObject):
 
         self.gui.optionsUpdated.connect(self.optionsUpdated)
 
-        self._readonly = ["models", "samplers", "upscalers", "UNETs", "CLIPs", "VAEs", "SRs", "LoRAs", "HNs", "hr_upscalers", "img2img_upscalers"]
+        self._readonly = ["models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "LoRAs", "HNs", "LoRA", "HN", "hr_upscalers", "img2img_upscalers", "attentions"]
         self._values = VariantMap(self, {"prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7, "strength": 0.75, "seed": -1, "eta": 1.0,
             "hr_factor": 1.0, "hr_strength":  0.7, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "subseed":-1, "subseed_strength": 0.0,
-            "model":"", "models":[], "sampler":"Euler a", "samplers":[], "hr_upscaler":"Latent (nearest)", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[], "upscalers":[],
-            "UNET":"", "UNETs":"", "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "SR":"", "SRs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[],
+            "model":"", "models":[], "sampler":"Euler a", "samplers":[], "hr_upscaler":"Latent (nearest)", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
+            "UNET":"", "UNETs":"", "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[],
             "attention":"", "attentions":[]})
         self._values.updated.connect(self.mapsUpdated)
         self._availableNetworks = []
@@ -389,13 +389,9 @@ class Parameters(QObject):
         self._availableNetworks += [ParametersNetwork(self, name, "HN") for name in self._values.get("HNs")]
         self._activeNetworks = [n for n in self._activeNetworks if any([n == nn._name for nn in self._availableNetworks])]
 
-        upscalers = self._values.get("upscalers") + self._values.get("SRs")
-
-        self._values.set("img2img_upscalers", [u for u in upscalers if not u.startswith("Latent ")])
         if self._values.get("img2img_upscaler") not in self._values.get("img2img_upscalers"):
             self._values.set("img2img_upscaler", "Lanczos")
 
-        self._values.set("hr_upscalers", upscalers)
         if self._values.get("hr_upscaler") not in self._values.get("hr_upscalers"):
             self._values.set("hr_upscaler", "Latent (nearest)")
          
@@ -405,17 +401,16 @@ class Parameters(QObject):
         request = {}
         data = {}
 
-        if images:
-            request["type"] = "img2img"     
-            data["image"] = images
-            data["mask"] = masks           
-        else:
-            request["type"] = "txt2img"
-
         for k, v in self._values._map.items():
             if not k in self._readonly:
                 data[k] = v
-        del data["SR"]
+
+        if images:
+            request["type"] = "img2img"
+            data["image"] = images
+            data["mask"] = masks
+        else:
+            request["type"] = "txt2img"
 
         if len({data["UNET"], data["CLIP"], data["VAE"]}) == 1:
             data["model"] = data["UNET"]
@@ -447,6 +442,8 @@ class Parameters(QObject):
         del data["subseed_strength"]
 
         data = {k.lower():v for k,v in data.items()}
+
+        #print(data)
 
         request["data"] = data
 
