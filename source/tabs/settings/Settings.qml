@@ -26,6 +26,13 @@ Item {
                 settingsStack.currentIndex = 0
             }
         }
+        SettingsButton {
+            label: "Program"
+            active: settingsStack.currentIndex == 1
+            onPressed: {
+                settingsStack.currentIndex = 1
+            }
+        }
     }
     Rectangle {
         id: divider
@@ -47,6 +54,7 @@ Item {
             id: settingsStack
             anchors.fill: parent
             RemoteSettings { }
+            ProgramSettings { }
         }
     }
 }

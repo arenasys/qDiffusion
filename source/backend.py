@@ -31,7 +31,7 @@ class Backend(QObject):
             if HAVE_TORCH:
                 self.inference = local.LocalInference()
             else:
-                self.response.emit(-1, {"type": "remote_only"})
+                self.response.emit({"type": "remote_only"})
                 return
         else:
             self.inference = remote.RemoteInference(endpoint, password)

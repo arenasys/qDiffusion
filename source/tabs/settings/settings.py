@@ -1,9 +1,18 @@
 import math
+import os
+import subprocess
 
-from PyQt5.QtCore import pyqtProperty, pyqtSignal, QObject, pyqtSlot, QUrl
+from PyQt5.QtCore import pyqtProperty, pyqtSignal, QObject, pyqtSlot, QUrl, QThread
 from PyQt5.QtQml import qmlRegisterSingletonType
 
 from misc import MimeData
+
+class Update(QThread):
+    def run(self):
+        subprocess.run(["git", "pull", "origin", "master"])
+        inf = os.path.join("source", "sd-inference-server")
+        if os.path.exists(inf):
+            subprocess.run(["git", "pull", "origin", "master"], cwd=inf)
 
 class Settings(QObject):
     updated = pyqtSignal()
@@ -38,6 +47,12 @@ class Settings(QObject):
     @pyqtSlot()
     def refresh(self):
         self.gui.backend.makeRequest(-1, {"type":"options"})
+
+    @pyqtSlot()
+    def update(self):
+        update = Update(self)
+        update.finished.connect(self.gui.getGitDate)
+        update.start()
     
     @pyqtSlot(str, str)
     def upload(self, type, file):
