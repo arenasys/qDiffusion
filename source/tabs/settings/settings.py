@@ -2,6 +2,7 @@ import math
 import os
 import subprocess
 import platform
+import datetime
 IS_WIN = platform.system() == 'Windows'
 
 from PyQt5.QtCore import pyqtProperty, pyqtSignal, QObject, pyqtSlot, QUrl, QThread
@@ -30,6 +31,8 @@ class Settings(QObject):
 
         self.gui.response.connect(self.onResponse)
 
+        self.getGitInfo()
+
     @pyqtProperty(str, notify=updated)
     def log(self):
         return self._log
@@ -53,7 +56,7 @@ class Settings(QObject):
     @pyqtSlot()
     def update(self):
         update = Update(self)
-        update.finished.connect(self.gui.getGitDate)
+        update.finished.connect(self.getGitDate)
         update.start()
     
     @pyqtSlot(str, str)
@@ -82,3 +85,15 @@ class Settings(QObject):
         self._log += response["data"]["message"] + "\n"
         self.updated.emit()   
         self.gui.backend.makeRequest(-1, {"type":"options"})
+
+    @pyqtProperty(str, notify=updated)
+    def gitInfo(self):
+        return self._gitInfo
+    
+    @pyqtSlot()
+    def getGitInfo(self):
+        self._gitInfo = ""
+        r = subprocess.run(["git", "log", "-1", "--format=%B (%h) (%ch)"], capture_output=True, shell=IS_WIN)
+        if r.returncode == 0:
+            self._gitInfo = "Last commit: " + r.stdout.decode('utf-8').replace("\n","")
+        self.updated.emit()

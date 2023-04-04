@@ -30,6 +30,7 @@ Item {
             label: "Program"
             active: settingsStack.currentIndex == 1
             onPressed: {
+                SETTINGS.getGitInfo()
                 settingsStack.currentIndex = 1
             }
         }

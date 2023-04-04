@@ -23,8 +23,8 @@ Item {
                 SETTINGS.update()
             }
         }
-        SText {
-            text: GUI.gitInfo
+        STextSelectable {
+            text: SETTINGS.gitInfo
             width: parent.width
             height: 30
             verticalAlignment: Text.AlignVCenter

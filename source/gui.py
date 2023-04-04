@@ -2,6 +2,8 @@ import os
 import random
 import subprocess
 import datetime
+import platform
+IS_WIN = platform.system() == 'Windows'
 
 from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent, QMimeData, QUrl
 from PyQt5.QtQuick import QQuickItem, QQuickPaintedItem
@@ -75,8 +77,6 @@ class GUI(QObject):
         for folder in self._modelFolders:
             self.watcher.watchFolder(folder)
         self._trashFolder = os.path.join("models", "TRASH")
-
-        self.getGitDate()
 
         parent.aboutToQuit.connect(self.stop)
 
@@ -326,10 +326,6 @@ class GUI(QObject):
 
         return mode + ", " + status
 
-    @pyqtProperty(str, notify=statusUpdated)
-    def gitInfo(self):
-        return "Last commit from " + datetime.datetime.fromtimestamp(self.git_date).strftime("%d/%m/%y %I:%M %p")
-    
     @pyqtSlot()
     def restartBackend(self):
         endpoint = self._config._values.get("endpoint")
@@ -361,13 +357,3 @@ class GUI(QObject):
             return
         
         self.backend.makeRequest({"type":"upload", "data":{"type": type, "file":file}})
-
-    @pyqtSlot()
-    def getGitDate(self):
-        self.git_date = -1
-
-        r = subprocess.run("git log -1 --format=%ct".split(" "), capture_output=True)
-        if r.returncode == 0:
-            self.git_date = int(r.stdout)
-        
-        self.statusUpdated.emit()
