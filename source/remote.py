@@ -4,7 +4,9 @@ import websocket as ws_client
 import bson
 import select
 import os
-import time
+import traceback
+import datetime
+import sys
 
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QThread
 from PyQt5.QtWidgets import QApplication
@@ -17,6 +19,13 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.fernet import Fernet, InvalidToken
 
 DEFAULT_PASSWORD = "qDiffusion"
+
+def log_traceback(label):
+    exc_type, exc_value, exc_tb = sys.exc_info()
+    tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
+    with open("crash.log", "a") as f:
+        f.write(f"{label} {datetime.datetime.now()}\n{tb}\n")
+    print(tb)
 
 def get_scheme(password):
     password = password.encode("utf8")
@@ -110,16 +119,21 @@ class RemoteInference(QThread):
             self.requests.put((-1, {"type":"options"}))
 
     def run(self):
+        ctr = 0
         self.id = -1
-        
         while not self.stopping:
             self.connect()
             
             try:
                 QApplication.processEvents()
+
+                if ctr == 200:
+                    self.requests.put((-1, {"type":"ping"}))
+                    ctr = 0
+                ctr += 1
+
                 if not self.requests.empty():
                     self.id, request = self.requests.get(False)
-
                     if request["type"] == "upload":
                         thread = RemoteInferenceUpload(self.requests, request["data"]["type"], request["data"]["file"])
                         thread.start()
@@ -127,16 +141,18 @@ class RemoteInference(QThread):
                     
                     data = encrypt(self.scheme, request)
                     self.client.send_binary(data)
+                    ctr = 0
                 else:
                     rd, _, _ = select.select([self.client], [], [], 0)
                     if not rd:
                         QThread.msleep(10)
                         continue
                     data = self.client.recv()
-                    response = decrypt(self.scheme, data)
-                    self.onResponse(self.id, response)
+                    ctr = 0
+                    if data:
+                        response = decrypt(self.scheme, data)
+                        self.onResponse(self.id, response)
             except queue.Empty:
-                self.client.ping()
                 pass
             except Exception as e:
                 if str(e) in {"socket is already closed.", "[Errno 32] Broken pipe"}:
@@ -144,10 +160,9 @@ class RemoteInference(QThread):
                 if type(e) == InvalidToken or type(e) == IndexError:
                     self.onResponse(-1, {"type": "error", "data": {"message": "Incorrect password"}})
                     break
-                elif not self.client.connected:
-                    self.onResponse(-1, {"type": "error", "data": {"message": str(e)}})
                 else:
-                    raise e
+                    self.onResponse(-1, {"type": "error", "data": {"message": str(e)}})
+                    log_traceback("REMOTE")
             
     @pyqtSlot()
     def stop(self):
