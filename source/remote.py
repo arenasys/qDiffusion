@@ -1,6 +1,6 @@
 import queue
 import multiprocessing
-import websocket as ws_client
+import websockets.sync.client
 import bson
 import select
 import os
@@ -25,7 +25,7 @@ def log_traceback(label):
     tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
     with open("crash.log", "a") as f:
         f.write(f"{label} {datetime.datetime.now()}\n{tb}\n")
-    print(tb)
+    print(label, tb)
 
 def get_scheme(password):
     password = password.encode("utf8")
@@ -79,7 +79,7 @@ class RemoteInferenceUpload(QThread):
         self.done.emit()
 
 class RemoteInference(QThread):
-    response = pyqtSignal(int, object)
+    response = pyqtSignal(object)
     def __init__(self, endpoint, password=None):
         super().__init__()
 
@@ -87,105 +87,77 @@ class RemoteInference(QThread):
         self.requests = multiprocessing.Queue(16)
         self.responses = multiprocessing.Queue(16)
         self.endpoint = endpoint
-        self.client = ws_client.WebSocket()
-        self.client.settimeout(5)
+        self.client = None
 
         self.scheme = None
         if not password:
             password = DEFAULT_PASSWORD
         self.scheme = get_scheme(password)
+        self.id = None
 
-    def connect(self, once=False):
-        if self.client.connected:
+    def connect(self):
+        if self.client:
             return
-        
-        self.onResponse(-1, {"type": "status", "data": {"message": "Connecting"}})
-        while not self.client.connected and not self.stopping:
+        self.onResponse({"type": "status", "data": {"message": "Connecting"}})
+        while not self.client and not self.stopping:
             try:
-                self.client.connect(self.endpoint)
-            except Exception as e:
-                for _ in range(100):
-                    if self.stopping:
-                        return
-                    QApplication.processEvents()
-                    QThread.msleep(10)
+                self.client = websockets.sync.client.connect(self.endpoint, open_timeout=2)
+            except TimeoutError:
                 pass
-            if once:
-                break
+            except Exception as e:
+                self.onResponse({"type": "remote_error", "data": {"message": str(e)}})
+                return
         if self.stopping:
-            return 
-        if self.client.connected:
-            self.onResponse(-1, {"type": "status", "data": {"message": "Connected"}})
-            self.requests.put((-1, {"type":"options"}))
+            return
+        if self.client:
+            self.onResponse({"type": "status", "data": {"message": "Connected"}})
+            self.requests.put({"type":"options"})
 
     def run(self):
-        ctr = 0
-        self.id = -1
         while not self.stopping:
             self.connect()
-            
+            if not self.client:
+                return
             try:
                 QApplication.processEvents()
 
-                if ctr == 200:
-                    self.requests.put((-1, {"type":"ping"}))
-                    ctr = 0
-                ctr += 1
-
                 if not self.requests.empty():
-                    self.id, request = self.requests.get(False)
-                    if request["type"] == "upload":
-                        thread = RemoteInferenceUpload(self.requests, request["data"]["type"], request["data"]["file"])
-                        thread.start()
-                        continue
-                    
+                    request = self.requests.get()
                     data = encrypt(self.scheme, request)
-                    self.client.send_binary(data)
-                    ctr = 0
+                    self.client.send(data)
                 else:
-                    rd, _, _ = select.select([self.client], [], [], 0)
-                    if not rd:
+                    try:
+                        data = self.client.recv(0)
+                    except TimeoutError:
                         QThread.msleep(10)
                         continue
-                    data = self.client.recv()
-                    ctr = 0
                     if data:
                         response = decrypt(self.scheme, data)
-                        self.onResponse(self.id, response)
+                        self.onResponse(response)
             except queue.Empty:
                 pass
             except Exception as e:
-                if str(e) in {"socket is already closed.", "[Errno 32] Broken pipe"}:
-                    continue
                 if type(e) == InvalidToken or type(e) == IndexError:
-                    self.onResponse(-1, {"type": "error", "data": {"message": "Incorrect password"}})
-                    break
+                    self.onResponse({"type": "remote_error", "data": {"message": "Incorrect password"}})
                 else:
-                    self.onResponse(-1, {"type": "error", "data": {"message": str(e)}})
+                    self.onResponse({"type": "remote_error", "data": {"message": str(e)}})
                     log_traceback("REMOTE")
+                return
             
     @pyqtSlot()
     def stop(self):
-        self.requests.put((-1, {"type": "stop", "data":{}}))
         self.stopping = True
-        if self.client.connected:
+        if self.client:
             self.client.close()
 
-    @pyqtSlot(int, object)
-    def onRequest(self, id, request):
-        self.requests.put((id, request))
+    @pyqtSlot(object)
+    def onRequest(self, request):
+        self.requests.put(request)
 
-    @pyqtSlot(int)
-    def onCancel(self, id):
-        if self.client.connected:
-            data = encrypt(self.scheme, {"type": "cancel", "data":{}})
-            self.client.send_binary(data)
-
-    def onResponse(self, id, response):
+    def onResponse(self, response):
         if response["type"] == "result":
             self.saveResults(response["data"]["images"], response["data"]["metadata"])
-
-        self.response.emit(id, response)
+        self.response.emit(response)
 
     def saveResults(self, images, metadata):
         for i in range(len(images)):

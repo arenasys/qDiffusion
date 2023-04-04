@@ -12,6 +12,7 @@ import re
 from misc import MimeData
 from canvas.shared import PILtoQImage, QImagetoPIL
 import sql
+import time
 
 MIME_BASIC_INPUT = "application/x-qd-basic-input"
 
@@ -316,11 +317,12 @@ class Basic(QObject):
         if self._id != id:
             return
         
+        id = (time.time_ns() // 1000000) % (2**31 - 1)
+
         sticky = self.isSticky()
         for i in range(len(self.gui._results)-1, -1, -1):
             img = self.gui._results[i]["image"]
             metadata = self.gui._results[i]["metadata"]
-
             self._outputs[id] = BasicOutput(self, img, metadata)
             q = QSqlQuery(self.conn.db)
             q.prepare("INSERT INTO outputs(id) VALUES (:id);")

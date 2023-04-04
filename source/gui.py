@@ -1,4 +1,5 @@
 import os
+import random
 
 from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent, QMimeData, QUrl
 from PyQt5.QtQuick import QQuickItem, QQuickPaintedItem
@@ -30,6 +31,9 @@ class RemoteStatusMode(Enum):
     CONNECTED = 2
     ERRORED = 3
 
+def get_id():
+    return random.SystemRandom().randint(1, 2**31 - 1)
+
 class GUI(QObject):
     statusUpdated = pyqtSignal()
     errorUpdated = pyqtSignal()
@@ -47,8 +51,6 @@ class GUI(QObject):
         self.network = QNetworkAccessManager(self)
         self.requestProgress = 0.0
         self.tabs = []
-
-        self._id = 0
 
         self._statusMode = StatusMode.STARTING
         self._statusText = "Inactive"
@@ -139,12 +141,14 @@ class GUI(QObject):
         return self._errorStatus
     
     def makeRequest(self, request):
-        self._id += 1024
-        self.backend.makeRequest(self._id, request)
-        return self._id
+        id = get_id()
+        request["id"] = id
+        self.backend.makeRequest(request)
+        return id
 
     def cancelRequest(self, id):
-        self.backend.cancelRequest(id)
+        if id:
+            self.backend.makeRequest({"type":"cancel", "data":{"id": id}})
 
     def setReady(self):
         self._statusMode = StatusMode.IDLE
@@ -153,8 +157,12 @@ class GUI(QObject):
         self._statusProgress = -1.0
         self.statusUpdated.emit()
     
-    @pyqtSlot(int, object)
-    def onResponse(self, id, response):
+    @pyqtSlot(object)
+    def onResponse(self, response):
+        id = -1
+        if "id" in response:
+            id = response["id"]
+
         if response["type"] == "status":
             self._statusText = response["data"]["message"]
             if self._statusText == "Initializing" or self._statusText == "Connecting":
@@ -189,8 +197,14 @@ class GUI(QObject):
         if response["type"] == "error":
             self._errorStatus = self._statusText
             self._errorText = response["data"]["message"]
-            if self._errorText == "Incorrect password":
-                self._remoteStatus = RemoteStatusMode.ERRORED
+            self.statusUpdated.emit()
+            self.errorUpdated.emit()
+
+        if response["type"] == "remote_error":
+            self._errorStatus = self._statusText
+            self._errorText = response["data"]["message"]
+            self._remoteStatus = RemoteStatusMode.ERRORED
+            self.backend.stop()
             self.statusUpdated.emit()
             self.errorUpdated.emit()
             
@@ -225,7 +239,7 @@ class GUI(QObject):
     def refreshModels(self):
         #if folder == self._modelFolders[0]:
         #    self.backend.makeRequest(-1, {"type":"convert", "data":{"model_folder": self._modelFolders[0], "trash_folder":self._trashFolder}})
-        self.backend.makeRequest(-1, {"type":"options"})
+        self.backend.makeRequest({"type":"options"})
 
     @pyqtSlot()
     def clearError(self):

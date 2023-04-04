@@ -15,9 +15,8 @@ except ImportError as e:
     pass
 
 class Backend(QObject):
-    request = pyqtSignal(int, object)
-    response = pyqtSignal(int, object)
-    cancel = pyqtSignal(int)
+    request = pyqtSignal(object)
+    response = pyqtSignal(object)
     stopping = pyqtSignal()
 
     def __init__(self, parent):
@@ -39,7 +38,6 @@ class Backend(QObject):
 
         self.inference.start()
         self.request.connect(self.inference.onRequest)
-        self.cancel.connect(self.inference.onCancel)
         self.inference.response.connect(self.onResponse)
         self.stopping.connect(self.inference.stop)
 
@@ -51,15 +49,10 @@ class Backend(QObject):
         if self.inference:
             self.inference.wait()
     
-    @pyqtSlot(int, object)
-    def makeRequest(self, id, request):
-        self.request.emit(id, request)
-        return id
+    @pyqtSlot(object)
+    def makeRequest(self, request):
+        self.request.emit(request)
 
-    @pyqtSlot(int)
-    def cancelRequest(self, id):
-        self.cancel.emit(id)
-
-    @pyqtSlot(int, object)
-    def onResponse(self, id, response):
-        self.response.emit(id, response)
+    @pyqtSlot(object)
+    def onResponse(self, response):
+        self.response.emit(response)

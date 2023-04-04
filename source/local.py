@@ -23,7 +23,7 @@ def log_traceback(label):
     tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
     with open("crash.log", "a") as f:
         f.write(f"{label} {datetime.datetime.now()}\n{tb}\n")
-    print(tb)
+    print(label, tb)
 
 class InferenceProcessThread(threading.Thread):
     def __init__(self, requests, responses):
@@ -38,7 +38,7 @@ class InferenceProcessThread(threading.Thread):
         sd_path = os.path.join("source", "sd-inference-server")
 
         if not os.path.exists(sd_path):
-            self.responses.put((-1, {"type":"status", "data":{"message":"Downloading"}}))
+            self.responses.put({"type":"status", "data":{"message":"Downloading"}})
             ret = subprocess.run(["git", "clone", "https://github.com/arenasys/sd-inference-server/", sd_path], capture_output=True, shell=IS_WIN)
             if ret.returncode:
                 raise RuntimeError(ret.stderr.decode("utf-8").split("fatal: ", 1)[1])
@@ -48,7 +48,7 @@ class InferenceProcessThread(threading.Thread):
 
         sys.path.insert(0, sd_path)
 
-        self.responses.put((-1, {"type":"status", "data":{"message":"Initializing"}}))
+        self.responses.put({"type":"status", "data":{"message":"Initializing"}})
 
         if sys.stdout == None:
             sys.stdout = open(os.devnull, 'w')
@@ -67,10 +67,13 @@ class InferenceProcessThread(threading.Thread):
         self.wrapper.callback = self.onResponse
     
     def run(self):
-        self.requests.put((-1, {"type":"options"}))
+        self.requests.put({"type":"options"})
         while not self.stopping:
             try:
-                self.current, request = self.requests.get(True, 0.01)
+                request = self.requests.get(True, 0.01)
+                self.current = None
+                if "id" in request:
+                    self.current = request["id"]
                 self.wrapper.reset()
                 if request["type"] == "txt2img":
                     self.wrapper.set(**request["data"])
@@ -88,7 +91,7 @@ class InferenceProcessThread(threading.Thread):
                 pass
             except Exception as e:
                 if str(e) == "Aborted":
-                    self.responses.put((self.current, {"type":"aborted", "data":{}}))
+                    self.responses.put({"type":"aborted", "id": self.current, "data":{}})
                     continue
                 additional = ""
                 try:
@@ -102,10 +105,12 @@ class InferenceProcessThread(threading.Thread):
                 except Exception:
                     pass
 
-                self.responses.put((self.current, {"type":"error", "data":{"message":str(e) + additional}}))
+                self.responses.put({"type":"error", "id": self.current,  "data":{"message":str(e) + additional}})
 
     def onResponse(self, response):
-        self.responses.put((self.current, response))
+        if self.current:
+            response["id"] = self.current
+        self.responses.put(response)
         return not self.current in self.cancelled
     
     def cancel(self, id):
@@ -125,20 +130,20 @@ class InferenceProcess(multiprocessing.Process):
             self.inference = InferenceProcessThread(inference_requests, self.responses)
         except Exception as e:
             log_traceback("LOCAL PROCESS")
-            self.responses.put((-1, {"type":"error", "data":{"message":str(e)}}))
+            self.responses.put({"type":"error", "data":{"message":str(e)}})
             return
 
         self.inference.start()
 
         while not self.stopping:
             try:
-                id, request = self.requests.get()
+                request = self.requests.get()
                 if request["type"] == "cancel":
-                    self.inference.cancel(id)
+                    self.inference.cancel(request["data"]["id"])
                 if request["type"] == "stop":
                     self.stop()
                 else:
-                    inference_requests.put((id, request))
+                    inference_requests.put(request)
             except queue.Empty:
                 pass
             except KeyboardInterrupt:
@@ -150,7 +155,7 @@ class InferenceProcess(multiprocessing.Process):
         self.inference.cancel(self.inference.current)
 
 class LocalInference(QThread):
-    response = pyqtSignal(int, object)
+    response = pyqtSignal(object)
     def __init__(self):
         super().__init__()
 
@@ -166,31 +171,27 @@ class LocalInference(QThread):
             try:
                 QApplication.processEvents()
                 QThread.msleep(10)
-                id, response = self.responses.get(False)
-                self.onResponse(id, response)
+                response = self.responses.get(False)
+                self.onResponse(response)
             except queue.Empty:
                 pass
             
     @pyqtSlot()
     def stop(self):
-        self.requests.put((-1, {"type": "stop", "data":{}}))
+        self.requests.put({"type": "stop", "data":{}})
         self.stopping = True
         self.inference.join()
         print("STOPPED")
 
-    @pyqtSlot(int, object)
-    def onRequest(self, id, request):
-        self.requests.put((id, request))
+    @pyqtSlot(object)
+    def onRequest(self, request):
+        self.requests.put(request)
 
-    @pyqtSlot(int)
-    def onCancel(self, id):
-        self.requests.put((id, {"type": "cancel", "data":{}}))
-
-    def onResponse(self, id, response):
+    def onResponse(self, response):
         if response["type"] == "result":
             self.saveResults(response["data"]["images"], response["data"]["metadata"])
 
-        self.response.emit(id, response)
+        self.response.emit(response)
 
     def saveResults(self, images, metadata):
         for i in range(len(images)):
