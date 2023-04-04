@@ -149,6 +149,7 @@ class RemoteInference(QThread):
         self.stopping = True
         if self.client:
             self.client.close()
+            self.client = None
 
     @pyqtSlot(object)
     def onRequest(self, request):
