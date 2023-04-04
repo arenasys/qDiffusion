@@ -93,7 +93,7 @@ class Settings(QObject):
     @pyqtSlot()
     def getGitInfo(self):
         self._gitInfo = ""
-        r = subprocess.run(["git", "log", "-1", "--format=%B (%h) (%ch)"], capture_output=True, shell=IS_WIN)
+        r = subprocess.run(["git", "log", "-1", "--format=%B (%h) (%cr)"], capture_output=True, shell=IS_WIN)
         if r.returncode == 0:
             self._gitInfo = "Last commit: " + r.stdout.decode('utf-8').replace("\n","")
         self.updated.emit()
