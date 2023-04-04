@@ -56,7 +56,7 @@ class Settings(QObject):
     @pyqtSlot()
     def update(self):
         update = Update(self)
-        update.finished.connect(self.getGitDate)
+        update.finished.connect(self.getGitInfo)
         update.start()
     
     @pyqtSlot(str, str)
