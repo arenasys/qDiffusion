@@ -237,8 +237,6 @@ class GUI(QObject):
 
     @pyqtSlot()
     def refreshModels(self):
-        #if folder == self._modelFolders[0]:
-        #    self.backend.makeRequest(-1, {"type":"convert", "data":{"model_folder": self._modelFolders[0], "trash_folder":self._trashFolder}})
         self.backend.makeRequest({"type":"options"})
 
     @pyqtSlot()
@@ -347,11 +345,11 @@ class GUI(QObject):
         if self._remoteStatus != RemoteStatusMode.CONNECTED:
             return
         
-        self.backend.makeRequest(-1, {"type":"download", "data":{"type": type, "url":url}})
+        self.backend.makeRequest({"type":"download", "data":{"type": type, "url":url}})
 
     @pyqtSlot(str, str)
     def remoteUpload(self, type, file):
         if self._remoteStatus != RemoteStatusMode.CONNECTED:
             return
         
-        self.backend.makeRequest(-1, {"type":"upload", "data":{"type": type, "file":file}})
+        self.backend.makeRequest({"type":"upload", "data":{"type": type, "file":file}})

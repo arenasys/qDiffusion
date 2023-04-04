@@ -72,10 +72,10 @@ class RemoteInferenceUpload(QThread):
 
                 while not self.queue.empty():
                     QThread.msleep(10)
-                self.queue.put((-1, request))
+                self.queue.put(request)
                 i += 1
 
-        self.queue.put((-1, {"type":"chunk", "data": {"type":self.type, "name": self.name}}))
+        self.queue.put({"type":"chunk", "data": {"type":self.type, "name": self.name}})
         self.done.emit()
 
 class RemoteInference(QThread):
