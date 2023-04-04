@@ -65,7 +65,7 @@ class RemoteInferenceUpload(QThread):
         with open(self.file, 'rb') as f:
             i = 0
             while True:
-                chunk = f.read(1024*1024)
+                chunk = f.read(1000000)
                 if not chunk:
                     break
                 request = {"type":"chunk", "data": {"type":self.type, "name": self.name, "chunk":chunk, "index":i}}
@@ -123,6 +123,12 @@ class RemoteInference(QThread):
 
                 if not self.requests.empty():
                     request = self.requests.get()
+
+                    if request["type"] == "upload":
+                        thread = RemoteInferenceUpload(self.requests, request["data"]["type"], request["data"]["file"])
+                        thread.start()
+                        continue
+
                     data = encrypt(self.scheme, request)
                     self.client.send(data)
                 else:

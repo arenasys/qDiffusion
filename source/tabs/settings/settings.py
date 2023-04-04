@@ -51,7 +51,7 @@ class Settings(QObject):
 
     @pyqtSlot()
     def refresh(self):
-        self.gui.backend.makeRequest(-1, {"type":"options"})
+        self.gui.backend.makeRequest({"type":"options"})
 
     @pyqtSlot()
     def update(self):
@@ -80,11 +80,11 @@ class Settings(QObject):
             
     @pyqtSlot(int, object)
     def onResponse(self, id, response):
-        if id != -1 or response["type"] != "downloaded":
+        if response["type"] != "downloaded":
             return
         self._log += response["data"]["message"] + "\n"
         self.updated.emit()   
-        self.gui.backend.makeRequest(-1, {"type":"options"})
+        self.gui.backend.makeRequest({"type":"options"})
 
     @pyqtProperty(str, notify=updated)
     def gitInfo(self):
