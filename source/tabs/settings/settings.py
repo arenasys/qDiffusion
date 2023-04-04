@@ -1,6 +1,8 @@
 import math
 import os
 import subprocess
+import platform
+IS_WIN = platform.system() == 'Windows'
 
 from PyQt5.QtCore import pyqtProperty, pyqtSignal, QObject, pyqtSlot, QUrl, QThread
 from PyQt5.QtQml import qmlRegisterSingletonType
@@ -9,10 +11,10 @@ from misc import MimeData
 
 class Update(QThread):
     def run(self):
-        subprocess.run(["git", "pull", "origin", "master"])
+        subprocess.run(["git", "pull", "origin", "master"], shell=IS_WIN)
         inf = os.path.join("source", "sd-inference-server")
         if os.path.exists(inf):
-            subprocess.run(["git", "pull", "origin", "master"], cwd=inf)
+            subprocess.run(["git", "pull", "origin", "master"], cwd=inf, shell=IS_WIN)
 
 class Settings(QObject):
     updated = pyqtSignal()
