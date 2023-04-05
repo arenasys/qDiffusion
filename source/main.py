@@ -393,10 +393,6 @@ def start(engine, app):
 
     backend = gui.GUI(parent=app)
 
-    os.makedirs("outputs/txt2img", exist_ok=True)
-    os.makedirs("outputs/img2img", exist_ok=True)
-    os.makedirs("outputs/favourites", exist_ok=True)
-
     engine.addImageProvider("sync", backend.thumbnails.sync_provider)
     engine.addImageProvider("async", backend.thumbnails.async_provider)
 

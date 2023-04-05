@@ -68,8 +68,13 @@ class GUI(QObject):
         self._errorStatus = ""
         self._errorText = ""
 
-        self._config = config.Config(self, "config.json", {"endpoint": "", "password": ""})
+        self._config = config.Config(self, "config.json", {"endpoint": "", "password": "", "output_directory":"outputs", "model_directory":"models"})
         self._remoteStatus = RemoteStatusMode.INACTIVE
+
+        self._output_directory = self._config._values.get("output_directory")
+        self._model_directory = self._config._values.get("model_directory")
+
+        self._modelFolders = []
 
         self._debugJSONLogging = self._config._values.get("debug") == True
 
@@ -78,11 +83,6 @@ class GUI(QObject):
         self.backend.setEndpoint(self._config._values.get("endpoint"), self._config._values.get("password"))
 
         self._options = {}
-
-        self._modelFolders = [os.path.join("models", f) for f in ["SD", "LoRA", "HN", "SR", "TI"]]
-        for folder in self._modelFolders:
-            self.watcher.watchFolder(folder)
-        self._trashFolder = os.path.join("models", "TRASH")
 
         parent.aboutToQuit.connect(self.stop)
 
@@ -209,6 +209,10 @@ class GUI(QObject):
             self._errorText = response["data"]["message"]
             self.statusUpdated.emit()
             self.errorUpdated.emit()
+            if "traceback" in response["data"]:
+                with open("crash.log", "a") as f:
+                    f.write(f"INFERENCE {datetime.datetime.now()}\n{response['data']['traceback']}\n")
+
 
         if response["type"] == "remote_error":
             self._errorStatus = self._statusText
@@ -399,3 +403,10 @@ class GUI(QObject):
                 self._errorStatus = "DEBUG"
                 self._errorText = str(e)
                 self.errorUpdated.emit()
+    
+    @pyqtSlot()
+    def watchModelDirectory(self):
+        self._modelFolders = [os.path.join(self._model_directory, f) for f in ["SD", "LoRA", "HN", "SR", "TI"]]
+        for folder in self._modelFolders:
+            self.watcher.watchFolder(folder)
+        self._trashFolder = os.path.join(self._model_directory, "TRASH")

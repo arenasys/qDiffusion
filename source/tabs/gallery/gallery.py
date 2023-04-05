@@ -2,6 +2,7 @@ import PIL.Image
 import shutil
 import os
 import send2trash
+import glob
 
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject, QThread, QUrl, QMimeData
 from PyQt5.QtSql import QSqlQuery
@@ -102,9 +103,20 @@ class Gallery(QObject):
         self.populater.moveToThread(self.populaterThread)
         self.populaterThread.start()
 
-        self.add_folder.emit("Txt2Img", "outputs/txt2img")
-        self.add_folder.emit("Img2Img", "outputs/img2img")
-        self.add_folder.emit("Favourites", "outputs/favourites")
+        output = self.gui._output_directory
+        order = ["txt2img", "img2img", "favourites"]
+        labels = {"txt2img": "Txt2Img", "img2img": "Img2Img"}
+
+        for s in order:
+            os.makedirs(os.path.join(output, s), exist_ok=True)
+
+        subfolders = [s.rsplit(os.path.sep,1)[-1] for s in list(filter(os.path.isdir, glob.glob(output + "/*")))]
+        subfolders = [o for o in order if o in subfolders] + [s for s in subfolders if not s in order]
+        for name in subfolders:
+            label = name.capitalize()
+            if name in labels:
+                label = labels[name]
+            self.add_folder.emit(label, os.path.join(output, name))
 
         parent.aboutToQuit.connect(self.stop)
 

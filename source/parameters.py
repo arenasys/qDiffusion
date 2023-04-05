@@ -90,14 +90,14 @@ def parse_parameters(formatted):
 
     return json
 
-def save_image(img, metadata):
+def save_image(img, metadata, outputs):
     global IDX
     if type(img) == bytes:
         img = PIL.Image.open(io.BytesIO(img))
     m = PIL.PngImagePlugin.PngInfo()
     m.add_text("parameters", format_parameters(metadata))
 
-    folder = os.path.join("outputs", metadata["mode"])
+    folder = os.path.join(outputs, metadata["mode"])
     os.makedirs(folder, exist_ok=True)
 
     def get_idx(filename):

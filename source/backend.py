@@ -49,12 +49,13 @@ class Backend(QObject):
         self.inference = None
         if endpoint == "":
             if HAVE_TORCH:
-                self.inference = local.LocalInference()
+                
+                self.inference = local.LocalInference(self.gui)
             else:
                 self.onResponse({"type": "remote_only"})
                 return
         else:
-            self.inference = remote.RemoteInference(endpoint, password)
+            self.inference = remote.RemoteInference(self.gui, endpoint, password)
 
         self.inference.start()
         self.request.connect(self.inference.onRequest)
@@ -64,6 +65,12 @@ class Backend(QObject):
     @pyqtSlot()
     def stop(self):
         self.stopping.emit()
+
+    @pyqtSlot()
+    def started(self):
+        if self.inference and type(self.inference) == local.LocalInference:
+            print("WATCH")
+            self.gui.watchModelDirectory()
 
     def wait(self):
         if self.inference:

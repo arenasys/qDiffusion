@@ -81,8 +81,9 @@ class RemoteInferenceUpload(QThread):
 
 class RemoteInference(QThread):
     response = pyqtSignal(object)
-    def __init__(self, endpoint, password=None):
-        super().__init__()
+    def __init__(self, gui, endpoint, password=None):
+        super().__init__(gui)
+        self.gui = gui
 
         self.stopping = False
         self.requests = multiprocessing.Queue(16)
@@ -171,4 +172,4 @@ class RemoteInference(QThread):
 
     def saveResults(self, images, metadata):
         for i in range(len(images)):
-            save_image(images[i], metadata[i])
+            save_image(images[i], metadata[i], self.gui._output_directory)

@@ -26,7 +26,7 @@ def log_traceback(label):
     print(label, tb)
 
 class InferenceProcessThread(threading.Thread):
-    def __init__(self, requests, responses):
+    def __init__(self, requests, responses, model_directory):
         super().__init__()
 
         self.stopping = False
@@ -43,8 +43,8 @@ class InferenceProcessThread(threading.Thread):
             if ret.returncode:
                 raise RuntimeError(ret.stderr.decode("utf-8").split("fatal: ", 1)[1])
 
-        if not os.path.exists("models"):
-            shutil.copytree(os.path.join(sd_path, "models"), os.path.join(os.getcwd(), "models"))
+        if not os.path.exists(model_directory):
+            shutil.copytree(os.path.join(sd_path, "models"), model_directory)
 
         sys.path.insert(0, sd_path)
 
@@ -62,7 +62,7 @@ class InferenceProcessThread(threading.Thread):
 
         attention.use_optimized_attention()
 
-        model_storage = storage.ModelStorage("./models", torch.float16, torch.float32)
+        model_storage = storage.ModelStorage(model_directory, torch.float16, torch.float32)
         self.wrapper = wrapper.GenerationParameters(model_storage, torch.device("cuda"))
         self.wrapper.callback = self.onResponse
     
@@ -117,17 +117,18 @@ class InferenceProcessThread(threading.Thread):
         self.cancelled.add(id)
 
 class InferenceProcess(multiprocessing.Process):
-    def __init__(self, requests, responses):
+    def __init__(self, requests, responses, model_directory):
         super().__init__()
         self.stopping = False
         self.requests = requests
         self.responses = responses
+        self.model_directory = model_directory
 
     def run(self):
         inference_requests = queue.Queue()
 
         try:
-            self.inference = InferenceProcessThread(inference_requests, self.responses)
+            self.inference = InferenceProcessThread(inference_requests, self.responses, self.model_directory)
         except Exception as e:
             log_traceback("LOCAL PROCESS")
             self.responses.put({"type":"error", "data":{"message":str(e)}})
@@ -156,13 +157,14 @@ class InferenceProcess(multiprocessing.Process):
 
 class LocalInference(QThread):
     response = pyqtSignal(object)
-    def __init__(self):
-        super().__init__()
+    def __init__(self, gui):
+        super().__init__(gui)
+        self.gui = gui
 
         self.stopping = False
         self.requests = multiprocessing.Queue(16)
         self.responses = multiprocessing.Queue(16)
-        self.inference = InferenceProcess(self.requests, self.responses)
+        self.inference = InferenceProcess(self.requests, self.responses, self.gui._model_directory)
 
     def run(self):
         self.inference.start()
@@ -195,4 +197,4 @@ class LocalInference(QThread):
 
     def saveResults(self, images, metadata):
         for i in range(len(images)):
-            save_image(images[i], metadata[i])
+            save_image(images[i], metadata[i], self.gui._output_directory)
