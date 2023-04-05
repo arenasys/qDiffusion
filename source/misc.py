@@ -1,6 +1,8 @@
+import re
+
 from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent, QMimeData
 from PyQt5.QtQuick import QQuickItem, QQuickPaintedItem
-from PyQt5.QtGui import QImage
+from PyQt5.QtGui import QColor, QPen, QImage, QSyntaxHighlighter, QTextCharFormat
 from PyQt5.QtQml import qmlRegisterType
 
 class FocusReleaser(QQuickItem):
@@ -148,6 +150,62 @@ class DropArea(QQuickItem):
         self._containsDrag = False
         self.updated.emit()
         self.dropped.emit(MimeData(drop.mimeData()))
+
+class SyntaxHighlighter(QSyntaxHighlighter):
+    def __init__(self, gui):
+        super().__init__(gui)
+        self.gui = gui
+    def highlightBlock(self, text):
+        text = text + " "
+        emb = QColor("#ffd893")
+        lora_bg = QColor("#f9c7ff")
+        lora = QColor("#d693ff")
+        hn_bg = QColor("#c7fff6")
+        hn = QColor("#93d6ff")
+        err_bg = QColor("#ffc4c4")
+        err = QColor("#ff9393")
+        field = QColor("#9e9e9e")
+
+        embeddings = set()
+        if "TI" in self.gui._options:
+            embeddings = set(self.gui._options["TI"])
+
+        loras = set()
+        if "LoRA" in self.gui._options:
+            loras = set(self.gui._options["LoRA"])
+
+        hns = set()
+        if "HN" in self.gui._options:
+            hns = set(self.gui._options["HN"])
+
+        for em in embeddings:
+            for s, e  in [m.span() for m in re.finditer(em, text)]:
+                self.setFormat(s, e-s, emb)
+        
+        for s, e, ms, me in [(*m.span(0), *m.span(1)) for m in re.finditer("<lora:([^:>]+)([^>]+)?>", text.lower())]:
+            m = text[ms:me]
+            if m in loras:
+                self.setFormat(s, e-s, lora_bg)
+                self.setFormat(ms, me-ms, lora)
+            else:
+                self.setFormat(s, e-s, err_bg)
+                self.setFormat(ms, me-ms, err)
+        
+        for s, e, ms, me in [(*m.span(0), *m.span(1))  for m in re.finditer("<hn:([^:>]+)([^>]+)?>", text.lower())]:
+            m = text[ms:me]
+            if m in hns:
+                self.setFormat(s, e-s, hn_bg)
+                self.setFormat(ms, me-ms, hn)
+            else:
+                self.setFormat(s, e-s, err_bg)
+                self.setFormat(ms, me-ms, err)
+        
+        if text.startswith("Negative prompt: "):
+            self.setFormat(0, 16, field)
+        
+        if text.startswith("Steps: "):
+            for s, e in [m.span(1) for m in re.finditer("(?:\s)?([^,:]+):[^,]+(,)?", text.lower())]:
+                self.setFormat(s, e-s, field)
 
 def registerTypes():
     qmlRegisterType(ImageDisplay, "gui", 1, 0, "ImageDisplay")

@@ -1,15 +1,14 @@
 from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, QObject, QUrl, QMimeData, QByteArray, QBuffer, Qt, QRegExp, QIODevice, QRect
 from PyQt5.QtQml import qmlRegisterSingletonType
-from PyQt5.QtGui import QImage, QDrag, QPixmap, QSyntaxHighlighter, QTextCharFormat
+from PyQt5.QtGui import QImage, QDrag, QPixmap
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtQuick import QQuickTextDocument
 from PyQt5.QtSql import QSqlQuery
 from PyQt5.QtNetwork import QNetworkRequest, QNetworkReply
 from enum import Enum
 
 import parameters
 import re
-from misc import MimeData
+from misc import MimeData, SyntaxHighlighter
 from canvas.shared import PILtoQImage, QImagetoPIL
 import sql
 import time
@@ -234,28 +233,6 @@ class BasicOutput(QObject):
     def drag(self, id, image):
         self.basic.gui.dragFiles([self._file])
 
-class SyntaxHighlighter(QSyntaxHighlighter):
-    def highlightBlock(self, text):
-        brackets = QTextCharFormat()
-        brackets.setForeground(Qt.red)
-        brackets.setFontWeight(65)
-
-        occ = {'(': [], '{': [], '<': [], '[': []}
-        rev = {')': '(', '}': '{', '>': '<', ']': '['}
-
-        for i, c in enumerate(text):
-            if c in "({<[":
-                occ[c] += [i]
-            if c in rev:
-                if occ[rev[c]]:
-                    occ[rev[c]].pop()
-                else:
-                    self.setFormat(i, 1, brackets)
-            
-        for b in occ:
-            for i in occ[b]:
-                self.setFormat(i, 1, brackets)
-
 class Basic(QObject):
     updated = pyqtSignal()
     results = pyqtSignal()
@@ -468,11 +445,6 @@ class Basic(QObject):
         q.bindValue(":idx", id)
         self.conn.doQuery(q)
         self.updated.emit()
-
-    @pyqtSlot(QQuickTextDocument)
-    def setHighlighting(self, doc):
-        highlighter = SyntaxHighlighter(self)
-        highlighter.setDocument(doc.textDocument())
 
     @pyqtProperty(int, notify=openedUpdated)
     def openedIndex(self):

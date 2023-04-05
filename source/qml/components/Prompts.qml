@@ -12,6 +12,9 @@ Item {
     property alias positivePrompt: promptPositive.text
     property alias negativePrompt: promptNegative.text
 
+    property alias positivePromptArea: promptPositive
+    property alias negativePromptArea: promptNegative
+
     property variant bindMap: null
 
     signal inspect()

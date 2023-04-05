@@ -11,6 +11,7 @@ from PyQt5.QtGui import QImage, QColor, QDrag
 from PyQt5.QtQml import qmlRegisterType
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtNetwork import QNetworkRequest, QNetworkReply, QNetworkAccessManager
+from PyQt5.QtQuick import QQuickTextDocument
 from enum import Enum
 
 import sql
@@ -18,6 +19,7 @@ import filesystem
 import thumbnails
 import backend
 import config
+from misc import SyntaxHighlighter
 from parameters import VariantMap
 
 NAME = "qDiffusion"
@@ -357,3 +359,8 @@ class GUI(QObject):
             return
         
         self.backend.makeRequest({"type":"upload", "data":{"type": type, "file":file}})
+
+    @pyqtSlot(QQuickTextDocument)
+    def setHighlighting(self, doc):
+        highlighter = SyntaxHighlighter(self)
+        highlighter.setDocument(doc.textDocument())

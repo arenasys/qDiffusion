@@ -303,7 +303,7 @@ class Parameters(QObject):
 
         self.gui.optionsUpdated.connect(self.optionsUpdated)
 
-        self._readonly = ["models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "LoRAs", "HNs", "LoRA", "HN", "hr_upscalers", "img2img_upscalers", "attentions"]
+        self._readonly = ["models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "LoRAs", "HNs", "LoRA", "HN", "TIs", "TI", "hr_upscalers", "img2img_upscalers", "attentions"]
         self._values = VariantMap(self, {"prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7, "strength": 0.75, "seed": -1, "eta": 1.0,
             "hr_factor": 1.0, "hr_strength":  0.7, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "subseed":-1, "subseed_strength": 0.0,
             "model":"", "models":[], "sampler":"Euler a", "samplers":[], "hr_upscaler":"Latent (nearest)", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
@@ -411,6 +411,7 @@ class Parameters(QObject):
             data["mask"] = masks
         else:
             request["type"] = "txt2img"
+            del data["mask_blur"]
 
         if len({data["UNET"], data["CLIP"], data["VAE"]}) == 1:
             data["model"] = data["UNET"]

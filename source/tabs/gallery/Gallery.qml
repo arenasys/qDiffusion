@@ -297,6 +297,10 @@ Rectangle {
             readOnly: true
 
             text: gallery.currentParams
+
+            Component.onCompleted: {
+                GUI.setHighlighting(parameters.area.textDocument)
+            }
         }
     }
 

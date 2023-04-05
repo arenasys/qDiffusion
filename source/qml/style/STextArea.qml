@@ -75,7 +75,7 @@ Rectangle {
             }
     
             font.pointSize: 10.8
-            color: COMMON.fg0
+            color: COMMON.fg1
 
             onCursorRectangleChanged: {
                 var y = cursorRectangle.y

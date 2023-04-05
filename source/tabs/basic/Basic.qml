@@ -110,13 +110,17 @@ Item {
 
         bindMap: BASIC.parameters.values
 
+        Component.onCompleted: {
+            GUI.setHighlighting(positivePromptArea.area.textDocument)
+            GUI.setHighlighting(negativePromptArea.area.textDocument)
+        }
+
         onPositivePromptChanged: {
             BASIC.parameters.promptsChanged()
         }
         onNegativePromptChanged: {
             BASIC.parameters.promptsChanged()
         }
-
         onInspect: {
             BASIC.pasteText(positivePrompt)
         }
