@@ -31,6 +31,7 @@ class Settings(QObject):
 
         self.gui.response.connect(self.onResponse)
 
+        self._currentGitInfo = None
         self.getGitInfo()
 
     @pyqtProperty(str, notify=updated)
@@ -95,5 +96,12 @@ class Settings(QObject):
         self._gitInfo = ""
         r = subprocess.run(["git", "log", "-1", "--format=%B (%h) (%cr)"], capture_output=True, shell=IS_WIN)
         if r.returncode == 0:
-            self._gitInfo = "Last commit: " + r.stdout.decode('utf-8').replace("\n","")
+            m = r.stdout.decode('utf-8').replace("\n","")
+
+            cm = m.rsplit(") (", 1)[0]
+            if self._currentGitInfo == None:
+                self._currentGitInfo = cm
+            self._gitInfo = "Last commit: " + m
+            self._needRestart = self._currentGitInfo != cm
+            #print(self._needRestart)
         self.updated.emit()
