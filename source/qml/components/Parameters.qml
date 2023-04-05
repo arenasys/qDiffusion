@@ -193,7 +193,7 @@ Item {
                         bindMap: root.binding.values
                         bindKey: "steps"
 
-                        minValue: 1
+                        minValue: 0
                         maxValue: 100
                         precValue: 0
                         incValue: 1

@@ -86,6 +86,9 @@ class InferenceProcessThread(threading.Thread):
                 elif request["type"] == "convert":
                     self.wrapper.set(**request["data"])
                     self.wrapper.convert()
+                elif request["type"] == "upscale":
+                    self.wrapper.set(**request["data"])
+                    self.wrapper.upscale()
                 self.requests.task_done()
             except queue.Empty:
                 pass

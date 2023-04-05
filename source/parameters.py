@@ -41,8 +41,10 @@ NETWORKS = {"LoRA":"lora","HN":"hypernet"}
 NETWORKS_INV = {"lora":"LoRA","hypernet":"HN"}
 
 def format_parameters(json):
-    formatted = json["prompt"] + "\n"
-    formatted += "Negative prompt: " + json["negative_prompt"] + "\n"
+    formatted = ""
+    if "prompt" in json:
+        formatted = json["prompt"] + "\n"
+        formatted += "Negative prompt: " + json["negative_prompt"] + "\n"
 
     json["size"] = f"{json['width']}x{json['height']}"
 
@@ -422,10 +424,16 @@ class Parameters(QObject):
             if not k in self._readonly:
                 data[k] = v
 
-        if images:
+        if data["steps"] == 0 and images:
+            request["type"] = "upscale"
+            data["image"] = images
+            if masks:
+                data["mask"] = masks
+        elif images:
             request["type"] = "img2img"
             data["image"] = images
-            data["mask"] = masks
+            if masks:
+                data["mask"] = masks
         else:
             request["type"] = "txt2img"
             del data["mask_blur"]
@@ -455,6 +463,8 @@ class Parameters(QObject):
 
         if request["type"] != "img2img":
             del data["strength"]
+        
+        if not request["type"] in {"img2img", "upscale"}:
             del data["img2img_upscaler"]
         
         if data["eta"] == 1.0:
@@ -469,9 +479,12 @@ class Parameters(QObject):
             del data["subseed"]
         del data["subseed_strength"]
 
-        data = {k.lower():v for k,v in data.items()}
+        if request["type"] == "upscale":
+            for k in list(data.keys()):
+                if not k in {"img2img_upscaler", "width", "height", "image", "mask", "mask_blur", "padding"}:
+                    del data[k]
 
-        #print(data)
+        data = {k.lower():v for k,v in data.items()}
 
         request["data"] = data
 
