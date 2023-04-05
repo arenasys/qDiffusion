@@ -133,7 +133,7 @@ class InferenceProcess(multiprocessing.Process):
             log_traceback("LOCAL PROCESS")
             self.responses.put({"type":"error", "data":{"message":str(e)}})
             return
-
+    
         self.inference.start()
 
         while not self.stopping:
@@ -168,7 +168,7 @@ class LocalInference(QThread):
 
     def run(self):
         self.inference.start()
-        
+
         while not self.stopping:
             try:
                 QApplication.processEvents()

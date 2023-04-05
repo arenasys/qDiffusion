@@ -82,6 +82,8 @@ class GUI(QObject):
         self.backend.response.connect(self.onResponse)
         self.backend.setEndpoint(self._config._values.get("endpoint"), self._config._values.get("password"))
 
+        self.watchModelDirectory()
+
         self._options = {}
 
         parent.aboutToQuit.connect(self.stop)
@@ -179,6 +181,7 @@ class GUI(QObject):
                 if self._statusText == "Connecting":
                     self._remoteStatus = RemoteStatusMode.CONNECTING
                 self._statusMode = StatusMode.STARTING
+                self.watchModelDirectory()
             elif self._statusText == "Ready" or self._statusText == "Connected":
                 if self._statusText == "Connected":
                     self._remoteStatus = RemoteStatusMode.CONNECTED
@@ -406,7 +409,9 @@ class GUI(QObject):
     
     @pyqtSlot()
     def watchModelDirectory(self):
-        self._modelFolders = [os.path.join(self._model_directory, f) for f in ["SD", "LoRA", "HN", "SR", "TI"]]
-        for folder in self._modelFolders:
-            self.watcher.watchFolder(folder)
+        modelFolders = [os.path.join(self._model_directory, f) for f in ["SD", "LoRA", "HN", "SR", "TI"]]
+        for folder in modelFolders:
+            if not folder in self._modelFolders and os.path.exists(folder):
+                self.watcher.watchFolder(folder)
+                self._modelFolders += [folder]
         self._trashFolder = os.path.join(self._model_directory, "TRASH")
