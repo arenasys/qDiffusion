@@ -12,6 +12,7 @@ from misc import MimeData, SyntaxHighlighter
 from canvas.shared import PILtoQImage, QImagetoPIL
 import sql
 import time
+import json
 
 MIME_BASIC_INPUT = "application/x-qd-basic-input"
 
@@ -265,8 +266,7 @@ class Basic(QObject):
         self.conn.doQuery("CREATE TABLE outputs(id INTEGER);")
         self.conn.enableNotifications("outputs")
 
-    @pyqtSlot()
-    def generate(self):
+    def buildRequest(self):
         images = []
         masks = []
         if self._inputs:
@@ -287,6 +287,11 @@ class Basic(QObject):
                     masks += [img_data]
 
         request = self._parameters.buildRequest(images, masks)
+        return request
+
+    @pyqtSlot()
+    def generate(self):
+        request = self.buildRequest()
         self._id = self.gui.makeRequest(request)
 
     @pyqtSlot(int)

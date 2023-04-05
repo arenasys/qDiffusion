@@ -10,8 +10,10 @@ Item {
     property var tooltip: ""
     property alias model: control.model
     property var mini: height == 20
+    property var value: control.model.length == 0 ? "" : control.model[control.currentIndex]
     property alias currentIndex: control.currentIndex
     property var disabled: false
+    property var overlay: root.disabled
     property var padded: true
 
     property alias control: control
@@ -223,7 +225,7 @@ Item {
 
     Rectangle {
         anchors.fill: control
-        visible: root.disabled
+        visible: root.overlay
         color: "#a0101010"
     }
     

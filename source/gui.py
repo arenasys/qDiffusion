@@ -2,6 +2,8 @@ import os
 import random
 import subprocess
 import datetime
+import json
+import bson
 import platform
 IS_WIN = platform.system() == 'Windows'
 
@@ -68,6 +70,8 @@ class GUI(QObject):
 
         self._config = config.Config(self, "config.json", {"endpoint": "", "password": ""})
         self._remoteStatus = RemoteStatusMode.INACTIVE
+
+        self._debugJSONLogging = self._config._values.get("debug") == True
 
         self.backend = backend.Backend(self)
         self.backend.response.connect(self.onResponse)
@@ -283,6 +287,9 @@ class GUI(QObject):
     def copyFiles(self, files):
         QApplication.clipboard().setMimeData(self.getFilesMimeData(files))
 
+    def copyText(self, text):
+        QApplication.clipboard().setText(text)
+
     def dragFiles(self, files):
         drag = QDrag(self)
         drag.setMimeData(self.getFilesMimeData(files))
@@ -364,3 +371,31 @@ class GUI(QObject):
     def setHighlighting(self, doc):
         highlighter = SyntaxHighlighter(self)
         highlighter.setDocument(doc.textDocument())
+
+    @pyqtSlot(str, bool)
+    def debugLogging(self, mode, enabled):
+        if mode == "json":
+            self._debugJSONLogging = enabled
+        if mode == "bin":
+            self._debugBINLogging = enabled
+
+    @pyqtSlot()
+    def debugRequest(self):
+        try:
+            mimedata = QApplication.clipboard().mimeData()
+            if mimedata.hasText():
+                text = mimedata.text()
+                request = json.loads(text)
+                self.makeRequest(request)
+            elif mimedata.hasUrls():
+                for url in mimedata.urls():
+                    if url.isLocalFile() and url.endswith(".bin"):
+                        with open(url.toLocalFile(), mode="rb") as f:
+                            data = f.read()
+                            request = bson.loads(data)
+                            self.makeRequest(request)
+                            break
+        except Exception as e:
+                self._errorStatus = "DEBUG"
+                self._errorText = str(e)
+                self.errorUpdated.emit()

@@ -15,7 +15,6 @@ Item {
     signal generate()
     signal cancel()
 
-
     function drop(mimedata) {
         
     }
@@ -291,7 +290,7 @@ Item {
                     width: parent.width
                     isCollapsed: true
 
-                    property var componentMode: false
+                    property var componentMode: unetInput.value != vaeInput.value || unetInput.value != clipInput.value
 
                     onExpanded: {
                         paramScroll.position(modelColumn)
@@ -307,11 +306,7 @@ Item {
                         bindKeyCurrent: "model"
                         bindKeyModel: "models"
 
-                        disabled: modelColumn.componentMode
-
-                        onTryEnter: {
-                            modelColumn.componentMode = false
-                        }
+                        overlay: modelColumn.componentMode
 
                         onContextMenu: {
                             modelsContextMenu.popup()
@@ -338,10 +333,7 @@ Item {
                         bindKeyCurrent: "UNET"
                         bindKeyModel: "UNETs"
 
-                        disabled: !modelColumn.componentMode
-                        onTryEnter: {
-                            modelColumn.componentMode = true
-                        }
+                        overlay: !modelColumn.componentMode
                     }
                     OChoice {
                         id: vaeInput
@@ -353,10 +345,7 @@ Item {
                         bindKeyCurrent: "VAE"
                         bindKeyModel: "VAEs"
                         
-                        disabled: !modelColumn.componentMode
-                        onTryEnter: {
-                            modelColumn.componentMode = true
-                        }
+                        overlay: !modelColumn.componentMode
                     }
                     OChoice {
                         id: clipInput
@@ -368,10 +357,7 @@ Item {
                         bindKeyCurrent: "CLIP"
                         bindKeyModel: "CLIPs"
 
-                        disabled: !modelColumn.componentMode
-                        onTryEnter: {
-                            modelColumn.componentMode = true
-                        }
+                        overlay: !modelColumn.componentMode
                     }
                 }
 
@@ -539,6 +525,30 @@ Item {
                     width: parent.width
                     isCollapsed: true
 
+                    function getHRSize() {
+                        if(hrFactorInput.value == 1.0) {
+                            return ""
+                        }
+                        var w = Math.floor((widthInput.value * hrFactorInput.value)/8)*8
+                        var h = Math.floor((heightInput.value * hrFactorInput.value)/8)*8
+                        return w + "x" + h
+                    }
+
+                    input: Item {
+                        width: hrColumn.width - 100
+                        height: 30
+                        clip: true
+                        SText {
+                            text: hrColumn.getHRSize()
+                            anchors.fill: parent
+                            color: COMMON.fg2
+                            font.pointSize: 9.8
+                            verticalAlignment: Text.AlignVCenter
+                            horizontalAlignment: Text.AlignRight
+                            elide: Text.ElideRight
+                        }
+                    }
+
                     onExpanded: {
                         paramScroll.position(hrColumn)
                     }
@@ -587,6 +597,57 @@ Item {
                         bindMap: root.binding.values
                         bindKeyCurrent: "hr_upscaler"
                         bindKeyModel: "hr_upscalers"
+                    }
+                    OSlider {
+                        id: hrStepsInput
+                        label: "HR Steps"
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKey: "hr_steps"
+
+                        disabled: hrFactorInput.value == 1.0
+                        overlay: hrFactorInput.value == 1.0 || root.binding.values.get("steps") == hrStepsInput.value
+                        defaultValue: root.binding.values.get("steps")
+
+                        minValue: 1
+                        maxValue: 100
+                        precValue: 0
+                        incValue: 1
+                        snapValue: 5
+                        bounded: false
+                    }
+                    OChoice {
+                        id: hrSamplerInput
+                        label: "HR Sampler"
+                        width: parent.width
+                        height: 30
+                        disabled: hrFactorInput.value == 1.0
+                        overlay: hrFactorInput.value == 1.0 || root.binding.values.get("sampler") == hrSamplerInput.value
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "hr_sampler"
+                        bindKeyModel: "samplers"
+                    }
+                    OSlider {
+                        visible: !samplerColumn.isCollapsed
+                        id: hrEtaInput
+                        label: "HR Eta"
+                        width: parent.width
+                        height: 25
+                        
+                        bindMap: root.binding.values
+                        bindKey: "hr_eta"
+
+                        disabled: hrFactorInput.value == 1.0 || hrSamplerInput.overlay
+                        overlay: hrFactorInput.value == 1.0 || root.binding.values.get("eta") == hrEtaInput.value 
+                        defaultValue: root.binding.values.get("eta")
+
+                        minValue: 0
+                        maxValue: 1
+                        precValue: 2
+                        incValue: 0.01
+                        snapValue: 0.05
                     }
                 }
                 OColumn {

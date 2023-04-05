@@ -32,5 +32,19 @@ Item {
             font.pointSize: 9.8
             color: COMMON.fg2
         }
+        Item {
+            width: parent.width
+            height: parent.height-100
+        }
+        OChoice {
+            width: parent.width
+            height: 30
+            label: "Debug Logging"
+            currentIndex: GUI.config.get("debug") ? 1 : 0 
+            model: ["Disabled", "Enabled"]
+            onCurrentIndexChanged: {
+                GUI.config.set("debug", currentIndex != 0)
+            }
+        }
     }
 }

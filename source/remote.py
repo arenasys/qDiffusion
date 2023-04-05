@@ -19,6 +19,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.fernet import Fernet, InvalidToken
 
 DEFAULT_PASSWORD = "qDiffusion"
+FRAGMENT_SIZE = 1048576
 
 def log_traceback(label):
     exc_type, exc_value, exc_tb = sys.exc_info()
@@ -101,7 +102,7 @@ class RemoteInference(QThread):
         self.onResponse({"type": "status", "data": {"message": "Connecting"}})
         while not self.client and not self.stopping:
             try:
-                self.client = websockets.sync.client.connect(self.endpoint, open_timeout=2)
+                self.client = websockets.sync.client.connect(self.endpoint, open_timeout=2, max_size=None)
             except TimeoutError:
                 pass
             except Exception as e:
@@ -130,6 +131,8 @@ class RemoteInference(QThread):
                         continue
 
                     data = encrypt(self.scheme, request)
+                    data = [data[i:min(i+FRAGMENT_SIZE,len(data))] for i in range(0, len(data), FRAGMENT_SIZE)]
+
                     self.client.send(data)
                 else:
                     try:

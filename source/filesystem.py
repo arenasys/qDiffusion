@@ -38,6 +38,7 @@ class WatcherRunnable(QRunnable):
 
 class Watcher(QObject):
     started = pyqtSignal(str)
+    parent_changed = pyqtSignal(str)
     folder_changed = pyqtSignal(str, str, int)
     file_changed = pyqtSignal(str)
     finished = pyqtSignal(str, int)
@@ -126,6 +127,7 @@ class Watcher(QObject):
             self.watcherStart(folder)
             return
         else:
+            self.parent_changed.emit(folder)
             for child, parent in self.parents.items():
                 if parent == folder:
                     self.watcher.addPath(child)

@@ -32,7 +32,10 @@ LABELS = [
     ("hn_strength", "HN strength"),
     ("hr_resize", "Hires resize"),
     ("hr_factor", "Hires factor"),
-    ("hr_upscaler", "Hires upscaler")
+    ("hr_upscaler", "Hires upscaler"),
+    ("hr_sampler", "Hires sampler"),
+    ("hr_steps", "Hires steps"),
+    ("hr_eta", "Hires sampler eta")
 ]
 NETWORKS = {"LoRA":"lora","HN":"hypernet"}
 NETWORKS_INV = {"lora":"LoRA","hypernet":"HN"}
@@ -170,6 +173,7 @@ def get_extent(bound, padding, src, wrk):
     return int(x1), int(y1), int(x2), int(y2)
 
 class VariantMap(QObject):
+    updating = pyqtSignal(str, 'QVariant', 'QVariant')
     updated = pyqtSignal(str)
     def __init__(self, parent=None, map = {}):
         super().__init__(parent)
@@ -183,6 +187,13 @@ class VariantMap(QObject):
     
     @pyqtSlot(str, 'QVariant')
     def set(self, key, value):
+        if key in self._map and self._map[key] == value:
+            return
+
+        if key in self._map:
+            self.updating.emit(key, self._map[key], value)
+        else:
+            self.updating.emit(key, QVariant(), value)
         self._map[key] = value
         self.updated.emit(key)
 
@@ -305,11 +316,11 @@ class Parameters(QObject):
 
         self._readonly = ["models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "LoRAs", "HNs", "LoRA", "HN", "TIs", "TI", "hr_upscalers", "img2img_upscalers", "attentions"]
         self._values = VariantMap(self, {"prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7, "strength": 0.75, "seed": -1, "eta": 1.0,
-            "hr_factor": 1.0, "hr_strength":  0.7, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "subseed":-1, "subseed_strength": 0.0,
+            "hr_factor": 1.0, "hr_strength":  0.7, "hr_sampler": "Euler a", "hr_steps": 25, "hr_eta": 1.0, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "subseed":-1, "subseed_strength": 0.0,
             "model":"", "models":[], "sampler":"Euler a", "samplers":[], "hr_upscaler":"Latent (nearest)", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
             "UNET":"", "UNETs":"", "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[],
             "attention":"", "attentions":[]})
-        self._values.updated.connect(self.mapsUpdated)
+        self._values.updating.connect(self.mapsUpdating)
         self._availableNetworks = []
         self._activeNetworks = []
 
@@ -356,14 +367,20 @@ class Parameters(QObject):
     def values(self):
         return self._values
 
-    @pyqtSlot(str)
-    def mapsUpdated(self, key):
-        if key == "model":
-            model = self._values.get("model")
-            self._values.set("UNET", model)
-            self._values.set("CLIP", model)
-            self._values.set("VAE", model)
+    @pyqtSlot(str, 'QVariant', 'QVariant')
+    def mapsUpdating(self, key, prev, curr):
+        pairs = [("sampler", "hr_sampler"), ("eta", "hr_eta"), ("steps", "hr_steps")]
+        for src, dst in pairs:
+            if key == src:
+                val = self._values.get(dst)
+                if val == prev:
+                    self._values.set(dst, curr)
         
+        if key == "model":
+            self._values.set("UNET", curr)
+            self._values.set("CLIP", curr)
+            self._values.set("VAE", curr)
+
         self.updated.emit()
 
     @pyqtSlot()
@@ -425,6 +442,16 @@ class Parameters(QObject):
             del data["hr_factor"]
             del data["hr_strength"]
             del data["hr_upscaler"]
+            del data["hr_steps"]
+            del data["hr_sampler"]
+            del data["hr_eta"]
+        else:
+            if data["hr_steps"] == data["steps"]:
+                del data["hr_steps"]
+            if data["hr_eta"] == data["eta"]:
+                del data["hr_eta"]
+            if data["hr_sampler"] == data["sampler"]:
+                del data["hr_sampler"]
 
         if request["type"] != "img2img":
             del data["strength"]
@@ -458,11 +485,8 @@ class Parameters(QObject):
     def sync(self, params):
         hr_resize = None
 
-        lora = []
-        lora_str = []
-
-        hn = []
-        hn_str = []
+        found = {'hr_resize':False, 'hr_factor': False, 'hr_sampler': False, 'hr_steps': False, 'hr_eta': False,
+              'sampler': False, 'steps': False, 'eta': False, 'model':False, 'VAE':False, "UNET":False, "CLIP":False}
 
         for p in params:
             if not p._checked:
@@ -479,6 +503,9 @@ class Parameters(QObject):
                 w,h = p._value.split("x")
                 hr_resize = int(w), int(h)
                 continue
+                
+            if p._name in found:
+                found[p._name] = True
 
             if not p._name in self._values._map:
                 continue
@@ -486,7 +513,14 @@ class Parameters(QObject):
             if p._name+"s" in self._values._map and not p._value in self._values._map[p._name+"s"]:
                 continue
 
-            self.values.set(p._name, type(self.values.get(p._name))(p._value))
+            val = None
+            try:
+                val = type(self.values.get(p._name))(p._value)
+            except:
+                pass
+
+            if val:
+                self.values.set(p._name, val)
 
         if hr_resize:
             w,h = hr_resize
@@ -495,20 +529,17 @@ class Parameters(QObject):
             f = int(f / 0.005) * 0.005
             self.values.set("hr_factor", f)
 
-        if lora or hn:
-            self._activeNetworks = []
-        
-        for i in range(len(lora)):
-            str = 1.0
-            if i < len(lora_str):
-                str = float(lora_str[i])
-            self._activeNetworks += [ParametersNetwork(self, lora[i], "LoRA", str)]
-        
-        for i in range(len(hn)):
-            str = 1.0
-            if i < len(hn_str):
-                str = float(hn_str[i])
-            self._activeNetworks += [ParametersNetwork(self, hn[i], "HN", str)]
+        if found["hr_factor"] or found["hr_resize"]:
+            if not found["hr_steps"] and found["steps"]:
+                self.values.set("hr_steps", self.values.get("steps"))
+            if not found["hr_sampler"] and found["sampler"]:
+                self.values.set("hr_sampler", self.values.get("sampler"))
+            if not found["hr_eta"] and found["eta"]:
+                self.values.set("hr_eta", self.values.get("eta"))
+
+        if found["UNET"] and found["VAE"] and found["CLIP"]:
+            self.values._map["model"] = self.values.get("UNET")
+            self.values.updated.emit("model")            
 
         self.updated.emit()
 
