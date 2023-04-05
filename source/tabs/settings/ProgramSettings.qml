@@ -32,6 +32,16 @@ Item {
             font.pointSize: 9.8
             color: COMMON.fg2
         }
+        SText {
+            text: "Restart required"
+            visible: SETTINGS.needRestart
+            width: parent.width
+            height: 20
+            verticalAlignment: Text.AlignVCenter
+            horizontalAlignment: Text.AlignHCenter
+            font.pointSize: 9.0
+            color: COMMON.accent(0)
+        }
         Item {
             width: parent.width
             height: parent.height-100

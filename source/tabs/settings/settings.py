@@ -91,17 +91,19 @@ class Settings(QObject):
     def gitInfo(self):
         return self._gitInfo
     
+    @pyqtProperty(bool, notify=updated)
+    def needRestart(self):
+        return self._needRestart
+    
     @pyqtSlot()
     def getGitInfo(self):
         self._gitInfo = ""
         r = subprocess.run(["git", "log", "-1", "--format=%B (%h) (%cr)"], capture_output=True, shell=IS_WIN)
         if r.returncode == 0:
             m = r.stdout.decode('utf-8').replace("\n","")
-
             cm = m.rsplit(") (", 1)[0]
             if self._currentGitInfo == None:
                 self._currentGitInfo = cm
             self._gitInfo = "Last commit: " + m
             self._needRestart = self._currentGitInfo != cm
-            #print(self._needRestart)
         self.updated.emit()
