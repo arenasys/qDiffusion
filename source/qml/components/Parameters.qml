@@ -216,21 +216,6 @@ Item {
                         snapValue: 0.5
                         bounded: false
                     }
-                    OSlider {
-                        id: strengthInput
-                        label: "Strength"
-                        width: parent.width
-                        height: 30
-                        
-                        bindMap: root.binding.values
-                        bindKey: "strength"
-
-                        minValue: 0
-                        maxValue: 1
-                        precValue: 2
-                        incValue: 0.01
-                        snapValue: 0.05
-                    }
                     OTextInput {
                         id: seedInput
                         label: "Seed"
@@ -476,6 +461,22 @@ Item {
 
                     onExpanded: {
                         paramScroll.position(ipColumn)
+                    }
+
+                    OSlider {
+                        id: strengthInput
+                        label: "Strength"
+                        width: parent.width
+                        height: 30
+                        
+                        bindMap: root.binding.values
+                        bindKey: "strength"
+
+                        minValue: 0
+                        maxValue: 1
+                        precValue: 2
+                        incValue: 0.01
+                        snapValue: 0.05
                     }
 
                     OChoice {
