@@ -68,7 +68,7 @@ class Settings(QObject):
         if not file.isLocalFile():
             return
 
-        self.gui.remoteUpload(type, file.toLocalFile())
+        self.gui.remoteUpload(type, file.toLocalFile().replace('/', os.path.sep))
     
     @pyqtSlot(QUrl, result=str)
     def toLocal(self, url):
