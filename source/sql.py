@@ -70,9 +70,15 @@ class Connection(QObject):
             query.prepare(q)
             q = query
         
+        ctr = 0
         while not q.exec():
+            if ctr > 100:
+                print(q.lastQuery(), q.boundValues(), "TIMEOUT")
+                break
             if q.lastError().nativeErrorCode() == "6":
                 QThread.msleep(10)
+                ctr += 1
+                continue
             else:
                 print(q.lastQuery(), q.boundValues(), q.lastError().text())
                 break
