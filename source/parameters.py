@@ -35,7 +35,8 @@ LABELS = [
     ("hr_upscaler", "Hires upscaler"),
     ("hr_sampler", "Hires sampler"),
     ("hr_steps", "Hires steps"),
-    ("hr_eta", "Hires sampler eta")
+    ("hr_eta", "Hires sampler eta"),
+    ("img2img_upscaler", "Upscaler"),
 ]
 NETWORKS = {"LoRA":"lora","HN":"hypernet"}
 NETWORKS_INV = {"lora":"LoRA","hypernet":"HN"}

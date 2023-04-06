@@ -73,12 +73,12 @@ class Settings(QObject):
         return url.toLocalFile()
     
     @pyqtSlot(MimeData, result=str)
-    def uploadDrop(self, mimeData):
+    def pathDrop(self, mimeData):
         mimeData = mimeData.mimeData
         for url in mimeData.urls():
             if url.isLocalFile():
-                return url.toLocalFile()
-            
+                return url.toLocalFile() 
+    
     @pyqtSlot(int, object)
     def onResponse(self, id, response):
         if response["type"] != "downloaded":

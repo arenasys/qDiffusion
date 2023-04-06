@@ -177,7 +177,7 @@ Item {
                 anchors.fill: uploadFileInput
 
                 onDropped: {
-                    var file = SETTINGS.uploadDrop(mimeData)
+                    var file = SETTINGS.pathDrop(mimeData)
                     if(file != null) {
                         uploadFileInput.value = file
                     }
