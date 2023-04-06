@@ -110,6 +110,9 @@ FocusReleaser {
                 label: COORDINATOR.disable ? "Cancel" : (COORDINATOR.packages.length == 0 ? "Proceed" : "Install")
                 
                 onPressed: {
+                    if(!COORDINATOR.disable) {
+                        outputArea.text = ""
+                    }
                     COORDINATOR.install()
                 }   
             }
@@ -123,6 +126,37 @@ FocusReleaser {
                 horizontalAlignment: Text.AlignHCenter
                 font.pointSize: 9.8
                 color: COMMON.fg2
+            }
+
+            Item {
+                width: parent.width
+                height: 30
+            }
+
+            Rectangle {
+                x: -parent.width
+                width: parent.width*3
+                height: 150
+                border.width: 1
+                border.color: COMMON.bg4
+                color: "transparent"
+
+                STextArea {
+                    id: outputArea
+                    anchors.fill: parent
+
+                    area.color: COMMON.fg2
+                    font.pointSize: 9.8
+                    monospace: true
+
+                    Connections {
+                        target: COORDINATOR
+                        function onOutput(output) {
+                            outputArea.text += output + "\n"
+                            outputArea.area.cursorPosition = outputArea.text.length-1
+                        }
+                    }
+                }
             }
 
         }

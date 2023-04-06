@@ -8,6 +8,7 @@ Rectangle {
 
     property alias text: textArea.text
     property alias font: textArea.font
+    property alias monospace: textArea.monospace
     property alias readOnly: textArea.readOnly
     property alias area: textArea
 
@@ -73,7 +74,12 @@ Rectangle {
             FontLoader {
                 source: "qrc:/fonts/Cantarell-Regular.ttf"
             }
-    
+            FontLoader {
+                source: "qrc:/fonts/SourceCodePro-Regular.ttf"
+            }
+
+            property var monospace: false
+            font.family: monospace ? "Source Code Pro" : "Cantarell"
             font.pointSize: 10.8
             color: COMMON.fg1
 

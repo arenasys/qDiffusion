@@ -9,6 +9,7 @@ import shutil
 import importlib
 import pkg_resources
 import json
+import select
 
 import platform
 IS_WIN = platform.system() == 'Windows'
@@ -111,6 +112,7 @@ def check(dependancies):
     return needed
 
 class Installer(QThread):
+    output = pyqtSignal(str)
     installing = pyqtSignal(str)
     installed = pyqtSignal(str)
     def __init__(self, parent, packages):
@@ -125,10 +127,16 @@ class Installer(QThread):
             args = ["pip", "install", "-U", p]
             if p[:5] == "torch":
                 args += ["--index-url", "https://download.pytorch.org/whl/" + p.rsplit("+",1)[-1]]
-            self.proc = subprocess.Popen(args, shell=IS_WIN)
-            if self.proc.wait():
-                if self.stopping:
-                    return
+            self.proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, shell=IS_WIN)
+
+            while self.proc.poll() == None:
+                r, _, _ = select.select([self.proc.stdout], [], [], 0.1)
+                if r:
+                    self.output.emit(self.proc.stdout.readline().strip())
+
+            if self.stopping:
+                return
+            if self.proc.returncode:
                 raise RuntimeError("Failed to install: ", p)
             self.installed.emit(p)
         self.proc = None
@@ -144,6 +152,8 @@ class Coordinator(QObject):
     show = pyqtSignal()
     proceed = pyqtSignal()
     cancel = pyqtSignal()
+
+    output = pyqtSignal(str)
 
     updated = pyqtSignal()
     installedUpdated = pyqtSignal()
@@ -307,6 +317,7 @@ class Coordinator(QObject):
         self.installer = Installer(self, packages)
         self.installer.installed.connect(self.onInstalled)
         self.installer.installing.connect(self.onInstalling)
+        self.installer.output.connect(self.onOutput)
         self.installer.finished.connect(self.doneInstalling)
         self.app.aboutToQuit.connect(self.installer.stop)
         self.cancel.connect(self.installer.stop)
@@ -322,6 +333,10 @@ class Coordinator(QObject):
     def onInstalling(self, package):
         self._installing = package
         self.installedUpdated.emit()
+    
+    @pyqtSlot(str)
+    def onOutput(self, out):
+        self.output.emit(out)
     
     @pyqtSlot()
     def doneInstalling(self):
