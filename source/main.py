@@ -130,10 +130,11 @@ class Installer(QThread):
             self.proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, shell=IS_WIN)
 
             while self.proc.poll() == None:
-                r, _, _ = select.select([self.proc.stdout], [], [], 0.1)
-                if r:
-                    self.output.emit(self.proc.stdout.readline().strip())
-
+                while line := self.proc.stdout.readline():
+                    if line:
+                        self.output.emit(line.strip())
+                    if self.stopping:
+                        return
             if self.stopping:
                 return
             if self.proc.returncode:
