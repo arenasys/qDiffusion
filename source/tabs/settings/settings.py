@@ -31,7 +31,9 @@ class Settings(QObject):
 
         self.gui.response.connect(self.onResponse)
 
+        self._needRestart = False
         self._currentGitInfo = None
+        self._triedGitInit = False
         self.getGitInfo()
 
     @pyqtProperty(str, notify=updated)
@@ -97,7 +99,7 @@ class Settings(QObject):
     
     @pyqtSlot()
     def getGitInfo(self):
-        self._gitInfo = ""
+        self._gitInfo = "Unknown"
         r = subprocess.run(["git", "log", "-1", "--format=%B (%h) (%cr)"], capture_output=True, shell=IS_WIN)
         if r.returncode == 0:
             m = r.stdout.decode('utf-8').replace("\n","")
@@ -106,4 +108,13 @@ class Settings(QObject):
                 self._currentGitInfo = cm
             self._gitInfo = "Last commit: " + m
             self._needRestart = self._currentGitInfo != cm
+        else:
+            m = r.stderr.decode('utf-8')
+            if not self._triedGitInit and m.startswith("fatal: not a git repository"):
+                self._triedGitInit = True
+                r = subprocess.run(["git", "init"], capture_output=True, shell=IS_WIN)
+                r = subprocess.run(["git", "remote", "add", "origin", "https://github.com/arenasys/qDiffusion.git"], capture_output=True, shell=IS_WIN)
+                r = subprocess.run(["git", "fetch"], capture_output=True, shell=IS_WIN)
+                r = subprocess.run(["git", "reset", "--hard", "origin/master"], capture_output=True, shell=IS_WIN)
+
         self.updated.emit()
