@@ -79,6 +79,7 @@ Item {
                 SText {
                     anchors.fill: parent
                     text: "Prompt"
+                    color: COMMON.fg1_5
                     leftPadding: 5
                     verticalAlignment: Text.AlignVCenter
                 }
@@ -164,6 +165,7 @@ Item {
                 SText {
                     anchors.fill: parent
                     text: "Negative Prompt"
+                    color: COMMON.fg1_5
                     leftPadding: 5
                     verticalAlignment: Text.AlignVCenter
                 }

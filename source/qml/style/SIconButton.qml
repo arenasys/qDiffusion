@@ -25,6 +25,12 @@ Rectangle {
     signal entered();
     signal exited();
 
+    Rectangle {
+        anchors.fill: parent
+        visible: button.disabled
+        color: "#c0101010"
+    }
+
     MouseArea {
         anchors.fill: parent
         id: mouse

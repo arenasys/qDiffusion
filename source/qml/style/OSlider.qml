@@ -281,6 +281,12 @@ Item {
     Rectangle {
         anchors.fill: control
         visible: root.overlay
-        color: "#a0101010"
+        color: "#90101010"
+    }
+    
+    Rectangle {
+        anchors.fill: control
+        visible: root.disabled
+        color: "#c0101010"
     }
 }

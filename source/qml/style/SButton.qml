@@ -6,6 +6,7 @@ import gui 1.0
 Item {
     id: root
     property alias label: labelText.text
+    property var disabled: false
 
     signal pressed()
     width: 100
@@ -14,8 +15,8 @@ Item {
     Rectangle {
         anchors.fill: parent
         anchors.margins: 2
-        color: mouseArea.containsPress ? COMMON.bg4 : COMMON.bg3
-        border.color: mouseArea.containsMouse ? COMMON.bg5 : COMMON.bg4
+        color: mouseArea.containsPress && !root.disabled ? COMMON.bg4 : COMMON.bg3
+        border.color: mouseArea.containsMouse && !root.disabled ? COMMON.bg5 : COMMON.bg4
 
         MouseArea {
             id: mouseArea
@@ -23,7 +24,9 @@ Item {
             hoverEnabled: true
 
             onPressed: {
-                root.pressed()
+                if(!root.disabled) {
+                    root.pressed()
+                }
             }
         }
 
@@ -36,5 +39,13 @@ Item {
             font.pointSize: 9.8
             color: COMMON.fg1
         }
+
+        Rectangle {
+            anchors.fill: parent
+            visible: root.disabled
+            color: "#c0101010"
+        }
     }
+
+
 }

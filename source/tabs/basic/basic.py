@@ -249,7 +249,7 @@ class Basic(QObject):
         self._inputs = []
         self._outputs = {}
         self._links = {}
-        self._id = -1
+        self._ids = []
         self._forever = False
 
         self._openedIndex = -1
@@ -257,6 +257,7 @@ class Basic(QObject):
 
         self.updated.connect(self.link)
         self.gui.result.connect(self.result)
+        self.gui.reset.connect(self.reset)
         self.gui.networkReply.connect(self.onNetworkReply)
 
         qmlRegisterSingletonType(Basic, "gui", 1, 0, "BASIC", lambda qml, js: self)
@@ -291,13 +292,15 @@ class Basic(QObject):
 
     @pyqtSlot()
     def generate(self):
-        request = self.buildRequest()
-        self._id = self.gui.makeRequest(request)
+        if not self._ids:
+            request = self.buildRequest()
+            self._ids += [self.gui.makeRequest(request)]
 
     @pyqtSlot(int)
     def result(self, id):
-        if self._id != id:
+        if not id in self._ids:
             return
+        self._ids.remove(id)
         
         id = (time.time_ns() // 1000000) % (2**31 - 1)
 
@@ -317,10 +320,15 @@ class Basic(QObject):
         self.results.emit()
         if sticky:
             self.left()
+        
+    @pyqtSlot()
+    def reset(self):
+        self._ids = []
 
     @pyqtSlot()
     def cancel(self):
-        self.gui.cancelRequest(self._id)
+        if self._ids:
+            self.gui.cancelRequest(self._ids.pop())
 
     @pyqtProperty(bool, notify=updated)
     def forever(self):

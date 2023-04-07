@@ -55,6 +55,7 @@ Item {
     signal enter()
     signal exit()
     signal contextMenu()
+    signal selected()
 
     SToolTip {
         id: infoToolTip
@@ -69,6 +70,10 @@ Item {
         anchors.margins: root.padded ? 2 : 0
         anchors.bottomMargin: 0
         focusPolicy: Qt.NoFocus
+
+        function selected() {
+            root.selected()
+        }
 
         delegate: Rectangle {
             width: control.popup.width
@@ -92,6 +97,7 @@ Item {
                 preventStealing: true
                 onPressed: {
                     control.currentIndex = index
+                    control.selected()
                     control.popup.close()
                 }
             }
@@ -140,7 +146,7 @@ Item {
                 leftPadding: 5
                 text: root.label
                 font.pointSize: root.mini ? 7.85 : 9.8
-                color: COMMON.fg0
+                color: COMMON.fg1_5
                 verticalAlignment: Text.AlignVCenter
                 elide: Text.ElideRight
             }
@@ -226,7 +232,13 @@ Item {
     Rectangle {
         anchors.fill: control
         visible: root.overlay
-        color: "#a0101010"
+        color: "#90101010"
+    }
+
+    Rectangle {
+        anchors.fill: control
+        visible: root.disabled
+        color: "#c0101010"
     }
     
     Keys.onPressed: {

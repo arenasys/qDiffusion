@@ -10,6 +10,10 @@ import "../../style"
 import "../../components"
 
 Item {
+    id: root
+
+    property var show: GUI.remoteStatus == 2
+
     Column {
         anchors.centerIn: parent
         height: parent.height-100
@@ -97,6 +101,7 @@ Item {
                 height: 30
                 label: "Type"
                 model: ["SD", "LoRA", "HN", "TI", "SR"]
+                disabled: !root.show
             }
             OTextInput {
                 anchors.leftMargin: -2
@@ -107,6 +112,7 @@ Item {
                 height: 30
                 label: ""
                 placeholder: "URL"
+                disabled: !root.show
             }
         }
         SButton {
@@ -116,6 +122,7 @@ Item {
             onPressed: {
                 SETTINGS.download(modelTypeInput.model[modelTypeInput.currentIndex], modelUrlInput.value)
             }
+            disabled: !root.show
         }
 
         Item {
@@ -135,6 +142,7 @@ Item {
                 height: 30
                 label: "Type"
                 model: ["SD", "LoRA", "HN", "TI", "SR"]
+                disabled: !root.show
             }
             OTextInput {
                 anchors.leftMargin: -2
@@ -145,6 +153,7 @@ Item {
                 height: 30
                 label: ""
                 placeholder: "File"
+                disabled: !root.show
             }
 
             SIconButton {
@@ -161,6 +170,7 @@ Item {
                 onPressed: {
                     uploadFileDialog.open()
                 }
+                disabled: !root.show
             }
 
             FileDialog {
@@ -203,6 +213,7 @@ Item {
             onPressed: {
                 SETTINGS.upload(uploadTypeInput.model[uploadTypeInput.currentIndex], uploadFileInput.value)
             }
+            disabled: !root.show
         }
 
         Item {
@@ -227,6 +238,12 @@ Item {
                 anchors.fill: parent
                 color: "transparent"
                 border.color: COMMON.bg4
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                visible: !root.show
+                color: "#80101010"
             }
         }
     }

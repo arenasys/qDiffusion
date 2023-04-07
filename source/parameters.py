@@ -378,11 +378,6 @@ class Parameters(QObject):
                 val = self._values.get(dst)
                 if val == prev:
                     self._values.set(dst, curr)
-        
-        if key == "model":
-            self._values.set("UNET", curr)
-            self._values.set("CLIP", curr)
-            self._values.set("VAE", curr)
 
         self.updated.emit()
 

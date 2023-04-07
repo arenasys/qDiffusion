@@ -50,6 +50,7 @@ class GUI(QObject):
     response = pyqtSignal(int, object)
     aboutToQuit = pyqtSignal()
     networkReply = pyqtSignal(QNetworkReply)
+    reset = pyqtSignal()
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -177,6 +178,7 @@ class GUI(QObject):
 
         if response["type"] == "status":
             self._statusText = response["data"]["message"]
+            self._statusInfo = ""
             if self._statusText == "Initializing" or self._statusText == "Connecting":
                 if self._statusText == "Connecting":
                     self._remoteStatus = RemoteStatusMode.CONNECTING
@@ -215,7 +217,6 @@ class GUI(QObject):
             if "traceback" in response["data"]:
                 with open("crash.log", "a") as f:
                     f.write(f"INFERENCE {datetime.datetime.now()}\n{response['data']['traceback']}\n")
-
 
         if response["type"] == "remote_error":
             self._errorStatus = self._statusText
@@ -359,6 +360,7 @@ class GUI(QObject):
         self.backend.stop()
         self.backend.wait()
         self.backend.setEndpoint(endpoint, password)
+        self.reset.emit()
 
     @pyqtSlot(str, str)
     def remoteDownload(self, type, url):

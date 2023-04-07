@@ -1,8 +1,8 @@
 import queue
 import multiprocessing
 import websockets.sync.client
+import websockets.exceptions
 import bson
-import select
 import os
 import traceback
 import datetime
@@ -54,32 +54,48 @@ def decrypt(scheme, data):
     return obj
 
 class RemoteInferenceUpload(QThread):
-    done = pyqtSignal()
+    done = pyqtSignal(str)
     def __init__(self, queue, type, file):
         super().__init__()
         self.queue = queue
         self.type = type
         self.file = file
         self.name = file.rsplit(os.path.sep, 1)[-1]
+        self.stopping = False
 
     def run(self):
         with open(self.file, 'rb') as f:
             i = 0
-            while True:
-                chunk = f.read(1000000)
+            while not self.stopping:
+                QApplication.processEvents()
+                chunk = f.read(FRAGMENT_SIZE-1024)
                 if not chunk:
                     break
                 request = {"type":"chunk", "data": {"type":self.type, "name": self.name, "chunk":chunk, "index":i}}
 
                 while not self.queue.empty():
                     QThread.msleep(10)
+                    QApplication.processEvents()
+                    if self.stopping:
+                        break
+                if self.stopping:
+                    break
                 self.queue.put(request)
                 i += 1
+            
+        if self.stopping:
+            self.queue.put({"type":"chunk", "data": {"type":self.type, "name": self.name, "index":-1}})
+        else:
+            self.queue.put({"type":"chunk", "data": {"type":self.type, "name": self.name}})
+        self.done.emit(self.file)
+        print("UPLOAD DONE")
 
-        self.queue.put({"type":"chunk", "data": {"type":self.type, "name": self.name}})
-        self.done.emit()
+    @pyqtSlot()
+    def stop(self):
+        self.stopping = True
 
 class RemoteInference(QThread):
+    kill = pyqtSignal()
     response = pyqtSignal(object)
     def __init__(self, gui, endpoint, password=None):
         super().__init__(gui)
@@ -96,6 +112,7 @@ class RemoteInference(QThread):
             password = DEFAULT_PASSWORD
         self.scheme = get_scheme(password)
         self.id = None
+        self.uploads = {}
 
     def connect(self):
         if self.client:
@@ -103,9 +120,12 @@ class RemoteInference(QThread):
         self.onResponse({"type": "status", "data": {"message": "Connecting"}})
         while not self.client and not self.stopping:
             try:
-                self.client = websockets.sync.client.connect(self.endpoint, open_timeout=2, max_size=None)
+                self.client = websockets.sync.client.connect(self.endpoint, open_timeout=2, close_timeout=0.1, max_size=None)
             except TimeoutError:
                 pass
+            except ConnectionRefusedError:
+                self.onResponse({"type": "remote_error", "data": {"message": "Connection refused"}})
+                return
             except Exception as e:
                 self.onResponse({"type": "remote_error", "data": {"message": str(e)}})
                 return
@@ -116,36 +136,38 @@ class RemoteInference(QThread):
             self.requests.put({"type":"options"})
 
     def run(self):
-        while not self.stopping:
-            self.connect()
-            if not self.client:
-                return
+        self.connect()
+        while self.client and not self.stopping:
             try:
                 QApplication.processEvents()
 
-                if not self.requests.empty():
-                    request = self.requests.get()
+                try:
+                    request = self.requests.get(False)
 
                     if request["type"] == "upload":
-                        thread = RemoteInferenceUpload(self.requests, request["data"]["type"], request["data"]["file"])
-                        thread.start()
+                        file = request["data"]["file"]
+                        if not file in self.uploads:
+                            self.uploads[file] = RemoteInferenceUpload(self.requests, request["data"]["type"], file)
+                            self.uploads[file].done.connect(self.onUploadDone)
+                            self.kill.connect(self.uploads[file].stop)
+                            self.uploads[file].start()
+                            
                         continue
 
                     data = encrypt(self.scheme, request)
                     data = [data[i:min(i+FRAGMENT_SIZE,len(data))] for i in range(0, len(data), FRAGMENT_SIZE)]
 
                     self.client.send(data)
-                else:
+                except queue.Empty:
                     try:
-                        data = self.client.recv(0)
+                        data = self.client.recv(5/1000)
                     except TimeoutError:
-                        QThread.msleep(10)
+                        QThread.msleep(5)
                         continue
-                    if data:
-                        response = decrypt(self.scheme, data)
-                        self.onResponse(response)
-            except queue.Empty:
-                pass
+                    response = decrypt(self.scheme, data)
+                    self.onResponse(response)
+            except websockets.exceptions.ConnectionClosedOK:
+                self.onResponse({"type": "remote_error", "data": {"message": "Connection closed"}})
             except Exception as e:
                 if type(e) == InvalidToken or type(e) == IndexError:
                     self.onResponse({"type": "remote_error", "data": {"message": "Incorrect password"}})
@@ -153,13 +175,18 @@ class RemoteInference(QThread):
                     self.onResponse({"type": "remote_error", "data": {"message": str(e)}})
                     log_traceback("REMOTE")
                 return
-            
+
+        if self.client:
+            self.client.recv_messages.close()
+            self.client.close()
+            self.client.socket.close()
+            self.client = None
+
     @pyqtSlot()
     def stop(self):
+        for file in self.uploads:
+            self.uploads[file].stopping = True
         self.stopping = True
-        if self.client:
-            self.client.close()
-            self.client = None
 
     @pyqtSlot(object)
     def onRequest(self, request):
@@ -173,3 +200,8 @@ class RemoteInference(QThread):
     def saveResults(self, images, metadata):
         for i in range(len(images)):
             save_image(images[i], metadata[i], self.gui._output_directory)
+
+    @pyqtSlot(str)
+    def onUploadDone(self, file):
+        if file in self.uploads:
+            del self.uploads[file]

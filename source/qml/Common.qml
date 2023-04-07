@@ -14,6 +14,7 @@ QtObject {
 
     readonly property var fg0: "#ffffff"
     readonly property var fg1: "#eeeeee"
+    readonly property var fg1_5: "#cccccc"
     readonly property var fg2: "#aaaaaa"
     readonly property var fg3: "#909090"
 

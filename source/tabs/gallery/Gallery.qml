@@ -280,6 +280,7 @@ Rectangle {
             SText {
                 anchors.fill: parent
                 text: "Parameters"
+                color: COMMON.fg1_5
                 leftPadding: 5
                 verticalAlignment: Text.AlignVCenter
             }

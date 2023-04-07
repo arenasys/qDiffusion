@@ -293,6 +293,12 @@ Item {
 
                         overlay: modelColumn.componentMode
 
+                        onSelected: {
+                            root.binding.values.set("VAE", value)
+                            root.binding.values.set("UNET", value)
+                            root.binding.values.set("CLIP", value)
+                        }
+
                         onContextMenu: {
                             modelsContextMenu.popup()
                         }

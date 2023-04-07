@@ -166,7 +166,17 @@ Item {
         Rectangle {
             anchors.fill: parent
             visible: control.overlay
-            color: "#a0101010"
+            color: "#90101010"
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            visible: control.disabled
+            color: "#c0101010"
+            
+            MouseArea {
+                anchors.fill: parent
+            }
         }
     }
 }
