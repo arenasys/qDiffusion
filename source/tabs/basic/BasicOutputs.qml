@@ -101,7 +101,6 @@ Item {
                 Rectangle {
                     visible: sizeLabel.text != ""
                     anchors.fill: sizeLabel
-                    height: 22
                     color: "#e0101010"
                     border.width: 1
                     border.color: COMMON.bg3
@@ -116,7 +115,8 @@ Item {
                     topPadding: 3
                     rightPadding: 3
                     bottomPadding: 3
-                    font.pointSize: 9.8
+                    color: COMMON.fg1_5
+                    font.pointSize: 9.2
                 }
 
                 MouseArea {

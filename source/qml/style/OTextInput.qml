@@ -62,7 +62,7 @@ Item {
             leftPadding: 5
             verticalAlignment: Text.AlignVCenter
             font.pointSize: control.mini ? 7.85 : 9.8
-            color: COMMON.fg1
+            color: COMMON.fg1_5
         }
 
         MouseArea {
@@ -108,7 +108,7 @@ Item {
                 verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignRight
                 font.pointSize: control.mini ? 7.85 : 9.8
-                color: COMMON.fg1
+                color: COMMON.fg0
                 monospace: true
                 validator: control.validator
                 readOnly: control.disabled

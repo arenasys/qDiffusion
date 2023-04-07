@@ -54,7 +54,7 @@ TabButton {
                 topPadding: 1
                 text: control.text
                 font.pointSize: 10.9
-                opacity: enabled ? 1.0 : 0.3
+                opacity: selected ? 1.0 : 0.7
                 color: COMMON.fg0
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment:  Text.AlignVCenter

@@ -73,7 +73,6 @@ Item {
         anchors.bottomMargin: 0
 
         color: COMMON.bg3
-        border.color: COMMON.bg4
 
         MouseArea {
             id: mouseArea
@@ -105,22 +104,6 @@ Item {
             }
         }
 
-        Rectangle {
-            id: indicator
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            color: COMMON.bg5
-            width: Math.min((mouseArea.width) * (root.value - root.minValue)/(root.maxValue-root.minValue), parent.width)
-        }
-
-        SToolTip {
-            id: infoToolTip
-            x: 0
-            visible: !disabled && tooltip != "" && mouseArea.containsMouse && mouseArea.mouseX < root.width/3
-            delay: 100
-            text: tooltip
-        }
 
         SText {
             id: labelText
@@ -133,7 +116,38 @@ Item {
             width: root.labelWidth
             verticalAlignment: Text.AlignVCenter
             font.pointSize: root.mini ? 7.85 : 9.8
-            color: COMMON.fg1
+            color: COMMON.fg1_5
+        }
+
+        Rectangle {
+            id: indicator
+            anchors.left: parent.left
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            color: COMMON.bg4
+            width: Math.min((mouseArea.width) * (root.value - root.minValue)/(root.maxValue-root.minValue), parent.width)
+            clip: true
+
+            SText {
+                text: root.label
+                anchors.left: parent.left
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                leftPadding: 5
+                rightPadding: 5
+                width: root.labelWidth
+                verticalAlignment: Text.AlignVCenter
+                font.pointSize: root.mini ? 7.85 : 9.8
+                color: COMMON.fg1
+            }
+        }
+
+        SToolTip {
+            id: infoToolTip
+            x: 0
+            visible: !disabled && tooltip != "" && mouseArea.containsMouse && mouseArea.mouseX < root.width/3
+            delay: 100
+            text: tooltip
         }
 
         Rectangle {
@@ -155,7 +169,7 @@ Item {
             width: contentWidth + 10
 
             id: valueInput
-            color: COMMON.fg1
+            color: COMMON.fg0
             font.pointSize: root.mini ? 7.7 : 9.6
             activeFocusOnPress: false
             leftPadding: 5
@@ -276,6 +290,12 @@ Item {
                     }
                 }
             }
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            color: "transparent"
+            border.color: COMMON.bg4
         }
     }
     Rectangle {

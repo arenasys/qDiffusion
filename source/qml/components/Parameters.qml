@@ -589,7 +589,8 @@ Item {
                             text: hrColumn.getHRSize()
                             anchors.fill: parent
                             color: COMMON.fg2
-                            font.pointSize: 9.8
+                            font.pointSize: 9.2
+                            opacity: 0.7
                             verticalAlignment: Text.AlignVCenter
                             horizontalAlignment: Text.AlignRight
                             elide: Text.ElideRight

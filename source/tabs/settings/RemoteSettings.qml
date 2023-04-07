@@ -68,7 +68,7 @@ Item {
         SButton {
             width: parent.width
             height: 30
-            label: "Restart"
+            label: endpointInput.value == "" ? "Restart" : "Reconnect"
             onPressed: {
                 SETTINGS.restart()
             }

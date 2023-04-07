@@ -105,7 +105,6 @@ Item {
 
                 Rectangle {
                     anchors.fill: roleLabel
-                    height: 22
                     color: "#e0101010"
                     border.width: 1
                     border.color: COMMON.bg3
@@ -120,12 +119,13 @@ Item {
                     topPadding: 3
                     rightPadding: 3
                     bottomPadding: 3
+                    color: COMMON.fg1_5
+                    font.pointSize: 9.8
                 }
 
                 Rectangle {
                     visible: sizeLabel.text != ""
                     anchors.fill: sizeLabel
-                    height: 22
                     color: "#e0101010"
                     border.width: 1
                     border.color: COMMON.bg3
@@ -136,11 +136,13 @@ Item {
                     text: modelData.size
                     anchors.top: parent.top
                     anchors.right: parent.right
+                    height: roleLabel.height
                     leftPadding: 3
                     topPadding: 3
                     rightPadding: 3
                     bottomPadding: 3
-                    font.pointSize: 9.8
+                    color: COMMON.fg1_5
+                    font.pointSize: 9.2
                 }
 
                 Rectangle {

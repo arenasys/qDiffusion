@@ -24,7 +24,6 @@ MenuItem {
             anchors.left: parent.left
             anchors.leftMargin: 6
             visible: menuItem.checkable
-            radius: 3
             color: COMMON.bg6
 
             border.color: COMMON.bg5

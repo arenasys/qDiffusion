@@ -35,11 +35,11 @@ Item {
         SText {
             id: labelText
             text: root.text
+            font.weight: Font.Medium
             font.pointSize: 11
-            leftPadding: 8
+            leftPadding: 6
             rightPadding: 16
-            font.bold: false
-            color: "white"
+            color: COMMON.fg1
             verticalAlignment: Text.AlignVCenter
             width: Math.min(parent.width, implicitWidth)
             elide: Text.ElideRight
