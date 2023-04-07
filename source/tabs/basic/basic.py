@@ -29,6 +29,7 @@ class BasicInput(QObject):
         self._image = image
         self._role = role
         self._linked = None
+        self._linkedTo = None
         self._dragging = False
         self._extent = QRect()
         self._extentWarning = False
@@ -48,12 +49,19 @@ class BasicInput(QObject):
     def setLinked(self, linked):
         if self._linked:
             self._linked.updated.disconnect(self.updateImage)
-        
+            if self._linked._linkedTo == self:
+                self._linked.setLinkedTo(None)
+            
         self._linked = linked
         if self._linked:
             self._linked.updated.connect(self.updateImage)
+            self._linked.setLinkedTo(self)
         
         self.updateImage()
+        self.linkedUpdated.emit()
+
+    def setLinkedTo(self, linked):
+        self._linkedTo = linked
         self.linkedUpdated.emit()
     
     @pyqtProperty(int, notify=updated)
@@ -85,6 +93,10 @@ class BasicInput(QObject):
     @pyqtProperty(bool, notify=linkedUpdated)
     def linked(self):
         return self._linked != None and not self._linked.empty
+    
+    @pyqtProperty(bool, notify=linkedUpdated)
+    def linkedTo(self):
+        return self._linkedTo != None
 
     @pyqtProperty(QImage, notify=linkedUpdated)
     def linkedImage(self):

@@ -64,15 +64,6 @@ Item {
                 }
             }
 
-            RectangularGlow {
-                anchors.fill: itemFrame
-                glowRadius: 5
-                opacity: 0.4
-                spread: 0.2
-                color: "black"
-                cornerRadius: 10
-            }
-
             Rectangle {
                 id: itemFrame
                 anchors.fill: parent
@@ -83,11 +74,13 @@ Item {
 
                 property var highlight: activeFocus || contextMenu.opened
 
-                TransparencyShader {
-                    x: itemImage.trueX
-                    y: itemImage.trueY
-                    width: itemImage.trueWidth
-                    height: itemImage.trueHeight
+                RectangularGlow {
+                    anchors.fill: trueFrame
+                    glowRadius: 5
+                    opacity: 0.4
+                    spread: 0.2
+                    color: "black"
+                    cornerRadius: 10
                 }
 
                 ImageDisplay {
@@ -97,27 +90,43 @@ Item {
                     image: modelObj.image
                     centered: true
                 }
+                
+                Item {
+                    id: trueFrame
+                    x: itemImage.trueX
+                    y: itemImage.trueY
+                    width: itemImage.trueWidth
+                    height: itemImage.trueHeight
 
-                Rectangle {
-                    visible: sizeLabel.text != ""
-                    anchors.fill: sizeLabel
-                    color: "#e0101010"
-                    border.width: 1
-                    border.color: COMMON.bg3
+                    Rectangle {
+                        visible: sizeLabel.text != ""
+                        anchors.fill: sizeLabel
+                        color: "#e0101010"
+                        border.width: 1
+                        border.color: COMMON.bg3
+                    }
+
+                    SText {
+                        id: sizeLabel
+                        text: modelObj.size
+                        anchors.top: parent.top
+                        anchors.right: parent.right
+                        leftPadding: 3
+                        topPadding: 3
+                        rightPadding: 3
+                        bottomPadding: 3
+                        color: COMMON.fg1_5
+                        font.pointSize: 9.2
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        border.color: itemFrame.highlight ? COMMON.fg2 : COMMON.bg4
+                        border.width: 1
+                        color: "transparent"
+                    }
                 }
 
-                SText {
-                    id: sizeLabel
-                    text: modelObj.size
-                    anchors.top: parent.top
-                    anchors.right: parent.right
-                    leftPadding: 3
-                    topPadding: 3
-                    rightPadding: 3
-                    bottomPadding: 3
-                    color: COMMON.fg1_5
-                    font.pointSize: 9.2
-                }
 
                 MouseArea {
                     anchors.fill: parent
@@ -227,12 +236,6 @@ Item {
                         break;
                     }
                 }
-            }
-            Rectangle {
-                anchors.fill: itemFrame
-                border.color: itemFrame.highlight ? COMMON.fg2 : COMMON.bg4
-                border.width: 1
-                color: "transparent"
             }
         }
 

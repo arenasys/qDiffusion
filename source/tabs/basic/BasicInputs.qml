@@ -46,15 +46,6 @@ Item {
                 }
             }
 
-            RectangularGlow {
-                anchors.fill: itemFrame
-                glowRadius: 5
-                opacity: 0.4
-                spread: 0.2
-                color: "black"
-                cornerRadius: 10
-            }
-
             Rectangle {
                 id: itemFrame
                 anchors.fill: parent
@@ -66,27 +57,91 @@ Item {
                 
                 Item {
                     anchors.fill: parent
-                    anchors.margins: 1
-                    TransparencyShader {
-                        x: itemImage.trueX
-                        y: itemImage.trueY
-                        width: itemImage.trueWidth
-                        height: itemImage.trueHeight
+
+                    Rectangle {
+                        visible: modelData.linked
+                        anchors.left: parent.left
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.leftMargin: -4
+                        anchors.right: trueFrame.left
+                        height: parent.height/4
+                        color: COMMON.fg2
+
+                        Rectangle {
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            height: 1
+                            color: COMMON.fg3
+                        }
+                        Rectangle {
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.bottom: parent.bottom
+                            height: 1
+                            color: COMMON.fg3
+                        }
                     }
 
-                    ImageDisplay {
-                        id: itemImage
-                        visible: !modelData.empty
-                        anchors.fill: parent
-                        image: modelData.image
-                        centered: true
+                    Rectangle {
+                        visible: modelData.linkedTo
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.rightMargin: -5
+                        anchors.left: trueFrame.right
+                        height: parent.height/4
+                        color: COMMON.fg2
+                        Rectangle {
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            height: 1
+                            color: COMMON.fg3
+                        }
+                        Rectangle {
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.bottom: parent.bottom
+                            height: 1
+                            color: COMMON.fg3
+                        }
+                    }
+
+
+                    RectangularGlow {
+                        visible: trueFrame.valid
+                        anchors.fill: trueFrame
+                        glowRadius: 5
+                        opacity: 0.4
+                        spread: 0.2
+                        color: "black"
+                        cornerRadius: 10
+                    }
+
+                    TransparencyShader {
+                        visible: trueFrame.valid
+                        anchors.fill: trueFrame
                     }
 
                     Item {
-                        visible: itemImage.visible
-                        anchors.centerIn: itemImage
-                        width: itemImage.trueWidth
-                        height: itemImage.trueHeight
+                        anchors.fill: parent
+                        anchors.margins: 1
+                        ImageDisplay {
+                            id: itemImage
+                            visible: !modelData.empty
+                            anchors.fill: parent
+                            image: modelData.image
+                            centered: true
+                        }
+                    }
+
+                    Item {
+                        id: trueFrame
+                        property var valid: itemImage.trueWidth != 0
+                        x: valid ? itemImage.trueX + 1: 0
+                        y: valid ? itemImage.trueY + 1: 0
+                        width: valid ? itemImage.trueWidth : parent.width
+                        height: valid ? itemImage.trueHeight : parent.height
 
                         Rectangle {
                             visible: itemImage.sourceWidth > 0
@@ -101,55 +156,64 @@ Item {
                             height: modelData.extent.height*factor
                         }
                     }
-                }
 
-                Rectangle {
-                    anchors.fill: roleLabel
-                    color: "#e0101010"
-                    border.width: 1
-                    border.color: COMMON.bg3
-                }
+                    Item {
+                        id: borderFrame
+                        property var valid: itemImage.trueWidth != 0
+                        x: valid ? itemImage.trueX: 0
+                        y: valid ? itemImage.trueY: 0
+                        width: valid ? itemImage.trueWidth+2 : parent.width
+                        height: valid ? itemImage.trueHeight+2 : parent.height
 
-                SText {
-                    id: roleLabel
-                    text: ["", "Image", "Mask"][modelData.role]
-                    anchors.top: parent.top
-                    anchors.left: parent.left
-                    leftPadding: 3
-                    topPadding: 3
-                    rightPadding: 3
-                    bottomPadding: 3
-                    color: COMMON.fg1_5
-                    font.pointSize: 9.8
-                }
+                        Rectangle {
+                            anchors.fill: roleLabel
+                            color: "#e0101010"
+                            border.width: 1
+                            border.color: COMMON.bg3
+                        }
 
-                Rectangle {
-                    visible: sizeLabel.text != ""
-                    anchors.fill: sizeLabel
-                    color: "#e0101010"
-                    border.width: 1
-                    border.color: COMMON.bg3
-                }
+                        SText {
+                            id: roleLabel
+                            text: ["", "Image", "Mask"][modelData.role]
+                            anchors.top: parent.top
+                            anchors.left: parent.left
+                            leftPadding: 3
+                            topPadding: 3
+                            rightPadding: 3
+                            bottomPadding: 3
+                            color: COMMON.fg1_5
+                            font.pointSize: 9.8
+                        }
 
-                SText {
-                    id: sizeLabel
-                    text: modelData.size
-                    anchors.top: parent.top
-                    anchors.right: parent.right
-                    height: roleLabel.height
-                    leftPadding: 3
-                    topPadding: 3
-                    rightPadding: 3
-                    bottomPadding: 3
-                    color: COMMON.fg1_5
-                    font.pointSize: 9.2
-                }
+                        Rectangle {
+                            visible: sizeLabel.text != ""
+                            anchors.fill: sizeLabel
+                            color: "#e0101010"
+                            border.width: 1
+                            border.color: COMMON.bg3
+                        }
 
-                Rectangle {
-                    anchors.fill: parent
-                    border.color: parent.highlight ? COMMON.fg2 : COMMON.bg4
-                    border.width: 1
-                    color: "transparent"
+                        SText {
+                            id: sizeLabel
+                            text: modelData.size
+                            anchors.top: parent.top
+                            anchors.right: parent.right
+                            height: roleLabel.height
+                            leftPadding: 3
+                            topPadding: 3
+                            rightPadding: 3
+                            bottomPadding: 3
+                            color: COMMON.fg1_5
+                            font.pointSize: 9.2
+                        }
+                    }
+
+                    Rectangle {
+                        anchors.fill: borderFrame
+                        border.color: itemFrame.highlight ? COMMON.fg2 : COMMON.bg4
+                        border.width: 1
+                        color: "transparent"
+                    }
                 }
 
                 MouseArea {
@@ -314,18 +378,6 @@ Item {
                         width: 1
                         color: COMMON.fg2
                     }
-                }
-
-                Rectangle {
-                    visible: modelData.linked
-                    anchors.left: parent.left
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.leftMargin: -9
-                    width: 9
-                    height: parent.height/4
-                    color: COMMON.fg2
-                    border.width: 1
-                    border.color: COMMON.fg3
                 }
 
                 Keys.onPressed: {
