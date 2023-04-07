@@ -72,7 +72,7 @@ Item {
         anchors.margins: 2
         anchors.bottomMargin: 0
 
-        color: COMMON.bg3
+        color: COMMON.bg2_5
 
         MouseArea {
             id: mouseArea

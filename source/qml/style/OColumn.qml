@@ -27,7 +27,7 @@ Item {
 
     Rectangle {
         id: header
-        color: COMMON.bg3
+        color: COMMON.bg3_5
         height: 30
         anchors.right: parent.right
         anchors.left: parent.left

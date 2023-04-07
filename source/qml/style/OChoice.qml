@@ -195,7 +195,7 @@ Item {
         background: Rectangle {
             implicitWidth: 120
             implicitHeight: 30
-            color: COMMON.bg3
+            color: COMMON.bg2_5
             border.color: COMMON.bg4
         }
 

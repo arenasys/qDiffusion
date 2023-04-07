@@ -50,7 +50,7 @@ Item {
         anchors.bottomMargin: 0
         clip: true
 
-        color: COMMON.bg3
+        color: COMMON.bg2_5
         border.color: COMMON.bg4
 
         SText {
