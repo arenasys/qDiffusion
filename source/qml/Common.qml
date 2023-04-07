@@ -2,6 +2,9 @@ pragma Singleton
 import QtQuick 2.15
 
 QtObject {
+    readonly property var pointValue: 9.3
+    readonly property var pointLabel: 9.4
+
     readonly property var bg0: "#1d1d1d"
     readonly property var bg1: "#242424"
     
@@ -25,7 +28,7 @@ QtObject {
     readonly property var bg000: "#0f0f0f"
     readonly property var bg1_5: "#272727"
     readonly property var bg2_5: "#2e2e2e"
-    readonly property var bg3_5: "#313231"
+    readonly property var bg3_5: "#2e2e2e"
 
     function accent(hue) {
         return Qt.hsva(hue, 0.65, 0.55, 1.0)

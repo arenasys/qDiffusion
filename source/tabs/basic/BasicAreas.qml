@@ -9,6 +9,11 @@ import "../../components"
 
 Item {
     id: root
+
+    SShadow {
+        opacity: 0.7
+        anchors.fill: parent
+    }
     Flickable {
         anchors.fill: parent
         contentHeight: col.height

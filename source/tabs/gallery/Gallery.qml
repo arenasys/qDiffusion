@@ -254,7 +254,7 @@ Rectangle {
         anchors.right: galleryDivider.left
         minOffset: 5
         maxOffset: parent.height
-        offset: 150
+        offset: 175
     }
 
     Rectangle {

@@ -50,7 +50,7 @@ Item {
 
     Rectangle {
         id: settings
-        color: COMMON.bg1
+        color: COMMON.bg0
         anchors.left: settingsDivider.right
         anchors.right: parent.right
         anchors.top: parent.top

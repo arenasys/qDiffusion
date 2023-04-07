@@ -169,10 +169,11 @@ Item {
                 anchors.bottom: parent.bottom
                 leftPadding: 5
                 text: root.label
-                font.pointSize: root.mini ? 7.85 : 9.8
+                font.pointSize: root.mini ? 7.85 : COMMON.pointLabel
                 color: COMMON.fg1_5
                 verticalAlignment: Text.AlignVCenter
                 elide: Text.ElideRight
+                monospace: false
             }
             
             SText {
@@ -184,7 +185,7 @@ Item {
                 rightPadding: 7
 
                 text: control.displayText
-                font.pointSize: root.mini ? 7.7 : 9.6
+                font.pointSize: root.mini ? 7.7 : COMMON.pointValue
                 color: COMMON.fg0
                 horizontalAlignment: Text.AlignRight
                 verticalAlignment: Text.AlignVCenter

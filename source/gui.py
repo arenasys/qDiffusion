@@ -214,6 +214,7 @@ class GUI(QObject):
             self._errorText = response["data"]["message"]
             self.statusUpdated.emit()
             self.errorUpdated.emit()
+            self.reset.emit()
             if "traceback" in response["data"]:
                 with open("crash.log", "a") as f:
                     f.write(f"INFERENCE {datetime.datetime.now()}\n{response['data']['traceback']}\n")
@@ -225,8 +226,10 @@ class GUI(QObject):
             self.backend.stop()
             self.statusUpdated.emit()
             self.errorUpdated.emit()
+            self.reset.emit()
             
         if response["type"] == "aborted":
+            self.reset.emit()
             self.setReady()
 
         if response["type"] == "progress":

@@ -158,7 +158,7 @@ Item {
                 leftPadding: 7
 
                 text: control.currentValue == undefined ? "" : control.currentValue.name
-                font.pointSize: root.mini ? 7.7 : 9.6
+                font.pointSize: root.mini ? 7.7 : COMMON.pointValue
                 color: COMMON.fg0
                 horizontalAlignment: Text.AlignLeft
                 verticalAlignment: Text.AlignVCenter
@@ -173,7 +173,7 @@ Item {
                 rightPadding: 7
 
                 text: control.currentValue == undefined ? "" : control.currentValue.type
-                font.pointSize: root.mini ? 7.7 : 9.6
+                font.pointSize: root.mini ? 7.7 : COMMON.pointValue
                 color: COMMON.fg2
                 horizontalAlignment: Text.AlignRight
                 verticalAlignment: Text.AlignVCenter

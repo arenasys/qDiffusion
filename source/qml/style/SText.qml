@@ -20,7 +20,7 @@ Text {
 
     Component.onCompleted: {
         if(font.bold) {
-            font.letterSpacing = -1.0
+            font.letterSpacing = -1.2
         }
     }
 }

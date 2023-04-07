@@ -115,8 +115,9 @@ Item {
             rightPadding: 5
             width: root.labelWidth
             verticalAlignment: Text.AlignVCenter
-            font.pointSize: root.mini ? 7.85 : 9.8
+            font.pointSize: root.mini ? 7.85 : COMMON.pointLabel
             color: COMMON.fg1_5
+            monospace: false
         }
 
         Rectangle {
@@ -137,8 +138,9 @@ Item {
                 rightPadding: 5
                 width: root.labelWidth
                 verticalAlignment: Text.AlignVCenter
-                font.pointSize: root.mini ? 7.85 : 9.8
+                font.pointSize: root.mini ? 7.85 : COMMON.pointLabel
                 color: COMMON.fg1
+                monospace: false
             }
         }
 
@@ -170,7 +172,7 @@ Item {
 
             id: valueInput
             color: COMMON.fg0
-            font.pointSize: root.mini ? 7.7 : 9.6
+            font.pointSize: root.mini ? 7.7 : COMMON.pointValue
             activeFocusOnPress: false
             leftPadding: 5
             rightPadding: 5

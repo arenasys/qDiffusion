@@ -1,5 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
+import QtGraphicalEffects 1.15
 
 import gui 1.0
 
@@ -9,7 +10,6 @@ Item {
     property var collapsable: true
     property var isCollapsed: false
     property var hasDivider: true
-    property var hasSides: false
     property var padding: true
     signal expanded()
     signal collapsed()
@@ -21,7 +21,7 @@ Item {
     default property alias content: column.children
     implicitHeight: header.height + column.height + (padding ? (hasDivider ? 5 : 0) - (isCollapsed ? 2 : 0) : 3)
 
-    property var contentMargin: hasSides ? 3 : 0
+    property var contentMargin: 7
 
     property alias input: inputLoader.sourceComponent
 
@@ -32,16 +32,18 @@ Item {
         anchors.right: parent.right
         anchors.left: parent.left
         anchors.top: parent.top
+        
         SText {
             id: labelText
             text: root.text
             font.weight: Font.Medium
-            font.pointSize: 11
+            font.pointSize: 10.5
             leftPadding: 6
             rightPadding: 16
-            color: COMMON.fg1
+            color: COMMON.fg0
+            opacity: 0.95
             verticalAlignment: Text.AlignVCenter
-            width: Math.min(parent.width, implicitWidth)
+            width: Math.min(parent.width, implicitWidth+5)
             elide: Text.ElideRight
             anchors.left: parent.left
             anchors.top: parent.top
@@ -95,6 +97,14 @@ Item {
                 }
             }
         }
+        Glow {
+            opacity: 0.5
+            anchors.fill: indicator
+            radius: 2
+            samples: 8
+            color: COMMON.bg0
+            source: indicator
+        }
     }
     Column {
         id: column
@@ -112,22 +122,6 @@ Item {
         anchors.left: parent.left
         anchors.bottom: parent.bottom
         height: hasDivider ? 3 : 0
-        color: COMMON.bg4
-    }
-
-    Rectangle {
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.bottom: parent.bottom
-        width: hasSides ? 3 : 0
-        color: COMMON.bg4
-    }
-
-    Rectangle {
-        anchors.top: parent.top
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        width: hasSides ? 3 : 0
         color: COMMON.bg4
     }
 }

@@ -61,8 +61,9 @@ Item {
             anchors.bottom: parent.bottom
             leftPadding: 5
             verticalAlignment: Text.AlignVCenter
-            font.pointSize: control.mini ? 7.85 : 9.8
+            font.pointSize: control.mini ? 7.85 : COMMON.pointLabel
             color: COMMON.fg1_5
+            monospace: false
         }
 
         MouseArea {
@@ -107,7 +108,7 @@ Item {
                 rightPadding: 5
                 verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignRight
-                font.pointSize: control.mini ? 7.85 : 9.8
+                font.pointSize: control.mini ? 7.85 : COMMON.pointValue
                 color: COMMON.fg0
                 monospace: true
                 validator: control.validator

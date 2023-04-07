@@ -8,6 +8,8 @@ Item {
     id: root
     property var color: COMMON.bg00
     property var shadowColor: "#f0000000"
+    property var radius: 16
+    property var samples: 16
 
     Rectangle {
         anchors.fill: parent
@@ -17,9 +19,10 @@ Item {
 
     layer.enabled: true
     layer.effect: InnerShadow {
+        id: innerShadow
         color: root.shadowColor
-        samples: 16
-        radius: 16
+        samples: root.samples
+        radius: root.radius
         spread: 0
         fast: true
     }
