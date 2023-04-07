@@ -12,10 +12,12 @@ from misc import MimeData
 
 class Update(QThread):
     def run(self):
-        subprocess.run(["git", "pull", "origin", "master"], shell=IS_WIN)
+        subprocess.run(["git", "fetch"], capture_output=True, shell=IS_WIN)
+        subprocess.run(["git", "reset", "--hard", "origin/master"], capture_output=True, shell=IS_WIN)
         inf = os.path.join("source", "sd-inference-server")
         if os.path.exists(inf):
-            subprocess.run(["git", "pull", "origin", "master"], cwd=inf, shell=IS_WIN)
+            subprocess.run(["git", "fetch"], capture_output=True, shell=IS_WIN)
+            subprocess.run(["git", "reset", "--hard", "origin/master"], capture_output=True, shell=IS_WIN)
 
 class Settings(QObject):
     updated = pyqtSignal()
