@@ -93,8 +93,22 @@ def parse_parameters(formatted):
 
     return json
 
+
+def get_index(folder):
+    def get_idx(filename):
+        try:
+            return int(filename.split(".")[0])
+        except Exception:
+            return 0
+
+    idx = max([get_idx(f) for f in os.listdir(folder)] + [0]) + 1
+    
+    while os.path.exists(os.path.join(folder, f"{idx:07d}.png")):
+        idx += 1
+    return idx
+
 def save_image(img, metadata, outputs):
-    global IDX
+
     if type(img) == bytes:
         img = PIL.Image.open(io.BytesIO(img))
     m = PIL.PngImagePlugin.PngInfo()
@@ -103,21 +117,7 @@ def save_image(img, metadata, outputs):
     folder = os.path.join(outputs, metadata["mode"])
     os.makedirs(folder, exist_ok=True)
 
-    def get_idx(filename):
-        try:
-            return int(filename.split(".")[0])
-        except Exception:
-            return 0
-
-    if IDX == -1:
-        IDX = max([get_idx(f) for f in os.listdir(folder)] + [0]) + 1
-    else:
-        IDX += 1
-    
-    idx = IDX
-
-    while os.path.exists(os.path.join(folder, f"{idx:07d}.png")):
-        idx += 1
+    idx = get_index(folder)
 
     tmp = os.path.join(folder, f"{idx:07d}.tmp")
     real = os.path.join(folder, f"{idx:07d}.png")

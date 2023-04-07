@@ -170,6 +170,45 @@ Item {
                                 BASIC.deleteOutputAfter(sql_id)
                             }
                         }
+
+                        SContextMenuSeparator { }
+
+                        SContextMenuItem {
+                            text: "Open"
+                            onTriggered: {
+                                GALLERY.doOpenImage([modelObj.file])
+                            }
+                        }
+
+                        SContextMenuItem {
+                            text: "Visit"
+                            onTriggered: {
+                                GALLERY.doOpenFolder([modelObj.file])
+                            }
+                        }
+
+                        SContextMenuSeparator { }
+
+                        Sql {
+                            id: destinationsSql
+                            query: "SELECT name, folder FROM folders WHERE UPPER(name) != UPPER('" + modelObj.mode + "');"
+                        }
+
+                        SContextMenu {
+                            id: copyToMenu
+                            title: "Copy to"
+                            Instantiator {
+                                model: destinationsSql
+                                SContextMenuItem {
+                                    text: sql_name
+                                    onTriggered: {
+                                        GALLERY.doCopy(sql_folder, [modelObj.file])
+                                    }
+                                }
+                                onObjectAdded: copyToMenu.insertItem(index, object)
+                                onObjectRemoved: copyToMenu.removeItem(object)
+                            }
+                        }
                     }
                 }
 

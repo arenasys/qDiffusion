@@ -38,8 +38,28 @@ Item {
     BasicFull {
         id: full
         anchors.fill: areas
-    }
 
+        onContextMenu: {
+            if(BASIC.openedArea == "output") {
+                fullContextMenu.popup()
+            }
+        }
+
+        SContextMenu {
+            id: fullContextMenu
+            SContextMenuItem {
+                text: "Show Parameters"
+                checkable: true
+                checked: fullParams.show
+                onCheckedChanged: {
+                    if(checked != fullParams.show) {
+                        fullParams.show = checked
+                        checked = Qt.binding(function() { return fullParams.show })
+                    }
+                }
+            }
+        }
+    }
 
     SDividerVR {
         id: settingsDivider
@@ -154,6 +174,7 @@ Item {
                 SText {
                     anchors.fill: parent
                     text: "Parameters"
+                    color: COMMON.fg1_5
                     leftPadding: 5
                     verticalAlignment: Text.AlignVCenter
                 }
@@ -185,6 +206,10 @@ Item {
                 readOnly: true
 
                 text: fullParams.parameters
+
+                Component.onCompleted: {
+                    GUI.setHighlighting(area.textDocument)
+                }
             }
         }
     }

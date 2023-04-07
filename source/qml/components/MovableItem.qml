@@ -16,6 +16,8 @@ Item {
     property var mouse: itmMouse
     property var ctrlZoom: false
 
+    signal contextMenu()
+
     clip: true
 
     CenteredItem {
@@ -166,7 +168,7 @@ Item {
         onClicked: {
             switch(mouse.button) {
             case Qt.RightButton:
-                contextMenu()
+                root.contextMenu()
                 break;
             default:
                 mouse.accepted = false

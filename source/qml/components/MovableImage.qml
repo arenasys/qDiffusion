@@ -16,8 +16,6 @@ MovableItem {
     itemWidth: sourceWidth
     itemHeight: sourceHeight
 
-    signal contextMenu()
-
     clip: true
 
     SGlow {

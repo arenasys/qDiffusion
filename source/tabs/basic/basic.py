@@ -208,6 +208,14 @@ class BasicOutput(QObject):
     def image(self):
         return self._image
     
+    @pyqtProperty(str, notify=updated)
+    def file(self):
+        return self._file
+    
+    @pyqtProperty(str, notify=updated)
+    def mode(self):
+        return self._metadata["mode"]
+    
     @pyqtProperty(int, notify=updated)
     def width(self):
         return self._image.width()

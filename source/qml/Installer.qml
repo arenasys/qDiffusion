@@ -136,7 +136,7 @@ FocusReleaser {
             Rectangle {
                 x: -parent.width
                 width: parent.width*3
-                height: 150
+                height: 120
                 border.width: 1
                 border.color: COMMON.bg4
                 color: "transparent"

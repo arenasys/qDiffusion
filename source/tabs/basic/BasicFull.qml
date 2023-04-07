@@ -12,6 +12,8 @@ Item {
     property var editing: false
     visible: false
 
+    signal contextMenu()
+
     function getTarget(index, area) {
         if(index == -1) {
             return null
@@ -117,6 +119,10 @@ Item {
         anchors.fill: parent
         itemWidth: 0
         itemHeight: 0
+
+        onContextMenu: {
+            root.contextMenu()
+        }
 
         Item {
             id: item

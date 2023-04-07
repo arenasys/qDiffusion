@@ -11,6 +11,7 @@ from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtWidgets import QApplication
 import sql
 import filesystem
+import parameters
 
 class Populater(QObject):
     stop = pyqtSignal(str)
@@ -71,7 +72,7 @@ class Populater(QObject):
                     parameters = img.info["parameters"]
                 width, height = img.size
         except Exception:
-            return       
+            return
 
         q = QSqlQuery(self.conn.db)
         q.prepare("INSERT OR REPLACE INTO images(file, folder, parameters, idx, width, height) VALUES (:file, :folder, :parameters, :idx, :width, :height);")
@@ -82,7 +83,17 @@ class Populater(QObject):
         q.bindValue(":width", width)
         q.bindValue(":height", height)
         self.conn.doQuery(q)
-        
+
+class Deleter(QThread):
+    def __init__(self, gui, files):
+        super().__init__()
+        self.files = files
+        self.gui = gui
+    def run(self):
+        for f in self.files:
+            send2trash.send2trash(f)
+        self.gui.thumbnails.removeAll(self.files)
+
 class Gallery(QObject):
     add_folder = pyqtSignal(str, str)
 
@@ -120,33 +131,37 @@ class Gallery(QObject):
 
         parent.aboutToQuit.connect(self.stop)
 
+        self.deleters = []
+
     @pyqtSlot(list)
     def doOpenImage(self, files):
-        QDesktopServices.openUrl(QUrl.fromLocalFile(files[0]))
+        QDesktopServices.openUrl(QUrl.fromLocalFile(os.path.abspath(files[0])))
 
     @pyqtSlot(list)
     def doOpenFolder(self, files):
-        QDesktopServices.openUrl(QUrl.fromLocalFile(os.path.dirname(files[0])))
+        QDesktopServices.openUrl(QUrl.fromLocalFile(os.path.dirname(os.path.abspath(files[0]))))
 
     @pyqtSlot(str, list)
     def doCopy(self, folder, files):
+        idx = parameters.get_index(folder)
         for src in files:
-            name = src.split(os.path.sep)[-1]
-            dst = os.path.join(folder, name)
+            dst = os.path.join(folder, f"{idx:07d}.png")
             shutil.copy(src, dst)
+            idx += 1
 
     @pyqtSlot(str, list)
     def doMove(self, folder, files):
+        idx = parameters.get_index(folder)
         for src in files:
-            name = src.split(os.path.sep)[-1]
-            dst = os.path.join(folder, name)
+            dst = os.path.join(folder, f"{idx:07d}.png")
             shutil.move(src, dst)
+            idx += 1
 
     @pyqtSlot(list)
     def doDelete(self, files):
-        for f in files:
-            send2trash.send2trash(f)
-        self.gui.thumbnails.removeAll(files)
+        deleter = Deleter(self.gui, files)
+        deleter.start()
+        self.deleters += [deleter]
 
     @pyqtSlot(list)
     def doClipboard(self, files):
