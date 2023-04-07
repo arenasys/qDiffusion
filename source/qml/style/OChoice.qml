@@ -67,7 +67,7 @@ Item {
         id: infoToolTip
         visible: !control.popup.opened && !disabled && tooltip != "" && mouseArea.containsMouse
         delay: 200
-        text: tooltip
+        text: root.tooltip != undefined ? root.tooltip : ""
     }
 
     ComboBox {

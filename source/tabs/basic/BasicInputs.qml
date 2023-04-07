@@ -37,7 +37,7 @@ Item {
 
         delegate: Item {
             id: item
-            height: inputListView.height
+            height: Math.floor(inputListView.height)
             width: height-9
 
             onActiveFocusChanged: {
@@ -64,37 +64,42 @@ Item {
 
                 property var highlight: activeFocus || inputContextMenu.opened || inputFileDialog.visible || centerDrop.containsDrag
                 
-                TransparencyShader {
-                    anchors.centerIn: itemImage
-                    width: itemImage.trueWidth
-                    height: itemImage.trueHeight
-                }
-
-                ImageDisplay {
-                    id: itemImage
-                    visible: !modelData.empty
-                    anchors.fill: parent
-                    image: modelData.image
-                    centered: true
-                }
-
                 Item {
-                    visible: itemImage.visible
-                    anchors.centerIn: itemImage
-                    width: itemImage.trueWidth
-                    height: itemImage.trueHeight
+                    anchors.fill: parent
+                    anchors.margins: 1
+                    TransparencyShader {
+                        x: itemImage.trueX
+                        y: itemImage.trueY
+                        width: itemImage.trueWidth
+                        height: itemImage.trueHeight
+                    }
 
-                    Rectangle {
-                        visible: itemImage.sourceWidth > 0
-                        property var factor: parent.width/itemImage.sourceWidth
-                        border.color: modelData.extentWarning ? "red" : "#00ff00"
-                        border.width: 1
-                        color: "transparent"
+                    ImageDisplay {
+                        id: itemImage
+                        visible: !modelData.empty
+                        anchors.fill: parent
+                        image: modelData.image
+                        centered: true
+                    }
 
-                        x: modelData.extent.x*factor
-                        y: modelData.extent.y*factor
-                        width: modelData.extent.width*factor
-                        height: modelData.extent.height*factor
+                    Item {
+                        visible: itemImage.visible
+                        anchors.centerIn: itemImage
+                        width: itemImage.trueWidth
+                        height: itemImage.trueHeight
+
+                        Rectangle {
+                            visible: itemImage.sourceWidth > 0
+                            property var factor: parent.width/itemImage.sourceWidth
+                            border.color: modelData.extentWarning ? "red" : "#00ff00"
+                            border.width: 1
+                            color: "transparent"
+
+                            x: modelData.extent.x*factor
+                            y: modelData.extent.y*factor
+                            width: modelData.extent.width*factor
+                            height: modelData.extent.height*factor
+                        }
                     }
                 }
 

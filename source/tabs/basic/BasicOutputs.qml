@@ -54,7 +54,7 @@ Item {
 
         delegate: Item {
             id: item
-            height: listView.height
+            height: Math.floor(listView.height)
             width: height-9
             property var modelObj: BASIC.outputs(sql_id) 
 
@@ -82,9 +82,10 @@ Item {
                 clip: true
 
                 property var highlight: activeFocus || contextMenu.opened
-                
+
                 TransparencyShader {
-                    anchors.centerIn: itemImage
+                    x: itemImage.trueX
+                    y: itemImage.trueY
                     width: itemImage.trueWidth
                     height: itemImage.trueHeight
                 }

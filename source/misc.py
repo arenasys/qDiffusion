@@ -36,6 +36,8 @@ class ImageDisplay(QQuickPaintedItem):
         self._centered = False
         self._trueWidth = 0
         self._trueHeight = 0
+        self._trueX = 0
+        self._trueY = 0
 
     @pyqtProperty(QImage, notify=imageUpdated)
     def image(self):
@@ -55,6 +57,7 @@ class ImageDisplay(QQuickPaintedItem):
             if self._trueWidth != img.width() or self._trueHeight != img.height():
                 self._trueWidth = img.width()
                 self._trueHeight = img.height()
+                self._trueX, self._trueY = self.arrange(img)
                 self.sizeUpdated.emit()
         else:
             self._trueWidth = 0
@@ -80,6 +83,14 @@ class ImageDisplay(QQuickPaintedItem):
     @pyqtProperty(int, notify=sizeUpdated)
     def trueHeight(self):
         return self._trueHeight
+    
+    @pyqtProperty(int, notify=sizeUpdated)
+    def trueX(self):
+        return self._trueX
+    
+    @pyqtProperty(int, notify=sizeUpdated)
+    def trueY(self):
+        return self._trueY
 
     @pyqtProperty(int, notify=imageUpdated)
     def sourceWidth(self):
@@ -92,6 +103,13 @@ class ImageDisplay(QQuickPaintedItem):
         if self._image:
             return self._image.height()
         return 0
+    
+    def arrange(self, img):
+        x, y = 0, 0
+        if self.centered:
+            x = int((self.width() - img.width())/2)
+            y = int((self.height() - img.height())//2)
+        return x, y
 
     def paint(self, painter):
         if self._image and not self._image.isNull():
@@ -101,14 +119,14 @@ class ImageDisplay(QQuickPaintedItem):
 
             # FIX THIS CRAP
             img = self._image.scaled(int(self.width()), int(self.height()), Qt.KeepAspectRatio, transform)
+            x, y = self.arrange(img)
+
             if self._trueWidth != img.width() or self._trueHeight != img.height():
                 self._trueWidth = img.width()
                 self._trueHeight = img.height()
+                self._trueX = x
+                self._trueY = y
                 self.sizeUpdated.emit()
-            x, y = 0, 0
-            if self.centered:
-                x = int((self.width() - img.width())/2)
-                y = int((self.height() - img.height())//2)
             painter.drawImage(x,y,img)
 
 class MimeData(QObject):
