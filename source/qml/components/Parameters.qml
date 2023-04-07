@@ -244,7 +244,6 @@ Item {
                     input: OChoice {
                         id: samplerInput
                         label: ""
-                        tooltip: "Sampler"
                         height: 28
                         width: samplerColumn.width - 100
 
@@ -291,6 +290,8 @@ Item {
                         bindKeyCurrent: "model"
                         bindKeyModel: "models"
 
+                        tooltip: value
+
                         overlay: modelColumn.componentMode
 
                         onSelected: {
@@ -314,6 +315,8 @@ Item {
                         }
                     }
 
+                    property var models: root.binding.values.get("models")
+
                     OChoice {
                         id: unetInput
                         label: "UNET"
@@ -325,6 +328,17 @@ Item {
                         bindKeyModel: "UNETs"
 
                         overlay: !modelColumn.componentMode
+
+                        function decoration(value) {
+                            if(!modelColumn.models.includes(value)) {
+                                return "External"
+                            }
+                            return ""
+                        }
+
+                        onSelected: {
+                            root.binding.values.set("model", value)
+                        }
                     }
                     OChoice {
                         id: vaeInput
@@ -335,8 +349,15 @@ Item {
                         bindMap: root.binding.values
                         bindKeyCurrent: "VAE"
                         bindKeyModel: "VAEs"
-                        
+
                         overlay: !modelColumn.componentMode
+
+                        function decoration(value) {
+                            if(!modelColumn.models.includes(value)) {
+                                return "External"
+                            }
+                            return ""
+                        }
                     }
                     OChoice {
                         id: clipInput
@@ -349,6 +370,13 @@ Item {
                         bindKeyModel: "CLIPs"
 
                         overlay: !modelColumn.componentMode
+
+                        function decoration(value) {
+                            if(!modelColumn.models.includes(value)) {
+                                return "External"
+                            }
+                            return ""
+                        }
                     }
                 }
 
@@ -493,6 +521,18 @@ Item {
                         bindMap: root.binding.values
                         bindKeyCurrent: "img2img_upscaler"
                         bindKeyModel: "img2img_upscalers"
+
+                        property var sr: root.binding.values.get("SRs")
+
+                        function decoration(value) {
+                            if(sr.includes(value)) {
+                                return "SR"
+                            }
+                            if(value.startsWith("Latent")) {
+                                return "Latent"
+                            }
+                            return "Pixel"
+                        }
                     }
                     OSlider {
                         label: "Padding"
@@ -604,6 +644,18 @@ Item {
                         bindMap: root.binding.values
                         bindKeyCurrent: "hr_upscaler"
                         bindKeyModel: "hr_upscalers"
+
+                        property var sr: root.binding.values.get("SRs")
+
+                        function decoration(value) {
+                            if(sr.includes(value)) {
+                                return "SR"
+                            }
+                            if(value.startsWith("Latent")) {
+                                return "Latent"
+                            }
+                            return "Pixel"
+                        }
                     }
                     OSlider {
                         id: hrStepsInput

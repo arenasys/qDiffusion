@@ -23,6 +23,12 @@ Item {
     property var bindKeyCurrent: null
     property var bindKeyModel: null
 
+    property alias popupHeight: control.popupHeight
+
+    function decoration(value) {
+        return ""
+    }
+
     Connections {
         target: bindMap
         function onUpdated() {
@@ -59,8 +65,8 @@ Item {
 
     SToolTip {
         id: infoToolTip
-        visible: !disabled && tooltip != "" && mouseArea.containsMouse && mouseArea.mouseX < root.width/3
-        delay: 100
+        visible: !control.popup.opened && !disabled && tooltip != "" && mouseArea.containsMouse
+        delay: 200
         text: tooltip
     }
 
@@ -71,6 +77,8 @@ Item {
         anchors.bottomMargin: 0
         focusPolicy: Qt.NoFocus
 
+        property var popupHeight: 300
+
         function selected() {
             root.selected()
         }
@@ -80,12 +88,28 @@ Item {
             height: 22
             color: delegateMouse.containsMouse ?  COMMON.bg4 : COMMON.bg3
             SText {
-                width: control.popup.width
+                id: decoText
+                anchors.right: parent.right
+                width: contentWidth
+                height: 22
+                text: root.decoration(modelData)
+                color: width < contentWidth ? "transparent" : COMMON.fg2
+                font.pointSize:  8.5
+                rightPadding: 8
+                horizontalAlignment: Text.AlignRight
+                verticalAlignment: Text.AlignVCenter
+            }
+            SText {
+                id: valueText
+                anchors.left: parent.left
+                anchors.right: decoText.left
+
                 height: 22
                 text: modelData
                 color: COMMON.fg0
                 font.pointSize:  8.5
                 leftPadding: 5
+                rightPadding: 10
                 elide: Text.ElideRight
 
                 verticalAlignment: Text.AlignVCenter
@@ -178,7 +202,7 @@ Item {
         popup: Popup {
             y: control.height
             width: Math.max(100, control.width)
-            implicitHeight: contentItem.implicitHeight+2
+            implicitHeight: Math.min(control.popupHeight, contentItem.implicitHeight+2)
             padding: 2
 
             onOpenedChanged: {
@@ -194,7 +218,11 @@ Item {
                 implicitHeight: contentHeight
                 model: control.popup.visible ? control.delegateModel : null
                 currentIndex: control.highlightedIndex
-                ScrollIndicator.vertical: ScrollIndicator { }
+                boundsBehavior: Flickable.StopAtBounds
+                ScrollIndicator.vertical: ScrollIndicator {
+                    anchors.right: parent.right
+                    anchors.rightMargin: -2
+                }
             }
 
             background: Rectangle {
