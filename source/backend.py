@@ -5,7 +5,7 @@ import bson
 import datetime
 import copy
 
-from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, QThread
+from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, QThread, Qt
 from PyQt5.QtWidgets import QApplication
 
 import local
@@ -57,7 +57,7 @@ class Backend(QObject):
         else:
             self.inference = remote.RemoteInference(self.gui, endpoint, password)
 
-        self.request.connect(self.inference.onRequest)
+        self.request.connect(self.inference.onRequest, type=Qt.QueuedConnection)
         self.inference.response.connect(self.onResponse)
         self.stopping.connect(self.inference.stop)
         self.inference.start()

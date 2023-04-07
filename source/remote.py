@@ -98,12 +98,12 @@ class RemoteInference(QThread):
     kill = pyqtSignal()
     response = pyqtSignal(object)
     def __init__(self, gui, endpoint, password=None):
-        super().__init__(gui)
+        super().__init__()
         self.gui = gui
 
         self.stopping = False
-        self.requests = multiprocessing.Queue(16)
-        self.responses = multiprocessing.Queue(16)
+        self.requests = queue.Queue()
+        self.responses = queue.Queue()
         self.endpoint = endpoint
         self.client = None
 
