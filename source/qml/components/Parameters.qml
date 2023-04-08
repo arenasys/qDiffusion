@@ -294,6 +294,7 @@ Item {
                         tooltip: value
 
                         overlay: modelColumn.componentMode
+                        popupHeight: root.height + 100
 
                         onSelected: {
                             root.binding.values.set("VAE", value)
@@ -336,6 +337,7 @@ Item {
                         bindKeyModel: "UNETs"
 
                         overlay: !modelColumn.componentMode
+                        popupHeight: root.height + 100
 
                         function decoration(value) {
                             if(!modelColumn.models.includes(value)) {
@@ -359,6 +361,7 @@ Item {
                         bindKeyModel: "VAEs"
 
                         overlay: !modelColumn.componentMode
+                        popupHeight: root.height + 100
 
                         function decoration(value) {
                             if(!modelColumn.models.includes(value)) {
@@ -378,6 +381,7 @@ Item {
                         bindKeyModel: "CLIPs"
 
                         overlay: !modelColumn.componentMode
+                        popupHeight: root.height + 100
 
                         function decoration(value) {
                             if(!modelColumn.models.includes(value)) {
@@ -530,6 +534,8 @@ Item {
                         bindKeyCurrent: "img2img_upscaler"
                         bindKeyModel: "img2img_upscalers"
 
+                        popupHeight: root.height + 100
+
                         property var sr: root.binding.values.get("SRs")
 
                         function decoration(value) {
@@ -653,6 +659,8 @@ Item {
                         bindMap: root.binding.values
                         bindKeyCurrent: "hr_upscaler"
                         bindKeyModel: "hr_upscalers"
+
+                        popupHeight: root.height + 100
 
                         property var sr: root.binding.values.get("SRs")
 
