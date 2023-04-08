@@ -18,7 +18,10 @@ class Wildcards(QObject):
     def reload(self):
         self._wildcards = {}
         root = self.gui.config.get("model_directory")
-        folders = [os.path.join(root,f) for f in os.listdir(root) if os.path.isdir(os.path.join(root,f))]
+        if os.path.exists(root):
+            folders = [os.path.join(root,f) for f in os.listdir(root) if os.path.isdir(os.path.join(root,f))]
+        else:
+            folders = [f for f in os.listdir(".") if os.path.isdir(f)]
         self._folders = [f for f in folders if re.search('wildcard(s)?', f, re.IGNORECASE)]    
         for folder in self._folders:
             self.watcher.watchFolder(folder)
