@@ -1,6 +1,7 @@
 import io
 import os
 import re
+import random
 
 import PIL.Image
 import PIL.PngImagePlugin
@@ -432,6 +433,12 @@ class Parameters(QObject):
             if not k in self._readonly:
                 data[k] = v
 
+        batch_size = int(data['batch_size'])
+        batch_size = max(batch_size, len(images), len(masks))
+
+        data['prompt'] = self.parsePrompt(data['prompt'], batch_size)
+        data['negative_prompt'] = self.parsePrompt(data['negative_prompt'], batch_size)
+
         if data["steps"] == 0 and images:
             request["type"] = "upscale"
             data["image"] = images
@@ -569,6 +576,23 @@ class Parameters(QObject):
         self.updated.emit()
 
         pass
+
+    def parsePrompt(self, prompt, batch_size):
+        wildcards = self.gui.wildcards._wildcards
+        prompts = []
+        pattern = re.compile("__([^\s]+?)__(?!___)")
+
+        for i in range(batch_size):
+            p = str(prompt)
+            while m := pattern.search(p):
+                s,e = m.span(0)
+                name = m.group(1)
+                if name in wildcards:
+                    p = list(p)
+                    p[s:e] = random.SystemRandom().choice(wildcards[name])
+                    p = ''.join(p)
+            prompts += [p]
+        return prompts
         
 def registerTypes():
     qmlRegisterUncreatableType(Parameters, "gui", 1, 0, "ParametersMap", "Not a QML type")

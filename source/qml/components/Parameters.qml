@@ -312,6 +312,12 @@ Item {
                                     GUI.refreshModels()
                                 }
                             }
+                            SContextMenuItem {
+                                text: "Build model"
+                                onPressed: {
+                                    
+                                }
+                            }
                         }
                     }
 

@@ -21,6 +21,7 @@ import filesystem
 import thumbnails
 import backend
 import config
+import wildcards
 from misc import SyntaxHighlighter
 from parameters import VariantMap
 
@@ -78,6 +79,8 @@ class GUI(QObject):
         self._modelFolders = []
 
         self._debugJSONLogging = self._config._values.get("debug") == True
+
+        self.wildcards = wildcards.Wildcards(self)
 
         self.backend = backend.Backend(self)
         self.backend.response.connect(self.onResponse)

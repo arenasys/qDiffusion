@@ -76,6 +76,9 @@ class Watcher(QObject):
         
     @pyqtSlot(str)
     def watchFolder(self, folder):
+        if folder in self.folders:
+            return
+        
         self.folders.add(folder)
         parentFolder = os.path.dirname(folder)
         self.parents[folder] = parentFolder

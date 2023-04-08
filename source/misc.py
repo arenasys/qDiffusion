@@ -182,6 +182,8 @@ class SyntaxHighlighter(QSyntaxHighlighter):
         hn = QColor("#93d6ff")
         err_bg = QColor("#ffc4c4")
         err = QColor("#ff9393")
+        wild_bg = QColor("#c7ffd2")
+        wild = QColor("#93ffa9")
         field = QColor("#9e9e9e")
 
         embeddings = set()
@@ -195,6 +197,8 @@ class SyntaxHighlighter(QSyntaxHighlighter):
         hns = set()
         if "HN" in self.gui._options:
             hns = set(self.gui._options["HN"])
+
+        wilds = set(self.gui.wildcards._wildcards.keys())
 
         for em in embeddings:
             for s, e  in [m.span() for m in re.finditer(em, text)]:
@@ -214,6 +218,15 @@ class SyntaxHighlighter(QSyntaxHighlighter):
             if m in hns:
                 self.setFormat(s, e-s, hn_bg)
                 self.setFormat(ms, me-ms, hn)
+            else:
+                self.setFormat(s, e-s, err_bg)
+                self.setFormat(ms, me-ms, err)
+
+        for s, e, ms, me in [(*m.span(0), *m.span(1)) for m in re.finditer("__([^\s]+?)__(?!___)", text)]:
+            m = text[ms:me]
+            if m in wilds:
+                self.setFormat(s, e-s, wild_bg)
+                self.setFormat(ms, me-ms, wild)
             else:
                 self.setFormat(s, e-s, err_bg)
                 self.setFormat(ms, me-ms, err)
