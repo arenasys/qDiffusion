@@ -680,3 +680,11 @@ class Basic(QObject):
     @pyqtSlot(list)
     def importParameters(self, params):
         self._parameters.importParameters(params)
+
+    @pyqtSlot(str)
+    def buildModel(self, filename):
+        unet = self._parameters._values.get("UNET")
+        vae = self._parameters._values.get("VAE")
+        clip = self._parameters._values.get("CLIP")
+        request = {"type":"build", "data":{"unet":unet, "vae":vae, "clip":clip, "filename":filename}}
+        self.gui.makeRequest(request)    

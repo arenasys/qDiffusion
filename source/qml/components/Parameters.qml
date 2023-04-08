@@ -14,6 +14,7 @@ Item {
 
     signal generate()
     signal cancel()
+    signal buildModel()
 
     function drop(mimedata) {
         
@@ -315,7 +316,8 @@ Item {
                             SContextMenuItem {
                                 text: "Build model"
                                 onPressed: {
-                                    
+                                    root.buildModel()
+                                    modelsContextMenu.close()
                                 }
                             }
                         }

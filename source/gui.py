@@ -205,6 +205,7 @@ class GUI(QObject):
 
         if response["type"] == "done":
             self.setReady()
+            self.refreshModels()
 
         if response["type"] == "options":
             self._options = response["data"]

@@ -18,6 +18,29 @@ Item {
         parent.releaseFocus()
     }
 
+    SDialog {
+        id: buildDialog
+        title: "Build model"
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        modal: true
+        dim: true
+
+        OTextInput {
+            id: filenameInput
+            width: 290
+            height: 30
+            label: "Filename"
+            value: BASIC.parameters.values.get("UNET") + ".st"
+        }
+
+        width: 300
+        height: 87
+
+        onAccepted: {
+            BASIC.buildModel(filenameInput.value)
+        }
+    }
+
     AdvancedDropArea {
         id: basicDrop
         anchors.fill: parent
@@ -89,6 +112,9 @@ Item {
             }
             onForeverChanged: {
                 BASIC.forever = params.forever
+            }
+            onBuildModel: {
+                buildDialog.open()
             }
             function drop(mimeData) {
                 BASIC.sizeDrop(mimeData)

@@ -89,6 +89,9 @@ class InferenceProcessThread(threading.Thread):
                 elif request["type"] == "upscale":
                     self.wrapper.set(**request["data"])
                     self.wrapper.upscale()
+                elif request["type"] == "build":
+                    self.wrapper.set(**request["data"])
+                    self.wrapper.build()
                 self.requests.task_done()
             except queue.Empty:
                 pass
