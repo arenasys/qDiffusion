@@ -587,10 +587,12 @@ class Parameters(QObject):
             while m := pattern.search(p):
                 s,e = m.span(0)
                 name = m.group(1)
+                p = list(p)
                 if name in wildcards:
-                    p = list(p)
                     p[s:e] = random.SystemRandom().choice(wildcards[name])
-                    p = ''.join(p)
+                else:
+                    p[s:e] = []
+                p = ''.join(p)
             prompts += [p]
         return prompts
         
