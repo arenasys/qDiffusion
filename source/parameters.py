@@ -559,9 +559,13 @@ class Parameters(QObject):
                 self.values.set("hr_eta", self.values.get("eta"))
 
         if found["UNET"] and found["VAE"] and found["CLIP"]:
-            self.values._map["model"] = self.values.get("UNET")
-            self.values.updated.emit("model")            
-
+            self.values.set("model", self.values.get("UNET"))
+        elif found["model"]:
+            model = self.values.get("model")
+            self.values.set("UNET", model)
+            self.values.set("VAE", model)
+            self.values.set("CLIP", model)
+        
         self.updated.emit()
 
         pass
