@@ -211,10 +211,10 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
             if key == self.activeLayer or key == self.floatingLayer:
                 layerImage = QImage(layerImage)
                 layerPainter = QPainter(layerImage)
-                if key == self.activeLayer:
-                    layerPainter.setOpacity(self.activeBrush.opacity)
-                    layerPainter.setCompositionMode(self.activeBrush.mode)
-                    layerPainter.drawImage(0,0,self.getMaskedBuffer())
+                #if key == self.activeLayer:
+                #    layerPainter.setOpacity(self.activeBrush.opacity)
+                #    layerPainter.setCompositionMode(self.activeBrush.mode)
+                #    layerPainter.drawImage(0,0,self.getMaskedBuffer())
                 #if key == self.floatingLayer:
                 #    layerPainter.drawImage(alignQPointF(self.floatingPosition + self.floatingOffset), self.mask.getImage())
                 layerPainter.end()
