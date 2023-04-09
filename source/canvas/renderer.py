@@ -117,11 +117,11 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
     
     def getMaskedBuffer(self):
         buffer = self.buffer.getImage()
-        painter = QPainter()
-        painter.begin(buffer)
-        painter.setCompositionMode(QPainter.CompositionMode_DestinationIn)
-        painter.drawImage(0,0,self.mask.getImage())
-        painter.end()
+        #painter = QPainter()
+        #painter.begin(buffer)
+        #painter.setCompositionMode(QPainter.CompositionMode_DestinationIn)
+        #painter.drawImage(0,0,self.mask.getImage())
+        #painter.end()
         return buffer
 
     def makeCheckpoint(self):
@@ -215,8 +215,8 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
                     layerPainter.setOpacity(self.activeBrush.opacity)
                     layerPainter.setCompositionMode(self.activeBrush.mode)
                     layerPainter.drawImage(0,0,self.getMaskedBuffer())
-                if key == self.floatingLayer:
-                    layerPainter.drawImage(alignQPointF(self.floatingPosition + self.floatingOffset), self.mask.getImage())
+                #if key == self.floatingLayer:
+                #    layerPainter.drawImage(alignQPointF(self.floatingPosition + self.floatingOffset), self.mask.getImage())
                 layerPainter.end()
             
             painter.setOpacity(layer.opacity)
