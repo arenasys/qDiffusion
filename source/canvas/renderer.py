@@ -33,6 +33,10 @@ class CanvasRendererBuffer():
         self.source = None
         self.cached = None
 
+        self.buffer.bind()
+        gl.glClearColor(0, 0, 0, 0)
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+
     def getImage(self):
         if self.cached == None:
             self.cached = self.buffer.toImage()
@@ -266,6 +270,7 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
         for key in self.layersOrder:
             layer = self.layers[key]
             if layer.source:
+                #print("HERE", layer.source)
                 painter = layer.beginPaint()
                 painter.drawImage(0,0,layer.source)
                 layer.endPaint()
