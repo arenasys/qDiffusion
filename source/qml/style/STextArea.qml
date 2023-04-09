@@ -101,7 +101,6 @@ Rectangle {
                         root.tab()
                         break;
                     default:
-                        event.accepted = false
                         break;
                     }
                 } else {
