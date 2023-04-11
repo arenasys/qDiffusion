@@ -10,6 +10,7 @@ import "../../components"
 Item {
     id: root
     property var editing: false
+    property var file: null
     visible: false
 
     signal contextMenu()
@@ -41,6 +42,7 @@ Item {
 
     onTargetChanged: {
         if(target == null) {
+            root.file = null
             root.visible = false
             return
         }
@@ -52,11 +54,13 @@ Item {
             canvas.visible = true
             movable.itemWidth = root.target.linkedWidth
             movable.itemHeight = root.target.linkedHeight
+            root.file = null
         } else {
             canvas.visible = false
             bg.image = root.target.image
             movable.itemWidth = root.target.width
             movable.itemHeight = root.target.height
+            root.file = root.target.file
         }
         movable.reset()
         canvas.update()

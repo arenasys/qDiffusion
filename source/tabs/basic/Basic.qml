@@ -70,6 +70,7 @@ Item {
 
         SContextMenu {
             id: fullContextMenu
+
             SContextMenuItem {
                 text: "Show Parameters"
                 checkable: true
@@ -79,6 +80,55 @@ Item {
                         fullParams.show = checked
                         checked = Qt.binding(function() { return fullParams.show })
                     }
+                }
+            }
+
+            property var output: full.file != ""
+
+            SContextMenuSeparator {
+                visible: fullContextMenu.output
+            }
+
+            SContextMenuItem {
+                id: outputContext
+                visible: fullContextMenu.output
+                text: "Open"
+                onTriggered: {
+                    GALLERY.doOpenImage([full.file])
+                }
+            }
+
+            SContextMenuItem {
+                text: "Visit"
+                visible: fullContextMenu.output
+                onTriggered: {
+                    GALLERY.doOpenFolder([full.file])
+                }
+            }
+
+            SContextMenuSeparator {
+                visible: fullContextMenu.output
+            }
+
+            Sql {
+                id: destinationsSql
+                query: "SELECT name, folder FROM folders WHERE UPPER(name) != UPPER('" + full.file + "');"
+            }
+
+            SContextMenu {
+                id: fullCopyToMenu
+                title: "Copy to"
+                Instantiator {
+                    model: destinationsSql
+                    SContextMenuItem {
+                        visible: fullContextMenu.output
+                        text: sql_name
+                        onTriggered: {
+                            GALLERY.doCopy(sql_folder, [full.file])
+                        }
+                    }
+                    onObjectAdded: fullCopyToMenu.insertItem(index, object)
+                    onObjectRemoved: fullCopyToMenu.removeItem(object)
                 }
             }
         }

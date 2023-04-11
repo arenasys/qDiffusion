@@ -117,5 +117,9 @@ Rectangle {
                 contextMenu.popup()
             }
         }
+
+        Keys.onPressed: {
+            event.accepted = true
+        }
     }
 }
