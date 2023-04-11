@@ -204,23 +204,31 @@ class SyntaxHighlighter(QSyntaxHighlighter):
             for s, e  in [m.span() for m in re.finditer(em, text)]:
                 self.setFormat(s, e-s, emb)
         
-        for s, e, ms, me in [(*m.span(0), *m.span(1)) for m in re.finditer("<lora:([^:>]+)([^>]+)?>", text.lower())]:
+        for s, e, ms, me in [(*m.span(0), *m.span(1)) for m in re.finditer("<@?lora:([^:>]+)([^>]+)?>", text.lower())]:
             m = text[ms:me]
             if m in loras:
                 self.setFormat(s, e-s, lora_bg)
                 self.setFormat(ms, me-ms, lora)
+                if text[s+1] == "@":
+                    self.setFormat(s+1,1,lora)
             else:
                 self.setFormat(s, e-s, err_bg)
                 self.setFormat(ms, me-ms, err)
+                if text[s+1] == "@":
+                    self.setFormat(s+1,1,err)
         
-        for s, e, ms, me in [(*m.span(0), *m.span(1))  for m in re.finditer("<hn:([^:>]+)([^>]+)?>", text.lower())]:
+        for s, e, ms, me in [(*m.span(0), *m.span(1))  for m in re.finditer("<@?hn:([^:>]+)([^>]+)?>", text.lower())]:
             m = text[ms:me]
             if m in hns:
                 self.setFormat(s, e-s, hn_bg)
                 self.setFormat(ms, me-ms, hn)
+                if text[s+1] == "@":
+                    self.setFormat(s+1,1,hn)
             else:
                 self.setFormat(s, e-s, err_bg)
                 self.setFormat(ms, me-ms, err)
+                if text[s+1] == "@":
+                    self.setFormat(s+1,1,err)
 
         for s, e, ms, me in [(*m.span(0), *m.span(1)) for m in re.finditer("__([^\s]+?)__(?!___)", text)]:
             m = text[ms:me]
