@@ -436,8 +436,9 @@ class Parameters(QObject):
         batch_size = int(data['batch_size'])
         batch_size = max(batch_size, len(images), len(masks))
 
-        data['prompt'] = self.parsePrompt(data['prompt'], batch_size)
-        data['negative_prompt'] = self.parsePrompt(data['negative_prompt'], batch_size)
+        pos = self.parsePrompt(data['prompt'], batch_size)
+        neg = self.parsePrompt(data['negative_prompt'], batch_size)
+        data['prompt'] = list(zip(pos, neg))
 
         if data["steps"] == 0 and images:
             request["type"] = "upscale"
@@ -593,6 +594,8 @@ class Parameters(QObject):
                 else:
                     p[s:e] = []
                 p = ''.join(p)
+
+            p = [s.replace('\n','').replace('\r', '').strip() for s in re.split("\sAND\s", p, flags=re.IGNORECASE)]
             prompts += [p]
         return prompts
         
