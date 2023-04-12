@@ -49,20 +49,27 @@ Item {
 
         root.editing = target.role == 2 && !target.empty && target.linked
 
+        var reset = false
+
         if(root.editing) {
             canvas.setupBasic(root.target.image, root.target.linkedImage)
             canvas.visible = true
+            reset = movable.itemWidth != root.target.linkedWidth || movable.itemHeight != root.target.linkedHeight
             movable.itemWidth = root.target.linkedWidth
             movable.itemHeight = root.target.linkedHeight
             root.file = null
         } else {
             canvas.visible = false
             bg.image = root.target.image
+            reset = movable.itemWidth != root.target.width || movable.itemHeight != root.target.height
             movable.itemWidth = root.target.width
             movable.itemHeight = root.target.height
             root.file = root.target.file
         }
-        movable.reset()
+
+        if(reset) {
+            movable.reset()
+        }
         canvas.update()
 
         root.visible = true

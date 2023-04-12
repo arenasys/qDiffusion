@@ -72,7 +72,7 @@ Item {
                 color: COMMON.bg00
                 clip: true
 
-                property var highlight: activeFocus || contextMenu.opened
+                property var highlight: listView.currentIndex == index || activeFocus || contextMenu.opened
 
                 RectangularGlow {
                     anchors.fill: trueFrame
