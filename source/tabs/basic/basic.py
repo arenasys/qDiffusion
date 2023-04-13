@@ -308,26 +308,27 @@ class Basic(QObject):
         self.conn.enableNotifications("outputs")
 
     def buildRequest(self):
+        def encode_image(img):
+            ba = QByteArray()
+            bf = QBuffer(ba)
+            bf.open(QIODevice.WriteOnly)
+            img.save(bf, "PNG")
+            return ba.data()
         images = []
         masks = []
+        areas = []
         if self._inputs:
             for i in self._inputs:
-                img = i._image
-                if img.isNull():
-                    continue
-                    
-                ba = QByteArray()
-                bf = QBuffer(ba)
-                bf.open(QIODevice.WriteOnly)
-                img.save(bf, "PNG")
-                img_data = ba.data()
-
                 if i._role == BasicInputRole.IMAGE:
-                    images += [img_data]
-                if i._role == BasicInputRole.MASK and i._linked:
-                    masks += [img_data]
-
-        request = self._parameters.buildRequest(images, masks)
+                    if not i._image.isNull():
+                        images += [encode_image(i._image)]
+                if i._role == BasicInputRole.MASK:
+                    if not i._image.isNull() and i._linked:
+                        masks += [encode_image(i._image)]
+                if i._role == BasicInputRole.SUBPROMPT:
+                    if not i._image.isNull() and i._areas:
+                        areas += [[encode_image(a) for a in i._areas]]
+        request = self._parameters.buildRequest(images, masks, areas)
         return request
 
     @pyqtSlot()
@@ -736,20 +737,17 @@ class Basic(QObject):
     def setupCanvas(self, wrapper, target):
         canvas = wrapper.canvas
         if target._role == BasicInputRole.MASK:
-            canvas.setupMask(target.image, target.linkedImage, QSize(target.linkedWidth, target.linkedHeight))
+            canvas.setupMask(target.image, QSize(target.linkedWidth, target.linkedHeight))
             return
         if target._role == BasicInputRole.SUBPROMPT:
             if target._linked and target._linked._role == BasicInputRole.IMAGE:
-                bg = target.linkedImage
+                z = target.linkedImage.size()
             else:
                 w,h = self.parameters.values.get("width"),  self.parameters.values.get("height")
-                if not self._bgCache or self._bgCache.width() != w or self._bgCache.height() != h:
-                    self._bgCache = QImage(QSize(int(w),int(h)), QImage.Format_ARGB32_Premultiplied)
-                    self._bgCache.fill(QColor("#505050"))
-                bg = self._bgCache
+                z = QSize(int(w),int(h))
 
             layerCount = len(self._parameters.subprompts)
-            canvas.setupSubprompt(layerCount, target._areas, bg)
+            canvas.setupSubprompt(layerCount, target._areas, z)
     
     @pyqtSlot(CanvasWrapper, BasicInput)
     def syncCanvas(self, wrapper, target):
@@ -758,7 +756,7 @@ class Basic(QObject):
             target.setImageData(canvas.getImage())
             return
         if target._role == BasicInputRole.SUBPROMPT:
-            layers = canvas.getImages()[1:]
+            layers = canvas.getImages()
             if len(layers) <= len(target._areas):
                 target._areas[:len(layers)] = layers
             else:
@@ -770,7 +768,12 @@ class Basic(QObject):
     def syncSubprompt(self, wrapper, active, target):
         canvas = wrapper.canvas
         layerCount = len(self._parameters.subprompts)
-        canvas.syncSubprompt(layerCount, active, target._areas)
+
+        areas = target._areas
+        if len(target._areas) >= layerCount:
+            areas = target._areas[:layerCount]
+
+        canvas.syncSubprompt(layerCount, active, areas)
 
     @pyqtSlot(BasicInput)
     def closeSubprompt(self, target):

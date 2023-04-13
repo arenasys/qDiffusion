@@ -55,6 +55,7 @@ Item {
             BASIC.setupCanvas(canvas.wrapper, root.target)
             root.syncSubprompt()
             canvas.visible = true
+            bg.image = root.target.linkedImage
             reset = movable.itemWidth != root.target.linkedWidth || movable.itemHeight != root.target.linkedHeight
             movable.itemWidth = root.target.linkedWidth
             movable.itemHeight = root.target.linkedHeight
@@ -159,6 +160,8 @@ Item {
             anchors.fill: item
         }
 
+        
+
         ImageDisplay {
             id: bg
             anchors.fill: item
@@ -171,6 +174,7 @@ Item {
             smooth: sourceSize.width*1.1 < width && sourceSize.height*1.1 < height ? false : true
             brush.color: "#ffffff"
             brush.hardness: 99.9
+            opacity: root.target && root.target.linked ? 0.8 : 1.0
 
             onChanged: {
                 root.sync()

@@ -435,7 +435,7 @@ class Parameters(QObject):
          
         self.updated.emit()
 
-    def buildRequest(self, images=[], masks=[]):
+    def buildRequest(self, images=[], masks=[], areas=[]):
         request = {}
         data = {}
 
@@ -444,7 +444,7 @@ class Parameters(QObject):
                 data[k] = v
 
         batch_size = int(data['batch_size'])
-        batch_size = max(batch_size, len(images), len(masks))
+        batch_size = max(batch_size, len(images), len(masks), len(areas))
 
         pos = self.parsePrompt(data['prompt'], batch_size)
         neg = self.parsePrompt(data['negative_prompt'], batch_size)
@@ -463,6 +463,13 @@ class Parameters(QObject):
         else:
             request["type"] = "txt2img"
             del data["mask_blur"]
+
+        if areas:
+            s = len(self.subprompts)
+            for a in range(len(areas)):
+                if len(areas[a]) > s:
+                    areas[a] = areas[a][:s]
+            data["area"] = areas
 
         if len({data["UNET"], data["CLIP"], data["VAE"]}) == 1:
             data["model"] = data["UNET"]
@@ -594,21 +601,21 @@ class Parameters(QObject):
         wildcards = self.gui.wildcards._wildcards
         prompts = []
         pattern = re.compile("__([^\s]+?)__(?!___)")
-
         for i in range(batch_size):
-            p = str(prompt)
-            while m := pattern.search(p):
-                s,e = m.span(0)
-                name = m.group(1)
-                p = list(p)
-                if name in wildcards:
-                    p[s:e] = random.SystemRandom().choice(wildcards[name])
-                else:
-                    p[s:e] = []
-                p = ''.join(p)
-
-            p = self.parseSubprompts(p)
-            prompts += [p]
+            sp = self.parseSubprompts(str(prompt))
+            for j in range(len(sp)):
+                p = sp[j]
+                while m := pattern.search(p):
+                    s,e = m.span(0)
+                    name = m.group(1)
+                    p = list(p)
+                    if name in wildcards:
+                        p[s:e] = random.SystemRandom().choice(wildcards[name])
+                    else:
+                        p[s:e] = []
+                    p = ''.join(p)
+                sp[j] = p
+            prompts += [sp]
         return prompts
     
     def parseSubprompts(self, p):

@@ -623,8 +623,8 @@ class Canvas(QQuickFramebufferObject):
         self.changes.operations.add(CanvasOperation.SET_SELECTION)
         self.changes.reset = True
 
-    @pyqtSlot(QImage, QImage, QSize)
-    def setupMask(self, image, bg, size):
+    @pyqtSlot(QImage, QSize)
+    def setupMask(self, image, size):
         self.setup()
         if image.size() != size:
             image = image.scaled(size, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
@@ -636,12 +636,7 @@ class Canvas(QQuickFramebufferObject):
         self.sourceUpdated.emit()
         self._layers = {}
         self._layersOrder = []
-        if not bg.isNull():
-            self.insertLayer(0, bg, CanvasLayerRole.IMAGE)
-            self._activeLayer = self.insertLayer(1, image, CanvasLayerRole.IMAGE)
-            self._layers[self._activeLayer].opacity = 80
-        else:
-            self._activeLayer = self.insertLayer(0, image, CanvasLayerRole.IMAGE)
+        self._activeLayer = self.insertLayer(0, image, CanvasLayerRole.IMAGE)
         self.layersUpdated.emit()
 
         self._brush.setColor(Qt.white)
@@ -651,22 +646,21 @@ class Canvas(QQuickFramebufferObject):
         self.changes.operations.add(CanvasOperation.SET_SELECTION)
         self.changes.reset = True
 
-    @pyqtSlot(int, list, QImage)
-    def setupSubprompt(self, count, areas, bg):
+    @pyqtSlot(int, list, QSize)
+    def setupSubprompt(self, count, areas, size):
         self.setup()
         for i in range(len(areas)):
-            if areas[i].size() != bg.size():
-                image = areas[i].scaled(bg.size(), Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
-                dx = int((image.width()-bg.width())//2)
-                dy = int((image.height()-bg.height())//2)
-                areas[i] = image.copy(dx, dy, bg.size().width(), bg.size().height())
-
-        self._sourceSize = bg.size()
+            if areas[i].size() != size:
+                image = areas[i].scaled(size, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+                dx = int((image.width()-size.width())//2)
+                dy = int((image.height()-size.height())//2)
+                areas[i] = image.copy(dx, dy, size.width(), size.height())
+        
+        self._sourceSize = size
         self.sourceUpdated.emit()
         self._layers = {}
         self._layersOrder = []
 
-        self.insertLayer(0, QImage(), CanvasLayerRole.IMAGE)
         self.syncSubprompt(count, 0, areas)
 
         self.changes = CanvasChanges()
@@ -684,9 +678,9 @@ class Canvas(QQuickFramebufferObject):
                 dy = int((image.height()-size.height())//2)
                 areas[i] = image.copy(dx, dy, size.width(), size.height())
 
-        layerCount = len(self._layersOrder)-1 
+        layerCount = len(self._layersOrder)
         if count < layerCount:
-            self._layersOrder = self._layersOrder[:count+1]
+            self._layersOrder = self._layersOrder[:count]
         elif count > layerCount:
             for i in range(layerCount, count):
                 if i < len(areas):
@@ -694,15 +688,10 @@ class Canvas(QQuickFramebufferObject):
                 else:
                     self.insertLayer(-1, QImage(), CanvasLayerRole.IMAGE)
         if not count:
-            self._activeLayer = self._layersOrder[0]
-            self._brush.setColor(QColor.fromHsvF(0, 0.0, 0.0, 0.0))
+            self._brush.setColor(Qt.white)
         else:
-            idx = max(0, min(active+1, len(self._layersOrder)-1))
-            self._activeLayer = self._layersOrder[idx]
-            if idx == 0:
-                self._brush.setColor(QColor.fromHsvF(0, 0.0, 0.0, 0.0))
-            else:
-                self._brush.setColor(QColor.fromHsvF((idx-1)/4, 0.7, 0.7, 1.0))
+            self._activeLayer = self._layersOrder[active]
+            self._brush.setColor(QColor.fromHsvF(active/4, 0.7, 0.7, 1.0))
 
     @pyqtSlot(result=bool)
     def forceSync(self):
