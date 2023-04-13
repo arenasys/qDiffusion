@@ -16,8 +16,8 @@ class Update(QThread):
         subprocess.run(["git", "reset", "--hard", "origin/master"], capture_output=True, shell=IS_WIN)
         inf = os.path.join("source", "sd-inference-server")
         if os.path.exists(inf):
-            subprocess.run(["git", "fetch"], capture_output=True, shell=IS_WIN)
-            subprocess.run(["git", "reset", "--hard", "origin/master"], capture_output=True, shell=IS_WIN)
+            subprocess.run(["git", "fetch"], capture_output=True, shell=IS_WIN, cwd=inf)
+            subprocess.run(["git", "reset", "--hard", "origin/master"], capture_output=True, shell=IS_WIN, cwd=inf)
 
 class Settings(QObject):
     updated = pyqtSignal()
