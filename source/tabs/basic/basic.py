@@ -1,6 +1,6 @@
-from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, QObject, QUrl, QMimeData, QByteArray, QBuffer, Qt, QRegExp, QIODevice, QRect
+from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, QObject, QSize, QUrl, QMimeData, QByteArray, QBuffer, Qt, QRegExp, QIODevice, QRect
 from PyQt5.QtQml import qmlRegisterSingletonType
-from PyQt5.QtGui import QImage, QDrag, QPixmap
+from PyQt5.QtGui import QImage, QDrag, QPixmap, QColor
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtSql import QSqlQuery
 from PyQt5.QtNetwork import QNetworkRequest, QNetworkReply
@@ -9,7 +9,8 @@ from enum import Enum
 import parameters
 import re
 from misc import MimeData, SyntaxHighlighter
-from canvas.shared import PILtoQImage, QImagetoPIL
+from canvas.shared import PILtoQImage, QImagetoPIL, CanvasWrapper
+from canvas.canvas import Canvas
 import sql
 import time
 import json
@@ -19,49 +20,58 @@ MIME_BASIC_INPUT = "application/x-qd-basic-input"
 class BasicInputRole(Enum):
     IMAGE = 1
     MASK = 2
+    SUBPROMPT = 3
 
 class BasicInput(QObject):
     updated = pyqtSignal()
     linkedUpdated = pyqtSignal()
     extentUpdated = pyqtSignal()
-    def __init__(self, parent=None, image=QImage(), role=BasicInputRole.IMAGE):
-        super().__init__(parent)
+    def __init__(self, basic, image=QImage(), role=BasicInputRole.IMAGE):
+        super().__init__(basic)
+        self.basic = basic
         self._image = image
         self._role = role
         self._linked = None
-        self._linkedTo = None
         self._dragging = False
         self._extent = QRect()
         self._extentWarning = False
 
-        parent.parameters._values.updated.connect(self.updateExtent)
+        self._areas = []
+
+        basic.parameters._values.updated.connect(self.updateExtent)
 
     def updateImage(self):
-        if self._image and not self._image.isNull() and self._linked and self._linked.image and not self._linked.image.isNull():
-            bg = self._linked.image
-            image = self._image.scaled(bg.size(), Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
-            dx = int((image.width()-bg.width())//2)
-            dy = int((image.height()-bg.height())//2)
-            self._image = image.copy(dx, dy, bg.size().width(), bg.size().height())
+        if self._image and not self._image.isNull():
+            if self._linked and self._linked.image and not self._linked.image.isNull():
+                bg = self._linked.image
+                self.resizeImage(bg.size())
+            elif self._role != BasicInputRole.IMAGE:
+                w,h = self.basic.parameters.values.get("width"),  self.basic.parameters.values.get("height")
+                self.resizeImage(QSize(int(w),int(h)))
+
         self.updateExtent()
         self.updated.emit()
 
+    def resizeImage(self, size):
+        image = self._image.scaled(size, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+        dx = int((image.width()-size.width())//2)
+        dy = int((image.height()-size.height())//2)
+        self._image = image.copy(dx, dy, size.width(), size.height())
+
     def setLinked(self, linked):
-        if self._linked:
-            self._linked.updated.disconnect(self.updateImage)
-            if self._linked._linkedTo == self:
-                self._linked.setLinkedTo(None)
-            
+        prevLinked = self._linked
         self._linked = linked
+        if prevLinked:
+            prevLinked.updated.disconnect(self.updateImage)
+            prevLinked.updateLinked()
         if self._linked:
             self._linked.updated.connect(self.updateImage)
-            self._linked.setLinkedTo(self)
-        
-        self.updateImage()
-        self.linkedUpdated.emit()
+            self._linked.updateLinked()
+        self.updateLinked()
 
-    def setLinkedTo(self, linked):
-        self._linkedTo = linked
+    @pyqtSlot()
+    def updateLinked(self):
+        self.updateImage()
         self.linkedUpdated.emit()
     
     @pyqtProperty(int, notify=updated)
@@ -92,11 +102,14 @@ class BasicInput(QObject):
 
     @pyqtProperty(bool, notify=linkedUpdated)
     def linked(self):
-        return self._linked != None and not self._linked.empty
+        return self._linked != None
     
     @pyqtProperty(bool, notify=linkedUpdated)
     def linkedTo(self):
-        return self._linkedTo != None
+        i = self.basic._inputs.index(self) + 1
+        if i >= len(self.basic._inputs):
+            return False
+        return self.basic._inputs[i]._linked != None
 
     @pyqtProperty(QImage, notify=linkedUpdated)
     def linkedImage(self):
@@ -106,14 +119,14 @@ class BasicInput(QObject):
     
     @pyqtProperty(int, notify=linkedUpdated)
     def linkedWidth(self):
-        if not self._linked:
-            return 0
+        if not self._linked or not self._linked._image.width():
+            return int(self.basic.parameters.values.get("width"))
         return self._linked._image.width()
     
     @pyqtProperty(int, notify=linkedUpdated)
     def linkedHeight(self):
-        if not self._linked:
-            return 0
+        if not self._linked or not self._linked._image.height():
+            return int(self.basic.parameters.values.get("height"))
         return self._linked._image.height()
         
     @pyqtProperty(str, notify=updated)
@@ -137,7 +150,12 @@ class BasicInput(QObject):
 
     @pyqtSlot()
     def setImageCanvas(self):
-        self._image = QImage(self._linked._image.size(), QImage.Format_ARGB32_Premultiplied)
+        w,h = 0,0
+        if self._linked:
+            w,h = self._linked._image.size().width(),  self._linked._image.size().height()
+        if not w or not w:
+            w,h = self.basic.parameters.values.get("width"),  self.basic.parameters.values.get("height")
+        self._image = QImage(QSize(int(w),int(h)), QImage.Format_ARGB32_Premultiplied)
         self._image.fill(0)
         self.updateImage()
 
@@ -275,6 +293,8 @@ class Basic(QObject):
         self._openedIndex = -1
         self._openedArea = ""
 
+        self._bgCache = None
+
         self.updated.connect(self.link)
         self.gui.result.connect(self.result)
         self.gui.reset.connect(self.reset)
@@ -383,12 +403,35 @@ class Basic(QObject):
         self.updated.emit()
 
     @pyqtSlot()
+    def addSubprompt(self):
+        self._inputs += [BasicInput(self, QImage(), BasicInputRole.SUBPROMPT)]
+        self.updated.emit()
+
+    @pyqtSlot()
     def link(self):
         for i in range(len(self._inputs)):
-            if i != 0 and self._inputs[i]._role == BasicInputRole.MASK and self._inputs[i-1]._role == BasicInputRole.IMAGE:
-                self._inputs[i].setLinked(self._inputs[i-1])
-            else:
-                self._inputs[i].setLinked(None)
+            curr = self._inputs[i]
+            if not curr._linked in self._inputs:
+                curr.setLinked(None)
+        for i in range(len(self._inputs)):
+            curr = self._inputs[i]
+            if i == 0 or curr._role == BasicInputRole.IMAGE:
+                continue
+            prev = self._inputs[i-1]
+            if prev._role == BasicInputRole.IMAGE:
+                curr.setLinked(prev)
+                continue
+            if prev._linked:
+                if not any([p._linked == prev._linked and p._role == curr._role and p != curr for p in self._inputs]):
+                    if curr._role == BasicInputRole.MASK and prev._role == BasicInputRole.SUBPROMPT:
+                        curr.setLinked(prev._linked)
+                        continue
+                    elif curr._role == BasicInputRole.SUBPROMPT and prev._role == BasicInputRole.MASK:
+                        curr.setLinked(prev._linked)
+                        continue
+            curr.setLinked(None)
+        for i in range(len(self._inputs)):
+            self._inputs[i].updateLinked()
 
     def moveItem(self, source, destination):
         i = self._inputs.pop(source)
@@ -688,3 +731,49 @@ class Basic(QObject):
         clip = self._parameters._values.get("CLIP")
         request = {"type":"build", "data":{"unet":unet, "vae":vae, "clip":clip, "filename":filename}}
         self.gui.makeRequest(request)    
+
+    @pyqtSlot(CanvasWrapper, BasicInput)
+    def setupCanvas(self, wrapper, target):
+        canvas = wrapper.canvas
+        if target._role == BasicInputRole.MASK:
+            canvas.setupMask(target.image, target.linkedImage, QSize(target.linkedWidth, target.linkedHeight))
+            return
+        if target._role == BasicInputRole.SUBPROMPT:
+            if target._linked and target._linked._role == BasicInputRole.IMAGE:
+                bg = target.linkedImage
+            else:
+                w,h = self.parameters.values.get("width"),  self.parameters.values.get("height")
+                if not self._bgCache or self._bgCache.width() != w or self._bgCache.height() != h:
+                    self._bgCache = QImage(QSize(int(w),int(h)), QImage.Format_ARGB32_Premultiplied)
+                    self._bgCache.fill(QColor("#505050"))
+                bg = self._bgCache
+
+            layerCount = len(self._parameters.subprompts)
+            canvas.setupSubprompt(layerCount, target._areas, bg)
+    
+    @pyqtSlot(CanvasWrapper, BasicInput)
+    def syncCanvas(self, wrapper, target):
+        canvas = wrapper.canvas
+        if target._role == BasicInputRole.MASK:
+            target.setImageData(canvas.getImage())
+            return
+        if target._role == BasicInputRole.SUBPROMPT:
+            layers = canvas.getImages()[1:]
+            if len(layers) <= len(target._areas):
+                target._areas[:len(layers)] = layers
+            else:
+                target._areas = layers
+            im = canvas.getDisplay()
+            target.setImageData(im)
+
+    @pyqtSlot(CanvasWrapper, int, BasicInput)
+    def syncSubprompt(self, wrapper, active, target):
+        canvas = wrapper.canvas
+        layerCount = len(self._parameters.subprompts)
+        canvas.syncSubprompt(layerCount, active, target._areas)
+
+    @pyqtSlot(BasicInput)
+    def closeSubprompt(self, target):
+        layerCount = len(self._parameters.subprompts)
+        if len(target._areas) > layerCount:
+            target._areas = target._areas[:layerCount]

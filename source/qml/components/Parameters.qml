@@ -777,6 +777,15 @@ Item {
                         bindKeyCurrent: "attention"
                         bindKeyModel: "attentions"
                     }
+                    OChoice {
+                        label: "Device"
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "device"
+                        bindKeyModel: "devices"
+                    }
                     
                     OSlider {
                         id: subseedStrInput

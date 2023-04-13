@@ -211,22 +211,16 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
             if not layer.visible:
                 continue
             layerImage = layer.getImage()
-
-            if key == self.activeLayer or key == self.floatingLayer:
-                layerImage = QImage(layerImage)
-                layerPainter = QPainter(layerImage)
-                if key == self.activeLayer:
-                    layerPainter.setOpacity(self.activeBrush.opacity)
-                    layerPainter.setCompositionMode(self.activeBrush.mode)
-                    layerPainter.drawImage(0,0,self.getMaskedBuffer())
-                #if key == self.floatingLayer:
-                #    layerPainter.drawImage(alignQPointF(self.floatingPosition + self.floatingOffset), self.mask.getImage())
-                layerPainter.end()
             
             painter.setOpacity(layer.opacity)
             painter.drawImage(0,0,layerImage)
 
+        painter.setOpacity(self.activeBrush.opacity)
+        painter.setCompositionMode(self.activeBrush.mode)
+        painter.drawImage(0,0,self.getMaskedBuffer())
+
         self.display.endPaint()
+        self.display.getImage()
 
     def renderMask(self):
         if self.mask.size != self.size:
@@ -332,13 +326,28 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
             self.buffer.endPaint()
         
         if CanvasOperation.STROKE in self.changes.operations:
-            painter = self.getLayer(self.activeLayer).beginPaint()
-            painter.setOpacity(self.activeBrush.opacity)
-            painter.setCompositionMode(self.activeBrush.mode)
-            painter.drawImage(0,0,self.getMaskedBuffer())
-            painter.setOpacity(1.0)
-            painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
-            self.getLayer(self.activeLayer).endPaint()
+            if self.activeBrush._mode == QPainter.CompositionMode_DestinationOut:
+                for layer in self.layers:
+                    painter = self.layers[layer].beginPaint()
+                    painter.setOpacity(self.activeBrush.opacity)
+                    painter.setCompositionMode(self.activeBrush.mode)
+                    painter.drawImage(0,0,self.getMaskedBuffer())
+                    painter.setOpacity(1.0)
+                    painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+                    self.layers[layer].endPaint()
+            else:
+                for layer in self.layers:
+                    if layer == self.activeLayer:
+                        mode = self.activeBrush.mode
+                    else:
+                        mode = QPainter.CompositionMode_DestinationOut
+                    painter = self.layers[layer].beginPaint()
+                    painter.setOpacity(self.activeBrush.opacity)
+                    painter.setCompositionMode(mode)
+                    painter.drawImage(0,0,self.getMaskedBuffer())
+                    painter.setOpacity(1.0)
+                    painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+                    self.layers[layer].endPaint()
             
             self.buffer.beginPaint()
             gl.glClearColor(0, 0, 0, 0)

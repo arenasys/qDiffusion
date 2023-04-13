@@ -1,4 +1,4 @@
-from PyQt5.QtCore import pyqtSlot, pyqtProperty, QPointF, QSize
+from PyQt5.QtCore import pyqtSlot, pyqtProperty, QPointF, QSize, QObject
 from PyQt5.QtGui import QImage
 from enum import Enum
 import io
@@ -59,6 +59,11 @@ class CanvasChanges():
         self.operations = set()
 
         self.setup = QSize()
+
+class CanvasWrapper(QObject):
+    def __init__(self, canvas):
+        super().__init__(canvas)
+        self.canvas = canvas
 
 def alignQPointF(point):
     return QPointF(point.toPoint())

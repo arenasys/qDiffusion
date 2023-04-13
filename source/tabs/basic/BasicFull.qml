@@ -47,12 +47,13 @@ Item {
             return
         }
 
-        root.editing = target.role == 2 && !target.empty && target.linked
+        root.editing = target.role != 1 && BASIC.openedArea == "input"
 
         var reset = false
 
         if(root.editing) {
-            canvas.setupBasic(root.target.image, root.target.linkedImage)
+            BASIC.setupCanvas(canvas.wrapper, root.target)
+            root.syncSubprompt()
             canvas.visible = true
             reset = movable.itemWidth != root.target.linkedWidth || movable.itemHeight != root.target.linkedHeight
             movable.itemWidth = root.target.linkedWidth
@@ -67,7 +68,7 @@ Item {
             root.file = root.target.file
         }
 
-        if(reset) {
+        if(reset || !root.visible) {
             movable.reset()
         }
         canvas.update()
@@ -77,7 +78,13 @@ Item {
 
     function sync() {
         if(root.editing) {
-            root.target.setImageData(canvas.getImage())
+            BASIC.syncCanvas(canvas.wrapper, root.target)
+        }
+    }
+
+    function syncSubprompt() {
+        if(root.editing && root.target && root.target.role == 3) {
+            BASIC.syncSubprompt(canvas.wrapper, subpromptColumn.selectedArea, root.target)
         }
     }
 
@@ -295,6 +302,85 @@ Item {
         }
     }
 
+    Rectangle {
+        id: subpromptBar
+        visible: root.target && root.target.role == 3 && BASIC.parameters.subprompts.length > 0
+        width: 40
+        height: subpromptColumn.height+7
+        anchors.verticalCenter: movable.verticalCenter
+        anchors.left: movable.left
+        anchors.leftMargin: -2
+        color: COMMON.bg2
+        ListView {
+            id: subpromptColumn
+            model: BASIC.parameters.subprompts
+            property var selectedArea: 0
+            onModelChanged: {
+                selectedArea = Math.max(0, Math.min(selectedArea, model.length-1))
+            }
+            height: contentHeight
+            width: parent.width
+            delegate: Item {
+                height: width-7
+                width: subpromptBar.width
+                property var color: COMMON.accent(index/4)
+                property var selected: subpromptColumn.selectedArea == index
+                Rectangle {
+                    id: colorRect
+                    color: Qt.lighter(parent.color, selected ? 1.2 : 1)
+                    anchors.fill: parent
+                    anchors.topMargin: 7
+                    anchors.leftMargin: 7
+                    anchors.rightMargin: 7
+                }
+                Rectangle {
+                    anchors.fill: colorRect
+                    border.color: Qt.lighter(parent.color, 0.9 + (selected ? 0.5 : 0))
+                    border.width: 3
+                    color: "transparent"
+                }
+                Rectangle {
+                    anchors.fill: colorRect
+                    border.color: Qt.lighter(parent.color, 1.5 + (selected ? 0.5 : 0))
+                    border.width: 2
+                    color: "transparent"
+                }
+                Rectangle {
+                    anchors.fill: colorRect
+                    border.color: Qt.lighter(parent.color, 1.2 + (selected ? 0.5 : 0))
+                    border.width: 1
+                    color: "transparent"
+                }
+
+                Rectangle {
+                    anchors.fill: colorRect
+                    anchors.margins: 5
+                    color: Qt.lighter(parent.color, selected ? 1.5 : 0.6)
+                }
+
+                MouseArea {
+                    anchors.fill: colorRect
+                    onPressed: {
+                        subpromptColumn.selectedArea = index
+                        root.syncSubprompt()
+                    }
+                }
+
+            }
+        }
+        border.color: COMMON.bg4
+        border.width: 2
+    }
+
+    Connections {
+        target: BASIC.parameters
+        function onSubpromptsChanged(subprompts) {
+            root.syncSubprompt()
+        }
+    }
+
+
+
     Keys.onPressed: {
             event.accepted = true
             switch(event.key) {
@@ -337,6 +423,9 @@ Item {
                 } else {
                     BASIC.delete()
                 }
+                break;
+            case Qt.Key_Alt:
+                movable.reset()
                 break;
             default:
                 event.accepted = false

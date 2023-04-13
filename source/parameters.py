@@ -6,7 +6,7 @@ import random
 import PIL.Image
 import PIL.PngImagePlugin
 
-from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QVariant
+from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QVariant, QSize
 from PyQt5.QtQml import qmlRegisterUncreatableType, qmlRegisterType
 from PyQt5.QtGui import QGuiApplication
 IDX = -1
@@ -318,13 +318,14 @@ class Parameters(QObject):
 
         self.gui.optionsUpdated.connect(self.optionsUpdated)
 
-        self._readonly = ["models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "SR", "LoRAs", "HNs", "LoRA", "HN", "TIs", "TI", "hr_upscalers", "img2img_upscalers", "attentions"]
+        self._readonly = ["models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "SR", "LoRAs", "HNs", "LoRA", "HN", "TIs", "TI", "hr_upscalers", "img2img_upscalers", "attentions", "device", "devices"]
         self._values = VariantMap(self, {"prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7, "strength": 0.75, "seed": -1, "eta": 1.0,
             "hr_factor": 1.0, "hr_strength":  0.7, "hr_sampler": "Euler a", "hr_steps": 25, "hr_eta": 1.0, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "subseed":-1, "subseed_strength": 0.0,
             "model":"", "models":[], "sampler":"Euler a", "samplers":[], "hr_upscaler":"Latent (nearest)", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
             "UNET":"", "UNETs":"", "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[],
-            "attention":"", "attentions":[]})
+            "attention":"", "attentions":[], "device":"", "devices":[]})
         self._values.updating.connect(self.mapsUpdating)
+        self._values.updated.connect(self.onUpdated)
         self._availableNetworks = []
         self._activeNetworks = []
 
@@ -380,6 +381,10 @@ class Parameters(QObject):
                 if val == prev:
                     self._values.set(dst, curr)
 
+        self.updated.emit()
+
+    @pyqtSlot(str)
+    def onUpdated(self, key):
         self.updated.emit()
 
     @pyqtSlot()
@@ -495,6 +500,8 @@ class Parameters(QObject):
             del data["subseed"]
         del data["subseed_strength"]
 
+        data["device_name"] = self._values._map["device"]
+
         if request["type"] == "upscale":
             for k in list(data.keys()):
                 if not k in {"img2img_upscaler", "width", "height", "image", "mask", "mask_blur", "padding"}:
@@ -595,9 +602,20 @@ class Parameters(QObject):
                     p[s:e] = []
                 p = ''.join(p)
 
-            p = [s.replace('\n','').replace('\r', '').strip() for s in re.split("\sAND\s", p, flags=re.IGNORECASE)]
+            p = self.parseSubprompts(p)
             prompts += [p]
         return prompts
+    
+    def parseSubprompts(self, p):
+        return [s.replace('\n','').replace('\r', '').strip() for s in re.split("\sAND\s", p + " ", flags=re.IGNORECASE)]
+    
+    @pyqtProperty(list, notify=updated)
+    def subprompts(self):
+        p = self._values.get("prompt")
+        p = self.parseSubprompts(p)
+        if len(p) <= 1:
+            return []
+        return p[1:]
         
 def registerTypes():
     qmlRegisterUncreatableType(Parameters, "gui", 1, 0, "ParametersMap", "Not a QML type")

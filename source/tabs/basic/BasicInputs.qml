@@ -174,7 +174,7 @@ Item {
 
                         SText {
                             id: roleLabel
-                            text: ["", "Image", "Mask"][modelData.role]
+                            text: ["", "Image", "Mask", "Subprompts"][modelData.role]
                             anchors.top: parent.top
                             anchors.left: parent.left
                             leftPadding: 3
@@ -239,7 +239,9 @@ Item {
                     }
 
                     onDoubleClicked: {
-                        BASIC.open(index, "input")
+                        if(!modelData.empty) {
+                            BASIC.open(index, "input")
+                        }
                     }
 
                     onPositionChanged: {
@@ -280,6 +282,12 @@ Item {
                                     modelData.role = 2
                                 }
                             }
+                            /*SContextMenuItem {
+                                text: "Subprompt"
+                                onPressed: {
+                                    modelData.role = 3
+                                }
+                            }*/
                         }
                     }
                 }
@@ -302,7 +310,7 @@ Item {
                     }
 
                     SIconButton {
-                        visible: modelData.empty && modelData.role == 2
+                        visible: modelData.empty && modelData.role != 1
                         id: paintButton
                         icon: "qrc:/icons/paint.svg"
                         onPressed: {
@@ -477,6 +485,13 @@ Item {
                             text: "Mask"
                             onPressed: {
                                 BASIC.addMask()
+                                addContextMenu.close()
+                            }
+                        }
+                        SContextMenuItem {
+                            text: "Subprompts"
+                            onPressed: {
+                                BASIC.addSubprompt()
                                 addContextMenu.close()
                             }
                         }

@@ -463,6 +463,8 @@ class Canvas(QQuickFramebufferObject):
 
         self._setup = True
 
+        self._display = None
+
         self.sourceUpdated.emit()
         self.layersUpdated.emit()
         self.toolUpdated.emit()
@@ -490,6 +492,9 @@ class Canvas(QQuickFramebufferObject):
             self._setup = False
             return False
 
+        if renderer.changed or not self._display:
+            self._display = renderer.display.getImage()
+
         if renderer.changed:
             self.changed.emit()
             renderer.changed = False
@@ -511,6 +516,8 @@ class Canvas(QQuickFramebufferObject):
             self._selection.setVisible(self._moveOffset.manhattanLength() == 0)
 
     def synchronizeLayers(self, renderer):
+        if renderer.layersOrder != self._layersOrder:
+            renderer.changed = True
         renderer.layersOrder = self._layersOrder
         for key in renderer.layersOrder:
             if not key in renderer.layers:
@@ -554,7 +561,10 @@ class Canvas(QQuickFramebufferObject):
         layer = CanvasLayer(f"{prefix} {idx}", self._sourceSize, role, self)
         layer.setSource(source)
         self._layers[layer.key] = layer
-        self._layersOrder.insert(index, layer.key)
+        if index == -1:
+            self._layersOrder.append(layer.key)
+        else:
+            self._layersOrder.insert(index, layer.key)
         self.changes.operations.add(CanvasOperation.LOAD)
         self.layersUpdated.emit()
         return layer.key
@@ -613,14 +623,14 @@ class Canvas(QQuickFramebufferObject):
         self.changes.operations.add(CanvasOperation.SET_SELECTION)
         self.changes.reset = True
 
-    @pyqtSlot(QImage, QImage)
-    def setupBasic(self, image, bg):
+    @pyqtSlot(QImage, QImage, QSize)
+    def setupMask(self, image, bg, size):
         self.setup()
-        if not bg.isNull() and image.size() != bg.size():
-            image = image.scaled(bg.size(), Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
-            dx = int((image.width()-bg.width())//2)
-            dy = int((image.height()-bg.height())//2)
-            image = image.copy(dx, dy, bg.size().width(), bg.size().height())
+        if image.size() != size:
+            image = image.scaled(size, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+            dx = int((image.width()-size.width())//2)
+            dy = int((image.height()-size.height())//2)
+            image = image.copy(dx, dy, size.width(), size.height())
 
         self._sourceSize = image.size()
         self.sourceUpdated.emit()
@@ -634,10 +644,65 @@ class Canvas(QQuickFramebufferObject):
             self._activeLayer = self.insertLayer(0, image, CanvasLayerRole.IMAGE)
         self.layersUpdated.emit()
 
+        self._brush.setColor(Qt.white)
+
         self.changes = CanvasChanges()
         self.changes.operations.add(CanvasOperation.LOAD)
         self.changes.operations.add(CanvasOperation.SET_SELECTION)
         self.changes.reset = True
+
+    @pyqtSlot(int, list, QImage)
+    def setupSubprompt(self, count, areas, bg):
+        self.setup()
+        for i in range(len(areas)):
+            if areas[i].size() != bg.size():
+                image = areas[i].scaled(bg.size(), Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+                dx = int((image.width()-bg.width())//2)
+                dy = int((image.height()-bg.height())//2)
+                areas[i] = image.copy(dx, dy, bg.size().width(), bg.size().height())
+
+        self._sourceSize = bg.size()
+        self.sourceUpdated.emit()
+        self._layers = {}
+        self._layersOrder = []
+
+        self.insertLayer(0, QImage(), CanvasLayerRole.IMAGE)
+        self.syncSubprompt(count, 0, areas)
+
+        self.changes = CanvasChanges()
+        self.changes.operations.add(CanvasOperation.LOAD)
+        self.changes.operations.add(CanvasOperation.SET_SELECTION)
+        self.changes.reset = True
+
+    @pyqtSlot(int, int, list)
+    def syncSubprompt(self, count, active, areas):
+        size = self._sourceSize
+        for i in range(len(areas)):
+            if areas[i].size() != size:
+                image = areas[i].scaled(size, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+                dx = int((image.width()-size.width())//2)
+                dy = int((image.height()-size.height())//2)
+                areas[i] = image.copy(dx, dy, size.width(), size.height())
+
+        layerCount = len(self._layersOrder)-1 
+        if count < layerCount:
+            self._layersOrder = self._layersOrder[:count+1]
+        elif count > layerCount:
+            for i in range(layerCount, count):
+                if i < len(areas):
+                    self.insertLayer(-1, areas[i], CanvasLayerRole.IMAGE)
+                else:
+                    self.insertLayer(-1, QImage(), CanvasLayerRole.IMAGE)
+        if not count:
+            self._activeLayer = self._layersOrder[0]
+            self._brush.setColor(QColor.fromHsvF(0, 0.0, 0.0, 0.0))
+        else:
+            idx = max(0, min(active+1, len(self._layersOrder)-1))
+            self._activeLayer = self._layersOrder[idx]
+            if idx == 0:
+                self._brush.setColor(QColor.fromHsvF(0, 0.0, 0.0, 0.0))
+            else:
+                self._brush.setColor(QColor.fromHsvF((idx-1)/4, 0.7, 0.7, 1.0))
 
     @pyqtSlot(result=bool)
     def forceSync(self):
@@ -866,6 +931,18 @@ class Canvas(QQuickFramebufferObject):
     @pyqtSlot(result=QImage)
     def getImage(self):
         return self._layers[self._activeLayer].image
+    
+    @pyqtSlot(result=list)
+    def getImages(self):
+        return [self._layers[i].image for i in self._layersOrder]
+    
+    @pyqtSlot(result=QImage)
+    def getDisplay(self):
+        return self._display
+    
+    @pyqtProperty(CanvasWrapper, notify=sourceUpdated)
+    def wrapper(self):
+        return CanvasWrapper(self)
 
 def registerTypes():
     qmlRegisterType(Canvas, "gui", 1, 0, "AdvancedCanvas")
@@ -873,3 +950,4 @@ def registerTypes():
     qmlRegisterUncreatableType(CanvasSelect, "gui", 1, 0, "CanvasBrush", "Not a QML type")
     qmlRegisterUncreatableType(CanvasLayer, "gui", 1, 0, "CanvasLayer", "Not a QML type")
     qmlRegisterUncreatableType(CanvasSelection, "gui", 1, 0, "CanvasSelection", "Not a QML type")
+    qmlRegisterUncreatableType(CanvasWrapper, "gui", 1, 0, "CanvasWrapper", "Not a QML type")

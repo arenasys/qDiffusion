@@ -60,8 +60,6 @@ class InferenceProcessThread(threading.Thread):
         import torch
         import attention, storage, wrapper
 
-        attention.use_optimized_attention()
-
         model_storage = storage.ModelStorage(model_directory, torch.float16, torch.float32)
         self.wrapper = wrapper.GenerationParameters(model_storage, torch.device("cuda"))
         self.wrapper.callback = self.onResponse
