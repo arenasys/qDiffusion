@@ -761,7 +761,7 @@ Item {
                         bindKey: "batch_size"
 
                         minValue: 1
-                        maxValue: 32
+                        maxValue: 8
                         precValue: 0
                         incValue: 1
                         snapValue: 2

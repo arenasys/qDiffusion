@@ -444,7 +444,7 @@ class Parameters(QObject):
                 data[k] = v
 
         batch_size = int(data['batch_size'])
-        batch_size = max(batch_size, len(images), len(masks), len(areas))
+        batch_size = max(batch_size, len(images), len(masks))
 
         pos = self.parsePrompt(data['prompt'], batch_size)
         neg = self.parsePrompt(data['negative_prompt'], batch_size)
