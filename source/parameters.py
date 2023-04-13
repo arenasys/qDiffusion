@@ -427,6 +427,11 @@ class Parameters(QObject):
 
         if self._values.get("hr_upscaler") not in self._values.get("hr_upscalers"):
             self._values.set("hr_upscaler", "Latent (nearest)")
+
+        pref_device = self.gui.config.get("device")
+        devices = self._values.get("devices")
+        if pref_device and pref_device in devices:
+            self._values.set("device", pref_device)
          
         self.updated.emit()
 

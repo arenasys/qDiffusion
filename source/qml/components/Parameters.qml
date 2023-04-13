@@ -777,6 +777,7 @@ Item {
                         bindKeyCurrent: "attention"
                         bindKeyModel: "attentions"
                     }
+
                     OChoice {
                         label: "Device"
                         width: parent.width
@@ -785,6 +786,10 @@ Item {
                         bindMap: root.binding.values
                         bindKeyCurrent: "device"
                         bindKeyModel: "devices"
+
+                        onSelected: {
+                            GUI.config.set("device", value)
+                        }
                     }
                     
                     OSlider {
