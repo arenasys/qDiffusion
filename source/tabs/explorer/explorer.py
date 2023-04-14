@@ -87,19 +87,21 @@ class Explorer(QObject):
     @pyqtSlot(misc.MimeData, str)
     def set(self, mimedata, file):
         mimedata = mimedata.mimeData
+        image = None
         if mimedata.hasImage():
             image = mimedata.imageData()
             if image and not image.isNull():
                 image.save(file)
-                self.gui.thumbnails.remove(file)
-                return
 
         for url in mimedata.urls():
             if url.isLocalFile():
                 image = QImage(url.toLocalFile())
-                image.save(file)
-                self.gui.thumbnails.remove(file)
-                return
+                break
+        
+        if image:
+            os.makedirs(os.path.dirname(file), exist_ok=True)
+            image.save(file)
+            self.gui.thumbnails.remove(file)
             
     @pyqtSlot(str)
     def clear(self, file):
