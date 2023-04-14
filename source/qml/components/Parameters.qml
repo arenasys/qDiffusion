@@ -16,7 +16,11 @@ Item {
     signal cancel()
     signal buildModel()
 
-    function drop(mimedata) {
+    function sizeDrop(mimedata) {
+        
+    }
+
+    function seedDrop(mimedata) {
         
     }
 
@@ -158,7 +162,7 @@ Item {
                             anchors.fill: parent
 
                             onDropped: {
-                                root.drop(mimeData)
+                                root.sizeDrop(mimeData)
                             }
                         }
                     }
@@ -182,7 +186,7 @@ Item {
                             anchors.fill: parent
 
                             onDropped: {
-                                root.drop(mimeData)
+                                root.sizeDrop(mimeData)
                             }
                         }
                     }
@@ -230,6 +234,14 @@ Item {
                         validator: IntValidator { 
                             bottom: -1
                             top: 2147483646
+                        }
+
+                        AdvancedDropArea {
+                            anchors.fill: parent
+
+                            onDropped: {
+                                root.seedDrop(mimeData)
+                            }
                         }
                     }
                 }

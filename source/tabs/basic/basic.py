@@ -504,6 +504,21 @@ class Basic(QObject):
         if width and height:
             self._parameters._values.set("width", width)
             self._parameters._values.set("height", height)
+
+    @pyqtSlot(MimeData)
+    def seedDrop(self, mimeData):
+        mimedata = mimeData.mimeData
+        for url in mimedata.urls():
+            if url.isLocalFile():
+                image = QImage(url.toLocalFile())
+                self.pastedImage.emit(image)
+                params = image.text("parameters")
+                if params:
+                    try:
+                        seed = parameters.parse_parameters(params)["seed"]
+                        self._parameters._values.set("seed", int(seed))
+                    except Exception:
+                        pass
             
     @pyqtSlot(int)
     def deleteInput(self, index):

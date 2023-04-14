@@ -90,8 +90,7 @@ class Deleter(QThread):
         self.files = files
         self.gui = gui
     def run(self):
-        for f in self.files:
-            send2trash.send2trash(f)
+        send2trash.send2trash(self.files)
         self.gui.thumbnails.removeAll(self.files)
 
 class Gallery(QObject):

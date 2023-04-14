@@ -168,8 +168,11 @@ Item {
             onBuildModel: {
                 buildDialog.open()
             }
-            function drop(mimeData) {
+            function sizeDrop(mimeData) {
                 BASIC.sizeDrop(mimeData)
+            }
+            function seedDrop(mimeData) {
+                BASIC.seedDrop(mimeData)
             }
         }
     }
