@@ -9,6 +9,7 @@ Item {
     property var active: false
 
     signal pressed()
+    
     width: 150
     height: 35
 
@@ -41,6 +42,23 @@ Item {
             font.pointSize: 10.8
             opacity: active ? 1 : 0.7
             color: COMMON.fg1
+        }
+
+        DropArea {
+            anchors.fill: parent
+            Timer {
+                id: dragTimer
+                interval: 200
+                onTriggered: {
+                    root.pressed()
+                }
+            }
+            onEntered: {
+                dragTimer.start()
+            }
+            onExited: {
+                dragTimer.stop()
+            }
         }
     }
 }

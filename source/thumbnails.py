@@ -20,39 +20,42 @@ def get_thumbnail(file, size, quality):
 
 class ThumbnailStorage(QObject):
     instance = None
-    def __init__(self, size, quality, parent=None):
+    def __init__(self, size, big_size, quality, parent=None):
         super().__init__(parent)
-        self.cache = {}
+        self.cache = {size: {}, big_size: {}}
         self.guard = QMutex()
         ThumbnailStorage.instance = self
 
         self.async_provider = AsyncThumbnailProvider(size, quality)
         self.sync_provider = SyncThumbnailProvider(size, quality)
+        self.big_provider = AsyncThumbnailProvider(big_size, quality)
 
-    def get(self, file):
+    def get(self, file, size):
         self.guard.lock()
-        image = self.cache.get(file, None)
+        image = self.cache[size].get(file, None)
         self.guard.unlock()
         return image
-    def put(self, file, image):
+    def put(self, file, image, size):
         self.guard.lock()
-        self.cache[file] = image
+        self.cache[size][file] = image
         self.guard.unlock()
-    def has(self, file):
+    def has(self, file, size):
         self.guard.lock()
-        out = file in self.cache
+        out = file in self.cache[size]
         self.guard.unlock()
         return out
     def remove(self, file):
         self.guard.lock()
-        if file in self.cache:
-            del self.cache[file]
+        for size in self.cache:
+            if file in self.cache[size]:
+                del self.cache[size][file]
         self.guard.unlock()
     def removeAll(self, files):
         self.guard.lock()
-        for file in files:
-            if file in self.cache:
-                del self.cache[file]
+        for size in self.cache:
+            for file in files:
+                if file in self.cache[size]:
+                    del self.cache[size][file]
         self.guard.unlock()
 
 class ThumbnailResponseRunnableSignals(QObject):
@@ -70,7 +73,7 @@ class ThumbnailResponseRunnable(QRunnable):
     def run(self):
         try:
             blob = get_thumbnail(self.file, self.size, self.quality)
-            ThumbnailStorage.instance.put(self.file, blob)
+            ThumbnailStorage.instance.put(self.file, blob, self.size)
             self.image = QImage.fromData(QByteArray(blob), "JPG")
         except Exception as e:
             #print(e)
@@ -81,7 +84,7 @@ class ThumbnailResponseRunnable(QRunnable):
 class ThumbnailResponse(QQuickImageResponse):
     def __init__(self, file, pool, size, quality):
         super().__init__()
-        blob = ThumbnailStorage.instance.get(file)
+        blob = ThumbnailStorage.instance.get(file, size)
         if not blob:
             runnable = ThumbnailResponseRunnable(file, size, quality)
             runnable.signals.done.connect(self.onDone)
@@ -119,10 +122,10 @@ class SyncThumbnailProvider(QQuickImageProvider):
     def requestImage(self, path, size):
         file = QUrl(path).path()
         try:
-            blob = ThumbnailStorage.instance.get(file)
+            blob = ThumbnailStorage.instance.get(file, self.size)
             if not blob:
                 blob = get_thumbnail(file, self.size, self.quality)
-                ThumbnailStorage.instance.put(file, blob)
+                ThumbnailStorage.instance.put(file, blob, self.size)
 
             image = QImage.fromData(QByteArray(blob), "JPG")
             return image, image.size()

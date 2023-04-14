@@ -3,66 +3,30 @@ import QtQuick.Controls 2.15
 
 import gui 1.0
 
-BusyIndicator {
-    id: control
-    implicitWidth: 64
-    implicitHeight: 64
+Item {
+    id: root
+    property var size: Math.max(root.width, root.height) / 4
+    property var running
+    visible: running
 
-    contentItem: Item {
-        implicitWidth: control.width
-        implicitHeight: control.width
+    Image {
+        opacity: 0.5
+        id: spinner
+        source: "qrc:/icons/loading.svg"
+        width: root.size
+        height: root.size
+        sourceSize: Qt.size(width, height)
+        anchors.centerIn: parent
+        smooth: true
+        antialiasing: true   
+    }
 
-        Item {
-            id: item
-            x: parent.width / 2 - control.width/2
-            y: parent.height / 2 - control.width/2
-            width: control.width
-            height: control.width
-            opacity: control.running ? 1 : 0
-
-            Behavior on opacity {
-                OpacityAnimator {
-                    duration: 250
-                }
-            }
-
-            RotationAnimator {
-                target: item
-                running: control.visible && control.running
-                from: 0
-                to: 360
-                loops: Animation.Infinite
-                duration: 1250
-            }
-
-            Repeater {
-                id: repeater
-                model: 6
-
-                Rectangle {
-                    id: delegate
-                    x: item.width / 2 - width / 2
-                    y: item.height / 2 - height / 2
-                    implicitWidth: control.width/8
-                    implicitHeight: control.width/8
-                    radius: 5
-                    color: COMMON.fg0
-                    opacity: 0.5
-
-                    required property int index
-
-                    transform: [
-                        Translate {
-                            y: -Math.min(item.width, item.height) * 0.5 + 5
-                        },
-                        Rotation {
-                            angle: delegate.index / repeater.count * 360
-                            origin.x: control.width/12
-                            origin.y: control.width/12
-                        }
-                    ]
-                }
-            }
-        }
+    RotationAnimator {
+        target: spinner
+        loops: Animation.Infinite
+        from: 0
+        to: 360
+        duration: 1000
+        running: true
     }
 }

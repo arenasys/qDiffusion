@@ -7,7 +7,7 @@ import bson
 import platform
 IS_WIN = platform.system() == 'Windows'
 
-from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent, QMimeData, QUrl
+from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent, QMimeData, QUrl, QSize
 from PyQt5.QtQuick import QQuickItem, QQuickPaintedItem
 from PyQt5.QtGui import QImage, QColor, QDrag
 from PyQt5.QtQml import qmlRegisterType
@@ -57,7 +57,7 @@ class GUI(QObject):
         super().__init__(parent)
         self.db = sql.Database(self)
         self.watcher = filesystem.Watcher()
-        self.thumbnails = thumbnails.ThumbnailStorage((256, 256), 75, self)
+        self.thumbnails = thumbnails.ThumbnailStorage((256,256),(640, 640),75, self)
         self.network = QNetworkAccessManager(self)
         self.requestProgress = 0.0
         self.tabs = []
@@ -120,7 +120,7 @@ class GUI(QObject):
 
     @pyqtSlot(str, result=bool)
     def isCached(self, file):
-        return self.thumbnails.has(file)
+        return self.thumbnails.has(file, (256,256))
     
     @pyqtProperty('QString', notify=statusUpdated)
     def statusText(self):
@@ -257,7 +257,8 @@ class GUI(QObject):
     @pyqtSlot(str, int)
     def onFolderChanged(self, folder, total):
         if folder in self._modelFolders:
-            self.refreshModels()
+            if self._statusMode != StatusMode.STARTING:
+                self.refreshModels()
             return
 
     @pyqtSlot()

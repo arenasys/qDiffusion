@@ -25,6 +25,7 @@ ApplicationWindow {
     }
 
     RotationAnimator {
+        loops: Animation.Infinite
         target: spinner
         from: 0
         to: 360

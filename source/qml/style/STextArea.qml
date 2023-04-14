@@ -51,6 +51,7 @@ Rectangle {
         contentWidth: width
         boundsBehavior: Flickable.StopAtBounds
         clip: true
+        interactive: false
 
         ScrollBar.vertical: SScrollBarV {
             id: scrollBar
@@ -59,6 +60,7 @@ Rectangle {
             anchors.right: control.right
             anchors.bottom: control.bottom
             policy: control.height >= control.contentHeight ? ScrollBar.AlwaysOff : ScrollBar.AlwaysOn
+            stepSize: 1/Math.ceil(textArea.contentHeight/textArea.font.pixelSize)
         }
 
         TextArea {
@@ -115,6 +117,13 @@ Rectangle {
             acceptedButtons: Qt.RightButton
             onPressed: {
                 contextMenu.popup()
+            }
+            onWheel: {
+                if(wheel.angleDelta.y < 0) {
+                    scrollBar.increase()
+                } else {
+                    scrollBar.decrease()
+                }
             }
         }
 

@@ -413,6 +413,7 @@ def start(engine, app):
 
     engine.addImageProvider("sync", backend.thumbnails.sync_provider)
     engine.addImageProvider("async", backend.thumbnails.async_provider)
+    engine.addImageProvider("big", backend.thumbnails.big_provider)
 
     qmlRegisterSingletonType(gui.GUI, "gui", 1, 0, "GUI", lambda qml, js: backend)
     

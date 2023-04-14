@@ -33,9 +33,7 @@ Item {
     }
 
     LoadingSpinner {
-        height: thumb.height/4
-        width: thumb.width/4
-        anchors.centerIn: thumb
+        anchors.fill: thumb
         running: img.status !== Image.Ready
     }
 

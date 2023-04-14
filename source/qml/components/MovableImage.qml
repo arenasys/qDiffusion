@@ -24,9 +24,7 @@ MovableItem {
     }
 
     LoadingSpinner {
-        height: thumb.height/4
-        width: thumb.width/4
-        anchors.centerIn: root
+        anchors.fill: thumb
         running: thumb.status !== Image.Ready
     }
 

@@ -83,11 +83,55 @@ Item {
         anchors.left: divider.right
         anchors.right: parent.right
         color: COMMON.bg00
+        clip: true
 
         StackLayout {
             id: modelsStack
+            currentIndex: 0
             anchors.fill: parent
-            
+
+            ModelGrid {
+                mode: "checkpoint"
+            }
+            ModelGrid {
+                mode: "component"
+            }
+            ModelGrid {
+                mode: "lora"
+            }
+            ModelGrid {
+                mode: "hypernet"
+            }
+            ModelGrid {
+                mode: "embedding"
+            }
+            ModelGrid {
+                mode: "wildcard"
+            }
+        }
+    }
+
+    Keys.onPressed: {
+        var current = modelsStack.children[modelsStack.currentIndex]
+        event.accepted = true
+        if(event.modifiers & Qt.ControlModifier) {
+            switch(event.key) {
+            case Qt.Key_Minus:
+                if(current.cellSize > 150) {
+                    current.cellSize -= 100
+                }
+                break;
+            case Qt.Key_Equal:
+                if(current.cellSize < 450) {
+                    current.cellSize += 100
+                }
+                break;
+            default:
+                event.accepted = false
+                break;
+            }
+        } else {
+            event.accepted = false
         }
     }
 }
