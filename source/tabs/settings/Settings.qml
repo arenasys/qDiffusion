@@ -19,14 +19,14 @@ Item {
         width: 150
         height: parent.height
 
-        SettingsButton {
+        SColumnButton {
             label: "Remote"
             active: settingsStack.currentIndex == 0
             onPressed: {
                 settingsStack.currentIndex = 0
             }
         }
-        SettingsButton {
+        SColumnButton {
             label: "Program"
             active: settingsStack.currentIndex == 1
             onPressed: {

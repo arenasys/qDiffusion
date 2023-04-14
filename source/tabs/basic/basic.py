@@ -289,6 +289,7 @@ class Basic(QObject):
         self._links = {}
         self._ids = []
         self._forever = False
+        self._remaining = 0
 
         self._openedIndex = -1
         self._openedArea = ""
@@ -334,6 +335,11 @@ class Basic(QObject):
     @pyqtSlot()
     def generate(self):
         if not self._ids:
+            if self._remaining == 0:
+                self._remaining = self._parameters._values.get("batch_count")
+                if self._remaining == 1:
+                    self._remaining = 0
+                self.updated.emit()
             request = self.buildRequest()
             self._ids += [self.gui.makeRequest(request)]
 
@@ -341,6 +347,7 @@ class Basic(QObject):
     def result(self, id):
         if not id in self._ids:
             return
+        
         self._ids.remove(id)
         
         id = (time.time_ns() // 1000000) % (2**31 - 1)
@@ -355,8 +362,11 @@ class Basic(QObject):
             q.bindValue(":id", id)
             self.conn.doQuery(q)
             id += 1
-        if self._forever:
+
+        self._remaining = max(0, self._remaining-1)
+        if self._remaining > 0 or self._forever:
             self.generate()
+
         self.updated.emit()
         self.results.emit()
         if sticky:
@@ -369,7 +379,9 @@ class Basic(QObject):
     @pyqtSlot()
     def cancel(self):
         if self._ids:
+            self._remaining = 0
             self.gui.cancelRequest(self._ids.pop())
+            self.updated.emit()
 
     @pyqtProperty(bool, notify=updated)
     def forever(self):
@@ -379,6 +391,10 @@ class Basic(QObject):
     def forever(self, forever):
         self._forever = forever
         self.updated.emit()
+
+    @pyqtProperty(int, notify=updated)
+    def remaining(self):
+        return int(self._remaining)
 
     @pyqtProperty(parameters.Parameters, notify=updated)
     def parameters(self):

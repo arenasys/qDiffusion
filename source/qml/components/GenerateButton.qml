@@ -10,6 +10,7 @@ Rectangle {
     property var working: false
     property var progress: -1
     property var info: ""
+    property var remaining: 0
 
 
     property var hue: 0.0
@@ -114,6 +115,28 @@ Rectangle {
         opacity: genWorking.opacity
         antialiasing: true
         anchors.verticalCenter: parent.verticalCenter
+    }
+
+    Rectangle {
+        visible: remainingLabel.visible
+        anchors.fill: remainingLabel
+        width: 15
+        height: 15
+        color: COMMON.bg2
+        border.color: parent.color
+        border.width: 2
+    }
+
+    SText {
+        visible: root.remaining >= 1
+        id: remainingLabel
+        anchors.top: parent.top
+        anchors.right: parent.right
+        text: root.remaining
+        font.pointSize: 9
+        font.bold: true
+        rightPadding: 5
+        leftPadding: 3
     }
 
     Rectangle {

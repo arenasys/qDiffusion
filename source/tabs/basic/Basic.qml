@@ -154,6 +154,8 @@ Item {
             anchors.fill: parent
             binding: BASIC.parameters
 
+            remaining: BASIC.remaining
+
             onGenerate: {
                 BASIC.generate()
             }

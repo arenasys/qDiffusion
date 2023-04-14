@@ -21,6 +21,7 @@ Item {
     }
 
     property var forever: false
+    property var remaining: 0
 
     property var binding
 
@@ -57,11 +58,11 @@ Item {
                 }
             }
 
-
             progress: -1
             working: false
             disabled: GUI.statusMode == 0 || GUI.statusMode == 3
             info: GUI.statusInfo
+            remaining: root.remaining
 
             onPressed: {
                 if(GUI.statusMode == 1) {
@@ -753,6 +754,22 @@ Item {
                     }
 
                     OSlider {
+                        label: "Batch Count"
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKey: "batch_count"
+
+                        minValue: 1
+                        maxValue: 16
+                        precValue: 0
+                        incValue: 1
+                        snapValue: 1
+                        bounded: false
+                    }
+
+                    OSlider {
                         label: "Batch Size"
                         width: parent.width
                         height: 30
@@ -764,7 +781,7 @@ Item {
                         maxValue: 8
                         precValue: 0
                         incValue: 1
-                        snapValue: 2
+                        snapValue: 1
                         bounded: false
                     }
 

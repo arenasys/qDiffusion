@@ -7,7 +7,8 @@ class Editor(QObject):
     updated = pyqtSignal()
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.priority = 1
+        self.priority = 4
+        self.hidden = True
         self.name = "Editor"
         self._parameters = parameters.Parameters(parent)
         qmlRegisterSingletonType(Editor, "gui", 1, 0, "EDITOR", lambda qml, js: self)

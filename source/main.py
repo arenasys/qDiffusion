@@ -83,6 +83,8 @@ def loadTabs(app, backend):
         tab_module = importlib.import_module(f"tabs.{tab_name}.{tab_name}")
         tab_class = getattr(tab_module, tab_name_c)
         tab_instance = tab_class(parent=app)
+        if getattr(tab_instance, "hidden", False):
+            continue
         tab_instance.source = f"qrc:/tabs/{tab_name}/{tab_name_c}.qml"
         tabs += [tab_instance]
     for tab in tabs:
