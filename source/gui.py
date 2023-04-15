@@ -206,6 +206,7 @@ class GUI(QObject):
 
         if response["type"] == "options":
             self._options = response["data"]
+            self.wildcards.reload()
             self.optionsUpdated.emit()
             if self._statusText == "Initializing":
                 self.setReady()
