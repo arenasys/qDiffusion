@@ -112,6 +112,7 @@ class Explorer(QObject):
             os.makedirs(os.path.dirname(file), exist_ok=True)
             image.save(file)
             self.gui.thumbnails.remove(file)
+            self.gui.watchModelDirectory()
             
     @pyqtSlot(str)
     def clear(self, file):
