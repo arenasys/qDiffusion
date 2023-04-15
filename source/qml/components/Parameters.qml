@@ -465,6 +465,7 @@ Item {
                                     anchors.margins: 0
                                     anchors.topMargin: -1
                                     padded: false
+                                    label: ""
                                     model: root.binding.availableNetworks
 
                                     function decoration(text) {
