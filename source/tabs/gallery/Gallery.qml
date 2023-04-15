@@ -153,7 +153,7 @@ Rectangle {
             SContextMenuItem {
                 text: "Delete"
                 onTriggered: {
-                    dialog.open()
+                    deleteDialog.show(galleryContextMenu.files)
                 }
             }
         }
@@ -164,23 +164,29 @@ Rectangle {
     }
 
     SDialog {
-        id: dialog
+        id: deleteDialog
         title: "Confirmation"
         standardButtons: Dialog.Ok | Dialog.Cancel
         modal: true
+        property var files: []
+
+        function show(files) {
+            deleteDialog.files = files
+            deleteDialog.open()
+        }
 
         height: 120
 
         SText {
             anchors.fill: parent
             padding: 5
-            text: "Delete " + galleryContextMenu.files.length + " images?"
+            text: "Delete " + deleteDialog.files.length + " images?"
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-        }
+        }       
 
         onAccepted: {
-            GALLERY.doDelete(galleryContextMenu.files)
+            GALLERY.doDelete(deleteDialog.files)
         }
 
     }
@@ -436,6 +442,9 @@ Rectangle {
     }
     Keys.onReleased: {
         switch(event.key) {
+            case Qt.Key_Delete:
+                deleteDialog.show(gallery.getSelectedFiles())
+                break;
             case Qt.Key_Up:
             case Qt.Key_Down:
             case Qt.Key_Left:

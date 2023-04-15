@@ -10,6 +10,10 @@ Dialog {
     width: 300
     dim: true
 
+    onOpened: {
+        buttonBox.forceActiveFocus()
+    }
+
     padding: 5
 
     background: Item {
@@ -67,6 +71,7 @@ Dialog {
         implicitHeight: 35
         color: COMMON.bg3
         DialogButtonBox {
+            id: buttonBox
             anchors.centerIn: parent
             standardButtons: dialog.standardButtons
             alignment: Qt.AlignHCenter
@@ -93,6 +98,19 @@ Dialog {
                     radius: 0
                     color: control.down ? COMMON.bg6 : COMMON.bg5
                     border.color: COMMON.bg6
+                }
+            }
+
+            Keys.onReleased: {
+                event.accepted = true
+                switch(event.key) {
+                    case Qt.Key_Enter:
+                    case Qt.Key_Return:
+                        dialog.accept()
+                        break;
+                    default:
+                        event.accepted = false
+                        break;
                 }
             }
 
