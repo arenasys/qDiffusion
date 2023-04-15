@@ -189,6 +189,10 @@ Rectangle {
             GALLERY.doDelete(deleteDialog.files)
         }
 
+        onClosed: {
+            root.forceActiveFocus()
+        }
+
     }
 
     Rectangle {
