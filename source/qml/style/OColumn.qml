@@ -43,7 +43,7 @@ Item {
             color: COMMON.fg0
             opacity: 0.95
             verticalAlignment: Text.AlignVCenter
-            width: Math.min(parent.width, implicitWidth+5)
+            width: Math.min(parent.width, implicitWidth+10)
             elide: Text.ElideRight
             anchors.left: parent.left
             anchors.top: parent.top
