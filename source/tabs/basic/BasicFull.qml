@@ -383,10 +383,20 @@ Item {
         }
     }
 
-
-
     Keys.onPressed: {
-            event.accepted = true
+        event.accepted = true
+        if(event.modifiers & Qt.ControlModifier) {
+            switch(event.key) {
+            case Qt.Key_C:
+                if(root.target != null && BASIC.openedArea == "output") {
+                    root.target.copy()
+                }
+                break;
+            default:
+                event.accepted = false
+                break;
+            }
+        } else {
             switch(event.key) {
             case Qt.Key_Left:
                 if(root.editing) {
@@ -436,4 +446,5 @@ Item {
                 break;
             }
         }
+    }
 }
