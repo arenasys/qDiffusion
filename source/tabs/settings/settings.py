@@ -11,7 +11,6 @@ from PyQt5.QtQml import qmlRegisterSingletonType
 from misc import MimeData
 
 class Update(QThread):
-    done = pyqtSignal()
     def run(self):
         subprocess.run(["git", "fetch"], capture_output=True, shell=IS_WIN)
         subprocess.run(["git", "reset", "--hard", "origin/master"], capture_output=True, shell=IS_WIN)
@@ -19,7 +18,6 @@ class Update(QThread):
         if os.path.exists(inf):
             subprocess.run(["git", "fetch"], capture_output=True, shell=IS_WIN, cwd=inf)
             subprocess.run(["git", "reset", "--hard", "origin/master"], capture_output=True, shell=IS_WIN, cwd=inf)
-        self.done.emit()
 
 class Settings(QObject):
     updated = pyqtSignal()
@@ -67,6 +65,7 @@ class Settings(QObject):
         self._updating = True
         update = Update(self)
         update.finished.connect(self.getGitInfo)
+        update.finished.connect(self.updateDone)
         update.start()
         self.updated.emit()
 
