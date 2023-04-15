@@ -223,7 +223,7 @@ class Coordinator(QObject):
         self.amd_torch_version = "2.0.0+rocm5.4.2"
         self.amd_torchvision_version = "0.15.1+rocm5.4.2"
 
-        self.xformers_version = "0.0.18"
+        self.need_xformers_version = "0.0.18"
         
         self.required_need = check(self.required)
         self.optional_need = check(self.optional)
@@ -273,7 +273,7 @@ class Coordinator(QObject):
             if not "+cu" in self.torchvision_version:
                 needed += ["torchvision=="+self.nvidia_torchvision_version]
             if not self.xformers_version:
-                needed += ["xformers=="+self.xformers_version]
+                needed += ["xformers=="+self.need_xformers_version]
             needed += self.optional_need
         if mode == "amd":
             if not "+rocm" in self.torch_version:
