@@ -84,6 +84,7 @@ class ThumbnailResponseRunnable(QRunnable):
 class ThumbnailResponse(QQuickImageResponse):
     def __init__(self, file, pool, size, quality):
         super().__init__()
+        file = QUrl.fromLocalFile(file).toLocalFile()
         blob = ThumbnailStorage.instance.get(file, size)
         if not blob:
             runnable = ThumbnailResponseRunnable(file, size, quality)
@@ -110,7 +111,7 @@ class AsyncThumbnailProvider(QQuickAsyncImageProvider):
         self.pool = QThreadPool()
 
     def requestImageResponse(self, path, size):
-        file = QUrl(path).path()
+        file = QUrl.fromPercentEncoding(path.encode('utf-8'))
         return ThumbnailResponse(file, self.pool, self.size, self.quality)
 
 class SyncThumbnailProvider(QQuickImageProvider):
@@ -120,7 +121,7 @@ class SyncThumbnailProvider(QQuickImageProvider):
         self.quality = quality
 
     def requestImage(self, path, size):
-        file = QUrl(path).path()
+        file = QUrl.fromPercentEncoding(path.encode('utf-8'))
         try:
             blob = ThumbnailStorage.instance.get(file, self.size)
             if not blob:

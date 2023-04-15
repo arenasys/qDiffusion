@@ -32,7 +32,7 @@ MovableItem {
         id: thumb
         anchors.fill: root.item
         visible: thumbnailOnly || full.status != Image.Ready
-        asynchronous: false
+        asynchronous: !GUI.isCached(root.source)
         source: (GUI.isCached(root.source) ? "image://sync/" : "image://async/") + root.source
         cache: false
     }

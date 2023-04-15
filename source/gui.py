@@ -117,7 +117,7 @@ class GUI(QObject):
 
     @pyqtSlot(str, result=bool)
     def isCached(self, file):
-        return self.thumbnails.has(file, (256,256))
+        return self.thumbnails.has(QUrl.fromLocalFile(file).toLocalFile(), (256,256))
     
     @pyqtProperty('QString', notify=statusUpdated)
     def statusText(self):
