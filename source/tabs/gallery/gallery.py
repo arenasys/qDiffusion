@@ -113,7 +113,7 @@ class Gallery(QObject):
         self.populater.moveToThread(self.populaterThread)
         self.populaterThread.start()
 
-        output = self.gui._output_directory
+        output = self.gui.outputDirectory()
         order = ["txt2img", "img2img", "favourites"]
         labels = {"txt2img": "Txt2Img", "img2img": "Img2Img"}
 

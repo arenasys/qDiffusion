@@ -29,6 +29,10 @@ Item {
         return ""
     }
 
+    function display(text) {
+        return text
+    }
+
     Connections {
         target: bindMap
         function onUpdated() {
@@ -105,7 +109,7 @@ Item {
                 anchors.right: decoText.left
 
                 height: 22
-                text: modelData
+                text: root.display(modelData)
                 color: COMMON.fg0
                 font.pointSize:  8.5
                 leftPadding: 5
@@ -184,7 +188,7 @@ Item {
                 leftPadding: 5
                 rightPadding: 7
 
-                text: control.displayText
+                text: root.display(control.displayText)
                 font.pointSize: root.mini ? 7.7 : COMMON.pointValue
                 color: COMMON.fg0
                 horizontalAlignment: Text.AlignRight

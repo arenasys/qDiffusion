@@ -73,9 +73,6 @@ class GUI(QObject):
         self._config = config.Config(self, "config.json", {"endpoint": "", "password": "", "output_directory":"outputs", "model_directory":"models", "device": ""})
         self._remoteStatus = RemoteStatusMode.INACTIVE
 
-        self._output_directory = self._config._values.get("output_directory")
-        self._model_directory = self._config._values.get("model_directory")
-
         self._modelFolders = []
 
         self._debugJSONLogging = self._config._values.get("debug") == True
@@ -416,12 +413,33 @@ class GUI(QObject):
                 self._errorStatus = "DEBUG"
                 self._errorText = str(e)
                 self.errorUpdated.emit()
+
+    def modelDirectory(self):
+        return self._config._values.get("model_directory")
+    
+    def outputDirectory(self):
+        return self._config._values.get("output_directory")
     
     @pyqtSlot()
     def watchModelDirectory(self):
-        modelFolders = [os.path.join(self._model_directory, f) for f in ["SD", "LoRA", "HN", "SR", "TI"]]
-        for folder in modelFolders:
+        folders = ["SD", "LoRA", "HN", "SR", "TI", "Stable-diffusion", "ESRGAN", "RealESRGAN", "Lora", "hypernetworks", os.path.join("..", "embeddings")]
+        folders = [os.path.abspath(os.path.join(self.modelDirectory(), f)) for f in folders]
+        folders = [f for f in folders if os.path.exists(f)]
+        for folder in folders:
             if not folder in self._modelFolders and os.path.exists(folder):
                 self.watcher.watchFolder(folder)
                 self._modelFolders += [folder]
-        self._trashFolder = os.path.join(self._model_directory, "TRASH")
+        self._trashFolder = os.path.join(self.modelDirectory(), "TRASH")
+
+    @pyqtSlot(str, result=str)
+    def modelName(self, name):
+        return name.rsplit(".",1)[0].rsplit('/',1)[-1].rsplit('\\',1)[-1]
+    
+    @pyqtSlot(str, result=str)
+    def netType(self, name):
+        folder = name.rsplit('/',1)[0].rsplit('\\',1)[0].rsplit('/',1)[-1].rsplit('\\',1)[-1]
+        if folder in {"LoRA"}:
+            return "LoRA"
+        elif folder in {"HN", "hypernetworks"}:
+            return "HN"
+        return None

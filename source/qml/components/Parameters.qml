@@ -309,6 +309,10 @@ Item {
                         overlay: modelColumn.componentMode
                         popupHeight: root.height + 100
 
+                        function display(text) {
+                            return GUI.modelName(text)
+                        }
+
                         onSelected: {
                             root.binding.values.set("VAE", value)
                             root.binding.values.set("UNET", value)
@@ -359,6 +363,10 @@ Item {
                             return ""
                         }
 
+                        function display(text) {
+                            return GUI.modelName(text)
+                        }
+
                         onSelected: {
                             root.binding.values.set("model", value)
                         }
@@ -382,6 +390,10 @@ Item {
                             }
                             return ""
                         }
+
+                        function display(text) {
+                            return GUI.modelName(text)
+                        }
                     }
                     OChoice {
                         id: clipInput
@@ -401,6 +413,10 @@ Item {
                                 return "External"
                             }
                             return ""
+                        }
+
+                        function display(text) {
+                            return GUI.modelName(text)
                         }
                     }
                 }
@@ -440,7 +456,7 @@ Item {
                                     color: COMMON.bg2
                                 }
 
-                                ParametersNetChoice {
+                                OChoice {
                                     id: netChoice
                                     anchors.top: parent.top
                                     anchors.bottom: parent.bottom
@@ -450,6 +466,14 @@ Item {
                                     anchors.topMargin: -1
                                     padded: false
                                     model: root.binding.availableNetworks
+
+                                    function decoration(text) {
+                                        return GUI.netType(text)
+                                    }
+
+                                    function display(text) {
+                                        return GUI.modelName(text)
+                                    }
                                 }
 
                                 SIconButton {
@@ -500,8 +524,8 @@ Item {
                                     ParametersNetItem {
                                         anchors.fill: parent
                                         anchors.rightMargin: scrollBar.policy == ScrollBar.AlwaysOn ? 8 : 0
-                                        label: modelData.name
-                                        type:  modelData.type
+                                        label: GUI.modelName(modelData)
+                                        type: GUI.netType(modelData)
 
                                         onDeactivate: {
                                             root.binding.deleteNetwork(index)
@@ -559,6 +583,10 @@ Item {
                                 return "Latent"
                             }
                             return "Pixel"
+                        }
+
+                        function display(text) {
+                            return GUI.modelName(text)
                         }
                     }
                     OSlider {
@@ -685,6 +713,10 @@ Item {
                                 return "Latent"
                             }
                             return "Pixel"
+                        }
+
+                        function display(text) {
+                            return GUI.modelName(text)
                         }
                     }
                     OSlider {

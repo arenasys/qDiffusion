@@ -294,21 +294,6 @@ class ParametersParser(QObject):
             return True
         else:
             return False
-
-class ParametersNetwork(QObject):
-    updated = pyqtSignal()
-    def __init__(self, parent=None, name="", type=""):
-        super().__init__(parent)
-        self._name = name
-        self._type = type
-
-    @pyqtProperty(str, notify=updated)
-    def name(self):
-        return self._name
-    
-    @pyqtProperty(str, notify=updated)
-    def type(self):
-        return self._type
     
 class Parameters(QObject):
     updated = pyqtSignal()
@@ -334,10 +319,14 @@ class Parameters(QObject):
         positive = self._values.get("prompt")
         negative = self._values.get("negative_prompt")
 
-        netre = r"<(lora|hypernet):([^:>]+)(?::([-\d.]+))?(?::([-\d.]+))?>"
+        netre = r"<@?(lora|hypernet):([^:>]+)(?::([-\d.]+))?(?::([-\d.]+))?>"
 
         nets = re.findall(netre, positive) + re.findall(netre, negative)
-        self._activeNetworks = [ParametersNetwork(self, net[1], NETWORKS_INV[net[0]]) for net in nets]
+        self._activeNetworks = []
+        for net in nets:
+            for a in self._availableNetworks:
+                if net[1] + "." in a:
+                    self._activeNetworks += [a]
         self.updated.emit()
 
     @pyqtProperty(list, notify=updated)
@@ -352,16 +341,29 @@ class Parameters(QObject):
     def addNetwork(self, index):
         if index >= 0 and index < len(self._availableNetworks):
             net = self.availableNetworks[index]
-            if any([n._name == net.name and n._type == net.type for n in self._activeNetworks]):
+            if net in self._activeNetworks:
                 return
             
-            self._values.set("prompt", self._values.get("prompt") + f"<{NETWORKS[net._type]}:{net.name}:1.0>")   
+            name = self.gui.modelName(net)
+            type = self.gui.netType(net)
+            if type:
+                type = {"LoRA":"lora", "HN":"hypernet"}[type]
+            else:
+                return
+            
+            self._values.set("prompt", self._values.get("prompt") + f"<{type}:{name}:1.0>")   
 
     @pyqtSlot(int)
     def deleteNetwork(self, index):
         net = self._activeNetworks[index]
-        t = NETWORKS[net._type]
-        netre = fr"(?:\s)?<({t}):({net._name})(?::([-\d.]+))?(?::([-\d.]+))?>"
+        name = self.gui.modelName(net)
+        type = self.gui.netType(net)
+        if type:
+            type = {"LoRA":"lora", "HN":"hypernet"}[type]
+        else:
+            return
+
+        netre = fr"(?:\s)?<@?({type}):({name})(?::([-\d.]+))?(?::([-\d.]+))?>"
         positive = re.sub(netre,'',self._values.get("prompt"))
         negative = re.sub(netre,'',self._values.get("negative_prompt"))
 
@@ -418,9 +420,8 @@ class Parameters(QObject):
         clips = [c for c in clips if not c in models] + [c for c in clips if c in models]
         self._values.set("CLIPs", clips)
 
-        self._availableNetworks = [ParametersNetwork(self, name, "LoRA") for name in self._values.get("LoRAs")]
-        self._availableNetworks += [ParametersNetwork(self, name, "HN") for name in self._values.get("HNs")]
-        self._activeNetworks = [n for n in self._activeNetworks if any([n == nn._name for nn in self._availableNetworks])]
+        self._availableNetworks = self._values.get("LoRAs") + self._values.get("HNs")
+        self._activeNetworks = [n for n in self._activeNetworks if n in self._availableNetworks]
 
         if self._values.get("img2img_upscaler") not in self._values.get("img2img_upscalers"):
             self._values.set("img2img_upscaler", "Lanczos")
@@ -556,10 +557,15 @@ class Parameters(QObject):
                 found[p._name] = True
 
             if not p._name in self._values._map:
-                continue
+                continue 
 
             if p._name+"s" in self._values._map and not p._value in self._values._map[p._name+"s"]:
-                continue
+                for m in self._values._map[p._name+"s"]:
+                    if p._value + "." in m:
+                        p._value = m
+                        break
+                else:
+                    continue
 
             val = None
             try:

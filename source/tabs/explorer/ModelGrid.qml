@@ -106,19 +106,15 @@ Item {
                         source: "qrc:/icons/placeholder_black.svg"
                         height: parent.width/4
                         width: height
-                        sourceSize: Qt.size(width, height)
+                        sourceSize: Qt.size(width*1.25, height*1.25)
                         anchors.centerIn: parent
-                        smooth: true
-                        antialiasing: true
                     }
 
                     ColorOverlay {
                         visible: placeholder.visible
                         anchors.fill: placeholder
                         source: placeholder
-                        color: COMMON.bg4
-                        smooth: true
-                        antialiasing: true
+                        color: addDrop.containsDrag ? COMMON.fg2 : COMMON.bg4
                     }
                 }
 
@@ -146,19 +142,54 @@ Item {
                     asynchronous: true
                 }
 
-                Rectangle {
+                MouseArea {
+                    id: mouseArea
+                    anchors.fill: parent
+                    acceptedButtons: Qt.LeftButton
+                    onPressed: {
+                        modelCard.forceActiveFocus()
+                    }
+                }
+
+                Item {
                     visible: sql_desc != "" && sql_width == 0
                     anchors.fill: interior
                     anchors.margins: 1
-                    STextArea {
+                    property var inset: sql_width == 0 ? 2 : 4
+                    Glow {
+                        visible: sql_width != 0
+                        opacity: 0.4
                         anchors.fill: parent
-                        anchors.margins: 2
+                        radius: 5
+                        samples: 8
+                        color: "#000000"
+                        source: parent
+                    }
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.margins: parent.inset
+                        color: COMMON.bg2
+                        opacity: sql_width == 0 ? 0 : 0.4
+                        border.color: COMMON.bg4
+                    }
+                    Glow {
+                        visible: sql_width != 0
+                        opacity: 0.4
+                        anchors.fill: descText
+                        radius: 5
+                        samples: 8
+                        color: "#000000"
+                        source: descText
+                    }
+                    STextArea {
+                        id: descText
+                        anchors.fill: parent
+                        anchors.margins: parent.inset
                         readOnly: true
                         font.pointSize: 9.8
-                        area.color: COMMON.fg2
+                        area.color: sql_width == 0 ? COMMON.fg2 : COMMON.fg1
                         text: sql_desc
                     }
-                    color: COMMON.bg1
                 }
 
                 Rectangle {
@@ -196,7 +227,7 @@ Item {
                         opacity: 0.8
                     }
                 }
-
+                
                 Rectangle {
                     id: labelBg
                     anchors.left: parent.left
@@ -205,7 +236,16 @@ Item {
                     height: 25
                     color: COMMON.bg2
                     opacity: 0.8
-                    border.color: COMMON.bg4
+                    border.width: sql_width == 0 ? 2 : 1
+                    border.color: sql_width == 0 ? COMMON.bg0 : COMMON.bg4
+
+                    Rectangle {
+                        visible: sql_width == 0
+                        anchors.fill: parent
+                        color: "transparent"
+                        opacity: 0.8
+                        border.color: COMMON.bg4
+                    }
                 }
 
                 Glow {
@@ -221,7 +261,7 @@ Item {
                 SText {
                     id: labelText
                     anchors.fill: labelBg
-                    text: sql_name
+                    text: GUI.modelName(sql_name)
                     verticalAlignment: Text.AlignVCenter
                     horizontalAlignment: Text.AlignHCenter
                     color: COMMON.fg1
@@ -231,6 +271,8 @@ Item {
                 }
 
                 MouseArea {
+                    id: cardMouseArea
+                    hoverEnabled: true
                     anchors.fill: parent
                     acceptedButtons: Qt.RightButton
                     onPressed: {
@@ -262,11 +304,21 @@ Item {
                 }
             }
 
+
             Rectangle {
                 anchors.fill: modelCard
                 color: "transparent"
-                border.color: addDrop.containsDrag ? COMMON.fg2 : COMMON.bg4
+                border.width: 2
+                border.color: COMMON.bg00
             }
+
+            Rectangle {
+                anchors.fill: modelCard
+                color: "transparent"
+                border.width: 1
+                border.color: (modelCard.activeFocus || addDrop.containsDrag) ? "white" : COMMON.bg4
+            }
+
         }
     }
 }

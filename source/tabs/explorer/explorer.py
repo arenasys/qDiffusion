@@ -26,14 +26,11 @@ class Explorer(QObject):
         self.conn.doQuery("CREATE TABLE models(name TEXT, category TEXT, type TEXT, file TEXT, desc TEXT, idx INTEGER, width INTEGER, height INTEGER, CONSTRAINT unq UNIQUE (category, idx));")
         self.conn.enableNotifications("models")
 
-    def setModel(self, name, category, type, folder, idx):
+    def setModel(self, name, category, type, idx):
         q = QSqlQuery(self.conn.db)
 
-        file = os.path.join(self.gui._model_directory, folder, name)
-        preview = os.path.abspath(file)
-        if type:
-            preview += "." + type.lower()
-        preview += ".png"
+        file =  os.path.abspath(os.path.join(self.gui.modelDirectory(), name.rsplit(".",1)[0]))
+        preview = file + ".png"
         desc = file + ".txt"
 
         w,h = 0,0
@@ -60,29 +57,42 @@ class Explorer(QObject):
         q.bindValue(":height", h)
         self.conn.doQuery(q)
 
+    def finishCategory(self, category, total):
+        q = QSqlQuery(self.conn.db)
+        q.prepare("DELETE FROM models WHERE category == :category AND idx >= :total;")
+        q.bindValue(":category", category)
+        q.bindValue(":total", total)
+        self.conn.doQuery(q)
+
     @pyqtSlot()
     def optionsUpdated(self):
         o = self.gui._options
 
         checkpoints = [a for a in o["UNET"] if a in o["VAE"] and a in o["CLIP"]]
         for idx, name in enumerate(checkpoints):
-            self.setModel(name, "checkpoint", "", "SD", idx)
+            self.setModel(name, "checkpoint", "", idx)
+        self.finishCategory("checkpoint", len(checkpoints))
         
         components = [a for a in o["VAE"] if not a in checkpoints]
         for idx, name in enumerate(components):
-            self.setModel(name, "component", "VAE", "SD", idx)
+            self.setModel(name, "component", "VAE", idx)
+        self.finishCategory("component", len(components))
 
         for idx, name in enumerate(o["LoRA"]):
-            self.setModel(name, "lora", "", "LoRA", idx)
+            self.setModel(name, "lora", "", idx)
+        self.finishCategory("lora", len(o["LoRA"]))
         
         for idx, name in enumerate(o["HN"]):
-            self.setModel(name, "hypernet", "", "HN", idx)
+            self.setModel(name, "hypernet", "", idx)
+        self.finishCategory("hypernet", len(o["HN"]))
 
         for idx, name in enumerate(o["TI"]):
-            self.setModel(name, "embedding", "", "TI", idx)
+            self.setModel(name, "embedding", "", idx)
+        self.finishCategory("embedding", len(o["TI"]))
 
         for idx, name in enumerate(self.gui.wildcards._wildcards):
-            self.setModel(name, "wildcard", "", "WILDCARD", idx)
+            self.setModel(os.path.join("WILDCARD", name), "wildcard", "", idx)
+        self.finishCategory("wildcard", len(self.gui.wildcards._wildcards))
 
     @pyqtSlot(misc.MimeData, str)
     def set(self, mimedata, file):

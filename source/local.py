@@ -168,7 +168,7 @@ class LocalInference(QThread):
         self.stopping = False
         self.requests = multiprocessing.Queue(16)
         self.responses = multiprocessing.Queue(16)
-        self.inference = InferenceProcess(self.requests, self.responses, self.gui._model_directory)
+        self.inference = InferenceProcess(self.requests, self.responses, self.gui.modelDirectory())
 
     def run(self):
         self.inference.start()
@@ -201,4 +201,4 @@ class LocalInference(QThread):
 
     def saveResults(self, images, metadata):
         for i in range(len(images)):
-            save_image(images[i], metadata[i], self.gui._output_directory)
+            save_image(images[i], metadata[i], self.gui.outputDirectory())

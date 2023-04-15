@@ -188,15 +188,15 @@ class SyntaxHighlighter(QSyntaxHighlighter):
 
         embeddings = set()
         if "TI" in self.gui._options:
-            embeddings = set(self.gui._options["TI"])
+            embeddings = set([self.gui.modelName(n) for n in self.gui._options["TI"]])
 
         loras = set()
         if "LoRA" in self.gui._options:
-            loras = set(self.gui._options["LoRA"])
+            loras = set([self.gui.modelName(n) for n in self.gui._options["LoRA"]])
 
         hns = set()
         if "HN" in self.gui._options:
-            hns = set(self.gui._options["HN"])
+            hns = set([self.gui.modelName(n) for n in self.gui._options["HN"]])
 
         wilds = set(self.gui.wildcards._wildcards.keys())
 
@@ -217,7 +217,7 @@ class SyntaxHighlighter(QSyntaxHighlighter):
                 if text[s+1] == "@":
                     self.setFormat(s+1,1,err)
         
-        for s, e, ms, me in [(*m.span(0), *m.span(1))  for m in re.finditer("<@?hn:([^:>]+)([^>]+)?>", text.lower())]:
+        for s, e, ms, me in [(*m.span(0), *m.span(1))  for m in re.finditer("<@?hypernet:([^:>]+)([^>]+)?>", text.lower())]:
             m = text[ms:me]
             if m in hns:
                 self.setFormat(s, e-s, hn_bg)

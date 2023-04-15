@@ -199,7 +199,7 @@ class RemoteInference(QThread):
 
     def saveResults(self, images, metadata):
         for i in range(len(images)):
-            save_image(images[i], metadata[i], self.gui._output_directory)
+            save_image(images[i], metadata[i], self.gui.outputDirectory())
 
     @pyqtSlot(str)
     def onUploadDone(self, file):
