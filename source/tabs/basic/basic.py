@@ -743,26 +743,27 @@ class Basic(QObject):
     def pasteItem(self, index, area):
         if area == "input":
             inputs = []
-            if index == -1:
-                index = len(self._inputs)
-
             mimedata = QApplication.clipboard().mimeData()
             if mimedata.hasImage():
                 image = mimedata.imageData()
                 if image and not image.isNull():
-                    inputs += [BasicInput(self, image)]
+                    inputs += [image]
             else:
                 for url in mimedata.urls():
                     if url.isLocalFile():
                         image = QImage(url.toLocalFile())
-                        inputs += [BasicInput(self, image)]
+                        inputs += [image]
                     elif url.scheme() == "http" or url.scheme() == "https":
                         if url.fileName().rsplit(".")[-1] in {"png", "jpg", "jpeg", "webp", "gif"}:
                             self.gui.makeNetworkRequest(QNetworkRequest(url))
                             self.replyInsert = index
 
-            for i in inputs[::-1]:
-                self._inputs.insert(index, i)
+            if index == -1:
+                for i in inputs[::-1]:
+                    self._inputs.insert(len(self._inputs), BasicInput(self, i))
+            elif inputs and index >= 0 and index < len(self._inputs):
+                self._inputs[index].setImageData(inputs[0])
+
             self.updated.emit()
 
     @pyqtSlot(list)
