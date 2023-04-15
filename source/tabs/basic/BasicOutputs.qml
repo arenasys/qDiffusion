@@ -132,18 +132,11 @@ Item {
                     anchors.fill: parent
                     acceptedButtons: Qt.LeftButton | Qt.RightButton
                     property var startPosition: Qt.point(0,0)
-                    property bool ready: false
-                    property var image
                     onPressed: {
                         if (mouse.button == Qt.LeftButton) {
                             listView.currentIndex = index
                             itemFrame.forceActiveFocus()
                             startPosition = Qt.point(mouse.x, mouse.y)
-                            ready = false
-                            itemFrame.grabToImage(function(result) {
-                                image = result.image;
-                                ready = true
-                            })
                         }
                         if (mouse.button == Qt.RightButton) {
                             contextMenu.popup()
@@ -155,10 +148,10 @@ Item {
                     }
 
                     onPositionChanged: {
-                        if(pressed && ready) {
+                        if(pressed) {
                             var delta = Qt.point(mouse.x-startPosition.x, mouse.y-startPosition.y)
                             if(Math.pow(delta.x*delta.x + delta.y*delta.y, 0.5) > 5) {
-                                modelObj.drag(sql_id, image)
+                                modelObj.drag()
                             }
                         }
                     }
@@ -227,13 +220,24 @@ Item {
 
                 Keys.onPressed: {
                     event.accepted = true
-                    switch(event.key) {
-                    case Qt.Key_Delete:
-                        BASIC.deleteOutput(sql_id)
-                        break;
-                    default:
-                        event.accepted = false
-                        break;
+                    if(event.modifiers & Qt.ControlModifier) {
+                        switch(event.key) {
+                        case Qt.Key_C:
+                            modelObj.copy()
+                            break;
+                        default:
+                            event.accepted = false
+                            break;
+                        }
+                    } else {
+                        switch(event.key) {
+                        case Qt.Key_Delete:
+                            BASIC.deleteOutput(sql_id)
+                            break;
+                        default:
+                            event.accepted = false
+                            break;
+                        }
                     }
                 }
             }

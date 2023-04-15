@@ -293,6 +293,7 @@ class GUI(QObject):
         urls = [QUrl.fromLocalFile(os.path.abspath(file)) for file in files]
         mimedata = QMimeData()
         mimedata.setUrls(urls)
+        mimedata.setImageData(QImage(files[0]))
 
         gnome = "copy\n"+'\n'.join(["file://"+url.toLocalFile() for url in urls])
         mimedata.setData("x-special/gnome-copied-files", gnome.encode("utf-8"))

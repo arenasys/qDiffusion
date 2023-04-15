@@ -170,9 +170,11 @@ class BasicInput(QObject):
             source = mimeData.imageData()
             if source and not source.isNull():
                 self._image = source
-            for url in mimeData.urls():
-                if url.isLocalFile():
-                     self._image = QImage(url.toLocalFile())
+            else:
+                for url in mimeData.urls():
+                    if url.isLocalFile():
+                        self._image = QImage(url.toLocalFile())
+                        break
         self.updateImage()
 
     @pyqtSlot(QImage)
@@ -207,20 +209,25 @@ class BasicInput(QObject):
         self._image = QImage()
         self.updateImage()
 
-    @pyqtSlot(int, QImage)
-    def drag(self, index, image):
+    def getMimeData(self, index):
+        mimeData = QMimeData()
+        mimeData.setData(MIME_BASIC_INPUT, QByteArray(f"{index}".encode()))
+        mimeData.setImageData(self._image)
+        return mimeData
+
+    @pyqtSlot(int)
+    def drag(self, index):
         if self._dragging:
             return
         self._dragging = True
         drag = QDrag(self)
-        drag.setPixmap(QPixmap.fromImage(image).scaledToWidth(50, Qt.SmoothTransformation))
-        mimeData = QMimeData()
-        mimeData.setData(MIME_BASIC_INPUT, QByteArray(f"{index}".encode()))
-        mimeData.setImageData(self._image)
-
-        drag.setMimeData(mimeData)
+        drag.setMimeData(self.getMimeData(index))
         drag.exec()
         self._dragging = False
+
+    @pyqtSlot(int)
+    def copy(self, index):
+        QApplication.clipboard().setMimeData(self.getMimeData(index))
 
 class BasicOutput(QObject):
     updated = pyqtSignal()
@@ -268,9 +275,13 @@ class BasicOutput(QObject):
     def parameters(self):
         return self._parameters
 
-    @pyqtSlot(int, QImage)
-    def drag(self, id, image):
+    @pyqtSlot()
+    def drag(self):
         self.basic.gui.dragFiles([self._file])
+
+    @pyqtSlot()
+    def copy(self):
+        self.basic.gui.copyFiles([self._file])
 
 class Basic(QObject):
     updated = pyqtSignal()
@@ -478,10 +489,11 @@ class Basic(QObject):
             source = mimeData.imageData()
             if source and not source.isNull():
                 self._inputs.insert(index, BasicInput(self, source, BasicInputRole.IMAGE))
-            for url in mimeData.urls():
-                if url.isLocalFile():
-                    source = QImage(url.toLocalFile())
-                    self._inputs.insert(index, BasicInput(self, source, BasicInputRole.IMAGE))
+            else:
+                for url in mimeData.urls():
+                    if url.isLocalFile():
+                        source = QImage(url.toLocalFile())
+                        self._inputs.insert(index, BasicInput(self, source, BasicInputRole.IMAGE))
         self.updated.emit()
 
     @pyqtSlot(MimeData)
@@ -692,17 +704,17 @@ class Basic(QObject):
                 params = image.text("parameters")
                 if params:
                     self.pastedText.emit(params)
-
-        for url in mimedata.urls():
-            if url.isLocalFile():
-                image = QImage(url.toLocalFile())
-                self.pastedImage.emit(image)
-                params = image.text("parameters")
-                if params:
-                    self.pastedText.emit(params)
-            elif url.scheme() == "http" or url.scheme() == "https":
-                if url.fileName().rsplit(".")[-1] in {"png", "jpg", "jpeg", "webp", "gif"}:
-                    self.gui.makeNetworkRequest(QNetworkRequest(url))
+        else:
+            for url in mimedata.urls():
+                if url.isLocalFile():
+                    image = QImage(url.toLocalFile())
+                    self.pastedImage.emit(image)
+                    params = image.text("parameters")
+                    if params:
+                        self.pastedText.emit(params)
+                elif url.scheme() == "http" or url.scheme() == "https":
+                    if url.fileName().rsplit(".")[-1] in {"png", "jpg", "jpeg", "webp", "gif"}:
+                        self.gui.makeNetworkRequest(QNetworkRequest(url))
 
     @pyqtSlot(QNetworkReply)
     def onNetworkReply(self, reply):
@@ -722,9 +734,7 @@ class Basic(QObject):
             mimeData.setImageData(self._inputs[index]._image)
             QApplication.clipboard().setMimeData(mimeData)
         else:
-            mimeData = QMimeData()
-            mimeData.setImageData(self._outputs[index]._image)
-            QApplication.clipboard().setMimeData(mimeData)
+            self.gui.copyFiles([self._outputs[index]._file])
 
     @pyqtSlot(int, str)
     def pasteItem(self, index, area):
@@ -738,15 +748,15 @@ class Basic(QObject):
                 image = mimedata.imageData()
                 if image and not image.isNull():
                     inputs += [BasicInput(self, image)]
-
-            for url in mimedata.urls():
-                if url.isLocalFile():
-                    image = QImage(url.toLocalFile())
-                    inputs += [BasicInput(self, image)]
-                elif url.scheme() == "http" or url.scheme() == "https":
-                    if url.fileName().rsplit(".")[-1] in {"png", "jpg", "jpeg", "webp", "gif"}:
-                        self.gui.makeNetworkRequest(QNetworkRequest(url))
-                        self.replyInsert = index
+            else:
+                for url in mimedata.urls():
+                    if url.isLocalFile():
+                        image = QImage(url.toLocalFile())
+                        inputs += [BasicInput(self, image)]
+                    elif url.scheme() == "http" or url.scheme() == "https":
+                        if url.fileName().rsplit(".")[-1] in {"png", "jpg", "jpeg", "webp", "gif"}:
+                            self.gui.makeNetworkRequest(QNetworkRequest(url))
+                            self.replyInsert = index
 
             for i in inputs[::-1]:
                 self._inputs.insert(index, i)
