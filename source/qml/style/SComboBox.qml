@@ -53,7 +53,7 @@ ComboBox {
     }
 
     contentItem: SText {
-        leftPadding: 5
+        leftPadding: 10
         rightPadding: control.indicator.width + control.spacing
 
         text: control.displayText

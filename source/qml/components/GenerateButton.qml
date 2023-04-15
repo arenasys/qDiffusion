@@ -55,7 +55,8 @@ Rectangle {
     Rectangle {
         visible: root.indeterminate
         id: genWorking
-        property var offset: root.width
+        property var percent: 0
+        property var offset: percent * root.width
         x: offset-25
         y: 2
         height: parent.height * 2
@@ -66,12 +67,12 @@ Rectangle {
         opacity: 0.35
         antialiasing: true
 
-        RotationAnimation on offset {
+        RotationAnimation on percent {
             id: offsetAnimation
             duration: 1200
             loops: Animation.Infinite
             from: 0
-            to: root.width
+            to: 1
         }
     }
 

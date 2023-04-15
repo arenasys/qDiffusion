@@ -64,31 +64,34 @@ class RemoteInferenceUpload(QThread):
         self.stopping = False
 
     def run(self):
-        with open(self.file, 'rb') as f:
-            i = 0
-            while not self.stopping:
-                QApplication.processEvents()
-                chunk = f.read(FRAGMENT_SIZE-1024)
-                if not chunk:
-                    break
-                request = {"type":"chunk", "data": {"type":self.type, "name": self.name, "chunk":chunk, "index":i}}
-
-                while not self.queue.empty():
-                    QThread.msleep(10)
+        try:
+            with open(self.file, 'rb') as f:
+                i = 0
+                while not self.stopping:
                     QApplication.processEvents()
+                    chunk = f.read(FRAGMENT_SIZE-1024)
+                    if not chunk:
+                        break
+                    request = {"type":"chunk", "data": {"type":self.type, "name": self.name, "chunk":chunk, "index":i}}
+
+                    while not self.queue.empty():
+                        QThread.msleep(10)
+                        QApplication.processEvents()
+                        if self.stopping:
+                            break
                     if self.stopping:
                         break
-                if self.stopping:
-                    break
-                self.queue.put(request)
-                i += 1
+                    self.queue.put(request)
+                    i += 1
+        except Exception:
+            self.done.emit(self.file)
+            return
             
         if self.stopping:
             self.queue.put({"type":"chunk", "data": {"type":self.type, "name": self.name, "index":-1}})
         else:
             self.queue.put({"type":"chunk", "data": {"type":self.type, "name": self.name}})
         self.done.emit(self.file)
-        print("UPLOAD DONE")
 
     @pyqtSlot()
     def stop(self):
