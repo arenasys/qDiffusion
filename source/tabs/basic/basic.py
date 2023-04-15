@@ -486,14 +486,17 @@ class Basic(QObject):
             destination = index
             self.moveItem(source, destination)
         else:
+            done = False
+            for url in mimeData.urls():
+                if url.isLocalFile():
+                    source = QImage(url.toLocalFile())
+                    self._inputs.insert(index, BasicInput(self, source, BasicInputRole.IMAGE))
+                    done = True
+            
             source = mimeData.imageData()
-            if source and not source.isNull():
+            if not done and source and not source.isNull():
                 self._inputs.insert(index, BasicInput(self, source, BasicInputRole.IMAGE))
-            else:
-                for url in mimeData.urls():
-                    if url.isLocalFile():
-                        source = QImage(url.toLocalFile())
-                        self._inputs.insert(index, BasicInput(self, source, BasicInputRole.IMAGE))
+                
         self.updated.emit()
 
     @pyqtSlot(MimeData)
