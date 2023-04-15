@@ -32,20 +32,38 @@ Item {
             font.pointSize: 9.8
             color: COMMON.fg2
         }
-        SText {
-            text: "Restart required"
-            visible: SETTINGS.needRestart
+        STextSelectable {
+            text: SETTINGS.gitServerInfo
             width: parent.width
-            height: 20
+            height: text != "" ? 10 : 0
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignHCenter
-            font.pointSize: 9.0
-            color: COMMON.accent(0)
+            font.pointSize: 9.8
+            color: COMMON.fg2
+        }
+        
+        Item {
+            width: parent.width
+            height: SETTINGS.updating ? 50 : 30
+            LoadingSpinner {
+                size: 20
+                running: SETTINGS.updating
+                anchors.fill: parent
+            }
+            SText {
+                text: "Restart required"
+                visible: !SETTINGS.updating && SETTINGS.needRestart
+                anchors.fill: parent
+                verticalAlignment: Text.AlignVCenter
+                horizontalAlignment: Text.AlignHCenter
+                font.pointSize: 9.0
+                color: COMMON.accent(0)
+            }
         }
 
         Item {
             width: parent.width
-            height: 30
+            height: SETTINGS.updating ? 10 : 30
         }
 
         Item {

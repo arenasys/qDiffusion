@@ -11,6 +11,7 @@ from PyQt5.QtQml import qmlRegisterSingletonType
 from misc import MimeData
 
 class Update(QThread):
+    done = pyqtSignal()
     def run(self):
         subprocess.run(["git", "fetch"], capture_output=True, shell=IS_WIN)
         subprocess.run(["git", "reset", "--hard", "origin/master"], capture_output=True, shell=IS_WIN)
@@ -18,6 +19,7 @@ class Update(QThread):
         if os.path.exists(inf):
             subprocess.run(["git", "fetch"], capture_output=True, shell=IS_WIN, cwd=inf)
             subprocess.run(["git", "reset", "--hard", "origin/master"], capture_output=True, shell=IS_WIN, cwd=inf)
+        self.done.emit()
 
 class Settings(QObject):
     updated = pyqtSignal()
@@ -35,7 +37,9 @@ class Settings(QObject):
 
         self._needRestart = False
         self._currentGitInfo = None
+        self._currentGitServerInfo = None
         self._triedGitInit = False
+        self._updating = False
         self.getGitInfo()
 
     @pyqtProperty(str, notify=updated)
@@ -60,17 +64,22 @@ class Settings(QObject):
 
     @pyqtSlot()
     def update(self):
+        self._updating = True
         update = Update(self)
         update.finished.connect(self.getGitInfo)
         update.start()
+        self.updated.emit()
+
+    @pyqtSlot()
+    def updateDone(self):
+        self._updating = False
+        self.updated.emit()
     
     @pyqtSlot(str, str)
     def upload(self, type, file):
         file = QUrl.fromLocalFile(file)
         if not file.isLocalFile():
             return
-
-        print("SETTINGS")
         self.gui.remoteUpload(type, file.toLocalFile().replace('/', os.path.sep))
     
     @pyqtSlot(QUrl, result=str)
@@ -96,20 +105,29 @@ class Settings(QObject):
     def gitInfo(self):
         return self._gitInfo
     
+    @pyqtProperty(str, notify=updated)
+    def gitServerInfo(self):
+        return self._gitServerInfo
+    
     @pyqtProperty(bool, notify=updated)
     def needRestart(self):
         return self._needRestart
     
+    @pyqtProperty(bool, notify=updated)
+    def updating(self):
+        return self._updating
+    
     @pyqtSlot()
     def getGitInfo(self):
         self._gitInfo = "Unknown"
+        self._gitServerInfo = ""
         r = subprocess.run(["git", "log", "-1", "--format=%B (%h) (%cr)"], capture_output=True, shell=IS_WIN)
         if r.returncode == 0:
             m = r.stdout.decode('utf-8').replace("\n","")
             cm = m.rsplit(") (", 1)[0]
             if self._currentGitInfo == None:
                 self._currentGitInfo = cm
-            self._gitInfo = "Last commit: " + m
+            self._gitInfo = "GUI commit: " + m
             self._needRestart = self._currentGitInfo != cm
         else:
             m = r.stderr.decode('utf-8')
@@ -119,5 +137,16 @@ class Settings(QObject):
                 r = subprocess.run(["git", "remote", "add", "origin", "https://github.com/arenasys/qDiffusion.git"], capture_output=True, shell=IS_WIN)
                 r = subprocess.run(["git", "fetch"], capture_output=True, shell=IS_WIN)
                 r = subprocess.run(["git", "reset", "--hard", "origin/master"], capture_output=True, shell=IS_WIN)
+
+        server_dir = os.path.join("source","sd-inference-server")
+        if os.path.exists(server_dir):
+            r = subprocess.run(["git", "log", "-1", "--format=%B (%h) (%cr)"], capture_output=True, shell=IS_WIN, cwd=server_dir)
+            if r.returncode == 0:
+                m = r.stdout.decode('utf-8').replace("\n","")
+                cm = m.rsplit(") (", 1)[0]
+                if self._currentGitServerInfo == None:
+                    self._currentGitServerInfo = cm
+                self._gitServerInfo = "Inference commit: " + m
+                self._needRestart = self._needRestart or (self._currentGitServerInfo != cm)
 
         self.updated.emit()
