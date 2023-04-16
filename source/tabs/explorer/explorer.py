@@ -1,7 +1,7 @@
-from PyQt5.QtCore import pyqtProperty, pyqtSignal, QObject, pyqtSlot
+from PyQt5.QtCore import pyqtProperty, pyqtSignal, QObject, pyqtSlot, QUrl
 from PyQt5.QtQml import qmlRegisterSingletonType
 from PyQt5.QtSql import QSqlQuery
-from PyQt5.QtGui import QImage
+from PyQt5.QtGui import QImage, QDesktopServices
 
 import sql
 import os
@@ -45,7 +45,7 @@ class Explorer(QObject):
         if os.path.exists(desc):
             with open(desc, "r") as f:
                 description = f.read().strip()
-
+        
         q.prepare("INSERT OR REPLACE INTO models(name, category, type, file, desc, idx, width, height) VALUES (:name, :category, :type, :file, :desc, :idx, :width, :height);")
         q.bindValue(":name", name)
         q.bindValue(":category", category)
@@ -91,11 +91,11 @@ class Explorer(QObject):
         self.finishCategory("embedding", len(o["TI"]))
 
         for idx, name in enumerate(self.gui.wildcards._wildcards):
-            self.setModel(os.path.join("WILDCARD", name), "wildcard", "", idx)
+            self.setModel(os.path.join("WILDCARD", name + ".txt"), "wildcard", "", idx)
         self.finishCategory("wildcard", len(self.gui.wildcards._wildcards))
 
     @pyqtSlot(misc.MimeData, str)
-    def set(self, mimedata, file):
+    def doReplace(self, mimedata, file):
         mimedata = mimedata.mimeData
         image = None
         if mimedata.hasImage():
@@ -115,7 +115,19 @@ class Explorer(QObject):
             self.gui.watchModelDirectory()
             
     @pyqtSlot(str)
-    def clear(self, file):
+    def doClear(self, file):
         if os.path.exists(file):
             os.remove(file)
             self.gui.thumbnails.remove(file)
+
+    @pyqtSlot(str)
+    def doDelete(self, file):
+        print("DELETE", file)
+
+    @pyqtSlot(str)
+    def doVisit(self, file):
+        path = os.path.abspath(os.path.join(self.gui.modelDirectory(), os.path.dirname(file)))
+        try:
+            QDesktopServices.openUrl(QUrl.fromLocalFile(path))
+        except Exception:
+            pass

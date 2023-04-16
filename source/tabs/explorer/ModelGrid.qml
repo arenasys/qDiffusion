@@ -82,6 +82,9 @@ Item {
                 anchors.topMargin: modelsView.padding
                 color: COMMON.bg1
 
+                property var selected: modelCard.activeFocus || contextMenu.activeFocus || addDrop.containsDrag
+                property var active: BASIC.parameters.active.includes(sql_name) 
+
                 LoadingSpinner {
                     anchors.fill: parent
                     running: sql_width != 0 && thumbnail.status !== Image.Ready
@@ -148,6 +151,9 @@ Item {
                     acceptedButtons: Qt.LeftButton
                     onPressed: {
                         modelCard.forceActiveFocus()
+                    }
+                    onDoubleClicked: {
+                        BASIC.parameters.doActivate(sql_name)
                     }
                 }
 
@@ -287,14 +293,14 @@ Item {
                     SContextMenuItem {
                         text: "Visit"
                         onPressed: {
-                            EXPLORER.visit(sql_file)
+                            EXPLORER.doVisit(sql_name)
                         }
                     }
 
                     SContextMenuItem {
                         text: "Clear"
                         onPressed: {
-                            EXPLORER.clear(sql_file)
+                            EXPLORER.doClear(sql_file)
                         }
                     }
 
@@ -335,12 +341,20 @@ Item {
             }
 
             Rectangle {
+                visible: modelCard.active
+                anchors.fill: modelCard
+                anchors.margins: -2
+                color: "transparent"
+                border.width: 2
+                border.color: COMMON.accent(0)
+            }
+
+            Rectangle {
                 anchors.fill: modelCard
                 color: "transparent"
                 border.width: 1
-                border.color: (modelCard.activeFocus || contextMenu.activeFocus || addDrop.containsDrag) ? "white" : COMMON.bg4
+                border.color: modelCard.selected ? COMMON.fg2 : COMMON.bg4
             }
-
         }
     }
 

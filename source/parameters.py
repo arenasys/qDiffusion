@@ -307,12 +307,13 @@ class Parameters(QObject):
         self._values = VariantMap(self, {"prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7, "strength": 0.75, "seed": -1, "eta": 1.0,
             "hr_factor": 1.0, "hr_strength":  0.7, "hr_sampler": "Euler a", "hr_steps": 25, "hr_eta": 1.0, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "subseed":-1, "subseed_strength": 0.0,
             "model":"", "models":[], "sampler":"Euler a", "samplers":[], "hr_upscaler":"Latent (nearest)", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
-            "UNET":"", "UNETs":"", "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[],
+            "UNET":"", "UNETs":"", "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[],
             "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1})
         self._values.updating.connect(self.mapsUpdating)
         self._values.updated.connect(self.onUpdated)
         self._availableNetworks = []
         self._activeNetworks = []
+        self._active = []
 
     @pyqtSlot()
     def promptsChanged(self):
@@ -336,6 +337,10 @@ class Parameters(QObject):
     @pyqtProperty(list, notify=updated)
     def activeNetworks(self):
         return self._activeNetworks
+    
+    @pyqtProperty(list, notify=updated)
+    def active(self):
+        return self._active
     
     @pyqtSlot(int)
     def addNetwork(self, index):
@@ -387,6 +392,7 @@ class Parameters(QObject):
 
     @pyqtSlot(str)
     def onUpdated(self, key):
+        self.getActive()
         self.updated.emit()
 
     @pyqtSlot()
@@ -634,6 +640,63 @@ class Parameters(QObject):
         if len(p) <= 1:
             return []
         return p[1:]
+
+    @pyqtSlot()
+    def getActive(self):
+        self._active = []
+
+        prompt = self._values.get("prompt") + " " + self._values.get("negative_prompt")
+
+        for lora_match in re.findall(r"<@?lora:([^:>]+)([^>]+)?>", prompt):
+            for lora in self._values.get("LoRAs"):
+                if lora_match[0] + "." in lora:
+                    self._active += [lora]
+
+        for hn_match in re.findall(r"<@?hypernet:([^:>]+)([^>]+)?>", prompt):
+            for hn in self._values.get("HNs"):
+                if hn_match[0] + "." in hn:
+                    self._active += [hn]
+
+        for w_match in re.findall(r"__([^\s]+?)__(?!___)", prompt):
+            if w_match in self.gui.wildcards._wildcards:
+                self._active += [os.path.join("WILDCARD", w_match + ".txt")]
+
+        for emb in self._values.get("TIs"):
+            if self.gui.modelName(emb) in prompt:
+                self._active += [emb]
+
+        for model in [self._values.get(m) for m in ["UNET", "VAE", "CLIP"]]:
+            if model and "." in model and not model in self._active:
+                self._active += [model]
+
+    @pyqtSlot(str)
+    def doActivate(self, file):
+        def append(s):
+            prompt = self._values.get("prompt")
+            if prompt:
+                s = ", " + s
+            self._values.set("prompt", prompt + s)
+        
+        name = self.gui.modelName(file)
+
+        for m in ["UNET", "VAE", "CLIP"]:
+            if file in self._values.get(m + "s"):
+                self._values.set(m, file)
+        self._values.set("model", self._values.get("UNET"))
+
+        if file in self._values.get("LoRAs"):
+            append(f"<lora:{name}>")
+
+        if file in self._values.get("HNs"):
+            append(f"<hypernet:{name}>")
+
+        if file in self._values.get("TIs"):
+            append(name)
+
+        if file.startswith("WILDCARD") and name in self.gui.wildcards._wildcards:
+            append(f"__{name}__")
+        
+    
         
 def registerTypes():
     qmlRegisterUncreatableType(Parameters, "gui", 1, 0, "ParametersMap", "Not a QML type")
