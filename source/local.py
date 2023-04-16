@@ -141,8 +141,13 @@ class InferenceProcess(multiprocessing.Process):
         self.inference.start()
 
         while not self.stopping:
+            parent = multiprocessing.parent_process()
+            if not parent or not parent.is_alive():
+                self.stop()
+                return
+            
             try:
-                request = self.requests.get()
+                request = self.requests.get(True, 1)
                 if request["type"] == "cancel":
                     self.inference.cancel(request["data"]["id"])
                 if request["type"] == "stop":
@@ -172,7 +177,6 @@ class LocalInference(QThread):
 
     def run(self):
         self.inference.start()
-
         while not self.stopping:
             try:
                 QApplication.processEvents()

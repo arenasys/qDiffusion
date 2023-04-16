@@ -282,11 +282,33 @@ Item {
 
                 SContextMenu {
                     id: contextMenu
+                    width: 80
+
+                    SContextMenuItem {
+                        text: "Visit"
+                        onPressed: {
+                            EXPLORER.visit(sql_file)
+                        }
+                    }
+
                     SContextMenuItem {
                         text: "Clear"
                         onPressed: {
                             EXPLORER.clear(sql_file)
                         }
+                    }
+
+                    SContextMenuSeparator { }
+
+                    SContextMenuItem {
+                        text: "Delete"
+                        onPressed: {
+                            deleteDialog.show(sql_name)
+                        }
+                    }
+
+                    onClosed: {
+
                     }
                 }
 
@@ -316,9 +338,44 @@ Item {
                 anchors.fill: modelCard
                 color: "transparent"
                 border.width: 1
-                border.color: (modelCard.activeFocus || addDrop.containsDrag) ? "white" : COMMON.bg4
+                border.color: (modelCard.activeFocus || contextMenu.activeFocus || addDrop.containsDrag) ? "white" : COMMON.bg4
             }
 
+        }
+    }
+
+    SDialog {
+        id: deleteDialog
+        title: "Confirmation"
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        modal: true
+        property var file: ""
+
+        function show(file) {
+            deleteDialog.file = file
+            deleteDialog.open()
+        }
+
+        height: Math.max(120, message.height + 60)
+        width: 300
+
+        SText {
+            id: message
+            anchors.centerIn: parent
+            padding: 5
+            text: "Delete " + deleteDialog.file + "?"
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            width: parent.width
+            wrapMode: Text.Wrap
+        }       
+
+        onAccepted: {
+            EXPLORER.doDelete(deleteDialog.file)
+        }
+
+        onClosed: {
+            root.forceActiveFocus()
         }
     }
 }

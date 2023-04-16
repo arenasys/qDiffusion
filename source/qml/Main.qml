@@ -47,16 +47,18 @@ FocusReleaser {
         modal: true
         dim: true
 
-        width: errorText.implicitWidth + 50
+        width: errorText.contentWidth + 50
         height: errorText.contentHeight + 80
 
         SText {
             id: errorText
-            anchors.fill: parent
+            anchors.centerIn: parent
             padding: 5
             text: "Error while " + GUI.errorStatus + ".\n" + GUI.errorText
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
+            width: Math.min(errorText.implicitWidth, 500)
+            wrapMode: Text.Wrap
         }
 
         onClosed: {

@@ -625,7 +625,7 @@ class Parameters(QObject):
         return prompts
     
     def parseSubprompts(self, p):
-        return [s.replace('\n','').replace('\r', '').strip() for s in re.split("\sAND\s", p + " ", flags=re.IGNORECASE)]
+        return [s.replace('\n','').replace('\r', '').strip() for s in re.split("\sAND\s", p + " ")]
     
     @pyqtProperty(list, notify=updated)
     def subprompts(self):
