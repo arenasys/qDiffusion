@@ -78,6 +78,7 @@ class GUI(QObject):
         self._debugJSONLogging = self._config._values.get("debug") == True
 
         self.wildcards = wildcards.Wildcards(self)
+        self.wildcards.reload()
 
         self.backend = backend.Backend(self)
         self.backend.response.connect(self.onResponse)
@@ -261,6 +262,7 @@ class GUI(QObject):
 
     @pyqtSlot()
     def refreshModels(self):
+        self.wildcards.reload()
         self.backend.makeRequest({"type":"options"})
 
     @pyqtSlot()
@@ -424,7 +426,7 @@ class GUI(QObject):
     
     @pyqtSlot()
     def watchModelDirectory(self):
-        folders = ["SD", "LoRA", "HN", "SR", "TI", "Stable-diffusion", "ESRGAN", "RealESRGAN", "Lora", "hypernetworks", os.path.join("..", "embeddings")]
+        folders = ["SD", "LoRA", "HN", "SR", "TI", "Stable-diffusion", "ESRGAN", "RealESRGAN", "Lora", "hypernetworks", os.path.join("..", "embeddings"), "WILDCARD"]
         folders = [os.path.abspath(os.path.join(self.modelDirectory(), f)) for f in folders]
         folders = [f for f in folders if os.path.exists(f)]
         for folder in folders:
