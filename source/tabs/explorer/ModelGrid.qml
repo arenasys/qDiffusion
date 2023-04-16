@@ -323,7 +323,7 @@ Item {
                     anchors.fill: parent
 
                     onDropped: {
-                        EXPLORER.set(mimeData, sql_file)
+                        EXPLORER.doReplace(mimeData, sql_file)
                         thumbnail.source = ""
                         fullThumbnail.source = ""
                         thumbnail.source = Qt.binding(function() { return thumbnail.trueSource })
