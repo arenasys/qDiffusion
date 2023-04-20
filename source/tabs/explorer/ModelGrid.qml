@@ -153,7 +153,7 @@ Item {
                         modelCard.forceActiveFocus()
                     }
                     onDoubleClicked: {
-                        BASIC.parameters.doActivate(sql_name)
+                        BASIC.parameters.doToggle(sql_name)
                     }
                 }
 

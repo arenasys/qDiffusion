@@ -696,6 +696,39 @@ class Parameters(QObject):
         if file.startswith("WILDCARD") and name in self.gui.wildcards._wildcards:
             append(f"__{name}__")
         
+    @pyqtSlot(str)
+    def doDeactivate(self, file):
+        def remove(m):
+            m = fr"(,*\s*{m})"
+            c = r"(^,*\s*)|(,*\s*$)"
+            pos = re.sub(c,'',re.sub(m,'',self._values.get("prompt")))
+            neg = re.sub(c,'',re.sub(m,'',self._values.get("negative_prompt")))
+            self._values.set("prompt", pos)
+            self._values.set("negative_prompt", neg)
+        
+        name = self.gui.modelName(file)
+
+        if file in self._values.get("VAEs"):
+            self._values.set("VAE", self._values.get("UNET"))
+
+        if file in self._values.get("LoRAs"):
+            remove(fr"<@?lora:({name})(?::([-\d.]+))?(?::([-\d.]+))?>")
+
+        if file in self._values.get("HNs"):
+            remove(fr"<@?hypernet:({name})(?::([-\d.]+))?(?::([-\d.]+))?>")
+
+        if file in self._values.get("TIs"):
+            remove(fr"{name}")
+
+        if file.startswith("WILDCARD") and name in self.gui.wildcards._wildcards:
+            remove(fr"__{name}__")
+
+    @pyqtSlot(str)
+    def doToggle(self, file):
+        if file in self._active:
+            self.doDeactivate(file)
+        else:
+            self.doActivate(file)
     
         
 def registerTypes():
