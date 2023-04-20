@@ -11,6 +11,7 @@ import "../../components"
 Item {
     id: root
     property var mode: ""
+    property var folder: ""
     property var cellSize: 150
     MouseArea {
         anchors.fill: parent
@@ -32,7 +33,7 @@ Item {
         anchors.fill: parent
         model: Sql {
             id: modelsSql
-            query: "SELECT name, type, desc, file, width, height FROM models WHERE category = '" + root.mode + "' ORDER BY idx ASC;"
+            query: "SELECT name, type, desc, file, width, height FROM models WHERE category = '" + root.mode + "' AND folder = '" + root.folder + "' ORDER BY idx ASC;"
             property bool reset: false
             function refresh() {
                 modelsView.positionViewAtBeginning()

@@ -188,7 +188,7 @@ class Sql(QAbstractListModel):
                 changed = True
                 break
             elif srcIdx > 0:
-                self.beginRemoveRows(QModelIndex(), i, i+srcIdx-1)
+                self.beginRemoveRows(QModelIndex(), i, i+srcIdx-2) # TODO: remember wtf is going on
                 self.results = self.results[:i] + self.results[i+srcIdx:]
                 self.endRemoveRows()
                 changed = True

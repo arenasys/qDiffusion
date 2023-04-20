@@ -671,11 +671,11 @@ class Parameters(QObject):
 
     @pyqtSlot(str)
     def doActivate(self, file):
-        def append(s):
-            prompt = self._values.get("prompt")
+        def append(s, key="prompt"):
+            prompt = self._values.get(key)
             if prompt:
                 s = ", " + s
-            self._values.set("prompt", prompt + s)
+            self._values.set(key, prompt + s)
         
         name = self.gui.modelName(file)
 
@@ -691,7 +691,10 @@ class Parameters(QObject):
             append(f"<hypernet:{name}>")
 
         if file in self._values.get("TIs"):
-            append(name)
+            if "neg" in re.split(r'/|\\', file, 1)[0].lower():
+                append(name, "negative_prompt")
+            else:
+                append(name)
 
         if file.startswith("WILDCARD") and name in self.gui.wildcards._wildcards:
             append(f"__{name}__")
@@ -729,7 +732,6 @@ class Parameters(QObject):
             self.doDeactivate(file)
         else:
             self.doActivate(file)
-    
         
 def registerTypes():
     qmlRegisterUncreatableType(Parameters, "gui", 1, 0, "ParametersMap", "Not a QML type")

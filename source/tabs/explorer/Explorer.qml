@@ -25,7 +25,13 @@ Item {
             active: modelsStack.currentIndex == index
             onPressed: {
                 modelsStack.currentIndex = index
+                modelsStack.currentItem.folder = ""
             }
+        }
+        SubfolderList {
+            mode: "checkpoint"
+            index: 0
+            stack: modelsStack
         }
         SColumnButton {
             label: "Components"
@@ -33,7 +39,13 @@ Item {
             active: modelsStack.currentIndex == index
             onPressed: {
                 modelsStack.currentIndex = index
+                modelsStack.currentItem.folder = ""
             }
+        }
+        SubfolderList {
+            mode: "component"
+            index: 1
+            stack: modelsStack
         }
         SColumnButton {
             label: "LoRAs"
@@ -41,7 +53,13 @@ Item {
             active: modelsStack.currentIndex == index
             onPressed: {
                 modelsStack.currentIndex = index
+                modelsStack.currentItem.folder = ""
             }
+        }
+        SubfolderList {
+            mode: "lora"
+            index: 2
+            stack: modelsStack
         }
         SColumnButton {
             label: "Hypernets"
@@ -49,7 +67,13 @@ Item {
             active: modelsStack.currentIndex == index
             onPressed: {
                 modelsStack.currentIndex = index
+                modelsStack.currentItem.folder = ""
             }
+        }
+        SubfolderList {
+            mode: "hypernet"
+            index: 3
+            stack: modelsStack
         }
         SColumnButton {
             label: "Embeddings"
@@ -57,7 +81,13 @@ Item {
             active: modelsStack.currentIndex == index
             onPressed: {
                 modelsStack.currentIndex = index
+                modelsStack.currentItem.folder = ""
             }
+        }
+        SubfolderList {
+            mode: "embedding"
+            index: 4
+            stack: modelsStack
         }
         SColumnButton {
             label: "Wildcards"
@@ -65,7 +95,13 @@ Item {
             active: modelsStack.currentIndex == index
             onPressed: {
                 modelsStack.currentIndex = index
+                modelsStack.currentItem.folder = ""
             }
+        }
+        SubfolderList {
+            mode: "wildcard"
+            index: 2
+            stack: modelsStack
         }
     }
     Rectangle {
@@ -89,6 +125,7 @@ Item {
             id: modelsStack
             currentIndex: 0
             anchors.fill: parent
+            property var currentItem: modelsStack.children[modelsStack.currentIndex]
 
             ModelGrid {
                 mode: "checkpoint"
@@ -112,7 +149,7 @@ Item {
     }
 
     Keys.onPressed: {
-        var current = modelsStack.children[modelsStack.currentIndex]
+        var current = modelsStack.currentItem
         event.accepted = true
         if(event.modifiers & Qt.ControlModifier) {
             switch(event.key) {

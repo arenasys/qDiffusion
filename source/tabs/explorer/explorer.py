@@ -7,6 +7,7 @@ import sql
 import os
 import PIL.Image
 import misc
+import re
 
 class Explorer(QObject):
     updated = pyqtSignal()
@@ -23,13 +24,18 @@ class Explorer(QObject):
 
         self.conn = sql.Connection(self)
         self.conn.connect()
-        self.conn.doQuery("CREATE TABLE models(name TEXT, category TEXT, type TEXT, file TEXT, desc TEXT, idx INTEGER, width INTEGER, height INTEGER, CONSTRAINT unq UNIQUE (category, idx));")
+        self.conn.doQuery("CREATE TABLE models(name TEXT, category TEXT, type TEXT, file TEXT, folder TEXT, desc TEXT, idx INTEGER, width INTEGER, height INTEGER, CONSTRAINT unq UNIQUE (category, idx));")
         self.conn.enableNotifications("models")
 
     def setModel(self, name, category, type, idx):
         q = QSqlQuery(self.conn.db)
 
         file =  os.path.abspath(os.path.join(self.gui.modelDirectory(), name.rsplit(".",1)[0]))
+        folder = ""
+        parts = re.split(r'/|\\', name)
+        if len(parts) > 2:
+            folder = parts[1]
+        
         preview = file + ".png"
         desc = file + ".txt"
 
@@ -46,11 +52,12 @@ class Explorer(QObject):
             with open(desc, "r") as f:
                 description = f.read().strip()
         
-        q.prepare("INSERT OR REPLACE INTO models(name, category, type, file, desc, idx, width, height) VALUES (:name, :category, :type, :file, :desc, :idx, :width, :height);")
+        q.prepare("INSERT OR REPLACE INTO models(name, category, type, file, folder, desc, idx, width, height) VALUES (:name, :category, :type, :file, :folder, :desc, :idx, :width, :height);")
         q.bindValue(":name", name)
         q.bindValue(":category", category)
         q.bindValue(":type", type)
         q.bindValue(":file", preview)
+        q.bindValue(":folder", folder)
         q.bindValue(":desc", description)
         q.bindValue(":idx", idx)
         q.bindValue(":width", w)

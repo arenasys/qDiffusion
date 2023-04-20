@@ -7,6 +7,7 @@ Item {
     id: root
     property alias label: labelText.text
     property var active: false
+    property var mini: height < 30
 
     signal pressed()
     
@@ -19,7 +20,7 @@ Item {
         anchors.leftMargin: -1
         anchors.rightMargin: -1
 
-        color: active ? COMMON.bg4 : COMMON.bg1
+        color: mini ? (active ? COMMON.bg3_5 : COMMON.bg1) : (active ? COMMON.bg4 : COMMON.bg1)
 
         border.color: active ? COMMON.bg5 : COMMON.bg2
 
