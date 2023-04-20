@@ -26,7 +26,7 @@ class WatcherRunnable(QRunnable):
     def run(self):
         try:
             files = glob.glob(os.path.join(self.folder, "*.*"))
-            files = sorted(files, key = os.path.getmtime)
+            files = sorted(files, key = os.path.getmtime, reverse=True)
             for i, file in enumerate(files):
                 if self.signals.stopping:
                     return
