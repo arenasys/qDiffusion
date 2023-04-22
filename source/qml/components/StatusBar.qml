@@ -14,30 +14,40 @@ Rectangle {
         height: 2
         color: COMMON.bg4
     }
-    
-    Rectangle {
-        id: statusColor
+
+    Item {
         anchors.bottom: parent.bottom
         width: parent.width
         height: 2
-        color: GUI.statusProgress <= 0 ? [COMMON.accent(0.2), COMMON.accent(0.4), COMMON.accent(0.6), "#a0000000", "#a0000000"][GUI.statusMode] : COMMON.accent(0)
-    }
+    
+        Rectangle {
+            id: statusColor
+            anchors.fill: parent
+            color: GUI.statusProgress <= 0 ? [COMMON.accent(0.2), COMMON.accent(0.4), COMMON.accent(0.6), "#a0000000", "#a0000000"][GUI.statusMode] : COMMON.accent(0)
+        }
 
-    Rectangle {
-        anchors.bottom: parent.bottom
-        width: parent.width * GUI.statusProgress
-        height: 2
-        color: Qt.lighter(statusColor.color, 1.5)
+        Rectangle {
+            width: parent.width * GUI.statusProgress
+            height: 2
+            color: Qt.lighter(statusColor.color, 1.5)
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            opacity: 0.25
+            color: COMMON.bg0
+        }
     }
 
     SText {
         anchors.fill: parent
         anchors.topMargin: 2
-        anchors.bottomMargin: 3
+        anchors.bottomMargin: 4
         verticalAlignment: Text.AlignVCenter
         horizontalAlignment: Text.AlignHCenter
         text: GUI.statusText
         font.bold: true
         font.pointSize: 9.8
+        color: COMMON.fg1_5
     }
 }
