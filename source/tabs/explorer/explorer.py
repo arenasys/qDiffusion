@@ -130,7 +130,8 @@ class Explorer(QObject):
 
     @pyqtSlot(str)
     def doDelete(self, file):
-        print("DELETE", file)
+        request = {"type":"manage", "data": {"operation": "modify", "old_file": file, "new_file": ""}}
+        self.gui.makeRequest(request)
 
     @pyqtSlot(str)
     def doVisit(self, file):

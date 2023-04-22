@@ -78,7 +78,7 @@ FocusReleaser {
         anchors.left: root.left
         anchors.right: root.right
         anchors.top: barDivider.bottom
-        anchors.bottom: root.bottom
+        anchors.bottom: statusBar.top
 
         currentIndex: GUI.tabNames.indexOf(tabBar.currentTab)
 
@@ -106,6 +106,14 @@ FocusReleaser {
         }
     }
 
+    StatusBar {
+        id: statusBar
+        anchors.left: root.left
+        anchors.right: root.right
+        anchors.bottom: root.bottom
+        height: stackLayout.currentIndex == 0 ? 0 : 20
+    }
+
     onReleaseFocus: {
         keyboardFocus.forceActiveFocus()
     }
@@ -116,6 +124,15 @@ FocusReleaser {
             event.accepted = true
             if(event.modifiers & Qt.ControlModifier) {
                 switch(event.key) {
+                case Qt.Key_1:
+                    tabBar.setIndex(0)
+                    break;
+                case Qt.Key_2:
+                    tabBar.setIndex(1)
+                    break;
+                case Qt.Key_3:
+                    tabBar.setIndex(2)
+                    break;
                 default:
                     event.accepted = false
                     break;

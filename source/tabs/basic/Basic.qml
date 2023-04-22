@@ -30,7 +30,7 @@ Item {
             width: 290
             height: 30
             label: "Filename"
-            value: BASIC.parameters.values.get("UNET") + ".st"
+            value: GUI.modelName(BASIC.parameters.values.get("UNET")) + ".safetensors"
         }
 
         width: 300

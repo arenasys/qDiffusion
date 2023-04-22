@@ -201,25 +201,18 @@ Item {
                 }
 
                 Item {
+                    id: descItem
                     visible: (sql_desc != "" || modelCard.showing) && (sql_width == 0 || modelCard.showing)
                     anchors.fill: interior
                     anchors.margins: 1
                     property var inset: sql_width == 0 ? 2 : 4
-                    Glow {
-                        visible: sql_width != 0
-                        opacity: 0.4
-                        anchors.fill: parent
-                        radius: 5
-                        samples: 8
-                        color: "#000000"
-                        source: parent
-                    }
+
                     Rectangle {
                         anchors.fill: parent
                         anchors.margins: parent.inset
                         color: COMMON.bg2
-                        opacity: sql_width == 0 ? 0 : 0.4
-                        border.color: COMMON.bg4
+                        opacity: sql_width == 0 ? 0 : 0.75
+                        border.color: COMMON.bg6
                     }
                     Glow {
                         visible: sql_width != 0

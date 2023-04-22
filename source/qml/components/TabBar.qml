@@ -12,6 +12,10 @@ Item {
     property var currentTab: GUI.tabNames[0]
     property var shown: GUI.tabNames.slice(0,-1)
 
+    function setIndex(index) {
+        currentTab = shown[index]
+    }
+
     function getShown() {
         var _shown = []
         var i = 0
