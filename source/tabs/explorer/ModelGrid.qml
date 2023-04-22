@@ -13,9 +13,13 @@ Item {
     property var mode: ""
     property var folder: ""
     property var cellSize: 150
+    property var shift: false
     MouseArea {
         anchors.fill: parent
-        acceptedButtons: Qt.NoButton
+        acceptedButtons: Qt.LeftButton
+        onPressed: {
+            root.deselect(-1)
+        }
         onWheel: {
             if(wheel.angleDelta.y < 0) {
                 scrollBar.increase()
@@ -24,6 +28,9 @@ Item {
             }
         }
     }
+
+    signal deselect(int index)
+
     GridView {
         id: modelsView
         property int padding: 10
@@ -41,10 +48,6 @@ Item {
             onQueryChanged: {
                 modelsSql.refresh()
                 reset = true
-            }
-            onBigChange: {
-                modelsSql.forceReset()
-                modelsSql.refresh()
             }
             onResultsChanged: {
                 if(reset) {
@@ -83,8 +86,30 @@ Item {
                 anchors.topMargin: modelsView.padding
                 color: COMMON.bg1
 
-                property var selected: modelCard.activeFocus || contextMenu.activeFocus || addDrop.containsDrag
+                property var selected: false
+                property var editing: false
                 property var active: BASIC.parameters.active.includes(sql_name) 
+
+                Connections {
+                    target: root
+                    function onDeselect(i) {
+                        if(i != index) {
+                            modelCard.selected = false
+                            modelCard.editing = false
+                        }
+                    }
+                }
+
+                function select() {
+                    modelCard.selected = true
+                    root.deselect(index)
+                }
+
+                function edit() {
+                    modelCard.selected = true
+                    modelCard.editing = true
+                    root.deselect(index)
+                }
 
                 LoadingSpinner {
                     anchors.fill: parent
@@ -151,7 +176,7 @@ Item {
                     anchors.fill: parent
                     acceptedButtons: Qt.LeftButton
                     onPressed: {
-                        modelCard.forceActiveFocus()
+                        modelCard.select()
                     }
                     onDoubleClicked: {
                         BASIC.parameters.doToggle(sql_name)
@@ -159,7 +184,7 @@ Item {
                 }
 
                 Item {
-                    visible: sql_desc != "" && sql_width == 0
+                    visible: sql_desc != "" && (sql_width == 0 || modelCard.editing)
                     anchors.fill: interior
                     anchors.margins: 1
                     property var inset: sql_width == 0 ? 2 : 4
@@ -192,10 +217,18 @@ Item {
                         id: descText
                         anchors.fill: parent
                         anchors.margins: parent.inset
-                        readOnly: true
+                        readOnly: !modelCard.editing
                         font.pointSize: 9.8
                         area.color: sql_width == 0 ? COMMON.fg2 : COMMON.fg1
                         text: sql_desc
+                        scrollBar.opacity: 0.5
+                        scrollBar.color: COMMON.fg3
+
+                        area.onActiveFocusChanged: {
+                            if(area.activeFocus) {
+                                modelCard.select()
+                            }
+                        }
                     }
                 }
 
@@ -234,7 +267,7 @@ Item {
                         opacity: 0.8
                     }
                 }
-                
+
                 Rectangle {
                     id: labelBg
                     anchors.left: parent.left
@@ -253,40 +286,71 @@ Item {
                         opacity: 0.8
                         border.color: COMMON.bg4
                     }
-                }
 
-                Glow {
-                    visible: sql_width != 0
-                    opacity: 0.4
-                    anchors.fill: labelText
-                    radius: 5
-                    samples: 8
-                    color: "#000000"
-                    source: labelText
-                }
-
-                SText {
-                    id: labelText
-                    anchors.fill: labelBg
-                    text: GUI.modelName(sql_name)
-                    verticalAlignment: Text.AlignVCenter
-                    horizontalAlignment: Text.AlignHCenter
-                    color: COMMON.fg1
-                    elide: Text.ElideRight
-                    leftPadding: 5
-                    rightPadding: 5
-                }
-
-                MouseArea {
-                    id: cardMouseArea
-                    hoverEnabled: true
-                    anchors.fill: parent
-                    acceptedButtons: Qt.RightButton
-                    onPressed: {
-                        contextMenu.popup()
+                    MouseArea {
+                        id: labelMouseArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        acceptedButtons: Qt.LeftButton
+                        onPressed: {
+                            modelCard.edit()
+                        }
                     }
                 }
 
+
+                Item {
+                    clip: true
+                    anchors.fill: labelBg
+
+                    Glow {
+                        property var target: labelTextEdit.visible ? labelTextEdit : labelText
+                        visible: sql_width != 0
+                        opacity: 0.4
+                        anchors.fill: target
+                        radius: 5
+                        samples: 8
+                        color: "#000000"
+                        source: target
+                    }
+
+                    SText {
+                        id: labelText
+                        visible: !labelTextEdit.visible
+                        anchors.fill: parent
+                        text: GUI.modelName(sql_name)
+                        verticalAlignment: Text.AlignVCenter
+                        horizontalAlignment: Text.AlignHCenter
+                        color: COMMON.fg1
+                        elide: Text.ElideRight
+                        leftPadding: 5
+                        rightPadding: 5
+                    }
+
+                    STextInput {
+                        id: labelTextEdit
+                        visible: modelCard.editing
+                        anchors.fill: parent
+                        text: GUI.modelName(sql_name)
+                        verticalAlignment: Text.AlignVCenter
+                        horizontalAlignment: Text.AlignHCenter
+                        color: COMMON.fg1
+                        leftPadding: 5
+                        rightPadding: 5
+                    }
+                }
+
+
+                MouseArea {
+                    id: cardMouseArea
+                    anchors.fill: parent
+                    acceptedButtons: Qt.RightButton
+                    onPressed: {
+                        modelCard.select()
+                        contextMenu.popup()
+                    }
+                }
+                
                 SContextMenu {
                     id: contextMenu
                     width: 80

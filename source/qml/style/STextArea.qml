@@ -11,6 +11,7 @@ Rectangle {
     property alias monospace: textArea.monospace
     property alias readOnly: textArea.readOnly
     property alias area: textArea
+    property alias scrollBar: controlScrollBar
 
     onActiveFocusChanged: {
         if(root.activeFocus) {
@@ -54,7 +55,7 @@ Rectangle {
         interactive: false
 
         ScrollBar.vertical: SScrollBarV {
-            id: scrollBar
+            id: controlScrollBar
             parent: control
             anchors.top: control.top
             anchors.right: control.right

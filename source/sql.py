@@ -88,11 +88,9 @@ class Connection(QObject):
     def relayNotification(self, table):
         self.notification.emit(table)
 
-
 class Sql(QAbstractListModel):
     queryChanged = pyqtSignal()
     resultsChanged = pyqtSignal()
-    bigChange = pyqtSignal()
     def __init__(self, parent):
         super().__init__(parent)
 
@@ -169,7 +167,6 @@ class Sql(QAbstractListModel):
             return
 
         totalResults = len(newResults)
-        delta = abs(len(newResults)-len(self.results))
 
         changed = False
         i = 0
@@ -187,11 +184,13 @@ class Sql(QAbstractListModel):
                 self.endRemoveRows()
                 changed = True
                 break
+
             elif srcIdx > 0:
-                self.beginRemoveRows(QModelIndex(), i, i+srcIdx-2) # TODO: remember wtf is going on
+                self.beginRemoveRows(QModelIndex(), i, i+srcIdx-1)
                 self.results = self.results[:i] + self.results[i+srcIdx:]
                 self.endRemoveRows()
                 changed = True
+                break
         
             if dstIdx > 0:
                 self.beginInsertRows(QModelIndex(), i, i+dstIdx-1)
@@ -215,9 +214,6 @@ class Sql(QAbstractListModel):
 
         if changed:
             self.resultsChanged.emit()
-        
-        if delta > 9:
-            self.bigChange.emit()
 
     def data(self, index, role):
         value = QVariant()

@@ -9,11 +9,13 @@ ScrollBar {
     position: 0.2
     active: true
     orientation: Qt.Vertical
+    property var color: COMMON.bg7
+    property var pressedColor: COMMON.fg3
 
     contentItem: Rectangle {
         implicitWidth: 6
         implicitHeight: 200
-        color: control.pressed ? COMMON.fg3 : COMMON.bg7
+        color: control.pressed ? control.pressedColor : control.color
         // Hide the ScrollBar when it's not needed.
         opacity: control.policy === ScrollBar.AlwaysOn || (control.active && control.size < 1.0) ? 0.75 : 0
 

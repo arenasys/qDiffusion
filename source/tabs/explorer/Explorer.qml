@@ -10,6 +10,7 @@ import "../../style"
 import "../../components"
 
 Item {
+    id: root
     Rectangle {
         anchors.fill: column
         color: COMMON.bg0
