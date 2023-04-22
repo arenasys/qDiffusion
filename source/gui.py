@@ -437,11 +437,15 @@ class GUI(QObject):
 
     @pyqtSlot(str, result=str)
     def modelName(self, name):
-        return name.rsplit(".",1)[0].rsplit('/',1)[-1].rsplit('\\',1)[-1]
+        return name.rsplit(".",1)[0].rsplit(os.path.sep,1)[-1]
+    
+    @pyqtSlot(str, result=str)
+    def modelFileName(self, name):
+        return name.rsplit(os.path.sep,1)[-1]
     
     @pyqtSlot(str, result=str)
     def netType(self, name):
-        folder = name.rsplit('/',1)[0].rsplit('\\',1)[0].rsplit('/',1)[-1].rsplit('\\',1)[-1]
+        folder = name.rsplit(os.path.sep,1)[0].rsplit(os.path.sep,1)[-1]
         if folder in {"LoRA"}:
             return "LoRA"
         elif folder in {"HN", "hypernetworks"}:

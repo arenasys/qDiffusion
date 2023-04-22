@@ -73,7 +73,6 @@ class RemoteInferenceUpload(QThread):
                     if not chunk:
                         break
                     request = {"type":"chunk", "data": {"type":self.type, "name": self.name, "chunk":chunk, "index":i}}
-
                     while not self.queue.empty():
                         QThread.msleep(10)
                         QApplication.processEvents()

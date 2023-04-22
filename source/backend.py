@@ -4,6 +4,7 @@ import json
 import bson
 import datetime
 import copy
+import os
 
 from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, QThread, Qt
 from PyQt5.QtWidgets import QApplication
@@ -31,6 +32,27 @@ def hideBytes(d):
                 d[i] = "..."
             if type(d[i]) in {dict, list}:
                 hideBytes(d[i])
+
+SEP = os.path.sep
+INV_SEP = {"\\": '/', '/':'\\'}[os.path.sep]
+
+def convert_path(p):
+    return p.replace(INV_SEP, SEP)
+
+def convert_all_paths(j):
+    if type(j) == list:
+        for i in range(len(j)):
+            v = j[i]
+            if type(v) == str and INV_SEP in v:
+                j[i] = convert_path(v)
+            if type(v) == list or type(v) == dict:
+                convert_all_paths(j[i])
+    elif type(j) == dict: 
+        for k, v in j.items():
+            if type(v) == str and INV_SEP in v:
+                j[k] = convert_path(v)
+            if type(v) == list or type(v) == dict:
+                convert_all_paths(j[k])
 
 class Backend(QObject):
     request = pyqtSignal(object)
@@ -85,5 +107,6 @@ class Backend(QObject):
 
     @pyqtSlot(object)
     def onResponse(self, response):
+        convert_all_paths(response)
         self.debugLogging("RESPONSE", response)
         self.response.emit(response)

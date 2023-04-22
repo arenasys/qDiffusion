@@ -8,6 +8,7 @@ import os
 import PIL.Image
 import misc
 import re
+import shutil
 
 class Explorer(QObject):
     updated = pyqtSignal()
@@ -138,3 +139,28 @@ class Explorer(QObject):
             QDesktopServices.openUrl(QUrl.fromLocalFile(path))
         except Exception:
             pass
+
+    @pyqtSlot(str, str, str)
+    def doEdit(self, file, name, desc):
+        old_file = file
+        new_file = os.path.join(os.path.dirname(old_file), name)
+        old_path = os.path.abspath(os.path.join(self.gui.modelDirectory(), old_file.split('.',1)[0]))
+        new_path = os.path.abspath(os.path.join(self.gui.modelDirectory(), new_file.split('.',1)[0]))
+
+        if old_file != new_file:
+            if os.path.exists(old_path + ".txt"):
+                shutil.move(old_path + ".txt", new_path + ".txt")
+            if os.path.exists(old_path + ".png"):
+                shutil.move(old_path + ".png", new_path + ".png")
+
+        if desc:
+            with open(new_path + ".txt", "w") as f:
+                f.write(desc)
+        elif os.path.exists(new_path + ".txt"):
+            os.remove(new_path + ".txt")
+
+        if old_file != new_file:
+            request = {"type":"manage", "data": {"operation": "modify", "old_file": old_file, "new_file": new_file}}
+            self.gui.makeRequest(request)
+
+        self.optionsUpdated()

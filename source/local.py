@@ -81,15 +81,12 @@ class InferenceProcessThread(threading.Thread):
                     self.wrapper.img2img()
                 elif request["type"] == "options":
                     self.wrapper.options()
-                elif request["type"] == "convert":
-                    self.wrapper.set(**request["data"])
-                    self.wrapper.convert()
                 elif request["type"] == "upscale":
                     self.wrapper.set(**request["data"])
                     self.wrapper.upscale()
-                elif request["type"] == "build":
+                elif request["type"] == "manage":
                     self.wrapper.set(**request["data"])
-                    self.wrapper.build()
+                    self.wrapper.manage()
                 self.requests.task_done()
             except queue.Empty:
                 pass

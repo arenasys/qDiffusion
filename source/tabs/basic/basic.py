@@ -775,7 +775,7 @@ class Basic(QObject):
         unet = self._parameters._values.get("UNET")
         vae = self._parameters._values.get("VAE")
         clip = self._parameters._values.get("CLIP")
-        request = {"type":"build", "data":{"unet":unet, "vae":vae, "clip":clip, "filename":filename}}
+        request = {"type":"manage", "data":{"operation": "build", "unet":unet, "vae":vae, "clip":clip, "filename":filename}}
         self.gui.makeRequest(request)    
 
     @pyqtSlot(CanvasWrapper, BasicInput)

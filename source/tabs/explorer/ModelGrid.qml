@@ -87,6 +87,7 @@ Item {
                 color: COMMON.bg1
 
                 property var selected: false
+                property var showing: false
                 property var editing: false
                 property var active: BASIC.parameters.active.includes(sql_name) 
 
@@ -96,6 +97,9 @@ Item {
                         if(i != index) {
                             modelCard.selected = false
                             modelCard.editing = false
+                            modelCard.showing = false
+                            descText.text = sql_desc
+                            labelTextEdit.text = GUI.modelFileName(sql_name)
                         }
                     }
                 }
@@ -105,10 +109,23 @@ Item {
                     root.deselect(index)
                 }
 
+                function show() {
+                    modelCard.selected = true
+                    modelCard.showing = true
+                    root.deselect(index)
+                }
+
                 function edit() {
                     modelCard.selected = true
+                    modelCard.showing = true
                     modelCard.editing = true
+                    labelTextEdit.cursorPosition = 0
                     root.deselect(index)
+                }
+
+                function save() {
+                    EXPLORER.doEdit(sql_name, labelTextEdit.text, descText.text)
+                    modelCard.editing = false
                 }
 
                 LoadingSpinner {
@@ -131,7 +148,7 @@ Item {
 
                     Image {
                         id: placeholder
-                        visible: sql_width == 0 && sql_desc == ""
+                        visible: sql_width == 0 && descText.text == ""
                         source: "qrc:/icons/placeholder_black.svg"
                         height: parent.width/4
                         width: height
@@ -184,7 +201,7 @@ Item {
                 }
 
                 Item {
-                    visible: sql_desc != "" && (sql_width == 0 || modelCard.editing)
+                    visible: (sql_desc != "" || modelCard.showing) && (sql_width == 0 || modelCard.showing)
                     anchors.fill: interior
                     anchors.margins: 1
                     property var inset: sql_width == 0 ? 2 : 4
@@ -293,7 +310,7 @@ Item {
                         hoverEnabled: true
                         acceptedButtons: Qt.LeftButton
                         onPressed: {
-                            modelCard.edit()
+                            modelCard.show()
                         }
                     }
                 }
@@ -331,7 +348,7 @@ Item {
                         id: labelTextEdit
                         visible: modelCard.editing
                         anchors.fill: parent
-                        text: GUI.modelName(sql_name)
+                        text: GUI.modelFileName(sql_name)
                         verticalAlignment: Text.AlignVCenter
                         horizontalAlignment: Text.AlignHCenter
                         color: COMMON.fg1
@@ -356,6 +373,19 @@ Item {
                     width: 80
 
                     SContextMenuItem {
+                        text: modelCard.editing ? "Save" : "Edit"
+                        onPressed: {
+                            if(modelCard.editing) {
+                                modelCard.save()
+                            } else {
+                                modelCard.edit()
+                            }
+                        }
+                    }
+
+                    SContextMenuSeparator {}
+
+                    SContextMenuItem {
                         text: "Visit"
                         onPressed: {
                             EXPLORER.doVisit(sql_name)
@@ -369,7 +399,7 @@ Item {
                         }
                     }
 
-                    SContextMenuSeparator { }
+                    SContextMenuSeparator {}
 
                     SContextMenuItem {
                         text: "Delete"
@@ -406,12 +436,12 @@ Item {
             }
 
             Rectangle {
-                visible: modelCard.active
+                visible: modelCard.active || modelCard.editing
                 anchors.fill: modelCard
                 anchors.margins: -2
                 color: "transparent"
                 border.width: 2
-                border.color: COMMON.accent(0)
+                border.color: modelCard.editing ? COMMON.accent(0.25) : COMMON.accent(0)
             }
 
             Rectangle {
