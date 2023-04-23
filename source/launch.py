@@ -44,6 +44,9 @@ def install_qt():
         subprocess.run(("venv/bin/pip install "+QT_VER).split(' '), env=get_env())
 
 if __name__ == "__main__":
+    if sys.version_info[0] < 3 or sys.version_info[1] < 8:
+        raise Exception(f"Python 3.8 or greater required. Have Python {sys.version_info[0]}.{sys.version_info[1]}.")
+
     if not INSIDE_VENV:
         if MISSING_VENV:
             install_venv()
