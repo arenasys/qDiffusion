@@ -197,8 +197,8 @@ class LocalInference(QThread):
     def onResponse(self, response):
         if response["type"] == "result":
             self.saveResults(response["data"]["images"], response["data"]["metadata"])
-
         self.response.emit(response)
+        QApplication.processEvents()
 
     def saveResults(self, images, metadata):
         for i in range(len(images)):

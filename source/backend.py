@@ -71,7 +71,6 @@ class Backend(QObject):
         self.inference = None
         if endpoint == "":
             if HAVE_TORCH:
-                
                 self.inference = local.LocalInference(self.gui)
             else:
                 self.onResponse({"type": "remote_only"})
