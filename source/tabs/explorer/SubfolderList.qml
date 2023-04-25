@@ -21,7 +21,7 @@ ListView {
     }
     delegate: Item {
         x: 10
-        width: parent.width - 2*x
+        width: root.width - 2*x
         height: 25
         SColumnButton {
             id: button

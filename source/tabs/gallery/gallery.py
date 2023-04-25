@@ -56,6 +56,8 @@ class Populater(QObject):
         q.bindValue(":total", total)
         self.conn.doQuery(q)
 
+        self.conn.enableNotifications("images")
+
     @pyqtSlot(str, str, int)
     def onResult(self, folder, file, idx):
         if not folder in self.folders:
@@ -73,6 +75,11 @@ class Populater(QObject):
                 width, height = img.size
         except Exception:
             return
+        
+        if idx == 0:
+            self.conn.disableNotifications("images")
+        if idx % 1000 == 999:
+            self.conn.relayNotification("images")
 
         q = QSqlQuery(self.conn.db)
         q.prepare("INSERT OR REPLACE INTO images(file, folder, parameters, idx, width, height) VALUES (:file, :folder, :parameters, :idx, :width, :height);")

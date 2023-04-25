@@ -12,6 +12,7 @@ class NotificationDelay(QTimer):
     def __init__(self, parent, table, interval=100):
         super().__init__(parent)
         self.table = table
+        self.setSingleShot(True)
         self.setInterval(interval)
         self.timeout.connect(self.onTimeout)
 
@@ -63,7 +64,10 @@ class Connection(QObject):
 
     def enableNotifications(self, table):
         self.db.driver().subscribeToNotification(table)
-        
+    
+    def disableNotifications(self, table):
+        self.db.driver().unsubscribeFromNotification(table)
+
     def doQuery(self, q):
         if type(q) == str:
             query = QSqlQuery(self.db)
