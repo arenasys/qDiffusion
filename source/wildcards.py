@@ -18,7 +18,7 @@ class Wildcards(QObject):
             self.loadFile(file)
     
     def loadFile(self, file):
-        with open(file, 'r') as f:
+        with open(file, 'r', encoding='utf-8') as f:
             lines = [l.strip() for l in f.readlines() if l.strip()]
             if lines:
                 name = file.rsplit(os.path.sep,1)[-1].rsplit('.',1)[0]

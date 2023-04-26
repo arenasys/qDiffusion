@@ -24,7 +24,7 @@ FRAGMENT_SIZE = 1048576
 def log_traceback(label):
     exc_type, exc_value, exc_tb = sys.exc_info()
     tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
-    with open("crash.log", "a") as f:
+    with open("crash.log", "a", encoding='utf-8') as f:
         f.write(f"{label} {datetime.datetime.now()}\n{tb}\n")
     print(label, tb)
 

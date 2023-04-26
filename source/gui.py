@@ -219,7 +219,7 @@ class GUI(QObject):
             self.errorUpdated.emit()
             self.reset.emit()
             if "traceback" in response["data"]:
-                with open("crash.log", "a") as f:
+                with open("crash.log", "a", encoding='utf-8') as f:
                     f.write(f"INFERENCE {datetime.datetime.now()}\n{response['data']['traceback']}\n")
 
         if response["type"] == "remote_error":

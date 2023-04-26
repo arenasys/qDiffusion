@@ -50,7 +50,7 @@ class Explorer(QObject):
         
         description = ""
         if os.path.exists(desc):
-            with open(desc, "r") as f:
+            with open(desc, "r", encoding='utf-8') as f:
                 description = f.read().strip()
         
         q.prepare("INSERT OR REPLACE INTO models(name, category, type, file, folder, desc, idx, width, height) VALUES (:name, :category, :type, :file, :folder, :desc, :idx, :width, :height);")
@@ -155,7 +155,7 @@ class Explorer(QObject):
                 shutil.move(old_path + ".png", new_path + ".png")
 
         if desc:
-            with open(new_path + ".txt", "w") as f:
+            with open(new_path + ".txt", "w", encoding='utf-8') as f:
                 f.write(desc)
         elif os.path.exists(new_path + ".txt"):
             os.remove(new_path + ".txt")

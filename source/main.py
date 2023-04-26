@@ -421,7 +421,7 @@ def start(engine, app):
 
 def exceptHook(exc_type, exc_value, exc_tb):
     tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
-    with open("crash.log", "a") as f:
+    with open("crash.log", "a", encoding='utf-8') as f:
         f.write(f"GUI {datetime.datetime.now()}\n{tb}\n")
     print(tb)
     print("TRACEBACK SAVED: crash.log")

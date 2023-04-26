@@ -96,7 +96,7 @@ class Backend(QObject):
             j = copy.deepcopy(data)
             hideBytes(j)
             j = json.dumps(j)
-            with open("debug.log", "a") as f:
+            with open("debug.log", "a", encoding='utf-8') as f:
                 f.write(f"{type} {datetime.datetime.now()}\n{j}\n")
 
     @pyqtSlot(object)
