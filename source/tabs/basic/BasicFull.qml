@@ -47,7 +47,7 @@ Item {
             return
         }
 
-        root.editing = target.role != 1 && BASIC.openedArea == "input"
+        root.editing = (target.role == 2 || target.role == 3) && BASIC.openedArea == "input"
 
         var reset = false
 

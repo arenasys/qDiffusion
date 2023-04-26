@@ -174,7 +174,7 @@ Item {
 
                         SText {
                             id: roleLabel
-                            text: ["", "Image", "Mask", "Subprompts"][modelData.role]
+                            text: ["", "Image", "Mask", "Subprompts", "Control"][modelData.role]
                             anchors.top: parent.top
                             anchors.left: parent.left
                             leftPadding: 3
@@ -280,6 +280,12 @@ Item {
                                 text: "Mask"
                                 onPressed: {
                                     modelData.role = 2
+                                }
+                            }
+                            SContextMenuItem {
+                                text: "Control"
+                                onPressed: {
+                                    modelData.role = 4
                                 }
                             }
                             /*SContextMenuItem {
@@ -492,6 +498,13 @@ Item {
                             text: "Subprompts"
                             onPressed: {
                                 BASIC.addSubprompt()
+                                addContextMenu.close()
+                            }
+                        }
+                        SContextMenuItem {
+                            text: "Control"
+                            onPressed: {
+                                BASIC.addControl()
                                 addContextMenu.close()
                             }
                         }

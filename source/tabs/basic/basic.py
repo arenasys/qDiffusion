@@ -21,6 +21,7 @@ class BasicInputRole(Enum):
     IMAGE = 1
     MASK = 2
     SUBPROMPT = 3
+    CONTROL = 4
 
 class BasicInput(QObject):
     updated = pyqtSignal()
@@ -329,6 +330,7 @@ class Basic(QObject):
         images = []
         masks = []
         areas = []
+        controls = []
         if self._inputs:
             for i in self._inputs:
                 if i._role == BasicInputRole.IMAGE:
@@ -340,7 +342,10 @@ class Basic(QObject):
                 if i._role == BasicInputRole.SUBPROMPT:
                     if not i._image.isNull() and i._areas:
                         areas += [[encode_image(a) for a in i._areas]]
-        request = self._parameters.buildRequest(images, masks, areas)
+                if i._role == BasicInputRole.CONTROL:
+                    if not i._image.isNull():
+                        controls += [encode_image(i._image)]
+        request = self._parameters.buildRequest(images, masks, areas, controls)
         return request
 
     @pyqtSlot()
@@ -433,6 +438,11 @@ class Basic(QObject):
     @pyqtSlot()
     def addSubprompt(self):
         self._inputs += [BasicInput(self, QImage(), BasicInputRole.SUBPROMPT)]
+        self.updated.emit()
+
+    @pyqtSlot()
+    def addControl(self):
+        self._inputs += [BasicInput(self, QImage(), BasicInputRole.CONTROL)]
         self.updated.emit()
 
     @pyqtSlot()
