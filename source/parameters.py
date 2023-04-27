@@ -308,7 +308,7 @@ class Parameters(QObject):
             "hr_factor": 1.0, "hr_strength":  0.7, "hr_sampler": "Euler a", "hr_steps": 25, "hr_eta": 1.0, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "subseed":-1, "subseed_strength": 0.0,
             "model":"", "models":[], "sampler":"Euler a", "samplers":[], "hr_upscaler":"Latent (nearest)", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
             "UNET":"", "UNETs":"", "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[], "CN":"", "CNs":[],
-            "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1})
+            "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "cn_strength":1.0})
         self._values.updating.connect(self.mapsUpdating)
         self._values.updated.connect(self.onUpdated)
         self._availableNetworks = []
@@ -527,9 +527,9 @@ class Parameters(QObject):
             data["cn_image"] = controlnet
             data["cn"] = ["canny"] * len(controlnet)
             data["cn_proc"] = ["canny"] * len(controlnet)
-            data["cn_scale"] = [data["strength"]] * len(controlnet)
+            data["cn_scale"] = [data["cn_strength"]] * len(controlnet)
 
-        if request["type"] != "img2img":
+        if request["type"] != "img2img" and "strength" in data:
             del data["strength"]
 
         data = {k.lower():v for k,v in data.items()}
