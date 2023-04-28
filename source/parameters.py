@@ -303,12 +303,12 @@ class Parameters(QObject):
 
         self.gui.optionsUpdated.connect(self.optionsUpdated)
 
-        self._readonly = ["models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "SR", "LoRAs", "HNs", "LoRA", "HN", "TIs", "TI", "CN", "CNs", "hr_upscalers", "img2img_upscalers", "attentions", "device", "devices", "batch_count", "prompt", "negative_prompt"]
+        self._client_only = ["models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "SR", "LoRAs", "HNs", "LoRA", "HN", "TIs", "TI", "CN", "CNs", "hr_upscalers", "img2img_upscalers", "attentions", "device", "devices", "batch_count", "prompt", "negative_prompt", "vram_usages"]
         self._values = VariantMap(self, {"prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7, "strength": 0.75, "seed": -1, "eta": 1.0,
             "hr_factor": 1.0, "hr_strength":  0.7, "hr_sampler": "Euler a", "hr_steps": 25, "hr_eta": 1.0, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "subseed":-1, "subseed_strength": 0.0,
             "model":"", "models":[], "sampler":"Euler a", "samplers":[], "hr_upscaler":"Latent (nearest)", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
             "UNET":"", "UNETs":"", "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[], "CN":"", "CNs":[],
-            "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "cn_strength":1.0})
+            "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "cn_strength":1.0, "vram_usage": "Default", "vram_usages": ["Default", "Minimal"]})
         self._values.updating.connect(self.mapsUpdating)
         self._values.updated.connect(self.onUpdated)
         self._availableNetworks = []
@@ -447,7 +447,7 @@ class Parameters(QObject):
         data = {}
 
         for k, v in self._values._map.items():
-            if not k in self._readonly:
+            if not k in self._client_only:
                 data[k] = v
 
         batch_size = int(data['batch_size'])
@@ -531,6 +531,9 @@ class Parameters(QObject):
 
         if request["type"] != "img2img" and "strength" in data:
             del data["strength"]
+
+        if data["vram_usage"] == "Default":
+            del data["vram_usage"]
 
         data = {k.lower():v for k,v in data.items()}
 

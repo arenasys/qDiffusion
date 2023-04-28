@@ -846,6 +846,16 @@ Item {
                     }
 
                     OChoice {
+                        label: "VRAM usage"
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "vram_usage"
+                        bindKeyModel: "vram_usages"
+                    }
+
+                    OChoice {
                         label: "Attention"
                         width: parent.width
                         height: 30
