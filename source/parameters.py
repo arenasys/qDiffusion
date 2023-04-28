@@ -2,6 +2,7 @@ import io
 import os
 import re
 import random
+import datetime
 
 import PIL.Image
 import PIL.PngImagePlugin
@@ -98,14 +99,11 @@ def parse_parameters(formatted):
 def get_index(folder):
     def get_idx(filename):
         try:
-            return int(filename.split(".")[0])
+            return int(filename.split(".")[0].split("-")[0])
         except Exception:
             return 0
 
     idx = max([get_idx(f) for f in os.listdir(folder)] + [0]) + 1
-    
-    while os.path.exists(os.path.join(folder, f"{idx:07d}.png")):
-        idx += 1
     return idx
 
 def save_image(img, metadata, outputs):
@@ -119,9 +117,10 @@ def save_image(img, metadata, outputs):
     os.makedirs(folder, exist_ok=True)
 
     idx = get_index(folder)
+    name = f"{idx:08d}-" + datetime.datetime.now().strftime("%m%d%H%M")
 
-    tmp = os.path.join(folder, f"{idx:07d}.tmp")
-    real = os.path.join(folder, f"{idx:07d}.png")
+    tmp = os.path.join(folder, f"{name}.tmp")
+    real = os.path.join(folder, f"{name}.png")
 
     img.save(tmp, format="PNG", pnginfo=m)
     os.replace(tmp, real)
