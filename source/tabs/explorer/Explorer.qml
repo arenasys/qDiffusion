@@ -11,6 +11,11 @@ import "../../components"
 
 Item {
     id: root
+
+    function releaseFocus() {
+        parent.releaseFocus()
+    }
+
     Rectangle {
         anchors.fill: column
         color: COMMON.bg0
@@ -122,29 +127,84 @@ Item {
         color: COMMON.bg00
         clip: true
 
-        StackLayout {
-            id: modelsStack
-            currentIndex: 0
-            anchors.fill: parent
-            property var currentItem: modelsStack.children[modelsStack.currentIndex]
+        Rectangle {
+            id: search
+            width: parent.width
+            height: 30
+            color: COMMON.bg1
 
-            ModelGrid {
-                mode: "checkpoint"
+            property var text: searchInput.text
+
+            Item {
+                anchors.fill: parent
+                anchors.bottomMargin: 2
+
+                STextInput {
+                    id: searchInput
+                    anchors.fill: parent
+                    color: COMMON.fg0
+                    font.bold: false
+                    font.pointSize: 11
+                    selectByMouse: true
+                    verticalAlignment: Text.AlignVCenter
+                    leftPadding: 8
+                    topPadding: 1
+
+                    onAccepted: {
+                        root.releaseFocus()
+                    }
+                }
+
+                SText {
+                    text: "Search..."
+                    anchors.fill: parent
+                    verticalAlignment: Text.AlignVCenter
+                    font.bold: false
+                    font.pointSize: 11
+                    leftPadding: 8
+                    topPadding: 1
+                    color: COMMON.fg2
+                    visible: !searchInput.text && !searchInput.activeFocus
+                }
             }
-            ModelGrid {
-                mode: "component"
+        
+            Rectangle {
+                width: parent.width
+                anchors.bottom: parent.bottom
+                height: 2
+                color: COMMON.bg4
             }
-            ModelGrid {
-                mode: "lora"
-            }
-            ModelGrid {
-                mode: "hypernet"
-            }
-            ModelGrid {
-                mode: "embedding"
-            }
-            ModelGrid {
-                mode: "wildcard"
+        }
+        Item {
+            clip: true
+            anchors.fill: parent
+            anchors.topMargin: search.height
+
+            StackLayout {
+                id: modelsStack
+                currentIndex: 0
+                anchors.fill: parent
+                property var currentItem: modelsStack.children[modelsStack.currentIndex]
+                property var searchText: search.text
+
+                ModelGrid {
+                    mode: "checkpoint"
+                }
+                ModelGrid {
+                    mode: "component"
+                }
+                ModelGrid {
+                    mode: "lora"
+                }
+                ModelGrid {
+                    mode: "hypernet"
+                }
+                ModelGrid {
+                    mode: "embedding"
+                }
+                ModelGrid {
+                    mode: "wildcard"
+                }
             }
         }
     }
@@ -169,7 +229,18 @@ Item {
                 break;
             }
         } else {
-            event.accepted = false
+            switch(event.key) {
+            case Qt.Key_Escape:
+                if(searchInput.activeFocus) {
+                    search.text = ""
+                    searchInput.text = ""
+                    root.releaseFocus()
+                }
+                break;
+            default:
+                event.accepted = false
+                break;
+            }
         }
     }
 }

@@ -518,16 +518,16 @@ class Parameters(QObject):
 
         data["device_name"] = self._values._map["device"]
 
-        if request["type"] == "upscale":
-            for k in list(data.keys()):
-                if not k in {"img2img_upscaler", "width", "height", "image", "mask", "mask_blur", "padding"}:
-                    del data[k]
-
         if controlnet:
             data["cn_image"] = controlnet
             data["cn"] = ["canny"] * len(controlnet)
             data["cn_proc"] = ["canny"] * len(controlnet)
             data["cn_scale"] = [data["cn_strength"]] * len(controlnet)
+
+        if request["type"] == "upscale":
+            for k in list(data.keys()):
+                if not k in {"img2img_upscaler", "width", "height", "image", "mask", "mask_blur", "padding"}:
+                    del data[k]
 
         if request["type"] != "img2img" and "strength" in data:
             del data["strength"]
