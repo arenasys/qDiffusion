@@ -307,6 +307,12 @@ Item {
                             modelCard.show()
                         }
                     }
+                    SToolTip {
+                        id: toolTip
+                        delay: 200
+                        visible: labelText.truncated && labelMouseArea.containsMouse
+                        text: labelText.text
+                    }
                 }
 
 
@@ -350,7 +356,6 @@ Item {
                         rightPadding: 5
                     }
                 }
-
 
                 MouseArea {
                     id: cardMouseArea
