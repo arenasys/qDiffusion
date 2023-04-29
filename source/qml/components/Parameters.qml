@@ -618,7 +618,7 @@ Item {
                         maxValue: 10
                         precValue: 0
                         incValue: 1
-                        snapValue: 4
+                        snapValue: 1
                         bounded: false
                     }
                 }
@@ -846,7 +846,17 @@ Item {
                     }
 
                     OChoice {
-                        label: "VRAM usage"
+                        label: "Artifacts"
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "artifact_mode"
+                        bindKeyModel: "artifact_modes"
+                    }
+
+                    OChoice {
+                        label: "VRAM"
                         width: parent.width
                         height: 30
 

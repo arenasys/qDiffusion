@@ -302,12 +302,12 @@ class Parameters(QObject):
 
         self.gui.optionsUpdated.connect(self.optionsUpdated)
 
-        self._client_only = ["models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "SR", "LoRAs", "HNs", "LoRA", "HN", "TIs", "TI", "CN", "CNs", "hr_upscalers", "img2img_upscalers", "attentions", "device", "devices", "batch_count", "prompt", "negative_prompt", "vram_usages"]
+        self._client_only = ["models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "SR", "LoRAs", "HNs", "LoRA", "HN", "TIs", "TI", "CN", "CNs", "hr_upscalers", "img2img_upscalers", "attentions", "device", "devices", "batch_count", "prompt", "negative_prompt", "vram_usages", "artifact_modes"]
         self._values = VariantMap(self, {"prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7, "strength": 0.75, "seed": -1, "eta": 1.0,
             "hr_factor": 1.0, "hr_strength":  0.7, "hr_sampler": "Euler a", "hr_steps": 25, "hr_eta": 1.0, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "subseed":-1, "subseed_strength": 0.0,
             "model":"", "models":[], "sampler":"Euler a", "samplers":[], "hr_upscaler":"Latent (nearest)", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
             "UNET":"", "UNETs":"", "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[], "CN":"", "CNs":[],
-            "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "cn_strength":1.0, "vram_usage": "Default", "vram_usages": ["Default", "Minimal"]})
+            "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "cn_strength":1.0, "vram_usage": "Default", "vram_usages": ["Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"]})
         self._values.updating.connect(self.mapsUpdating)
         self._values.updated.connect(self.onUpdated)
         self._availableNetworks = []
@@ -441,7 +441,7 @@ class Parameters(QObject):
          
         self.updated.emit()
 
-    def buildRequest(self, images=[], masks=[], areas=[], controlnet=[]):
+    def buildRequest(self, images=[], masks=[], areas=[], control=[]):
         request = {}
         data = {}
 
@@ -450,7 +450,7 @@ class Parameters(QObject):
                 data[k] = v
 
         batch_size = int(data['batch_size'])
-        batch_size = max(batch_size, len(images), len(masks))
+        batch_size = max(batch_size, len(images), len(masks), len(areas), len(control))
 
         pos = self.parsePrompt(self._values._map['prompt'], batch_size)
         neg = self.parsePrompt(self._values._map['negative_prompt'], batch_size)
@@ -517,11 +517,11 @@ class Parameters(QObject):
 
         data["device_name"] = self._values._map["device"]
 
-        if controlnet:
-            data["cn_image"] = controlnet
-            data["cn"] = ["canny"] * len(controlnet)
-            data["cn_proc"] = ["canny"] * len(controlnet)
-            data["cn_scale"] = [data["cn_strength"]] * len(controlnet)
+        if control:
+            data["cn_image"] = control
+            data["cn"] = ["canny"] * len(control)
+            data["cn_proc"] = ["canny"] * len(control)
+            data["cn_scale"] = [data["cn_strength"]] * len(control)
 
         if request["type"] == "upscale":
             for k in list(data.keys()):
@@ -531,8 +531,13 @@ class Parameters(QObject):
         if request["type"] != "img2img" and "strength" in data:
             del data["strength"]
 
-        if data["vram_usage"] == "Default":
-            del data["vram_usage"]
+        if data["vram_usage"] == "Minimal":
+            data["minimal_vram"] = True
+        del data["vram_usage"]
+
+        if data["artifact_mode"] == "Enabled":
+            data["keep_artifacts"] = True
+        del data["artifact_mode"]
 
         data = {k.lower():v for k,v in data.items()}
 

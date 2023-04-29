@@ -232,16 +232,16 @@ class BasicInput(QObject):
 
 class BasicOutput(QObject):
     updated = pyqtSignal()
-    def __init__(self, parent=None, image=QImage(), metadata={}):
+    def __init__(self, parent=None, image=QImage(), metadata={}, artifacts={}):
         super().__init__(parent)
         self.basic = parent
         self._image = image
         self._metadata = metadata
+        self._artifacts = artifacts
         self._file = metadata["file"]
         self._parameters = parameters.format_parameters(self._metadata)
         self._dragging = False
         self._image.setText("parameters", self._parameters)
-        self._artifacts = {}
 
     @pyqtProperty(QImage, notify=updated)
     def image(self):
@@ -285,9 +285,15 @@ class BasicOutput(QObject):
     def copy(self):
         self.basic.gui.copyFiles([self._file])
 
-    def addArtifact(self, name, img):
-        print(name)
-        self._artifacts[name] = img
+    @pyqtProperty(list, notify=updated)
+    def artifacts(self):
+        return list(self._artifacts.keys())
+
+    @pyqtSlot(str, result=QImage)
+    def artifact(self, name):
+        return self._artifacts[name]
+    
+
 
 class Basic(QObject):
     updated = pyqtSignal()
@@ -307,7 +313,6 @@ class Basic(QObject):
         self._ids = []
         self._forever = False
         self._remaining = 0
-        self._mapping = {}
 
         self._openedIndex = -1
         self._openedArea = ""
@@ -365,13 +370,6 @@ class Basic(QObject):
             request = self.buildRequest()
             self._ids += [self.gui.makeRequest(request)]
 
-    @pyqtSlot(int, str, QImage)
-    def artifact(self, id, name, img):
-        if id in self._mapping:
-            id = self._mapping[id]
-        if id in self._outputs:
-            self._outputs.addArtifact(name, img)
-
     @pyqtSlot(int)
     def result(self, id):
         if not id in self._ids:
@@ -379,14 +377,19 @@ class Basic(QObject):
         
         self._ids.remove(id)
 
-        self._mapping[id] = (time.time_ns() // 1000000) % (2**31 - 1)
-        id = self._mapping[id]
+        artifacts = {}
+        if id in self.gui._artifacts:
+            artifacts = self.gui._artifacts[id]
+        self.gui._artifacts = {}
+
+        id = (time.time_ns() // 1000000) % (2**31 - 1)
 
         sticky = self.isSticky()
         for i in range(len(self.gui._results)-1, -1, -1):
             img = self.gui._results[i]["image"]
             metadata = self.gui._results[i]["metadata"]
-            self._outputs[id] = BasicOutput(self, img, metadata)
+            artifact = {k:v[i] for k,v in artifacts.items()}
+            self._outputs[id] = BasicOutput(self, img, metadata, artifact)
             q = QSqlQuery(self.conn.db)
             q.prepare("INSERT INTO outputs(id) VALUES (:id);")
             q.bindValue(":id", id)
@@ -475,10 +478,7 @@ class Basic(QObject):
                 continue
             if prev._linked:
                 if not any([p._linked == prev._linked and p._role == curr._role and p != curr for p in self._inputs]):
-                    if curr._role == BasicInputRole.MASK and prev._role == BasicInputRole.SUBPROMPT:
-                        curr.setLinked(prev._linked)
-                        continue
-                    elif curr._role == BasicInputRole.SUBPROMPT and prev._role == BasicInputRole.MASK:
+                    if curr._role != BasicInputRole.IMAGE and prev._role != BasicInputRole.IMAGE:
                         curr.setLinked(prev._linked)
                         continue
             curr.setLinked(None)

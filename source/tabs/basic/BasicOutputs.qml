@@ -56,7 +56,11 @@ Item {
             id: item
             height: Math.floor(listView.height)
             width: height-9
-            property var modelObj: BASIC.outputs(sql_id) 
+            property var modelObj: BASIC.outputs(sql_id)
+            property var artifacts: modelObj.artifacts
+            property var aIndex: -1
+            property var aName: aIndex == -1 ? "" : artifacts[aIndex]
+            property var img: aIndex == -1 ? modelObj.image : modelObj.artifact(aName)
 
             onActiveFocusChanged: {
                 if(activeFocus) {
@@ -87,7 +91,7 @@ Item {
                     id: itemImage
                     visible: !modelObj.empty
                     anchors.fill: parent
-                    image: modelObj.image
+                    image: item.img
                     centered: true
                 }
                 
@@ -99,6 +103,48 @@ Item {
                     height: itemImage.trueHeight
 
                     Rectangle {
+                        anchors.fill: nameLabel
+                        visible: nameLabel.text != ""
+                        color: "#e0101010"
+                        border.width: 1
+                        border.color: COMMON.bg3
+                    }
+
+                    SText {
+                        id: nameLabel
+                        text: item.aName
+                        anchors.top: parent.top
+                        anchors.left: parent.left
+                        leftPadding: 3
+                        topPadding: 3
+                        rightPadding: 3
+                        bottomPadding: 3
+                        color: COMMON.fg1_5
+                        font.pointSize: 9.8
+                    }
+
+                    Rectangle {
+                        anchors.fill: indexLabel
+                        visible: indexLabel.text != ""
+                        color: "#e0101010"
+                        border.width: 1
+                        border.color: COMMON.bg3
+                    }
+
+                    SText {
+                        id: indexLabel
+                        text: item.artifacts.length != "" ? ((item.aIndex+2) + " of " + (item.artifacts.length + 1)) : ""
+                        anchors.bottom: parent.bottom
+                        anchors.right: parent.right
+                        leftPadding: 3
+                        topPadding: 3
+                        rightPadding: 3
+                        bottomPadding: 3
+                        color: COMMON.fg1_5
+                        font.pointSize: 9.8
+                    }
+
+                    Rectangle {
                         visible: sizeLabel.text != ""
                         anchors.fill: sizeLabel
                         color: "#e0101010"
@@ -108,7 +154,7 @@ Item {
 
                     SText {
                         id: sizeLabel
-                        text: modelObj.size
+                        text: itemImage.implicitWidth + "x" + itemImage.implicitHeight
                         anchors.top: parent.top
                         anchors.right: parent.right
                         leftPadding: 3
@@ -126,7 +172,6 @@ Item {
                         color: "transparent"
                     }
                 }
-
 
                 MouseArea {
                     anchors.fill: parent
@@ -209,6 +254,29 @@ Item {
                                 }
                                 onObjectAdded: copyToMenu.insertItem(index, object)
                                 onObjectRemoved: copyToMenu.removeItem(object)
+                            }
+                        }
+                    }
+                }
+
+                MouseArea {
+                    anchors.right: trueFrame.right
+                    anchors.bottom: trueFrame.bottom
+                    width: indexLabel.width
+                    height: indexLabel.height
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    onPressed: {
+                        if (mouse.button == Qt.LeftButton) {
+                            if(item.aIndex == item.artifacts.length-1) {
+                                item.aIndex = -1
+                            } else {
+                                item.aIndex += 1
+                            }
+                        } else {
+                            if(item.aIndex == -1) {
+                                item.aIndex = item.artifacts.length-1
+                            } else {
+                                item.aIndex -= 1
                             }
                         }
                     }

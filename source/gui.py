@@ -87,6 +87,8 @@ class GUI(QObject):
         self.watchModelDirectory()
 
         self._options = {}
+        self._results = []
+        self._artifacts = {}
 
         parent.aboutToQuit.connect(self.stop)
 
@@ -250,6 +252,17 @@ class GUI(QObject):
                 self._results += [{"image": img, "metadata": response["data"]["metadata"][i]}]
             self.result.emit(id)
             self.setReady()
+
+        if response["type"] == "artifact":
+            if not id in self._artifacts:
+                self._artifacts[id] = {}
+            name = response["data"]["name"]
+            self._artifacts[id][name] = []
+            
+            for i, bytes in enumerate(response["data"]["images"]):
+                img = QImage()
+                img.loadFromData(bytes, "png")
+                self._artifacts[id][name] += [img]
 
         self.response.emit(id, response)
     
