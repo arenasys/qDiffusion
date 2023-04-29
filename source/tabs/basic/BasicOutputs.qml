@@ -93,6 +93,7 @@ Item {
                     anchors.fill: parent
                     image: item.img
                     centered: true
+                    smooth: implicitWidth > trueWidth && implicitHeight > trueHeight
                 }
                 
                 Item {
@@ -183,7 +184,7 @@ Item {
                             itemFrame.forceActiveFocus()
                             startPosition = Qt.point(mouse.x, mouse.y)
                         }
-                        if (mouse.button == Qt.RightButton) {
+                        if (mouse.button == Qt.RightButton && modelObj.ready) {
                             contextMenu.popup()
                         }
                     }
@@ -195,7 +196,7 @@ Item {
                     onPositionChanged: {
                         if(pressed) {
                             var delta = Qt.point(mouse.x-startPosition.x, mouse.y-startPosition.y)
-                            if(Math.pow(delta.x*delta.x + delta.y*delta.y, 0.5) > 5) {
+                            if(Math.pow(delta.x*delta.x + delta.y*delta.y, 0.5) > 5 && modelObj.ready) {
                                 modelObj.drag()
                             }
                         }

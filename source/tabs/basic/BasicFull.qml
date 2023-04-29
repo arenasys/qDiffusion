@@ -62,7 +62,7 @@ Item {
             root.file = null
         } else {
             canvas.visible = false
-            bg.image = root.target.image
+            bg.image = Qt.binding(function () { return root.target.image })
             reset = movable.itemWidth != root.target.width || movable.itemHeight != root.target.height
             movable.itemWidth = root.target.width
             movable.itemHeight = root.target.height
@@ -114,6 +114,7 @@ Item {
                 root.change()
             }
         } else {
+            bg.image = bg.image
             BASIC.close()
         }
     }
@@ -160,9 +161,11 @@ Item {
             anchors.fill: item
         }
 
-        
-
         ImageDisplay {
+            onImageChanged: {
+                movable.itemWidth = root.target.width
+                movable.itemHeight = root.target.height
+            }
             id: bg
             anchors.fill: item
             smooth: implicitWidth*1.25 < width && implicitHeight*1.25 < height ? false : true

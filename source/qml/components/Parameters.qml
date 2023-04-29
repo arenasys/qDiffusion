@@ -845,50 +845,6 @@ Item {
                         snapValue: 0.05
                     }
 
-                    OChoice {
-                        label: "Artifacts"
-                        width: parent.width
-                        height: 30
-
-                        bindMap: root.binding.values
-                        bindKeyCurrent: "artifact_mode"
-                        bindKeyModel: "artifact_modes"
-                    }
-
-                    OChoice {
-                        label: "VRAM"
-                        width: parent.width
-                        height: 30
-
-                        bindMap: root.binding.values
-                        bindKeyCurrent: "vram_usage"
-                        bindKeyModel: "vram_usages"
-                    }
-
-                    OChoice {
-                        label: "Attention"
-                        width: parent.width
-                        height: 30
-
-                        bindMap: root.binding.values
-                        bindKeyCurrent: "attention"
-                        bindKeyModel: "attentions"
-                    }
-
-                    OChoice {
-                        label: "Device"
-                        width: parent.width
-                        height: 30
-
-                        bindMap: root.binding.values
-                        bindKeyCurrent: "device"
-                        bindKeyModel: "devices"
-
-                        onSelected: {
-                            GUI.config.set("device", value)
-                        }
-                    }
-                    
                     OSlider {
                         id: subseedStrInput
                         label: "Subseed strength"
@@ -920,6 +876,70 @@ Item {
                         validator: IntValidator { 
                             bottom: -1
                             top: 2147483646
+                        }
+                    }
+                }
+                OColumn {
+                    id: opColumn
+                    text: "Operation"
+                    width: parent.width
+                    isCollapsed: true
+
+                    onExpanded: {
+                        paramScroll.position(opColumn)
+                    }
+
+                    OChoice {
+                        label: "Preview"
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "preview_mode"
+                        bindKeyModel: "preview_modes"
+                    }
+
+                    OChoice {
+                        label: "Artifacts"
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "artifact_mode"
+                        bindKeyModel: "artifact_modes"
+                    }
+
+                    OChoice {
+                        label: "VRAM"
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "vram_mode"
+                        bindKeyModel: "vram_modes"
+                    }
+
+                    OChoice {
+                        label: "Attention"
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "attention"
+                        bindKeyModel: "attentions"
+                    }
+
+                    OChoice {
+                        label: "Device"
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "device"
+                        bindKeyModel: "devices"
+
+                        onSelected: {
+                            GUI.config.set("device", value)
                         }
                     }
                 }

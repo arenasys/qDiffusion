@@ -47,11 +47,11 @@ class GUI(QObject):
     statusUpdated = pyqtSignal()
     errorUpdated = pyqtSignal()
     optionsUpdated = pyqtSignal()
-    result = pyqtSignal(int)
+    result = pyqtSignal(int, str)
     response = pyqtSignal(int, object)
     aboutToQuit = pyqtSignal()
     networkReply = pyqtSignal(QNetworkReply)
-    reset = pyqtSignal()
+    reset = pyqtSignal(int)
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -87,8 +87,7 @@ class GUI(QObject):
         self.watchModelDirectory()
 
         self._options = {}
-        self._results = []
-        self._artifacts = {}
+        self._results = {}
 
         parent.aboutToQuit.connect(self.stop)
 
@@ -219,7 +218,7 @@ class GUI(QObject):
             self._errorText = response["data"]["message"]
             self.statusUpdated.emit()
             self.errorUpdated.emit()
-            self.reset.emit()
+            self.reset.emit(id)
             if "traceback" in response["data"]:
                 with open("crash.log", "a", encoding='utf-8') as f:
                     f.write(f"INFERENCE {datetime.datetime.now()}\n{response['data']['traceback']}\n")
@@ -231,10 +230,10 @@ class GUI(QObject):
             self.backend.stop()
             self.statusUpdated.emit()
             self.errorUpdated.emit()
-            self.reset.emit()
+            self.reset.emit(id)
             
         if response["type"] == "aborted":
-            self.reset.emit()
+            self.reset.emit(id)
             self.setReady()
 
         if response["type"] == "progress":
@@ -243,28 +242,31 @@ class GUI(QObject):
             if response['data']['rate']:
                 self._statusInfo = f"{response['data']['rate']:.2f}it/s"
             self.statusUpdated.emit()
+            if "previews" in response["data"]:
+                self.addResult(id, "preview", response["data"]["previews"])
 
         if response["type"] == "result":
-            self._results = []
-            for i, bytes in enumerate(response["data"]["images"]):
-                img = QImage()
-                img.loadFromData(bytes, "png")
-                self._results += [{"image": img, "metadata": response["data"]["metadata"][i]}]
-            self.result.emit(id)
+            self.addResult(id, "metadata", response["data"]["metadata"])
+            self.addResult(id, "result", response["data"]["images"])
             self.setReady()
 
         if response["type"] == "artifact":
-            if not id in self._artifacts:
-                self._artifacts[id] = {}
-            name = response["data"]["name"]
-            self._artifacts[id][name] = []
-            
-            for i, bytes in enumerate(response["data"]["images"]):
-                img = QImage()
-                img.loadFromData(bytes, "png")
-                self._artifacts[id][name] += [img]
+            self.addResult(id, response["data"]["name"], response["data"]["images"])
 
         self.response.emit(id, response)
+
+    def addResult(self, id, name, data):
+        if not id in self._results:
+            self._results[id] = {}
+        self._results[id][name] = []
+        if type(data[0]) == bytes or type(data[0]) == bytearray:
+            for i, b in enumerate(data):
+                img = QImage()
+                img.loadFromData(b, "png")
+                self._results[id][name] += [img]
+        else:
+            self._results[id][name] = data
+        self.result.emit(id, name)
     
     @pyqtSlot(str, int)
     def onFolderChanged(self, folder, total):
@@ -382,7 +384,7 @@ class GUI(QObject):
         self.backend.stop()
         self.backend.wait()
         self.backend.setEndpoint(endpoint, password)
-        self.reset.emit()
+        self.reset.emit(-1)
 
     @pyqtSlot(str, str)
     def remoteDownload(self, type, url):

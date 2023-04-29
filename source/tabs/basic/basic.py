@@ -232,16 +232,37 @@ class BasicInput(QObject):
 
 class BasicOutput(QObject):
     updated = pyqtSignal()
-    def __init__(self, parent=None, image=QImage(), metadata={}, artifacts={}):
+    def __init__(self, parent=None, image=QImage()):
         super().__init__(parent)
         self.basic = parent
         self._image = image
+        self._metadata = None
+        self._artifacts = {}
+        self._file = ""
+        self._parameters = ""
+        self._dragging = False
+        self._ready = False
+
+    def setResult(self, image, metadata):
+        self._image = image
         self._metadata = metadata
-        self._artifacts = artifacts
         self._file = metadata["file"]
         self._parameters = parameters.format_parameters(self._metadata)
-        self._dragging = False
         self._image.setText("parameters", self._parameters)
+        self._ready = True
+        self.updated.emit()
+
+    def setPreview(self, image):
+        self._image = image
+        self.updated.emit()
+
+    def setArtifacts(self, artifacts):
+        self._artifacts = artifacts
+        self.updated.emit()
+
+    @pyqtProperty(bool, notify=updated)
+    def ready(self):
+        return self._ready
 
     @pyqtProperty(QImage, notify=updated)
     def image(self):
@@ -253,6 +274,8 @@ class BasicOutput(QObject):
     
     @pyqtProperty(str, notify=updated)
     def mode(self):
+        if not self._metadata:
+            return ""
         return self._metadata["mode"]
     
     @pyqtProperty(int, notify=updated)
@@ -313,6 +336,7 @@ class Basic(QObject):
         self._ids = []
         self._forever = False
         self._remaining = 0
+        self._mapping = {}
 
         self._openedIndex = -1
         self._openedArea = ""
@@ -370,43 +394,76 @@ class Basic(QObject):
             request = self.buildRequest()
             self._ids += [self.gui.makeRequest(request)]
 
-    @pyqtSlot(int)
-    def result(self, id):
+    @pyqtSlot(int, str)
+    def result(self, id, name):
         if not id in self._ids:
             return
+        if not id in self._mapping:
+            self._mapping[id] = (time.time_ns() // 1000000) % (2**31 - 1)
+
+        out = self._mapping[id]
+        if not out in self._outputs:
+            sticky = self.isSticky()
+            available = self.gui._results[id]
+            if "result" in available:
+                initial = available["result"]
+            elif "preview" in available:
+                initial = available["preview"]
+            else:
+                return
+            for i in range(len(initial)-1, -1, -1):
+                self._outputs[out] = BasicOutput(self, initial[i])
+                q = QSqlQuery(self.conn.db)
+                q.prepare("INSERT INTO outputs(id) VALUES (:id);")
+                q.bindValue(":id", out)
+                self.conn.doQuery(q)
+                out += 1
+                if sticky:
+                    self.stick()
+
+            if "metadata" in available:
+                out = self._mapping[id]
+                for i in range(len(initial)-1, -1, -1):
+                    self._outputs[out].setResult(available["result"][i], available["metadata"][i])
+                    out += 1
+            
+        if name == "preview":
+            previews = self.gui._results[id]["preview"]
+            out = self._mapping[id]
+            for i in range(len(previews)-1, -1, -1):
+                self._outputs[out].setPreview(previews[i])
+                out += 1
+
+        if name == "result":
+            self._ids.remove(id)
+            results = self.gui._results[id]["result"]
+            metadata = self.gui._results[id]["metadata"]
+            artifacts = {k:v for k,v in self.gui._results[id].items() if not k in {"result", "metadata", "preview"}}
+            self.gui._results = {}
+            out = self._mapping[id]
+            for i in range(len(results)-1, -1, -1):
+                if not self._outputs[out]._ready:
+                    self._outputs[out].setResult(results[i], metadata[i])
+                self._outputs[out].setArtifacts({k:v[i] for k,v in artifacts.items()})
+                out += 1
+
+            self._remaining = max(0, self._remaining-1)
+            if self._remaining > 0 or self._forever:
+                self.generate()
+
+            self.updated.emit()
+            self.results.emit()
         
-        self._ids.remove(id)
+    @pyqtSlot(int)
+    def reset(self, id):
+        if id in self._mapping:
+            out = self._mapping[id]
+            while out in self._outputs:
+                self.deleteOutput(out)
+                if self._openedIndex == out:
+                    self.right()
+                out += 1
 
-        artifacts = {}
-        if id in self.gui._artifacts:
-            artifacts = self.gui._artifacts[id]
-        self.gui._artifacts = {}
-
-        id = (time.time_ns() // 1000000) % (2**31 - 1)
-
-        sticky = self.isSticky()
-        for i in range(len(self.gui._results)-1, -1, -1):
-            img = self.gui._results[i]["image"]
-            metadata = self.gui._results[i]["metadata"]
-            artifact = {k:v[i] for k,v in artifacts.items()}
-            self._outputs[id] = BasicOutput(self, img, metadata, artifact)
-            q = QSqlQuery(self.conn.db)
-            q.prepare("INSERT INTO outputs(id) VALUES (:id);")
-            q.bindValue(":id", id)
-            self.conn.doQuery(q)
-            id += 1
-
-        self._remaining = max(0, self._remaining-1)
-        if self._remaining > 0 or self._forever:
-            self.generate()
-
-        self.updated.emit()
-        self.results.emit()
-        if sticky:
-            self.left()
-        
-    @pyqtSlot()
-    def reset(self):
         self._ids = []
 
     @pyqtSlot()
@@ -687,6 +744,14 @@ class Basic(QObject):
                 self._openedIndex = idx
                 self.openedUpdated.emit()
 
+    @pyqtSlot()
+    def stick(self):
+        if self._openedArea == "output":
+            id = self.outputIndexToID(0)
+            if id in self._outputs:
+                self._openedIndex = id
+                self.openedUpdated.emit()
+
     @pyqtSlot(int, result=int)
     def outputIDToIndex(self, id):
         outputs = sorted(list(self._outputs.keys()), reverse=True)
@@ -705,6 +770,8 @@ class Basic(QObject):
     def isSticky(self):
         if self._openedIndex == -1 or self._openedArea != "output":
             return False
+        if not self._openedIndex in self._outputs:
+            return True
         return self.outputIDToIndex(self._openedIndex) == 0 
         
     @pyqtSlot()

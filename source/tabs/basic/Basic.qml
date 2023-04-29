@@ -63,7 +63,7 @@ Item {
         anchors.fill: areas
 
         onContextMenu: {
-            if(BASIC.openedArea == "output") {
+            if(BASIC.openedArea == "output" && full.target.ready) {
                 fullContextMenu.popup()
             }
         }
@@ -83,7 +83,7 @@ Item {
                 }
             }
 
-            property var output: full.file != ""
+            property var output: full.target != null && full.target.file != ""
 
             SContextMenuSeparator {
                 visible: fullContextMenu.output
