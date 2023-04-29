@@ -9,22 +9,47 @@ Rectangle {
     required property int minOffset
     required property int maxOffset
     required property int offset
-    y: parent.height - offset
+    y: snapping ? (parent.height - Math.floor(snap)) : (parent.height - offset)
     height: 5
     color: COMMON.bg4
+    property bool locked: true
+    property bool snapping: false
+    property var snap: null
+    property var snapSize: 50
+
+    onOffsetChanged: {
+        if(snap - offset == 0.0) {
+            root.offset = Qt.binding(function() {return snap})
+            root.locked = true
+        }
+    }
 
     MouseArea {
         anchors.fill: parent
         hoverEnabled: true
         onPositionChanged: {
             if(pressedButtons) {
+                root.locked = false
                 parent.offset = Math.min(parent.maxOffset, Math.max(parent.minOffset, root.parent.height - (parent.y + mouseY)))
+                if(snap != null) {
+                    root.snapping = (Math.abs(snap - offset) < snapSize)
+                }
+            }
+        }
+        onReleased: {
+            if(snap == null) {
+                return
+            }
+            root.snapping = false
+            if(Math.abs(snap - offset) < snapSize) {
+                root.offset = Qt.binding(function() {return snap})
+                root.locked = true
             }
         }
     }
 
     onMaxOffsetChanged: {
-        if(parent && parent.height > 0 && y > 0)
+        if(!root.locked && parent && parent.height > 0 && y > 0)
             offset = Math.min(maxOffset, Math.max(minOffset, offset))
     }
 }

@@ -14,34 +14,37 @@ Item {
         opacity: 0.7
         anchors.fill: parent
     }
-    Flickable {
-        anchors.fill: parent
-        contentHeight: col.height
-        contentWidth: parent.width
-        boundsBehavior: Flickable.StopAtBounds
-        Column {
-            id: col
-            width: parent.width
 
-            BasicInputs {
-                id: inputArea
-                width: parent.width
-                height: Math.max(root.height/2 - 1, 180)
-            }
+    BasicInputs {
+        id: inputArea
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: divider.top
+    }
 
-            Rectangle {
-                anchors.left: parent.left
-                anchors.right: parent.right
-                color: COMMON.bg4
-                height: 2
-            }
-
-            BasicOutputs {
-                id: outputArea
-                y: inputArea.height
-                width: parent.width
-                height: Math.max(root.height-inputArea.height-2, 180)
-            }
+    SDividerHB {
+        id: divider
+        minOffset: 128
+        maxOffset: parent.height-128
+        offset: snap
+        snap: Math.floor(parent.height/2)+2
+        snapSize: 20
+        height: 4
+        color: "transparent"
+        Rectangle {
+            anchors.fill: parent
+            color: COMMON.bg5
+            anchors.topMargin: 1
+            anchors.bottomMargin: 1
         }
+    }
+
+    BasicOutputs {
+        id: outputArea
+        anchors.top: divider.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
     }
 }

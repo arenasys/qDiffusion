@@ -241,6 +241,7 @@ class BasicOutput(QObject):
         self._parameters = parameters.format_parameters(self._metadata)
         self._dragging = False
         self._image.setText("parameters", self._parameters)
+        self._artifacts = {}
 
     @pyqtProperty(QImage, notify=updated)
     def image(self):
@@ -284,6 +285,10 @@ class BasicOutput(QObject):
     def copy(self):
         self.basic.gui.copyFiles([self._file])
 
+    def addArtifact(self, name, img):
+        print(name)
+        self._artifacts[name] = img
+
 class Basic(QObject):
     updated = pyqtSignal()
     results = pyqtSignal()
@@ -302,6 +307,7 @@ class Basic(QObject):
         self._ids = []
         self._forever = False
         self._remaining = 0
+        self._mapping = {}
 
         self._openedIndex = -1
         self._openedArea = ""
@@ -359,14 +365,22 @@ class Basic(QObject):
             request = self.buildRequest()
             self._ids += [self.gui.makeRequest(request)]
 
+    @pyqtSlot(int, str, QImage)
+    def artifact(self, id, name, img):
+        if id in self._mapping:
+            id = self._mapping[id]
+        if id in self._outputs:
+            self._outputs.addArtifact(name, img)
+
     @pyqtSlot(int)
     def result(self, id):
         if not id in self._ids:
             return
         
         self._ids.remove(id)
-        
-        id = (time.time_ns() // 1000000) % (2**31 - 1)
+
+        self._mapping[id] = (time.time_ns() // 1000000) % (2**31 - 1)
+        id = self._mapping[id]
 
         sticky = self.isSticky()
         for i in range(len(self.gui._results)-1, -1, -1):
