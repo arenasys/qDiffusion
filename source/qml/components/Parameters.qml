@@ -897,6 +897,30 @@ Item {
                         bindMap: root.binding.values
                         bindKeyCurrent: "preview_mode"
                         bindKeyModel: "preview_modes"
+
+                        onSelected: {
+                            GUI.config.set("previews", value)
+                        }
+                    }
+
+
+                    OSlider {
+                        label: "Preview interval"
+                        width: parent.width
+                        height: 30
+                        
+                        bindMap: root.binding.values
+                        bindKey: "preview_interval"
+
+                        minValue: 0
+                        maxValue: 10
+                        precValue: 0
+                        incValue: 1
+                        snapValue: 1
+
+                        onSelected: {
+                            GUI.config.set("preview_interval", value)
+                        }
                     }
 
                     OChoice {
@@ -907,6 +931,10 @@ Item {
                         bindMap: root.binding.values
                         bindKeyCurrent: "artifact_mode"
                         bindKeyModel: "artifact_modes"
+
+                        onSelected: {
+                            GUI.config.set("artifacts", value)
+                        }
                     }
 
                     OChoice {
@@ -917,6 +945,10 @@ Item {
                         bindMap: root.binding.values
                         bindKeyCurrent: "vram_mode"
                         bindKeyModel: "vram_modes"
+
+                        onSelected: {
+                            GUI.config.set("vram", value)
+                        }
                     }
 
                     OChoice {

@@ -309,7 +309,7 @@ class Parameters(QObject):
             "model":"", "models":[], "sampler":"Euler a", "samplers":[], "hr_upscaler":"Latent (nearest)", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
             "UNET":"", "UNETs":"", "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[], "CN":"", "CNs":[],
             "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "cn_strength":1.0,
-            "vram_mode": "Default", "vram_modes": ["Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"], "preview_mode": "Disabled", "preview_modes": ["Disabled", "Light", "Medium", "Full"]})
+            "vram_mode": "Default", "vram_modes": ["Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"], "preview_mode": "Disabled", "preview_modes": ["Disabled", "Light", "Medium", "Full"], "preview_interval":0})
         self._values.updating.connect(self.mapsUpdating)
         self._values.updated.connect(self.onUpdated)
         self._availableNetworks = []
@@ -437,9 +437,24 @@ class Parameters(QObject):
             self._values.set("hr_upscaler", "Latent (nearest)")
 
         pref_device = self.gui.config.get("device")
-        devices = self._values.get("devices")
-        if pref_device and pref_device in devices:
+        if pref_device and pref_device in self._values.get("devices"):
             self._values.set("device", pref_device)
+
+        pref_artifacts = self.gui.config.get("artifacts")
+        if pref_artifacts and pref_artifacts in self._values.get("artifact_modes"):
+            self._values.set("artifact_mode", pref_artifacts)
+
+        pref_previews = self.gui.config.get("previews")
+        if pref_previews and pref_previews in self._values.get("preview_modes"):
+            self._values.set("preview_mode", pref_previews)
+
+        pref_preview_interval = self.gui.config.get("preview_interval")
+        if pref_preview_interval and pref_preview_interval >= 0:
+            self._values.set("preview_interval", pref_preview_interval)
+
+        pref_vram = self.gui.config.get("vram")
+        if pref_vram and pref_vram in self._values.get("vram_modes"):
+            self._values.set("vram_mode", pref_vram)
          
         self.updated.emit()
 
@@ -524,6 +539,8 @@ class Parameters(QObject):
             data["cn"] = ["canny"] * len(control)
             data["cn_proc"] = ["canny"] * len(control)
             data["cn_scale"] = [data["cn_strength"]] * len(control)
+        else:
+            del data["cn_strength"]
 
         if request["type"] == "upscale":
             for k in list(data.keys()):

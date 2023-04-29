@@ -25,6 +25,8 @@ Item {
     property variant bindMap: null
     property var bindKey: null
 
+    signal selected()
+
     Connections {
         target: bindMap
         function onUpdated() {
@@ -100,6 +102,7 @@ Item {
             onPositionChanged: {
                 if(pressed) {
                     mouseArea.update()
+                    root.selected()
                 }
             }
         }
