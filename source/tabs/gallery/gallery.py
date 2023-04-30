@@ -55,7 +55,7 @@ class Populater(QObject):
         q.bindValue(":folder", folder)
         q.bindValue(":total", total)
         self.conn.doQuery(q)
-
+        
         self.conn.enableNotifications("images")
 
     @pyqtSlot(str, str, int)

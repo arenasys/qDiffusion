@@ -63,10 +63,12 @@ class Connection(QObject):
         self.db = db
 
     def enableNotifications(self, table):
-        self.db.driver().subscribeToNotification(table)
+        if not table in self.db.driver().subscribedToNotifications():
+            self.db.driver().subscribeToNotification(table)
     
     def disableNotifications(self, table):
-        self.db.driver().unsubscribeFromNotification(table)
+        if table in self.db.driver().subscribedToNotifications():
+            self.db.driver().unsubscribeFromNotification(table)
 
     def doQuery(self, q):
         if type(q) == str:

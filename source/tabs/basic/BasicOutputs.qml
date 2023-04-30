@@ -17,6 +17,7 @@ Item {
         id: listView
         interactive: false
         boundsBehavior: Flickable.StopAtBounds
+        highlightFollowsCurrentItem: BASIC.openedArea == "output"
         clip:true
         orientation: Qt.Horizontal
         width: Math.min(contentWidth, parent.width)

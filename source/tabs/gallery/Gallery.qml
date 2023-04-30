@@ -53,7 +53,7 @@ Rectangle {
         clip: true
         model: Sql {
             id: filesSql
-            query: "SELECT file, width, height, parameters, idx FROM images WHERE folder = '" + folder.currentValue + "' AND parameters LIKE '%" + search.text + "%' ORDER BY idx;"
+            query: "SELECT file, width, height, parameters, idx FROM images WHERE folder = '" + folder.currentValue + "' AND parameters LIKE '%" + search.text + "%' ORDER BY idx DESC;"
             
             property bool reset: false
 

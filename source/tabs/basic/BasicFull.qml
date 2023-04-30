@@ -11,7 +11,14 @@ Item {
     id: root
     property var editing: false
     property var file: null
+    property var image: null
     visible: false
+
+    onImageChanged: {
+        if(image) {
+            bg.image = image
+        }
+    }
 
     signal contextMenu()
 
@@ -55,14 +62,14 @@ Item {
             BASIC.setupCanvas(canvas.wrapper, root.target)
             root.syncSubprompt()
             canvas.visible = true
-            bg.image = root.target.linkedImage
+            root.image = root.target.linkedImage
             reset = movable.itemWidth != root.target.linkedWidth || movable.itemHeight != root.target.linkedHeight
             movable.itemWidth = root.target.linkedWidth
             movable.itemHeight = root.target.linkedHeight
             root.file = null
         } else {
             canvas.visible = false
-            bg.image = Qt.binding(function () { return root.target.image })
+            root.image = Qt.binding(function () { return root.target.image; })
             reset = movable.itemWidth != root.target.width || movable.itemHeight != root.target.height
             movable.itemWidth = root.target.width
             movable.itemHeight = root.target.height
@@ -114,7 +121,7 @@ Item {
                 root.change()
             }
         } else {
-            bg.image = bg.image
+            root.image = root.image
             BASIC.close()
         }
     }
