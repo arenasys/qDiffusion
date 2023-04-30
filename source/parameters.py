@@ -309,7 +309,7 @@ class Parameters(QObject):
             "model":"", "models":[], "sampler":"Euler a", "samplers":[], "hr_upscaler":"Latent (nearest)", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
             "UNET":"", "UNETs":"", "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[], "CN":"", "CNs":[],
             "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "cn_strength":1.0, "schedule": "Default", "schedules": ["Default", "Karras"],
-            "vram_mode": "Default", "vram_modes": ["Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"], "preview_mode": "Disabled", "preview_modes": ["Disabled", "Light", "Medium", "Full"], "preview_interval":0})
+            "vram_mode": "Default", "vram_modes": ["Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"], "preview_mode": "Disabled", "preview_modes": ["Disabled", "Light", "Medium", "Full"], "preview_interval":1})
         self._values.updating.connect(self.mapsUpdating)
         self._values.updated.connect(self.onUpdated)
         self._availableNetworks = []

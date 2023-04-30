@@ -923,7 +923,7 @@ Item {
                         bindMap: root.binding.values
                         bindKey: "preview_interval"
 
-                        minValue: 0
+                        minValue: 1
                         maxValue: 10
                         precValue: 0
                         incValue: 1

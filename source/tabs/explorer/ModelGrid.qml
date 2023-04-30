@@ -208,7 +208,7 @@ Item {
 
                 Item {
                     id: descItem
-                    visible: (sql_desc != "" && modelCard.showing) || sql_width == 0 || modelCard.editing
+                    visible: (sql_desc != "" && modelCard.showing) || (sql_desc != "" && sql_width == 0) || modelCard.editing
                     anchors.fill: interior
                     anchors.margins: 1
                     property var inset: sql_width == 0 ? 2 : 4
