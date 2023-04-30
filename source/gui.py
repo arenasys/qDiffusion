@@ -461,7 +461,7 @@ class GUI(QObject):
     
     @pyqtSlot(str, result=str)
     def netType(self, name):
-        folder = name.rsplit(os.path.sep,1)[0].rsplit(os.path.sep,1)[-1]
+        folder = name.rsplit(os.path.sep,1)[0].rsplit(os.path.sep,1)[0]
         if folder in {"LoRA"}:
             return "LoRA"
         elif folder in {"HN", "hypernetworks"}:

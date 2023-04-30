@@ -110,6 +110,11 @@ Item {
                     root.deselect(index)
                 }
 
+                function hide() {
+                    modelCard.showing = false
+                    root.deselect(index)
+                }
+
                 function show() {
                     modelCard.selected = true
                     modelCard.showing = true
@@ -203,7 +208,7 @@ Item {
 
                 Item {
                     id: descItem
-                    visible: (sql_desc != "" || modelCard.showing) && (sql_width == 0 || modelCard.showing)
+                    visible: (sql_desc != "" && modelCard.showing) || sql_width == 0 || modelCard.editing
                     anchors.fill: interior
                     anchors.margins: 1
                     property var inset: sql_width == 0 ? 2 : 4
@@ -305,6 +310,10 @@ Item {
                         acceptedButtons: Qt.LeftButton
                         onPressed: {
                             modelCard.show()
+                        }
+                        onDoubleClicked: {
+                            BASIC.parameters.doToggle(sql_name)
+                            modelCard.hide()
                         }
                     }
                     SToolTip {

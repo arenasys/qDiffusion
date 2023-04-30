@@ -329,6 +329,7 @@ class Parameters(QObject):
             for a in self._availableNetworks:
                 if net[1] + "." in a:
                     self._activeNetworks += [a]
+                    break
         self.updated.emit()
 
     @pyqtProperty(list, notify=updated)
