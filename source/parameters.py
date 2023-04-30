@@ -303,12 +303,12 @@ class Parameters(QObject):
         self.gui.optionsUpdated.connect(self.optionsUpdated)
 
         self._client_only = ["models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "SR", "LoRAs", "HNs", "LoRA", "HN", "TIs", "TI", "CN", "CNs", "hr_upscalers", "img2img_upscalers", 
-                             "attentions", "device", "devices", "batch_count", "prompt", "negative_prompt", "vram_usages", "artifact_modes", "preview_modes"]
+                             "attentions", "device", "devices", "batch_count", "prompt", "negative_prompt", "vram_usages", "artifact_modes", "preview_modes", "schedules"]
         self._values = VariantMap(self, {"prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7, "strength": 0.75, "seed": -1, "eta": 1.0,
             "hr_factor": 1.0, "hr_strength":  0.7, "hr_sampler": "Euler a", "hr_steps": 25, "hr_eta": 1.0, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "subseed":-1, "subseed_strength": 0.0,
             "model":"", "models":[], "sampler":"Euler a", "samplers":[], "hr_upscaler":"Latent (nearest)", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
             "UNET":"", "UNETs":"", "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[], "CN":"", "CNs":[],
-            "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "cn_strength":1.0,
+            "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "cn_strength":1.0, "schedule": "Default", "schedules": ["Default", "Karras"],
             "vram_mode": "Default", "vram_modes": ["Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"], "preview_mode": "Disabled", "preview_modes": ["Disabled", "Light", "Medium", "Full"], "preview_interval":0})
         self._values.updating.connect(self.mapsUpdating)
         self._values.updated.connect(self.onUpdated)
@@ -396,6 +396,16 @@ class Parameters(QObject):
         self.getActive()
         self.updated.emit()
 
+        if key == "sampler":
+            sampler = self._values.get("sampler")
+            if sampler in {"DPM++ 2M", "DPM++ 2S a", "DPM++ SDE"}:
+                self._values.set("schedules", ["Default", "Karras"])
+            else:
+                self._values.set("schedules", ["Default"])
+            schedule = self._values.get("schedule")
+            if not schedule in self._values.get("schedules"):
+                self._values.set("schedule", "Default")
+
     @pyqtSlot()
     def optionsUpdated(self):
         for k in self.gui._options:
@@ -455,7 +465,9 @@ class Parameters(QObject):
         pref_vram = self.gui.config.get("vram")
         if pref_vram and pref_vram in self._values.get("vram_modes"):
             self._values.set("vram_mode", pref_vram)
-         
+
+        self._values.set("samplers", [s for s in self._values.get("samplers") if not "Karras" in s])
+        
         self.updated.emit()
 
     def buildRequest(self, images=[], masks=[], areas=[], control=[]):
@@ -472,6 +484,10 @@ class Parameters(QObject):
         pos = self.parsePrompt(self._values._map['prompt'], batch_size)
         neg = self.parsePrompt(self._values._map['negative_prompt'], batch_size)
         data['prompt'] = list(zip(pos, neg))
+
+        if data["schedule"] == "Karras":
+            data["sampler"] += " Karras"
+        del data["schedule"]
 
         if data["steps"] == 0 and images:
             request["type"] = "upscale"
@@ -575,10 +591,11 @@ class Parameters(QObject):
     @pyqtSlot(list)
     def sync(self, params):
         hr_resize = None
+        schedule = None
 
         found = {'hr_resize':False, 'hr_factor': False, 'hr_sampler': False, 'hr_steps': False, 'hr_eta': False,
               'sampler': False, 'steps': False, 'eta': False, 'model':False, 'VAE':False, "UNET":False, "CLIP":False}
-
+        
         for p in params:
             if not p._checked:
                 continue
@@ -594,6 +611,13 @@ class Parameters(QObject):
                 w,h = p._value.split("x")
                 hr_resize = int(w), int(h)
                 continue
+                
+            if p._name == "sampler":
+                if p._value.endswith(" Karras"):
+                    p._value = p._value.rsplit(" ",1)[0]
+                    schedule = "Karras"
+                else:
+                    schedule = "Default"
                 
             if p._name in found:
                 found[p._name] = True
@@ -616,7 +640,10 @@ class Parameters(QObject):
                 pass
 
             if val:
-                self.values.set(p._name, val)
+                self.values.set(p._name, p._value)
+
+        if schedule:
+            self.values.set("schedule", schedule)
 
         if hr_resize:
             w,h = hr_resize

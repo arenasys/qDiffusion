@@ -266,6 +266,17 @@ Item {
                         bindKeyModel: "samplers"
                     }
 
+                    OChoice {
+                        id: scheduleInput
+                        label: "Schedule"
+                        width: parent.width
+                        height: 25
+                        
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "schedule"
+                        bindKeyModel: "schedules"
+                    }
+
                     OSlider {
                         id: etaInput
                         label: "Eta"
