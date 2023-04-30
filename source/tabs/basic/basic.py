@@ -418,7 +418,7 @@ class Basic(QObject):
                 q.bindValue(":id", out)
                 self.conn.doQuery(q)
                 out += 1
-                if sticky:
+                if sticky and "result" in available:
                     self.stick()
 
             if "metadata" in available:
@@ -434,8 +434,9 @@ class Basic(QObject):
                 self._outputs[out].setPreview(previews[i])
                 out += 1
 
-        if name == "result":
+        if name == "result": 
             self._ids.remove(id)
+            sticky = self.isSticky()
             results = self.gui._results[id]["result"]
             metadata = self.gui._results[id]["metadata"]
             artifacts = {k:v for k,v in self.gui._results[id].items() if not k in {"result", "metadata", "preview"}}
@@ -446,6 +447,8 @@ class Basic(QObject):
                     self._outputs[out].setResult(results[i], metadata[i])
                 self._outputs[out].setArtifacts({k:v[i] for k,v in artifacts.items()})
                 out += 1
+            if sticky:
+                self.stick()
 
             self._remaining = max(0, self._remaining-1)
             if self._remaining > 0 or self._forever:
@@ -772,7 +775,11 @@ class Basic(QObject):
             return False
         if not self._openedIndex in self._outputs:
             return True
-        return self.outputIDToIndex(self._openedIndex) == 0 
+        idx = self.outputIDToIndex(self._openedIndex)
+        if idx == 0:
+            return True
+        if idx == 1 and not self._outputs[self.outputIndexToID(0)].ready:
+            return True
         
     @pyqtSlot()
     def pasteClipboard(self):
