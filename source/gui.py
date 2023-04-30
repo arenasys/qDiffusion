@@ -227,10 +227,11 @@ class GUI(QObject):
             self._errorStatus = self._statusText
             self._errorText = response["data"]["message"]
             self._remoteStatus = RemoteStatusMode.ERRORED
-            self.backend.stop()
             self.statusUpdated.emit()
             self.errorUpdated.emit()
             self.reset.emit(id)
+            self.backend.stop()
+            self.backend.wait()
             
         if response["type"] == "aborted":
             self.reset.emit(id)

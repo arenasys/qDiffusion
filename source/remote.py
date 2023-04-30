@@ -170,18 +170,17 @@ class RemoteInference(QThread):
                     self.onResponse(response)
             except websockets.exceptions.ConnectionClosedOK:
                 self.onResponse({"type": "remote_error", "data": {"message": "Connection closed"}})
+                break
             except Exception as e:
                 if type(e) == InvalidToken or type(e) == IndexError:
                     self.onResponse({"type": "remote_error", "data": {"message": "Incorrect password"}})
                 else:
                     self.onResponse({"type": "remote_error", "data": {"message": str(e)}})
                     log_traceback("REMOTE")
-                return
+                break
 
         if self.client:
-            self.client.recv_messages.close()
             self.client.close()
-            self.client.socket.close()
             self.client = None
 
     @pyqtSlot()

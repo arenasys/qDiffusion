@@ -542,11 +542,6 @@ class Parameters(QObject):
         else:
             del data["cn_strength"]
 
-        if request["type"] == "upscale":
-            for k in list(data.keys()):
-                if not k in {"img2img_upscaler", "width", "height", "image", "mask", "mask_blur", "padding"}:
-                    del data[k]
-
         if request["type"] != "img2img" and "strength" in data:
             del data["strength"]
 
@@ -561,6 +556,11 @@ class Parameters(QObject):
         if data["preview_mode"] != "Disabled":
             data["show_preview"] = data["preview_mode"]
         del data["preview_mode"]
+
+        if request["type"] == "upscale":
+            for k in list(data.keys()):
+                if not k in {"img2img_upscaler", "width", "height", "image", "mask", "mask_blur", "padding"}:
+                    del data[k]
 
         data = {k.lower():v for k,v in data.items()}
 
