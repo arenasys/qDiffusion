@@ -11,6 +11,8 @@ INSIDE_VENV = VENV_DIR in sys.executable and VENV_DIR in os.environ["PATH"]
 MISSING_VENV = not os.path.exists("venv")
 MISSING_QT = False
 
+PYTHON_RUN = sys.executable
+
 try:
     from PyQt5.QtCore import Qt
 except Exception:
@@ -34,7 +36,7 @@ def restart():
 
 def install_venv():
     print("CREATING VENV...")
-    subprocess.run("python -m venv venv".split(' '))
+    subprocess.run(f"{PYTHON_RUN} -m venv venv".split(' '))
 
 def install_qt():
     print("INSTALLNG PyQt...")
