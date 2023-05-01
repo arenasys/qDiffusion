@@ -200,6 +200,7 @@ GridView {
         property int sourceWidth: sql_width
         property int sourceHeight: sql_height
         property var sourceParams: sql_parameters
+        
         source: sql_file
 
         selected: thumbView.currentIndex === index || (thumbView.selectedLength <= 0 ? false : thumbView.selected.includes(sql_file))

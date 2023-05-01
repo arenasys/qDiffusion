@@ -81,11 +81,12 @@ class Populater(QObject):
         if idx % 1000 == 999:
             self.conn.relayNotification("images")
 
+
+        parameters = parameters.replace("'", "''")
         q = QSqlQuery(self.conn.db)
-        q.prepare("INSERT OR REPLACE INTO images(file, folder, parameters, idx, width, height) VALUES (:file, :folder, :parameters, :idx, :width, :height);")
+        q.prepare(f"INSERT OR REPLACE INTO images(file, folder, parameters, idx, width, height) VALUES (:file, :folder, '{parameters}', :idx, :width, :height);")
         q.bindValue(":file", file)
         q.bindValue(":folder", folder)
-        q.bindValue(":parameters", parameters)
         q.bindValue(":idx", idx)
         q.bindValue(":width", width)
         q.bindValue(":height", height)

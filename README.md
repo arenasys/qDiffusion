@@ -9,5 +9,18 @@ Clone the repo via `git clone https://github.com/arenasys/qDiffusion`. Then run 
 ### Remote
 Notebooks for running a remote instances are available: [Colab](https://colab.research.google.com/github/arenasys/qDiffusion/blob/master/remote_colab.ipynb).
 
-### Features
-TODO
+### Overview
+- Stable diffusion 1.x and 2.x (including v-prediction)
+- Txt2Img, Img2Img, Inpainting, HR Fix and Upscaling modes
+- Prompt and network weighting and scheduling
+- Hypernetworks
+- LoRAs (including LoCon)
+- Textual inversion Embeddings
+- Model pruning and conversion
+- Subprompts via Composable Diffusion
+- Live preview modes
+- Optimized attention
+- Minimal VRAM mode
+- Device selection
+- ~~ControlNet~~ (working on it!)
+- ~~Merging~~ (working on it!)

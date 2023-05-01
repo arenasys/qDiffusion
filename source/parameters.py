@@ -107,7 +107,6 @@ def get_index(folder):
     return idx
 
 def save_image(img, metadata, outputs):
-
     if type(img) == bytes:
         img = PIL.Image.open(io.BytesIO(img))
     m = PIL.PngImagePlugin.PngInfo()

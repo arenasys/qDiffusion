@@ -914,7 +914,6 @@ Item {
                         }
                     }
 
-
                     OSlider {
                         label: "Preview interval"
                         width: parent.width

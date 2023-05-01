@@ -34,7 +34,6 @@ Rectangle {
         anchors.bottom: imageDivider.top        
     }
 
-    
     Rectangle {
         id: searchDivider
         anchors.left: galleryDivider.right
