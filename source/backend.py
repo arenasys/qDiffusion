@@ -49,6 +49,7 @@ def convert_all_paths(j):
                 convert_all_paths(j[i])
     elif type(j) == dict: 
         for k, v in j.items():
+            if 'prompt' in k: continue
             if type(v) == str and INV_SEP in v:
                 j[k] = convert_path(v)
             if type(v) == list or type(v) == dict:
