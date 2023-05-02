@@ -336,6 +336,7 @@ class Basic(QObject):
         self._ids = []
         self._forever = False
         self._remaining = 0
+        self._batch = None
         self._mapping = {}
 
         self._openedIndex = -1
@@ -356,6 +357,9 @@ class Basic(QObject):
         self.conn.enableNotifications("outputs")
 
     def buildRequest(self):
+        if self._remaining != 0 and self._batch:
+            return self._batch
+
         def encode_image(img):
             ba = QByteArray()
             bf = QBuffer(ba)
@@ -381,6 +385,10 @@ class Basic(QObject):
                     if not i._image.isNull():
                         controls += [encode_image(i._image)]
         request = self._parameters.buildRequest(images, masks, areas, controls)
+
+        if self._remaining != 0:
+            self._batch = request
+
         return request
 
     @pyqtSlot()
@@ -453,6 +461,8 @@ class Basic(QObject):
             self._remaining = max(0, self._remaining-1)
             if self._remaining > 0 or self._forever:
                 self.generate()
+            else:
+                self._batch = None
 
             self.updated.emit()
             self.results.emit()
@@ -473,6 +483,7 @@ class Basic(QObject):
     def cancel(self):
         if self._ids:
             self._remaining = 0
+            self._batch = None
             self.gui.cancelRequest(self._ids.pop())
             self.updated.emit()
 
