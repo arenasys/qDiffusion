@@ -9,6 +9,7 @@ class Wildcards(QObject):
         super().__init__(gui)
         self.gui = gui
         self._wildcards = {}
+        self._counter = {}
         self.reload()
 
     @pyqtSlot()

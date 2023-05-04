@@ -470,6 +470,11 @@ class Parameters(QObject):
         
         self.updated.emit()
 
+    def buildPrompts(self, batch_size):
+        pos = self.parsePrompt(self._values._map['prompt'], batch_size)
+        neg = self.parsePrompt(self._values._map['negative_prompt'], batch_size)
+        return list(zip(pos, neg))
+
     def buildRequest(self, images=[], masks=[], areas=[], control=[]):
         request = {}
         data = {}
@@ -481,9 +486,7 @@ class Parameters(QObject):
         batch_size = int(data['batch_size'])
         batch_size = max(batch_size, len(images), len(masks), len(areas), len(control))
 
-        pos = self.parsePrompt(self._values._map['prompt'], batch_size)
-        neg = self.parsePrompt(self._values._map['negative_prompt'], batch_size)
-        data['prompt'] = list(zip(pos, neg))
+        data['prompt'] = self.buildPrompts(batch_size)
 
         if data["schedule"] == "Karras":
             data["sampler"] += " Karras"
@@ -552,7 +555,7 @@ class Parameters(QObject):
 
         if control:
             data["cn_image"] = control
-            data["cn"] = ["canny"] * len(control)
+            data["cn"] = ["control_v11p_sd15_canny"] * len(control)
             data["cn_proc"] = ["canny"] * len(control)
             data["cn_scale"] = [data["cn_strength"]] * len(control)
         else:
@@ -669,13 +672,13 @@ class Parameters(QObject):
             self.values.set("CLIP", model)
         
         self.updated.emit()
-
         pass
 
     def parsePrompt(self, prompt, batch_size):
         wildcards = self.gui.wildcards._wildcards
+        counter = self.gui.wildcards._counter
         prompts = []
-        pattern = re.compile("__([^\s]+?)__(?!___)")
+        pattern = re.compile("@?__([^\s]+?)__(?!___)")
         for i in range(batch_size):
             sp = self.parseSubprompts(str(prompt))
             for j in range(len(sp)):
@@ -684,10 +687,16 @@ class Parameters(QObject):
                     s,e = m.span(0)
                     name = m.group(1)
                     p = list(p)
+                    c = []
                     if name in wildcards:
-                        p[s:e] = random.SystemRandom().choice(wildcards[name])
-                    else:
-                        p[s:e] = []
+                        if p[s] == "@":
+                            if not name in counter:
+                                counter[name] = 0
+                            c = wildcards[name][counter[name]%len(wildcards[name])]
+                            counter[name] += 1
+                        else:
+                            c = random.SystemRandom().choice(wildcards[name])
+                    p[s:e] = c
                     p = ''.join(p)
                 sp[j] = p
             prompts += [sp]
@@ -720,7 +729,7 @@ class Parameters(QObject):
                 if hn_match[0] + "." in hn:
                     self._active += [hn]
 
-        for w_match in re.findall(r"__([^\s]+?)__(?!___)", prompt):
+        for w_match in re.findall(r"@?__([^\s]+?)__(?!___)", prompt):
             if w_match in self.gui.wildcards._wildcards:
                 self._active += [os.path.join("WILDCARD", w_match + ".txt")]
 

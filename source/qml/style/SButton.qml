@@ -7,6 +7,7 @@ Item {
     id: root
     property alias label: labelText.text
     property var disabled: false
+    property alias color: labelText.color
 
     signal pressed()
     width: 100

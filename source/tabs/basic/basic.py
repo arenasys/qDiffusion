@@ -336,7 +336,7 @@ class Basic(QObject):
         self._ids = []
         self._forever = False
         self._remaining = 0
-        self._batch = None
+        self._requests = []
         self._mapping = {}
 
         self._openedIndex = -1
@@ -357,8 +357,8 @@ class Basic(QObject):
         self.conn.enableNotifications("outputs")
 
     def buildRequest(self):
-        if self._remaining != 0 and self._batch:
-            return self._batch
+        if self._remaining != 0 and self._requests:
+            return self._requests[self._remaining-1]
 
         def encode_image(img):
             ba = QByteArray()
@@ -384,23 +384,20 @@ class Basic(QObject):
                 if i._role == BasicInputRole.CONTROL:
                     if not i._image.isNull():
                         controls += [encode_image(i._image)]
-        request = self._parameters.buildRequest(images, masks, areas, controls)
-
-        if self._remaining != 0:
-            self._batch = request
-
-        return request
+        
+        self._requests = []
+        for i in range(self._remaining):
+            self._requests += [self._parameters.buildRequest(images, masks, areas, controls)]
+        return self._requests[self._remaining-1]
 
     @pyqtSlot()
     def generate(self):
         if not self._ids:
             if self._remaining == 0:
-                self._remaining = self._parameters._values.get("batch_count")
-                if self._remaining == 1:
-                    self._remaining = 0
-                self.updated.emit()
+                self._remaining = int(self._parameters._values.get("batch_count"))
             request = self.buildRequest()
             self._ids += [self.gui.makeRequest(request)]
+            self.updated.emit()
 
     @pyqtSlot(int, str)
     def result(self, id, name):
@@ -462,7 +459,7 @@ class Basic(QObject):
             if self._remaining > 0 or self._forever:
                 self.generate()
             else:
-                self._batch = None
+                self._requests = []
 
             self.updated.emit()
             self.results.emit()
@@ -483,7 +480,7 @@ class Basic(QObject):
     def cancel(self):
         if self._ids:
             self._remaining = 0
-            self._batch = None
+            self._requests = None
             self.gui.cancelRequest(self._ids.pop())
             self.updated.emit()
 
@@ -498,6 +495,8 @@ class Basic(QObject):
 
     @pyqtProperty(int, notify=updated)
     def remaining(self):
+        if self._requests and len(self._requests) <= 1:
+            return 0
         return int(self._remaining)
 
     @pyqtProperty(parameters.Parameters, notify=updated)

@@ -188,21 +188,27 @@ Item {
                 property var searchText: search.text
 
                 ModelGrid {
+                    label: "Checkpoints"
                     mode: "checkpoint"
                 }
                 ModelGrid {
+                    label: "Components"
                     mode: "component"
                 }
                 ModelGrid {
+                    label: "LoRAs"
                     mode: "lora"
                 }
                 ModelGrid {
+                    label: "Hypernets"
                     mode: "hypernet"
                 }
                 ModelGrid {
+                    label: "Embeddings"
                     mode: "embedding"
                 }
                 ModelGrid {
+                    label: "Wildcards"
                     mode: "wildcard"
                 }
             }

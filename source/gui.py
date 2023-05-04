@@ -9,7 +9,7 @@ IS_WIN = platform.system() == 'Windows'
 
 from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent, QMimeData, QUrl, QSize
 from PyQt5.QtQuick import QQuickItem, QQuickPaintedItem
-from PyQt5.QtGui import QImage, QColor, QDrag
+from PyQt5.QtGui import QImage, QColor, QDrag, QDesktopServices
 from PyQt5.QtQml import qmlRegisterType
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtNetwork import QNetworkRequest, QNetworkReply, QNetworkAccessManager
@@ -467,3 +467,32 @@ class GUI(QObject):
         elif folder in {"HN", "hypernetworks"}:
             return "HN"
         return None
+    
+    @pyqtSlot(str)
+    def openModelFolder(self, mode):
+        MODE_FOLDERS = {
+            "checkpoint": ["SD", "Stable-diffusion", "VAE"],
+            "component": ["SD", "Stable-diffusion", "VAE"],
+            "upscale": ["SR", "ESRGAN", "RealESRGAN"], 
+            "embedding": ["TI", "embeddings", os.path.join("..", "embeddings")], 
+            "lora": ["LoRA"], 
+            "hypernet": ["HN", "hypernetworks"],
+            "wildcard": ["WILDCARD"],
+            "controlnet": ["CN"]
+        }
+        dir = self.modelDirectory()
+        found = None
+        for f in MODE_FOLDERS[mode]:
+            path = os.path.join(dir, f)
+            if os.path.exists(path):
+                found = path
+                break
+        if not found:
+            found = os.path.join(dir, MODE_FOLDERS[mode][0])
+            os.makedirs(found)
+        try:
+            found = os.path.abspath(found)
+            QDesktopServices.openUrl(QUrl.fromLocalFile(found))
+        except Exception:
+            pass
+        

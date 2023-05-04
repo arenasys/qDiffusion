@@ -230,14 +230,18 @@ class SyntaxHighlighter(QSyntaxHighlighter):
                 if text[s+1] == "@":
                     self.setFormat(s+1,1,err)
 
-        for s, e, ms, me in [(*m.span(0), *m.span(1)) for m in re.finditer("__([^\s]+?)__(?!___)", text)]:
+        for s, e, ms, me in [(*m.span(0), *m.span(1)) for m in re.finditer("@?__([^\s]+?)__(?!___)", text)]:
             m = text[ms:me]
             if m in wilds:
                 self.setFormat(s, e-s, wild_bg)
                 self.setFormat(ms, me-ms, wild)
+                if text[s] == "@":
+                    self.setFormat(s,1,wild)
             else:
                 self.setFormat(s, e-s, err_bg)
                 self.setFormat(ms, me-ms, err)
+                if text[s] == "@":
+                    self.setFormat(s,1,err)
         
         if text.startswith("Negative prompt: "):
             self.setFormat(0, 16, field)

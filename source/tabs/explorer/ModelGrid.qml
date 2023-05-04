@@ -12,6 +12,7 @@ Item {
     id: root
     property var mode: ""
     property var folder: ""
+    property var label: ""
     property var cellSize: 150
     property var shift: false
     property var searchText: parent.searchText
@@ -31,6 +32,27 @@ Item {
     }
 
     signal deselect(int index)
+
+    SButton {
+        visible: modelsView.count == 0 && (GUI.remoteStatus == 0 || root.mode == "wildcard")
+        anchors.centerIn: root
+        width: 150
+        height: 27
+        label: "Open " + root.label
+        color: COMMON.fg1_5
+
+        onPressed: {
+            GUI.openModelFolder(root.mode)
+        }
+    }
+
+    SText {
+        anchors.centerIn: parent
+        visible: modelsView.count == 0 && GUI.remoteStatus != 0 && root.mode != "wildcard"
+        text: "Remote has no " + root.label
+        color: COMMON.fg2
+        font.pointSize: 9.8
+    }
 
     GridView {
         id: modelsView
