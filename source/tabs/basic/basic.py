@@ -15,6 +15,13 @@ import sql
 import time
 import json
 
+def encode_image(img):
+    ba = QByteArray()
+    bf = QBuffer(ba)
+    bf.open(QIODevice.WriteOnly)
+    img.save(bf, "PNG")
+    return ba.data()
+
 MIME_BASIC_INPUT = "application/x-qd-basic-input"
 
 class BasicInputRole(Enum):
@@ -23,23 +30,34 @@ class BasicInputRole(Enum):
     SUBPROMPT = 3
     CONTROL = 4
 
+INPUT_ID = 1
+
 class BasicInput(QObject):
     updated = pyqtSignal()
     linkedUpdated = pyqtSignal()
     extentUpdated = pyqtSignal()
     def __init__(self, basic, image=QImage(), role=BasicInputRole.IMAGE):
+        global INPUT_ID
         super().__init__(basic)
         self.basic = basic
+        self._original = image.copy()
         self._image = image
         self._role = role
         self._linked = None
         self._dragging = False
         self._extent = QRect()
         self._extentWarning = False
+        self._mode = None
+        self._id = INPUT_ID
+        INPUT_ID += 1
+
+        self._artifacts = {}
+        self._artifactNames = []
+        self._display = None
 
         self._areas = []
 
-        basic.parameters._values.updated.connect(self.updateExtent)
+        basic.parameters._values.updated.connect(self.updateImage)
 
     def updateImage(self):
         if self._image and not self._image.isNull():
@@ -54,7 +72,7 @@ class BasicInput(QObject):
         self.updated.emit()
 
     def resizeImage(self, size):
-        image = self._image.scaled(size, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+        image = self._original.scaled(size, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
         dx = int((image.width()-size.width())//2)
         dy = int((image.height()-size.height())//2)
         self._image = image.copy(dx, dy, size.width(), size.height())
@@ -82,6 +100,8 @@ class BasicInput(QObject):
     @role.setter
     def role(self, role):
         self._role = BasicInputRole(role)
+        if self._role != BasicInputRole.CONTROL:
+            self._mode = None
         self.updated.emit()
         self.parent().updated.emit()
 
@@ -144,10 +164,105 @@ class BasicInput(QObject):
     def extentWarning(self):
         return self._extentWarning
     
+    @pyqtProperty(str, notify=updated)
+    def mode(self):
+        if self._mode:
+            return self._mode
+        else:
+            return ""
+        
+    @mode.setter
+    def mode(self, mode):
+        self._mode = mode
+        if self._display:
+            self.annotate()
+        else:
+            self.setArtifacts({})
+        self.updated.emit()
+        self.parent().updated.emit()
+
+    @pyqtSlot()
+    def annotate(self):
+        self.basic.annotate(self)
+    
+    def setArtifacts(self, artifacts):
+        self._artifacts = artifacts
+        self._artifactNames = list(self._artifacts.keys())
+        if self._artifactNames:
+            self._display = self._artifactNames[-1]
+        else:
+            self._display = None
+        self.updated.emit()
+
+    @pyqtProperty(QImage, notify=updated)
+    def display(self):
+        if not self._display:
+            return self._image
+        return self._artifacts[self._display]
+    
+    @pyqtProperty(QImage, notify=updated)
+    def display(self):
+        if not self._display:
+            return self._image
+        return self._artifacts[self._display]
+    
+    @pyqtProperty(str, notify=updated)
+    def displayName(self):
+        return ["", "Image", "Mask", "Subprompts", "Control"][self._role.value]
+    
+    @pyqtProperty(str, notify=updated)
+    def displayIndex(self):
+        if not self._artifacts:
+            return ""
+        if not self._display:
+            return f"1 of {len(self._artifactNames)+1}"
+        else:
+            idx = self._artifactNames.index(self._display)
+            return f"{idx+2} of {len(self._artifactNames)+1}"
+
+    @pyqtSlot()
+    def nextDisplay(self):
+        if not self._display:
+            if self._artifactNames:
+                self._display = self._artifactNames[0]
+        else:
+            idx = self._artifactNames.index(self._display) + 1
+            if idx < len(self._artifactNames):
+                self._display = self._artifactNames[idx]
+            else:
+                self._display = None
+        self.updated.emit()
+    
+    @pyqtSlot()
+    def prevDisplay(self):
+        if not self._display:
+            if self._artifactNames:
+                self._display = self._artifactNames[-1]
+        else:
+            idx = self._artifactNames.index(self._display) - 1
+            if idx >= 0:
+                self._display = self._artifactNames[idx]
+            else:
+                self._display = None
+        self.updated.emit()
+
+    @pyqtSlot()
+    def resetDisplay(self):
+        self._display = None
+        self.updated.emit()
+
+    def checkAnnotation(self):
+        if self._display and self._role == BasicInputRole.CONTROL:
+            self.annotate()
+        else:
+            self.setArtifacts({})
+
     @pyqtSlot(QUrl)
     def setImageFile(self, path):
         self._image = QImage(path.toLocalFile())
+        self._original = self._image.copy()
         self.updateImage()
+        self.checkAnnotation()
 
     @pyqtSlot()
     def setImageCanvas(self):
@@ -158,11 +273,14 @@ class BasicInput(QObject):
             w,h = self.basic.parameters.values.get("width"),  self.basic.parameters.values.get("height")
         self._image = QImage(QSize(int(w),int(h)), QImage.Format_ARGB32_Premultiplied)
         self._image.fill(0)
+        self._original = self._image.copy()
         self.updateImage()
+        self.checkAnnotation()
 
     @pyqtSlot(MimeData, int)
     def setImageDrop(self, mimeData, index):
         mimeData = mimeData.mimeData
+        found = False
         if MIME_BASIC_INPUT in mimeData.formats():
             source = int(str(mimeData.data(MIME_BASIC_INPUT), 'utf-8'))
             destination = index
@@ -171,17 +289,25 @@ class BasicInput(QObject):
             source = mimeData.imageData()
             if source and not source.isNull():
                 self._image = source
+                found = True
             else:
                 for url in mimeData.urls():
                     if url.isLocalFile():
                         self._image = QImage(url.toLocalFile())
+                        found = True
                         break
-        self.updateImage()
+        if found:
+            self._original = self._image.copy()
+            self.updateImage()
+            self.checkAnnotation()
 
     @pyqtSlot(QImage)
     def setImageData(self, data):
         self._image = data
+
+        self._original = self._image.copy()
         self.updateImage()
+        self.checkAnnotation()
 
     def updateExtent(self):
         if self._role != BasicInputRole.MASK or not self._image or self._image.isNull():
@@ -238,6 +364,8 @@ class BasicOutput(QObject):
         self._image = image
         self._metadata = None
         self._artifacts = {}
+        self._artifactNames = []
+        self._display = None
         self._file = ""
         self._parameters = ""
         self._dragging = False
@@ -258,6 +386,8 @@ class BasicOutput(QObject):
 
     def setArtifacts(self, artifacts):
         self._artifacts = artifacts
+        self._artifactNames = list(self._artifacts.keys())
+        self._display = None
         self.updated.emit()
 
     @pyqtProperty(bool, notify=updated)
@@ -268,6 +398,58 @@ class BasicOutput(QObject):
     def image(self):
         return self._image
     
+    @pyqtProperty(QImage, notify=updated)
+    def display(self):
+        if not self._display:
+            return self._image
+        return self._artifacts[self._display]
+    
+    @pyqtProperty(QImage, notify=updated)
+    def display(self):
+        if not self._display:
+            return self._image
+        return self._artifacts[self._display]
+    
+    @pyqtProperty(str, notify=updated)
+    def displayName(self):
+        return self._display
+    
+    @pyqtProperty(str, notify=updated)
+    def displayIndex(self):
+        if not self._artifacts:
+            return ""
+        if not self._display:
+            return f"1 of {len(self._artifactNames)+1}"
+        else:
+            idx = self._artifactNames.index(self._display)
+            return f"{idx+2} of {len(self._artifactNames)+1}"
+
+    @pyqtSlot()
+    def nextDisplay(self):
+        if not self._display:
+            if self._artifactNames:
+                self._display = self._artifactNames[0]
+        else:
+            idx = self._artifactNames.index(self._display) + 1
+            if idx < len(self._artifactNames):
+                self._display = self._artifactNames[idx]
+            else:
+                self._display = None
+        self.updated.emit()
+    
+    @pyqtSlot()
+    def prevDisplay(self):
+        if not self._display:
+            if self._artifactNames:
+                self._display = self._artifactNames[-1]
+        else:
+            idx = self._artifactNames.index(self._display) - 1
+            if idx >= 0:
+                self._display = self._artifactNames[idx]
+            else:
+                self._display = None
+        self.updated.emit()
+
     @pyqtProperty(str, notify=updated)
     def file(self):
         return self._file
@@ -315,8 +497,6 @@ class BasicOutput(QObject):
     @pyqtSlot(str, result=QImage)
     def artifact(self, name):
         return self._artifacts[name]
-    
-
 
 class Basic(QObject):
     updated = pyqtSignal()
@@ -338,6 +518,7 @@ class Basic(QObject):
         self._remaining = 0
         self._requests = []
         self._mapping = {}
+        self._annotations = {}
 
         self._openedIndex = -1
         self._openedArea = ""
@@ -359,17 +540,12 @@ class Basic(QObject):
     def buildRequest(self):
         if self._remaining != 0 and self._requests:
             return self._requests[self._remaining-1]
-
-        def encode_image(img):
-            ba = QByteArray()
-            bf = QBuffer(ba)
-            bf.open(QIODevice.WriteOnly)
-            img.save(bf, "PNG")
-            return ba.data()
+    
         images = []
         masks = []
         areas = []
         controls = []
+
         if self._inputs:
             for i in self._inputs:
                 if i._role == BasicInputRole.IMAGE:
@@ -383,7 +559,7 @@ class Basic(QObject):
                         areas += [[encode_image(a) for a in i._areas]]
                 if i._role == BasicInputRole.CONTROL:
                     if not i._image.isNull():
-                        controls += [encode_image(i._image)]
+                        controls += [(i._mode, encode_image(i._image))]
         
         self._requests = []
         for i in range(self._remaining):
@@ -395,12 +571,19 @@ class Basic(QObject):
         if not self._ids:
             if self._remaining == 0:
                 self._remaining = int(self._parameters._values.get("batch_count"))
+            self._requests = []
             request = self.buildRequest()
             self._ids += [self.gui.makeRequest(request)]
             self.updated.emit()
 
     @pyqtSlot(int, str)
     def result(self, id, name):
+        if id in self._annotations:
+            img = self.gui._results[id]["result"][0]
+            id = self._annotations[id]
+            for i in self._inputs:
+                if i._id == id:
+                    i.setArtifacts({"Annotated":img})
         if not id in self._ids:
             return
         if not id in self._mapping:
@@ -527,9 +710,11 @@ class Basic(QObject):
         self._inputs += [BasicInput(self, QImage(), BasicInputRole.SUBPROMPT)]
         self.updated.emit()
 
-    @pyqtSlot()
-    def addControl(self):
-        self._inputs += [BasicInput(self, QImage(), BasicInputRole.CONTROL)]
+    @pyqtSlot(str)
+    def addControl(self, mode):
+        i = BasicInput(self, QImage(), BasicInputRole.CONTROL)
+        i._mode = mode
+        self._inputs += [i]
         self.updated.emit()
 
     @pyqtSlot()
@@ -933,3 +1118,8 @@ class Basic(QObject):
         layerCount = len(self._parameters.subprompts)
         if len(target._areas) > layerCount:
             target._areas = target._areas[:layerCount]
+
+    def annotate(self, input):
+        request = self._parameters.buildAnnotateRequest(input._mode, encode_image(input._image))
+        id = self.gui.makeRequest(request)
+        self._annotations[id] = input._id

@@ -69,7 +69,7 @@ Item {
             root.file = null
         } else {
             canvas.visible = false
-            root.image = Qt.binding(function () { return root.target.image; })
+            root.image = Qt.binding(function () { return root.target.display; })
             reset = movable.itemWidth != root.target.width || movable.itemHeight != root.target.height
             movable.itemWidth = root.target.width
             movable.itemHeight = root.target.height
@@ -115,13 +115,13 @@ Item {
     }
 
     function close() {
+        root.image = root.image
         if(root.editing) {
             changing = "close"
             if(!canvas.forceSync()) {
                 root.change()
             }
         } else {
-            root.image = root.image
             BASIC.close()
         }
     }
@@ -428,15 +428,14 @@ Item {
                     BASIC.right()
                 }
                 break;
+            case Qt.Key_Up:
+                root.target.prevDisplay()
+                break;
+            case Qt.Key_Down:
+                root.target.nextDisplay()
+                break;
             case Qt.Key_Escape:
-                if(root.editing) {
-                    changing = "close"
-                    if(!canvas.forceSync()) {
-                        root.change()
-                    }
-                } else {
-                    BASIC.close()
-                }
+                root.close()
                 break;
             case Qt.Key_Delete:
                 if(root.editing) {

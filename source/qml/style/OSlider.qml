@@ -26,6 +26,7 @@ Item {
     property var bindKey: null
 
     signal selected()
+    signal finished()
 
     Connections {
         target: bindMap
@@ -104,6 +105,10 @@ Item {
                     mouseArea.update()
                     root.selected()
                 }
+            }
+
+            onReleased: {
+                root.finished()
             }
         }
 

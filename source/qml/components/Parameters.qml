@@ -15,6 +15,7 @@ Item {
     signal generate()
     signal cancel()
     signal buildModel()
+    signal sizeFinished()
 
     function sizeDrop(mimedata) {
         
@@ -158,6 +159,10 @@ Item {
                         snapValue: 64
                         bounded: false
 
+                        onFinished: {
+                            root.sizeFinished()
+                        }
+
                         AdvancedDropArea {
                             anchors.fill: parent
 
@@ -181,6 +186,10 @@ Item {
                         incValue: 8
                         snapValue: 64
                         bounded: false
+
+                        onFinished: {
+                            root.sizeFinished()
+                        }
 
                         AdvancedDropArea {
                             anchors.fill: parent

@@ -301,14 +301,19 @@ class Parameters(QObject):
 
         self.gui.optionsUpdated.connect(self.optionsUpdated)
 
-        self._client_only = ["models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "SR", "LoRAs", "HNs", "LoRA", "HN", "TIs", "TI", "CN", "CNs", "hr_upscalers", "img2img_upscalers", 
-                             "attentions", "device", "devices", "batch_count", "prompt", "negative_prompt", "vram_usages", "artifact_modes", "preview_modes", "schedules"]
-        self._values = VariantMap(self, {"prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7, "strength": 0.75, "seed": -1, "eta": 1.0,
+        self._client_only = [
+            "models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "SR", "LoRAs", "HNs", "LoRA", "HN", "TIs", "TI", "CN", "CNs", "hr_upscalers", "img2img_upscalers", 
+            "attentions", "device", "devices", "batch_count", "prompt", "negative_prompt", "vram_usages", "artifact_modes", "preview_modes", "schedules"
+        ]
+        self._values = VariantMap(self, {
+            "prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7, "strength": 0.75, "seed": -1, "eta": 1.0,
             "hr_factor": 1.0, "hr_strength":  0.7, "hr_sampler": "Euler a", "hr_steps": 25, "hr_eta": 1.0, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "subseed":-1, "subseed_strength": 0.0,
             "model":"", "models":[], "sampler":"Euler a", "samplers":[], "hr_upscaler":"Latent (nearest)", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
-            "UNET":"", "UNETs":"", "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[], "CN":"", "CNs":[],
+            "UNET":"", "UNETs":"", "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[], "CN":"", "CNs":[], "CN_modes": [],
             "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "cn_strength":1.0, "schedule": "Default", "schedules": ["Default", "Karras"],
-            "vram_mode": "Default", "vram_modes": ["Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"], "preview_mode": "Disabled", "preview_modes": ["Disabled", "Light", "Medium", "Full"], "preview_interval":1})
+            "vram_mode": "Default", "vram_modes": ["Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"], "preview_mode": "Disabled",
+            "preview_modes": ["Disabled", "Light", "Medium", "Full"], "preview_interval":1
+        })
         self._values.updating.connect(self.mapsUpdating)
         self._values.updated.connect(self.onUpdated)
         self._availableNetworks = []
@@ -467,6 +472,14 @@ class Parameters(QObject):
             self._values.set("vram_mode", pref_vram)
 
         self._values.set("samplers", [s for s in self._values.get("samplers") if not "Karras" in s])
+
+        mode_names = ["canny","depth","pose","lineart","softedge","anime","mlsd"]
+        modes = []
+        for m in mode_names:
+            for cn in self._values.get("CNs"):
+                if not m in modes and m in cn.rsplit(os.path.sep, 1)[-1]:
+                    modes += [m.capitalize()]
+        self._values.set("CN_modes", modes)
         
         self.updated.emit()
 
@@ -484,7 +497,7 @@ class Parameters(QObject):
                 data[k] = v
 
         batch_size = int(data['batch_size'])
-        batch_size = max(batch_size, len(images), len(masks), len(areas), len(control))
+        batch_size = max(batch_size, len(images), len(masks), len(areas))
 
         data['prompt'] = self.buildPrompts(batch_size)
 
@@ -554,9 +567,18 @@ class Parameters(QObject):
         data["device_name"] = self._values._map["device"]
 
         if control:
-            data["cn_image"] = control
-            data["cn"] = ["control_v11p_sd15_canny"] * len(control)
-            data["cn_proc"] = ["canny"] * len(control)
+            images = [i for m,i in control]
+            modes = [m.lower() for m,i in control]
+            models = []
+            for m in modes:
+                for cn in self._values.get("CNs"):
+                    if m in cn.rsplit(os.path.sep, 1)[-1]:
+                        models += [cn]
+                        break
+            data["cn_image"] = images
+            data["cn"] = models
+            data["cn_annotator"] = modes
+            data["cn_args"] = [()] * len(modes)
             data["cn_scale"] = [data["cn_strength"]] * len(control)
         else:
             del data["cn_strength"]
@@ -586,6 +608,17 @@ class Parameters(QObject):
         request["data"] = data
 
         return request
+
+    def buildAnnotateRequest(self, mode, image):
+        mode = mode.lower()
+        data = {}
+        args = []
+        if mode == "canny":
+            args = [100,200]
+        data["cn_image"] = [image]
+        data["cn_annotator"] = [mode.lower()]
+        data["cn_args"] = [args]
+        return {"type":"annotate", "data": data}
 
     @pyqtSlot()
     def reset(self):

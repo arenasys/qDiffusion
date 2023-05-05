@@ -39,6 +39,7 @@ Item {
             id: item
             height: Math.floor(inputListView.height)
             width: height-9
+            property var input: modelData
 
             onActiveFocusChanged: {
                 if(activeFocus) {
@@ -130,7 +131,7 @@ Item {
                             id: itemImage
                             visible: !modelData.empty
                             anchors.fill: parent
-                            image: modelData.image
+                            image: modelData.display
                             centered: true
                         }
                     }
@@ -174,8 +175,31 @@ Item {
 
                         SText {
                             id: roleLabel
-                            text: ["", "Image", "Mask", "Subprompts", "Control"][modelData.role]
+                            text: modelData.displayName
                             anchors.top: parent.top
+                            anchors.left: parent.left
+                            leftPadding: 3
+                            topPadding: 3
+                            rightPadding: 3
+                            bottomPadding: 3
+                            color: COMMON.fg1_5
+                            font.pointSize: 9.8
+                        }
+
+                        Rectangle {
+                            visible: modeLabel.visible
+                            anchors.fill: modeLabel
+                            color: "#e0101010"
+                            border.width: 1
+                            border.color: COMMON.bg3
+                        }
+
+                        SText {
+                            id: modeLabel
+                            visible: text != ""
+                            text: modelData.mode
+                            anchors.top: roleLabel.bottom
+                            anchors.topMargin: -1
                             anchors.left: parent.left
                             leftPadding: 3
                             topPadding: 3
@@ -205,6 +229,17 @@ Item {
                             bottomPadding: 3
                             color: COMMON.fg1_5
                             font.pointSize: 9.2
+                        }
+
+                        Rectangle {
+                            anchors.bottom: parent.bottom
+                            anchors.right: parent.right
+                            width: 20
+                            height: 20
+                            visible: indexButton.visible
+                            color: "#e0101010"
+                            border.width: 1
+                            border.color: COMMON.bg3
                         }
                     }
 
@@ -282,19 +317,43 @@ Item {
                                     modelData.role = 2
                                 }
                             }
-                            SContextMenuItem {
-                                text: "Control"
-                                onPressed: {
-                                    modelData.role = 4
+                            SContextMenu {
+                                title: "Control"
+                                width: 100
+                                Repeater {
+                                    id: controlRepeater
+                                    model: BASIC.parameters.values.get("CN_modes")
+                                    SContextMenuItem {
+                                        width: 100
+                                        text: modelData
+                                        onPressed: {
+                                            item.input.role = 4
+                                            item.input.mode = modelData
+                                        }
+                                    }
                                 }
                             }
-                            /*SContextMenuItem {
-                                text: "Subprompt"
-                                onPressed: {
-                                    modelData.role = 3
-                                }
-                            }*/
                         }
+                    }
+                }
+
+                SIconButton {
+                    id: indexButton
+                    visible: modelData.role == 4
+                    color: "transparent"
+                    icon: "qrc:/icons/refresh.svg"
+                    x: borderFrame.x + borderFrame.width - 20
+                    y: borderFrame.y + borderFrame.height - 20
+                    height: 20
+                    width: 20
+                    inset: 5
+
+                    onPressed: {
+                        modelData.annotate()
+                    }
+
+                    onContextMenu: {
+                        modelData.resetDisplay()
                     }
                 }
 
@@ -501,11 +560,20 @@ Item {
                                 addContextMenu.close()
                             }
                         }
-                        SContextMenuItem {
-                            text: "Control"
-                            onPressed: {
-                                BASIC.addControl()
-                                addContextMenu.close()
+                        SContextMenu {
+                            title: "Control"
+                            width: 100
+                            Repeater {
+                                id: controlRepeater
+                                model: BASIC.parameters.values.get("CN_modes")
+                                SContextMenuItem {
+                                    width: 100
+                                    text: modelData
+                                    onPressed: {
+                                        BASIC.addControl(modelData)
+                                        addContextMenu.close()
+                                    }
+                                }
                             }
                         }
                     }

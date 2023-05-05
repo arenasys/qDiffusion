@@ -58,10 +58,6 @@ Item {
             height: Math.floor(listView.height)
             width: height-9
             property var modelObj: BASIC.outputs(sql_id)
-            property var artifacts: modelObj.artifacts
-            property var aIndex: -1
-            property var aName: aIndex == -1 ? "" : artifacts[aIndex]
-            property var img: aIndex == -1 ? modelObj.image : modelObj.artifact(aName)
 
             onActiveFocusChanged: {
                 if(activeFocus) {
@@ -92,7 +88,7 @@ Item {
                     id: itemImage
                     visible: !modelObj.empty
                     anchors.fill: parent
-                    image: item.img
+                    image: modelObj.display
                     centered: true
                     smooth: implicitWidth > trueWidth && implicitHeight > trueHeight
                 }
@@ -114,7 +110,7 @@ Item {
 
                     SText {
                         id: nameLabel
-                        text: item.aName
+                        text: modelObj.displayName
                         anchors.top: parent.top
                         anchors.left: parent.left
                         leftPadding: 3
@@ -135,7 +131,7 @@ Item {
 
                     SText {
                         id: indexLabel
-                        text: item.artifacts.length != "" ? ((item.aIndex+2) + " of " + (item.artifacts.length + 1)) : ""
+                        text: modelObj.displayIndex
                         anchors.bottom: parent.bottom
                         anchors.right: parent.right
                         leftPadding: 3
@@ -269,17 +265,9 @@ Item {
                     acceptedButtons: Qt.LeftButton | Qt.RightButton
                     onPressed: {
                         if (mouse.button == Qt.LeftButton) {
-                            if(item.aIndex == item.artifacts.length-1) {
-                                item.aIndex = -1
-                            } else {
-                                item.aIndex += 1
-                            }
+                            modelObj.nextDisplay()
                         } else {
-                            if(item.aIndex == -1) {
-                                item.aIndex = item.artifacts.length-1
-                            } else {
-                                item.aIndex -= 1
-                            }
+                            modelObj.prevDisplay()
                         }
                     }
                 }

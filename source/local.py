@@ -87,6 +87,9 @@ class InferenceProcessThread(threading.Thread):
                 elif request["type"] == "manage":
                     self.wrapper.set(**request["data"])
                     self.wrapper.manage()
+                elif request["type"] == "annotate":
+                    self.wrapper.set(**request["data"])
+                    self.wrapper.annotate()
                 self.requests.task_done()
             except queue.Empty:
                 pass

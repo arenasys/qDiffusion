@@ -251,6 +251,10 @@ class GUI(QObject):
             self.addResult(id, "result", response["data"]["images"])
             self.setReady()
 
+        if response["type"] == "annotate":
+            self.addResult(id, "result", response["data"]["images"])
+            self.setReady()
+
         if response["type"] == "artifact":
             self.addResult(id, response["data"]["name"], response["data"]["images"])
 
