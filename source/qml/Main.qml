@@ -126,18 +126,23 @@ FocusReleaser {
     }
 
     Shortcut {
-        sequence: "Ctrl+1"
+        sequences: ["Ctrl+1","F1"]
         onActivated: tabBar.setIndex(0)
     }
 
     Shortcut {
-        sequence: "Ctrl+2"
+        sequences: ["Ctrl+2","F2"]
         onActivated: tabBar.setIndex(1)
     }
 
     Shortcut {
-        sequence: "Ctrl+3"
+        sequences: ["Ctrl+3","F3"]
         onActivated: tabBar.setIndex(2)
+    }
+
+    Shortcut {
+        sequences: ["Ctrl+0","F12"]
+        onActivated: tabBar.setIndex(-1)
     }
 
     Item {

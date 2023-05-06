@@ -13,7 +13,11 @@ Item {
     property var shown: GUI.tabNames.slice(0,-1)
 
     function setIndex(index) {
-        currentTab = shown[index]
+        if(index == -1) {
+            currentTab = "Settings"
+        } else {
+            currentTab = shown[index]
+        }
     }
 
     function getShown() {
