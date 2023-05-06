@@ -303,7 +303,8 @@ class Parameters(QObject):
 
         self._client_only = [
             "models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "SR", "LoRAs", "HNs", "LoRA", "HN", "TIs", "TI", "CN", "CNs", "hr_upscalers", "img2img_upscalers", 
-            "attentions", "device", "devices", "batch_count", "prompt", "negative_prompt", "vram_usages", "artifact_modes", "preview_modes", "schedules"
+            "attentions", "device", "devices", "batch_count", "prompt", "negative_prompt", "vram_usages", "artifact_modes", "preview_modes", "schedules",
+            "CN_modes", "vram_modes"
         ]
         self._values = VariantMap(self, {
             "prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7, "strength": 0.75, "seed": -1, "eta": 1.0,
@@ -501,6 +502,8 @@ class Parameters(QObject):
 
         data['prompt'] = self.buildPrompts(batch_size)
 
+        same_sampler = data["sampler"] == data["hr_sampler"]
+
         if data["schedule"] == "Karras":
             data["sampler"] += " Karras"
         del data["schedule"]
@@ -546,7 +549,7 @@ class Parameters(QObject):
                 del data["hr_steps"]
             if data["hr_eta"] == data["eta"]:
                 del data["hr_eta"]
-            if data["hr_sampler"] == data["sampler"]:
+            if same_sampler:
                 del data["hr_sampler"]
         
         if not request["type"] in {"img2img", "upscale"}:
