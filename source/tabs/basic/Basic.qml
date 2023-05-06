@@ -392,11 +392,11 @@ Item {
     }
 
     Shortcut {
-        sequences: ["Ctrl+Return","Ctrl+`"]
+        sequences: COMMON.keys_generate
         onActivated: BASIC.generate()
     }
     Shortcut {
-        sequences: ["Ctrl+Backspace","Ctrl+Escape"]
+        sequences: COMMON.keys_cancel
         onActivated: BASIC.cancel()
     }
 

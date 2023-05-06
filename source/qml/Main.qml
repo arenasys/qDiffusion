@@ -126,22 +126,22 @@ FocusReleaser {
     }
 
     Shortcut {
-        sequences: ["Ctrl+1","F1"]
+        sequences: COMMON.keys_basic
         onActivated: tabBar.setIndex(0)
     }
 
     Shortcut {
-        sequences: ["Ctrl+2","F2"]
+        sequences: COMMON.keys_models
         onActivated: tabBar.setIndex(1)
     }
 
     Shortcut {
-        sequences: ["Ctrl+3","F3"]
+        sequences: COMMON.keys_gallery
         onActivated: tabBar.setIndex(2)
     }
 
     Shortcut {
-        sequences: ["Ctrl+0","F12"]
+        sequences: COMMON.keys_settings
         onActivated: tabBar.setIndex(-1)
     }
 

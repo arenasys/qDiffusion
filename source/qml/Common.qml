@@ -30,6 +30,13 @@ QtObject {
     readonly property var bg2_5: "#2e2e2e"
     readonly property var bg3_5: "#2e2e2e"
 
+    readonly property var keys_basic:       ["Ctrl+1","F1"]
+    readonly property var keys_models:      ["Ctrl+2","F2"]
+    readonly property var keys_gallery:     ["Ctrl+3","F3"]
+    readonly property var keys_settings:    ["Ctrl+0","F12"]
+    readonly property var keys_generate:    ["Ctrl+Return","Ctrl+`"]
+    readonly property var keys_cancel:      ["Ctrl+Backspace","Ctrl+Escape"]
+
     function accent(hue) {
         return Qt.hsva(hue, 0.65, 0.55, 1.0)
     }
