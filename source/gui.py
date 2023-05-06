@@ -70,7 +70,7 @@ class GUI(QObject):
         self._errorStatus = ""
         self._errorText = ""
 
-        self._config = config.Config(self, "config.json", {"endpoint": "", "password": "", "output_directory":"outputs", "model_directory":"models", "device": ""})
+        self._config = config.Config(self, "config.json", {"endpoint": "", "password": "", "output_directory":"outputs", "model_directory":"models", "device": "", "swap": False})
         self._remoteStatus = RemoteStatusMode.INACTIVE
 
         self._modelFolders = []

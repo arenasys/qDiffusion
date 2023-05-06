@@ -8,10 +8,13 @@ import "../style"
 Item {
     anchors.margins: 2
     clip: true
+    property var swap: false
 
     Rectangle {
         anchors.top: parent.top
         anchors.bottom: parent.bottom
+        anchors.left: root.swap ? undefined : parent.left
+        anchors.right: root.swap ? parent.right : undefined
         width: Math.max(100, parent.width)
 
         color: "transparent"

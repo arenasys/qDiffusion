@@ -11,6 +11,7 @@ import "../style"
 Item {
     id: root
     anchors.fill: parent
+    property var swap: false
 
     signal generate()
     signal cancel()
@@ -32,7 +33,8 @@ Item {
 
     Item {
         anchors.top: parent.top
-        anchors.left: parent.left
+        anchors.left: root.swap ? undefined : parent.left
+        anchors.right: root.swap ? parent.right : undefined
         anchors.bottom: parent.bottom
 
         width: Math.max(150, parent.width)

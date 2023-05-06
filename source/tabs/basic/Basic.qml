@@ -13,6 +13,7 @@ import "../../components"
 Item {
     id: root
     clip: true
+    property var swap: GUI.config.get("swap")
 
     function releaseFocus() {
         parent.releaseFocus()
@@ -50,11 +51,47 @@ Item {
         }
     }
 
+    Item {
+        id: leftArea
+        anchors.left: parent.left
+        anchors.right: divider.left
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+    }
+
+    SDividerVR {
+        id: rightDivider
+        visible: !root.swap
+        minOffset: 5
+        maxOffset: 300
+        offset: 210
+    }
+
+    SDividerVL {
+        id: leftDivider
+        visible: root.swap
+        minOffset: 0
+        maxOffset: 300
+        offset: 210
+    }
+    
+    Item {
+        id: rightArea
+        anchors.left: divider.right
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+    }
+
+    property var divider: root.swap ? leftDivider : rightDivider
+    property var mainArea: root.swap ? rightArea : leftArea
+    property var settingsArea: root.swap ? leftArea : rightArea
+
     BasicAreas {
         id: areas
-        anchors.left: parent.left
-        anchors.top: parent.top
-        anchors.right: settingsDivider.left
+        anchors.left: mainArea.left
+        anchors.top: mainArea.top
+        anchors.right: mainArea.right
         anchors.bottom: promptDivider.top
     }
 
@@ -134,25 +171,19 @@ Item {
         }
     }
 
-    SDividerVR {
-        id: settingsDivider
-        minOffset: 5
-        maxOffset: 300
-        offset: 210
-    }
-
     Rectangle {
         id: settings
         color: COMMON.bg0
-        anchors.left: settingsDivider.right
-        anchors.right: parent.right
-        anchors.top: parent.top
+        anchors.left: settingsArea.left
+        anchors.right: settingsArea.right
+        anchors.top: settingsArea.top
         anchors.bottom: statusDivider.top
 
         Parameters {
             id: params
             anchors.fill: parent
             binding: BASIC.parameters
+            swap: root.swap
 
             remaining: BASIC.remaining
 
@@ -179,8 +210,8 @@ Item {
 
     SDividerHB {
         id: statusDivider
-        anchors.left: settings.left
-        anchors.right: parent.right
+        anchors.left: settingsArea.left
+        anchors.right: settingsArea.right
         minOffset: 50
         maxOffset: 70
         offset: 50
@@ -188,15 +219,15 @@ Item {
 
     Status {
         anchors.top: statusDivider.bottom
-        anchors.bottom: parent.bottom
-        anchors.left: statusDivider.left
-        anchors.right: parent.right
+        anchors.bottom: settingsArea.bottom
+        anchors.left: settingsArea.left
+        anchors.right: settingsArea.right
     }
 
     SDividerHB {
         id: promptDivider
-        anchors.left: parent.left
-        anchors.right: settingsDivider.left
+        anchors.left: mainArea.left
+        anchors.right: mainArea.right
         minOffset: 5
         maxOffset: 300
         offset: 150
@@ -204,9 +235,9 @@ Item {
 
     Prompts {
         id: prompts
-        anchors.left: parent.left
-        anchors.right: settingsDivider.left
-        anchors.bottom: parent.bottom
+        anchors.left: mainArea.left
+        anchors.right: mainArea.right
+        anchors.bottom: mainArea.bottom
         anchors.top: promptDivider.bottom
 
         bindMap: BASIC.parameters.values

@@ -299,6 +299,11 @@ class BasicInput(QObject):
                         self._image = QImage(url.toLocalFile())
                         found = True
                         break
+                    elif url.scheme() == "http" or url.scheme() == "https":
+                        if url.fileName().rsplit(".")[-1] in {"png", "jpg", "jpeg", "webp", "gif"}:
+                            self.basic.download(url, index)
+                            break
+
         if found:
             self._original = self._image.copy()
             self.updateImage()
@@ -527,6 +532,8 @@ class Basic(QObject):
         self._openedArea = ""
 
         self._bgCache = None
+
+        self._replyIndex = None
 
         self.updated.connect(self.link)
         self.gui.result.connect(self.result)
@@ -781,6 +788,9 @@ class Basic(QObject):
                     source = QImage(url.toLocalFile())
                     self._inputs.insert(index, BasicInput(self, source, BasicInputRole.IMAGE))
                     done = True
+                elif url.scheme() == "http" or url.scheme() == "https":
+                    if url.fileName().rsplit(".")[-1] in {"png", "jpg", "jpeg", "webp", "gif"}:
+                        self.download(url, index)
             
             source = mimeData.imageData()
             if not done and source and not source.isNull():
@@ -794,7 +804,10 @@ class Basic(QObject):
         width,height = None,None
         if MIME_BASIC_INPUT in mimeData.formats():
             source = int(str(mimeData.data(MIME_BASIC_INPUT), 'utf-8'))
-            width,height = self._inputs[source].width, self._inputs[source].height
+            if self._inputs[source]._role == BasicInputRole.IMAGE:
+                width,height = self._inputs[source]._original.width(), self._inputs[source]._original.height()
+            else:
+                width,height = self._inputs[source].width, self._inputs[source].height
         else:
             source = mimeData.imageData()
             if source and not source.isNull():
@@ -1002,36 +1015,54 @@ class Basic(QObject):
     def pasteMimedata(self, mimedata):
         if mimedata.hasText():
             self.pastedText.emit(mimedata.text())
-        
+
+        image = None
         if mimedata.hasImage():
             image = mimedata.imageData()
-            if image and not image.isNull():
-                self.pastedImage.emit(image)
-                params = image.text("parameters")
-                if params:
-                    self.pastedText.emit(params)
-        else:
-            for url in mimedata.urls():
-                if url.isLocalFile():
-                    image = QImage(url.toLocalFile())
-                    self.pastedImage.emit(image)
-                    params = image.text("parameters")
-                    if params:
-                        self.pastedText.emit(params)
-                elif url.scheme() == "http" or url.scheme() == "https":
-                    if url.fileName().rsplit(".")[-1] in {"png", "jpg", "jpeg", "webp", "gif"}:
-                        self.gui.makeNetworkRequest(QNetworkRequest(url))
+        
+        urls = mimedata.urls()
+        if mimedata.hasText():
+            url = QUrl.fromUserInput(mimedata.text())
+            if url.isValid():
+                urls += [url]
+
+        for url in urls:
+            if url.isLocalFile():
+                image = QImage(url.toLocalFile())
+            elif url.scheme() == "http" or url.scheme() == "https":
+                if url.fileName().rsplit(".")[-1] in {"png", "jpg", "jpeg", "webp", "gif"}:
+                    self.download(url, None)
+
+        if image and not image.isNull():
+            self.pastedImage.emit(image)
+            params = image.text("parameters")
+            if params:
+                self.pastedText.emit(params)
+        
+
+    def download(self, url, index):
+        self.gui.makeNetworkRequest(QNetworkRequest(url))
+        self._replyIndex = index
 
     @pyqtSlot(QNetworkReply)
     def onNetworkReply(self, reply):
         image = QImage()
         image.loadFromData(reply.readAll())
         if not image.isNull():
-            self.pastedImage.emit(image)
-            params = image.text("parameters")
-            if params:
-                self.pastedText.emit(params)
+            if self._replyIndex == None:
+                self.pastedImage.emit(image)
+                params = image.text("parameters")
+                if params:
+                    self.pastedText.emit(params)
+            else:
+                if self._replyIndex == -1:
+                    self._replyIndex = len(self._inputs)
+                if len(self._inputs) <= self._replyIndex:
+                    self._inputs.insert(self._replyIndex, BasicInput(self, image, BasicInputRole.IMAGE))
+                else:
+                    self._inputs[self._replyIndex].setImageData(image)
         self.updated.emit()
+        self._replyIndex = None
 
     @pyqtSlot(int, str)
     def copyItem(self, index, area):
@@ -1051,15 +1082,23 @@ class Basic(QObject):
                 image = mimedata.imageData()
                 if image and not image.isNull():
                     inputs += [image]
-            else:
+            elif mimedata.hasUrls():
                 for url in mimedata.urls():
                     if url.isLocalFile():
                         image = QImage(url.toLocalFile())
                         inputs += [image]
                     elif url.scheme() == "http" or url.scheme() == "https":
                         if url.fileName().rsplit(".")[-1] in {"png", "jpg", "jpeg", "webp", "gif"}:
-                            self.gui.makeNetworkRequest(QNetworkRequest(url))
-                            self.replyInsert = index
+                            self.download(url, index)
+            elif mimedata.hasText():
+                url = QUrl.fromUserInput(mimedata.text())
+                if url.isValid():
+                    if url.isLocalFile():
+                        image = QImage(url.toLocalFile())
+                        inputs += [image]
+                    elif url.scheme() == "http" or url.scheme() == "https":
+                        if url.fileName().rsplit(".")[-1] in {"png", "jpg", "jpeg", "webp", "gif"}:
+                            self.download(url, index)
 
             if index == -1:
                 for i in inputs[::-1]:
