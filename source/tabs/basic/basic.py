@@ -64,9 +64,12 @@ class BasicInput(QObject):
             if self._linked and self._linked.image and not self._linked.image.isNull():
                 bg = self._linked.image
                 self.resizeImage(bg.size())
-            elif self._role != BasicInputRole.IMAGE:
-                w,h = self.basic.parameters.values.get("width"),  self.basic.parameters.values.get("height")
-                self.resizeImage(QSize(int(w),int(h)))
+            else:
+                if self._role == BasicInputRole.IMAGE and self.basic.hasMask(self):
+                    self._image = self._original
+                else:
+                    w,h = self.basic.parameters.values.get("width"),  self.basic.parameters.values.get("height")
+                    self.resizeImage(QSize(int(w),int(h)))
 
         self.updateExtent()
         self.updated.emit()
@@ -550,7 +553,7 @@ class Basic(QObject):
             for i in self._inputs:
                 if i._role == BasicInputRole.IMAGE:
                     if not i._image.isNull():
-                        images += [encode_image(i._image)]
+                        images += [encode_image(i._original)]
                 if i._role == BasicInputRole.MASK:
                     if not i._image.isNull() and i._linked:
                         masks += [encode_image(i._image)]
@@ -739,6 +742,13 @@ class Basic(QObject):
             curr.setLinked(None)
         for i in range(len(self._inputs)):
             self._inputs[i].updateLinked()
+
+    def hasMask(self, input):
+        for i in range(len(self._inputs)):
+            curr = self._inputs[i]
+            if curr._linked == input and curr._role == BasicInputRole.MASK:
+                return True
+        return False
 
     def moveItem(self, source, destination):
         i = self._inputs.pop(source)

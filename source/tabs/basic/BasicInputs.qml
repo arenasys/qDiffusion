@@ -470,11 +470,8 @@ Item {
                     } else {
                         switch(event.key) {
                         case Qt.Key_Delete:
-                            if(modelData.empty) {
-                                BASIC.deleteInput(index)
-                            } else {
-                                modelData.clearImage()
-                            }
+                            modelData.clearImage()
+                            BASIC.deleteInput(index)
                             break;
                         default:
                             event.accepted = false
