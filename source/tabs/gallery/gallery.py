@@ -4,7 +4,7 @@ import os
 import send2trash
 import glob
 
-from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject, QThread, QUrl, QMimeData
+from PyQt5.QtCore import pyqtSlot, pyqtSignal, pyqtProperty, QObject, QThread, QUrl, QMimeData
 from PyQt5.QtSql import QSqlQuery
 from PyQt5.QtQml import qmlRegisterSingletonType
 from PyQt5.QtGui import QDesktopServices
@@ -106,6 +106,7 @@ class Deleter(QThread):
         self.gui.thumbnails.removeAll(self.files)
 
 class Gallery(QObject):
+    update = pyqtSignal()
     add_folder = pyqtSignal(str, str)
 
     def __init__(self, parent=None):
@@ -113,6 +114,7 @@ class Gallery(QObject):
         self.gui = parent
         self.priority = 3
         self.name = "Gallery"
+        self.sleeping = True
 
         qmlRegisterSingletonType(Gallery, "gui", 1, 0, "GALLERY", lambda qml, js: self)
 
@@ -143,6 +145,16 @@ class Gallery(QObject):
         parent.aboutToQuit.connect(self.stop)
 
         self.deleters = []
+    
+    @pyqtProperty(bool, notify=update)
+    def asleep(self):
+        return self.sleeping
+
+    @pyqtSlot()
+    def awaken(self):
+        self.sleeping = False
+        self.update.emit()
+
 
     @pyqtSlot(list)
     def doOpenImage(self, files):

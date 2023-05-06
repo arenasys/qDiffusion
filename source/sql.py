@@ -196,7 +196,6 @@ class Sql(QAbstractListModel):
                 self.results = self.results[:i] + self.results[i+srcIdx:]
                 self.endRemoveRows()
                 changed = True
-                break
         
             if dstIdx > 0:
                 self.beginInsertRows(QModelIndex(), i, i+dstIdx-1)

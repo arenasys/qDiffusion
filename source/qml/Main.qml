@@ -28,6 +28,12 @@ FocusReleaser {
         anchors.left: root.left
         anchors.right: root.right
         anchors.top: windowBar.bottom
+
+        onCurrentTabChanged: {
+            if(currentTab == "Gallery") {
+                GALLERY.awaken()
+            }
+        }
     }
 
     Rectangle {
@@ -81,6 +87,7 @@ FocusReleaser {
         anchors.bottom: statusBar.top
 
         currentIndex: GUI.tabNames.indexOf(tabBar.currentTab)
+
 
         function releaseFocus() {
             keyboardFocus.forceActiveFocus()

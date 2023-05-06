@@ -52,7 +52,7 @@ Rectangle {
         clip: true
         model: Sql {
             id: filesSql
-            query: "SELECT file, width, height, parameters, idx FROM images WHERE folder = '" + folder.currentValue + "' AND parameters LIKE '%" + search.text + "%' ORDER BY idx DESC;"
+            query: GALLERY.asleep ? "" : ("SELECT file, width, height, parameters FROM images WHERE folder = '" + folder.currentValue + "' AND parameters LIKE '%" + search.text + "%' ORDER BY idx DESC;")
             
             property bool reset: false
 
@@ -69,6 +69,9 @@ Rectangle {
                 if(reset) {
                     filesSql.refresh()
                     reset = false
+                }
+                if(gallery.count != filesSql.length) {
+                    console.log(gallery.count, filesSql.length)
                 }
                 gallery.applySelection()
             }
