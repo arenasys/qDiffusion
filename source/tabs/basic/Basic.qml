@@ -391,6 +391,15 @@ Item {
         }
     }
 
+    Shortcut {
+        sequences: ["Ctrl+Return","Ctrl+`"]
+        onActivated: BASIC.generate()
+    }
+    Shortcut {
+        sequences: ["Ctrl+Backspace","Ctrl+Escape"]
+        onActivated: BASIC.cancel()
+    }
+
     Keys.onPressed: {
         event.accepted = true
         if(event.modifiers & Qt.ControlModifier) {

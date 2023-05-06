@@ -125,21 +125,27 @@ FocusReleaser {
         keyboardFocus.forceActiveFocus()
     }
 
+    Shortcut {
+        sequence: "Ctrl+1"
+        onActivated: tabBar.setIndex(0)
+    }
+
+    Shortcut {
+        sequence: "Ctrl+2"
+        onActivated: tabBar.setIndex(1)
+    }
+
+    Shortcut {
+        sequence: "Ctrl+3"
+        onActivated: tabBar.setIndex(2)
+    }
+
     Item {
         id: keyboardFocus
         Keys.onPressed: {
             event.accepted = true
             if(event.modifiers & Qt.ControlModifier) {
                 switch(event.key) {
-                case Qt.Key_1:
-                    tabBar.setIndex(0)
-                    break;
-                case Qt.Key_2:
-                    tabBar.setIndex(1)
-                    break;
-                case Qt.Key_3:
-                    tabBar.setIndex(2)
-                    break;
                 default:
                     event.accepted = false
                     break;
