@@ -114,7 +114,6 @@ class Gallery(QObject):
         self.gui = parent
         self.priority = 3
         self.name = "Gallery"
-        self.sleeping = True
 
         qmlRegisterSingletonType(Gallery, "gui", 1, 0, "GALLERY", lambda qml, js: self)
 
@@ -146,16 +145,6 @@ class Gallery(QObject):
 
         self.deleters = []
     
-    @pyqtProperty(bool, notify=update)
-    def asleep(self):
-        return self.sleeping
-
-    @pyqtSlot()
-    def awaken(self):
-        self.sleeping = False
-        self.update.emit()
-
-
     @pyqtSlot(list)
     def doOpenImage(self, files):
         QDesktopServices.openUrl(QUrl.fromLocalFile(os.path.abspath(files[0])))

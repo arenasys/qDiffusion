@@ -56,7 +56,7 @@ ApplicationWindow {
             if(component.status != Component.Ready) {
                 console.log("ERROR", component.errorString())
             } else {
-                component.incubateObject(root)
+                component.incubateObject(root, { window: root })
             }
         }
     }

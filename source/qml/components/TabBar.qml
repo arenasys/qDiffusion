@@ -12,11 +12,18 @@ Item {
     property var currentTab: GUI.tabNames[0]
     property var shown: GUI.tabNames.slice(0,-1)
 
-    function setIndex(index) {
-        if(index == -1) {
-            currentTab = "Settings"
-        } else {
-            currentTab = shown[index]
+    Connections {
+        target: GUI
+        function onCurrentTabChanged() {
+            if(GUI.currentTab != root.currentTab) {
+                root.currentTab = GUI.currentTab
+            }
+        }
+    }
+
+    onCurrentTabChanged: {
+        if(GUI.currentTab != root.currentTab) {
+            GUI.currentTab = root.currentTab
         }
     }
 

@@ -20,7 +20,7 @@ Item {
         anchors.leftMargin: -1
         anchors.rightMargin: -1
 
-        color: mini ? (active ? COMMON.bg3_5 : COMMON.bg1) : (active ? COMMON.bg4 : COMMON.bg1)
+        color: mini ? (active ? COMMON.bg2_5 : COMMON.bg1) : (active ? COMMON.bg4 : COMMON.bg1)
 
         border.color: active ? COMMON.bg5 : COMMON.bg2
 

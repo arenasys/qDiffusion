@@ -772,6 +772,12 @@ class Basic(QObject):
         self._inputs[destination] = a
         self.updated.emit()
 
+    @pyqtSlot(str)
+    def importImage(self, file):
+        source = QImage(file)
+        self._inputs.append(BasicInput(self, source, BasicInputRole.IMAGE))
+        self.updated.emit()
+
     @pyqtSlot(MimeData, int)
     def addDrop(self, mimeData, index):
         mimeData = mimeData.mimeData

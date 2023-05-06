@@ -47,6 +47,7 @@ class GUI(QObject):
     statusUpdated = pyqtSignal()
     errorUpdated = pyqtSignal()
     optionsUpdated = pyqtSignal()
+    tabUpdated = pyqtSignal()
     result = pyqtSignal(int, str)
     response = pyqtSignal(int, object)
     aboutToQuit = pyqtSignal()
@@ -61,6 +62,7 @@ class GUI(QObject):
         self.network = QNetworkAccessManager(self)
         self.requestProgress = 0.0
         self.tabs = []
+        self._currentTab = "Basic"
 
         self._statusMode = StatusMode.STARTING
         self._statusText = "Inactive"
@@ -110,6 +112,15 @@ class GUI(QObject):
     @pyqtProperty(list, constant=True)
     def tabNames(self): 
         return [tab.name for tab in self.tabs]
+    
+    @pyqtProperty(str, notify=tabUpdated)
+    def currentTab(self): 
+        return self._currentTab
+
+    @currentTab.setter
+    def currentTab(self, tab):
+        self._currentTab = tab
+        self.tabUpdated.emit()
 
     @pyqtProperty('QString', notify=statusUpdated)
     def title(self):

@@ -12,6 +12,16 @@ Rectangle {
     id: root
     color: COMMON.bg0
     clip: true
+    property var asleep: true
+
+    Connections {
+        target: GUI
+        function onCurrentTabChanged() {
+            if(GUI.currentTab == "Gallery") {
+                root.asleep = false
+            }
+        }
+    }
 
     function releaseFocus() {
         parent.releaseFocus()
@@ -52,7 +62,7 @@ Rectangle {
         clip: true
         model: Sql {
             id: filesSql
-            query: GALLERY.asleep ? "" : ("SELECT file, width, height, parameters FROM images WHERE folder = '" + folder.currentValue + "' AND parameters LIKE '%" + search.text + "%' ORDER BY idx DESC;")
+            query: root.asleep ? "" : ("SELECT file, width, height, parameters FROM images WHERE folder = '" + folder.currentValue + "' AND parameters LIKE '%" + search.text + "%' ORDER BY idx DESC;")
             
             property bool reset: false
 
@@ -291,6 +301,39 @@ Rectangle {
                 color: COMMON.fg1_5
                 leftPadding: 5
                 verticalAlignment: Text.AlignVCenter
+            }
+
+            SIconButton {
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                anchors.right: inspectButton.left
+                anchors.margins: 1
+                height: 23
+                width: 23
+                tooltip: "Import"
+                icon: "qrc:/icons/back.svg"
+                inset: 8
+                onPressed: {
+                    GUI.currentTab = "Basic"
+                    BASIC.importImage(gallery.currentSource)
+                }
+            }
+
+            SIconButton {
+                id: inspectButton
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                anchors.right: parent.right
+                anchors.margins: 1
+                height: 23
+                width: 23
+                tooltip: "Inspect"
+                icon: "qrc:/icons/search.svg"
+                inset: 8
+                onPressed: {
+                    GUI.currentTab = "Basic"
+                    BASIC.pasteText(gallery.currentParams)
+                }
             }
         }
 

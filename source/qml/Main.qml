@@ -9,7 +9,12 @@ import "style"
 import "components"
 
 FocusReleaser {
+    property var window
     anchors.fill: parent
+
+    Component.onCompleted: {
+        window.title = Qt.binding(function() { return GUI.title; })
+    }
 
     Rectangle {
         id: root
@@ -28,12 +33,6 @@ FocusReleaser {
         anchors.left: root.left
         anchors.right: root.right
         anchors.top: windowBar.bottom
-
-        onCurrentTabChanged: {
-            if(currentTab == "Gallery") {
-                GALLERY.awaken()
-            }
-        }
     }
 
     Rectangle {
@@ -86,8 +85,7 @@ FocusReleaser {
         anchors.top: barDivider.bottom
         anchors.bottom: statusBar.top
 
-        currentIndex: GUI.tabNames.indexOf(tabBar.currentTab)
-
+        currentIndex: GUI.tabNames.indexOf(GUI.currentTab)
 
         function releaseFocus() {
             keyboardFocus.forceActiveFocus()
@@ -127,22 +125,22 @@ FocusReleaser {
 
     Shortcut {
         sequences: COMMON.keys_basic
-        onActivated: tabBar.setIndex(0)
+        onActivated: GUI.currentTab = "Basic"
     }
 
     Shortcut {
         sequences: COMMON.keys_models
-        onActivated: tabBar.setIndex(1)
+        onActivated: GUI.currentTab = "Models"
     }
 
     Shortcut {
         sequences: COMMON.keys_gallery
-        onActivated: tabBar.setIndex(2)
+        onActivated: GUI.currentTab = "Gallery"
     }
 
     Shortcut {
         sequences: COMMON.keys_settings
-        onActivated: tabBar.setIndex(-1)
+        onActivated: GUI.currentTab = "Settings"
     }
 
     Item {

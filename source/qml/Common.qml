@@ -23,12 +23,9 @@ QtObject {
 
     // fix later lol
     readonly property var bg00: "#1a1a1a"
-    readonly property var bg4_5: "#484848"
     readonly property var bg0_5: "#202020"
-    readonly property var bg000: "#0f0f0f"
     readonly property var bg1_5: "#272727"
     readonly property var bg2_5: "#2e2e2e"
-    readonly property var bg3_5: "#2e2e2e"
 
     readonly property var keys_basic:       ["Ctrl+1","F1"]
     readonly property var keys_models:      ["Ctrl+2","F2"]
