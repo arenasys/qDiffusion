@@ -39,7 +39,7 @@ Item {
             var m = root.bindMap.get(root.bindKeyModel);
             var c = root.bindMap.get(root.bindKeyCurrent);
             if(m != root.model) {
-                var diff = root.model.length != m.length
+                var diff = (m == null || root.model == null || root.model.length != m.length)
                 root.model = m;
                 root.currentIndex = root.model.indexOf(c);
                 if(diff) {

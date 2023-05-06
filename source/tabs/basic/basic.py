@@ -23,6 +23,7 @@ def encode_image(img):
     return ba.data()
 
 MIME_BASIC_INPUT = "application/x-qd-basic-input"
+MIME_BASIC_DIVIDER = "application/x-qd-basic-divider"
 
 class BasicInputRole(Enum):
     IMAGE = 1
@@ -1172,3 +1173,19 @@ class Basic(QObject):
         request = self._parameters.buildAnnotateRequest(input._mode, encode_image(input._image))
         id = self.gui.makeRequest(request)
         self._annotations[id] = input._id
+
+    @pyqtSlot()
+    def dividerDrag(self):
+        mimeData = QMimeData()
+        mimeData.setData(MIME_BASIC_DIVIDER, QByteArray(f"DIVIDER".encode()))
+        drag = QDrag(self)
+        drag.setMimeData(mimeData)
+        drag.exec()
+
+    @pyqtSlot(MimeData, result=bool)
+    def dividerDrop(self, mimeData):
+        mimeData = mimeData.mimeData
+        if MIME_BASIC_DIVIDER in mimeData.formats():
+            self.gui.config.set("swap", not self.gui.config.get("swap", False))
+            return True
+        return False

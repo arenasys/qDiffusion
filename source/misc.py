@@ -145,29 +145,45 @@ class DropArea(QQuickItem):
         super().__init__(parent)
         self.setFlag(QQuickItem.ItemAcceptsDrops, True)
         self._containsDrag = False
+        self._filters = []
     
     @pyqtProperty(bool, notify=updated)
     def containsDrag(self):
         return self._containsDrag
     
-    def dragEnterEvent(self, enter): 
-        enter.accept()
-        self._containsDrag = True
+    @pyqtProperty(list, notify=updated)
+    def filters(self):
+        return self._filters
+
+    @filters.setter
+    def filters(self, filters):
+        self._filters = filters
         self.updated.emit()
 
-    def dragLeaveEvent(self, leave): 
+    def dragEnterEvent(self, enter):
+        formats = enter.mimeData().formats()
+        if not self._filters or any([f in formats for f in self._filters]):
+            enter.accept()
+            self._containsDrag = True
+            self.updated.emit()
+
+    def dragLeaveEvent(self, leave):
         leave.accept()
         self._containsDrag = False
         self.updated.emit()
 
     def dragMoveEvent(self, move):
-        move.accept()
+        formats = move.mimeData().formats()
+        if not self._filters or any([f in formats for f in self._filters]):
+            move.accept()
 
     def dropEvent(self, drop):
-        drop.accept()
-        self._containsDrag = False
-        self.updated.emit()
-        self.dropped.emit(MimeData(drop.mimeData()))
+        formats = drop.mimeData().formats()
+        if not self._filters or any([f in formats for f in self._filters]):
+            drop.accept()
+            self._containsDrag = False
+            self.updated.emit()
+            self.dropped.emit(MimeData(drop.mimeData()))
 
 class SyntaxHighlighter(QSyntaxHighlighter):
     def __init__(self, gui):

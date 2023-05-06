@@ -14,6 +14,10 @@ Item {
     id: root
     clip: true
     property var swap: GUI.config.get("swap")
+    onSwapChanged: {
+        leftDivider.offset = 210
+        rightDivider.offset = 210
+    }
 
     function releaseFocus() {
         parent.releaseFocus()
@@ -65,6 +69,12 @@ Item {
         minOffset: 5
         maxOffset: 300
         offset: 210
+
+        onLimitedChanged: {
+            if(limited) {
+                BASIC.dividerDrag()
+            }
+        }
     }
 
     SDividerVL {
@@ -73,6 +83,12 @@ Item {
         minOffset: 0
         maxOffset: 300
         offset: 210
+
+        onLimitedChanged: {
+            if(limited) {
+                BASIC.dividerDrag()
+            }
+        }
     }
     
     Item {
@@ -323,6 +339,55 @@ Item {
                     GUI.setHighlighting(area.textDocument)
                 }
             }
+        }
+    }
+
+    AdvancedDropArea {
+        id: leftDrop
+        visible: !root.swap
+        width: 10
+        height: parent.height
+        anchors.left: leftArea.left
+        anchors.top: leftArea.top
+        anchors.bottom: leftArea.bottom
+        filters: ['application/x-qd-basic-divider']
+
+        onDropped: {
+            if(BASIC.dividerDrop(mimeData)) {
+                root.swap = !root.swap
+            }
+        }
+
+        Rectangle {
+            visible: leftDrop.containsDrag
+            width: 3
+            color: COMMON.bg6
+            height: parent.height
+        }
+    }
+
+    AdvancedDropArea {
+        id: rightDrop
+        visible: root.swap
+        width: 10
+        height: parent.height
+        anchors.right: rightArea.right
+        anchors.top: rightArea.top
+        anchors.bottom: rightArea.bottom
+        filters: ['application/x-qd-basic-divider']
+
+        onDropped: {
+            if(BASIC.dividerDrop(mimeData)) {
+                root.swap = !root.swap
+            }
+        }
+
+        Rectangle {
+            visible: rightDrop.containsDrag
+            anchors.right: parent.right
+            width: 3
+            color: COMMON.bg6
+            height: parent.height
         }
     }
 

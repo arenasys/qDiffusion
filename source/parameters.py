@@ -182,10 +182,10 @@ class VariantMap(QObject):
         self._map = map
 
     @pyqtSlot(str, result='QVariant')
-    def get(self, key):
+    def get(self, key, default=QVariant()):
         if key in self._map:
             return self._map[key]
-        return QVariant()
+        return default
     
     @pyqtSlot(str, 'QVariant')
     def set(self, key, value):

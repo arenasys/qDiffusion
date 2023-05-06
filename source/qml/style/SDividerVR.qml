@@ -22,16 +22,36 @@ Rectangle {
         }
     }
 
+    property var limited: false
+    function setLimited(current) {
+        if(current != limited) {
+            limited = current
+        }
+    }
+
     MouseArea {
         anchors.fill: parent
         hoverEnabled: true
+        property var startPosition: Qt.point(0,0)
+        onPressed: {
+            startPosition = Qt.point(mouse.x, mouse.y)
+            root.setLimited(false)
+        }
         onPositionChanged: {
             if(pressedButtons) {
                 root.locked = false
                 parent.offset = Math.min(parent.maxOffset, Math.max(parent.minOffset, root.parent.width - (parent.x + mouseX)))
+
+                var delta = Qt.point(mouse.x-startPosition.x, mouse.y-startPosition.y)
+                if(parent.offset == parent.maxOffset && Math.pow(delta.x*delta.x + delta.y*delta.y, 0.5) > 400) {
+                    root.setLimited(true)
+                } else {
+                    root.setLimited(false)
+                }
             }
         }
         onReleased: {
+            root.setLimited(false)
             if(snap == null) {
                 return
             }
