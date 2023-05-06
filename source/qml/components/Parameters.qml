@@ -284,6 +284,25 @@ Item {
                         bindMap: root.binding.values
                         bindKeyCurrent: "schedule"
                         bindKeyModel: "schedules"
+
+                        property var last: null
+
+                        onSelected: {
+                            if(value != "Default") {
+                                last = value
+                            } else {
+                                last = null
+                            }
+                        }
+
+                        onOptionsChanged: {
+                            if(model != null && last != null) {
+                                var idx = model.indexOf(last)
+                                if(idx >= 0) {
+                                    currentIndex = idx
+                                }
+                            }
+                        }
                     }
 
                     OSlider {
@@ -766,10 +785,10 @@ Item {
                         width: parent.width
                         height: 30
                         disabled: hrFactorInput.value == 1.0
-                        overlay: hrFactorInput.value == 1.0 || root.binding.values.get("sampler") == hrSamplerInput.value
+                        overlay: hrFactorInput.value == 1.0 || root.binding.values.get("true_sampler") == hrSamplerInput.value
                         bindMap: root.binding.values
                         bindKeyCurrent: "hr_sampler"
-                        bindKeyModel: "samplers"
+                        bindKeyModel: "true_samplers"
                     }
                     OSlider {
                         visible: !samplerColumn.isCollapsed

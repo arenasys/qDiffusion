@@ -304,7 +304,7 @@ class Parameters(QObject):
         self._client_only = [
             "models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "SR", "LoRAs", "HNs", "LoRA", "HN", "TIs", "TI", "CN", "CNs", "hr_upscalers", "img2img_upscalers", 
             "attentions", "device", "devices", "batch_count", "prompt", "negative_prompt", "vram_usages", "artifact_modes", "preview_modes", "schedules",
-            "CN_modes", "vram_modes"
+            "CN_modes", "vram_modes", "true_samplers", "schedule"
         ]
         self._values = VariantMap(self, {
             "prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7, "strength": 0.75, "seed": -1, "eta": 1.0,
@@ -313,7 +313,7 @@ class Parameters(QObject):
             "UNET":"", "UNETs":"", "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[], "CN":"", "CNs":[], "CN_modes": [],
             "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "cn_strength":1.0, "schedule": "Default", "schedules": ["Default", "Karras"],
             "vram_mode": "Default", "vram_modes": ["Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"], "preview_mode": "Disabled",
-            "preview_modes": ["Disabled", "Light", "Medium", "Full"], "preview_interval":1
+            "preview_modes": ["Disabled", "Light", "Medium", "Full"], "preview_interval":1, "true_samplers": [], "true_sampler": "Euler a"
         })
         self._values.updating.connect(self.mapsUpdating)
         self._values.updated.connect(self.onUpdated)
@@ -388,7 +388,7 @@ class Parameters(QObject):
 
     @pyqtSlot(str, 'QVariant', 'QVariant')
     def mapsUpdating(self, key, prev, curr):
-        pairs = [("sampler", "hr_sampler"), ("eta", "hr_eta"), ("steps", "hr_steps")]
+        pairs = [("true_sampler", "hr_sampler"), ("eta", "hr_eta"), ("steps", "hr_steps")]
         for src, dst in pairs:
             if key == src:
                 val = self._values.get(dst)
@@ -402,6 +402,9 @@ class Parameters(QObject):
         self.getActive()
         self.updated.emit()
 
+        if key != "sampler" and key != "schedule":
+            return
+
         if key == "sampler":
             sampler = self._values.get("sampler")
             if sampler in {"DPM++ 2M", "DPM++ 2S a", "DPM++ SDE"}:
@@ -411,6 +414,13 @@ class Parameters(QObject):
             schedule = self._values.get("schedule")
             if not schedule in self._values.get("schedules"):
                 self._values.set("schedule", "Default")
+
+        true_sampler = self._values.get("sampler")
+        schedule = self._values.get("schedule")
+        if schedule and schedule != "Default":
+            true_sampler += " " + schedule
+        self._values.set("true_sampler", true_sampler)
+        
 
     @pyqtSlot()
     def optionsUpdated(self):
@@ -472,6 +482,7 @@ class Parameters(QObject):
         if pref_vram and pref_vram in self._values.get("vram_modes"):
             self._values.set("vram_mode", pref_vram)
 
+        self._values.set("true_samplers", self._values.get("samplers"))
         self._values.set("samplers", [s for s in self._values.get("samplers") if not "Karras" in s])
 
         mode_names = ["canny","depth","pose","lineart","softedge","anime","mlsd"]
@@ -502,11 +513,8 @@ class Parameters(QObject):
 
         data['prompt'] = self.buildPrompts(batch_size)
 
-        same_sampler = data["sampler"] == data["hr_sampler"]
-
-        if data["schedule"] == "Karras":
-            data["sampler"] += " Karras"
-        del data["schedule"]
+        data["sampler"] = data["true_sampler"]
+        del data["true_sampler"]
 
         if data["steps"] == 0 and images:
             request["type"] = "upscale"
@@ -549,7 +557,7 @@ class Parameters(QObject):
                 del data["hr_steps"]
             if data["hr_eta"] == data["eta"]:
                 del data["hr_eta"]
-            if same_sampler:
+            if data["hr_sampler"] == data["sampler"]:
                 del data["hr_sampler"]
         
         if not request["type"] in {"img2img", "upscale"}:

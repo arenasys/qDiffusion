@@ -42,6 +42,7 @@ Item {
                 root.model = m;
             }
             root.currentIndex = root.model.indexOf(c);
+            root.optionsChanged()
         }
     }
 
@@ -66,6 +67,7 @@ Item {
     signal exit()
     signal contextMenu()
     signal selected()
+    signal optionsChanged()
 
     SToolTip {
         id: infoToolTip
