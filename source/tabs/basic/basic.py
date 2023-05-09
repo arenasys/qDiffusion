@@ -578,11 +578,12 @@ class Basic(QObject):
         return self._requests[self._remaining-1]
 
     @pyqtSlot()
-    def generate(self):
+    def generate(self, user=True):
         if not self._ids:
             if self._remaining == 0:
                 self._remaining = int(self._parameters._values.get("batch_count"))
-            self._requests = []
+            if user:
+                self._requests = []
             request = self.buildRequest()
             self._ids += [self.gui.makeRequest(request)]
             self.updated.emit()
@@ -651,7 +652,7 @@ class Basic(QObject):
 
             self._remaining = max(0, self._remaining-1)
             if self._remaining > 0 or self._forever:
-                self.generate()
+                self.generate(user=False)
             else:
                 self._requests = []
 
