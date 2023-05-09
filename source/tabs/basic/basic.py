@@ -838,7 +838,7 @@ class Basic(QObject):
             if url.isLocalFile():
                 image = QImage(url.toLocalFile())
                 self.pastedImage.emit(image)
-                params = image.text("parameters")
+                params = parameters.get_parameters(image)
                 if params:
                     try:
                         seed = parameters.parse_parameters(params)["seed"]
@@ -1044,7 +1044,7 @@ class Basic(QObject):
 
         if image and not image.isNull():
             self.pastedImage.emit(image)
-            params = image.text("parameters")
+            params = parameters.get_parameters(image)
             if params:
                 self.pastedText.emit(params)
         
@@ -1060,7 +1060,7 @@ class Basic(QObject):
         if not image.isNull():
             if self._replyIndex == None:
                 self.pastedImage.emit(image)
-                params = image.text("parameters")
+                params = parameters.get_parameters(image)
                 if params:
                     self.pastedText.emit(params)
             else:

@@ -3,6 +3,7 @@ import os
 import re
 import random
 import datetime
+import json
 
 import PIL.Image
 import PIL.PngImagePlugin
@@ -95,6 +96,14 @@ def parse_parameters(formatted):
 
     return json
 
+def get_parameters(img):
+    params = img.text("parameters")
+    if not params and img.text("Description"):
+        desc = img.text("Description").replace("(","\\(").replace(")","\\)").replace("{","(").replace("}",")")
+        data = json.loads(img.text("Comment"))
+        uc = data['uc'].replace("(","\\(").replace(")","\\)").replace("{","(").replace("}",")")
+        params = f"{desc}\nNegative prompt: {uc}\nSteps: {data['steps']}, Sampler: {data['sampler']},  CFG scale: {data['scale']}, Seed: {data['seed']}"
+    return params
 
 def get_index(folder):
     def get_idx(filename):
