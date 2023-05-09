@@ -582,7 +582,8 @@ class Basic(QObject):
         if not self._ids:
             if self._remaining == 0:
                 self._remaining = int(self._parameters._values.get("batch_count"))
-            if user:
+                self._requests = []
+            elif user:
                 self._requests = []
             request = self.buildRequest()
             self._ids += [self.gui.makeRequest(request)]
