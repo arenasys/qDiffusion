@@ -4,6 +4,7 @@ import re
 import random
 import datetime
 import json
+from typing import cast
 
 import PIL.Image
 import PIL.PngImagePlugin
@@ -93,7 +94,6 @@ def parse_parameters(formatted):
                 name = n
         if name:
             json[name] = value
-
     return json
 
 def get_parameters(img):
@@ -102,7 +102,9 @@ def get_parameters(img):
         desc = img.text("Description").replace("(","\\(").replace(")","\\)").replace("{","(").replace("}",")")
         data = json.loads(img.text("Comment"))
         uc = data['uc'].replace("(","\\(").replace(")","\\)").replace("{","(").replace("}",")")
-        params = f"{desc}\nNegative prompt: {uc}\nSteps: {data['steps']}, Sampler: {data['sampler']},  CFG scale: {data['scale']}, Seed: {data['seed']}"
+        params = f"{desc}\nNegative prompt: {uc}\nSteps: {data['steps']}, Sampler: {data['sampler']}, CFG scale: {data['scale']}, Seed: {data['seed']}"
+        if "strength" in data:
+            params += f", Denoising strength: {data['strength']}"
     return params
 
 def get_index(folder):
@@ -691,8 +693,8 @@ class Parameters(QObject):
 
             val = None
             try:
-                val = type(self.values.get(p._name))(p._value)
-            except:
+                val = cast(self.values.get(p._name), p._value)
+            except Exception as e:
                 pass
 
             if val:
