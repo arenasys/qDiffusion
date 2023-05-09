@@ -36,10 +36,13 @@ class Explorer(QObject):
         parts = re.split(r'/|\\', name)
         if len(parts) > 2:
             folder = parts[1]
-        
-        preview = file + ".png"
         desc = file + ".txt"
 
+        if os.path.exists(file + ".preview.png"):
+            preview = file + ".preview.png"
+        else:
+            preview = file + ".png"
+        
         w,h = 0,0
         if os.path.exists(preview):
             try:
