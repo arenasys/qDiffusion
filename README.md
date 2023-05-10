@@ -7,7 +7,7 @@ Built from the ground up alongside [sd-inference-server](https://github.com/aren
 Clone or [Download](https://github.com/arenasys/qDiffusion/archive/refs/heads/master.zip) this repo. Then run `qDiffusion`. Three modes are available: `Nvidia, AMD, and Remote`. Remote will only install whats needed to connect to a remote instance (much lighter). The `start_win.bat` and `start_linux.sh` launchers are equivalent to the exe (but less cool).
 
 ### Remote
-Notebooks for running a remote instances are available: [Colab](https://colab.research.google.com/github/arenasys/qDiffusion/blob/master/remote_colab.ipynb).
+Notebooks for running a remote instances are available: [Colab](https://colab.research.google.com/github/arenasys/qDiffusion/blob/master/remote_colab.ipynb), [Kaggle](https://www.kaggle.com/code/arenasys/qdiffusion)
 
 ### Overview
 - Stable diffusion 1.x and 2.x (including v-prediction)
