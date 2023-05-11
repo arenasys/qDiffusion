@@ -216,18 +216,6 @@ Item {
                     asynchronous: true
                 }
 
-                MouseArea {
-                    id: mouseArea
-                    anchors.fill: parent
-                    acceptedButtons: Qt.LeftButton
-                    onPressed: {
-                        modelCard.select()
-                    }
-                    onDoubleClicked: {
-                        BASIC.parameters.doToggle(sql_name)
-                    }
-                }
-
                 Item {
                     id: descItem
                     visible: (sql_desc != "" && modelCard.showing) || (sql_desc != "" && sql_width == 0) || modelCard.editing
@@ -267,6 +255,28 @@ Item {
                                 modelCard.select()
                             }
                         }
+                    }
+                }
+
+                MouseArea {
+                    id: mouseArea
+                    anchors.fill: parent
+                    acceptedButtons: Qt.LeftButton
+                    preventStealing: true
+                    property var last: 0
+                    onPressed: {
+                        var now = Date.now()
+                        if(descItem.visible) {
+                            if(now - last < 200) {
+                                BASIC.parameters.doToggle(sql_name)
+                            }
+                            mouse.accepted = false
+                        }
+                        last = now
+                        modelCard.select()
+                    }
+                    onDoubleClicked: {
+                        BASIC.parameters.doToggle(sql_name)
                     }
                 }
 
