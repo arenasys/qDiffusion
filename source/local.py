@@ -167,7 +167,7 @@ class InferenceProcess(multiprocessing.Process):
 class LocalInference(QThread):
     response = pyqtSignal(object)
     def __init__(self, gui):
-        super().__init__(gui)
+        super().__init__()
         self.gui = gui
 
         self.stopping = False

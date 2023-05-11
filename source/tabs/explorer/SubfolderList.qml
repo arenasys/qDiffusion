@@ -15,10 +15,16 @@ ListView {
     height: contentHeight
     property var index: 0
     property var mode: ""
-    property var stack
+    property var label: ""
+    property var folder: ""
+    property var active: false
+
+    signal pressed(string folder)
+
     model: Sql {
         query: "SELECT DISTINCT folder FROM models WHERE category = '" + root.mode + "' AND folder != '' ORDER BY folder ASC;"
     }
+
     delegate: Item {
         x: 10
         width: root.width - 2*x
@@ -28,10 +34,9 @@ ListView {
             label: modelData
             height: 25
             width: parent.width
-            active: root.stack.currentIndex == root.index && root.stack.currentItem.folder == modelData
+            active: root.active && root.folder == modelData
             onPressed: {
-                root.stack.currentIndex = root.index
-                root.stack.currentItem.folder = modelData
+                root.pressed(modelData)
             }
         }
     }

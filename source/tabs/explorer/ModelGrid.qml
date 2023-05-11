@@ -15,7 +15,7 @@ Item {
     property var label: ""
     property var cellSize: 150
     property var shift: false
-    property var searchText: parent.searchText
+    property var search: ""
     MouseArea {
         anchors.fill: parent
         acceptedButtons: Qt.LeftButton
@@ -63,7 +63,7 @@ Item {
         anchors.fill: parent
         model: Sql {
             id: modelsSql
-            query: "SELECT name, type, desc, file, width, height FROM models WHERE category = '" + root.mode + "' AND folder = '" + root.folder + "' AND name LIKE '%" + root.searchText +"%' ORDER BY idx ASC;"
+            query: "SELECT name, type, desc, file, width, height FROM models WHERE category = '" + root.mode + "' AND folder = '" + root.folder + "' AND name LIKE '%" + root.search +"%' ORDER BY idx ASC;"
             property bool reset: false
             function refresh() {
                 modelsView.positionViewAtBeginning()
@@ -169,7 +169,7 @@ Item {
                     anchors.bottom: labelBg.top
                     clip: true
                 }
-
+                
                 Item {
                     anchors.fill: interior
                     anchors.bottomMargin: typeBg.visible ? -5 : -10

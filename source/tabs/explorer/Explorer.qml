@@ -12,6 +12,10 @@ import "../../components"
 Item {
     id: root
 
+    property var label: "Checkpoints"
+    property var mode: "checkpoint"
+    property var folder: ""
+
     function releaseFocus() {
         parent.releaseFocus()
     }
@@ -26,88 +30,130 @@ Item {
         height: parent.height
 
         SColumnButton {
+            property var mode: "checkpoint"
             label: "Checkpoints"
-            property var index: 0
-            active: modelsStack.currentIndex == index
+            active: root.mode == mode
             onPressed: {
-                modelsStack.currentIndex = index
-                modelsStack.currentItem.folder = ""
+                root.label = label
+                root.mode = mode
+                root.folder = ""
             }
         }
         SubfolderList {
             mode: "checkpoint"
-            index: 0
-            stack: modelsStack
+            label: "Checkpoints"
+            folder: root.folder
+            active: root.mode == mode
+            onPressed: {
+                root.label = label
+                root.mode = mode
+                root.folder = folder
+            }
         }
         SColumnButton {
+            property var mode: "component"
             label: "Components"
-            property var index: 1
-            active: modelsStack.currentIndex == index
+            active: root.mode == mode
             onPressed: {
-                modelsStack.currentIndex = index
-                modelsStack.currentItem.folder = ""
+                root.label = label
+                root.mode = mode
+                root.folder = ""
             }
         }
         SubfolderList {
             mode: "component"
-            index: 1
-            stack: modelsStack
+            label: "Components"
+            folder: root.folder
+            active: root.mode == mode
+            onPressed: {
+                root.label = label
+                root.mode = mode
+                root.folder = folder
+            }
         }
         SColumnButton {
+            property var mode: "lora"
             label: "LoRAs"
-            property var index: 2
-            active: modelsStack.currentIndex == index
+            active: root.mode == mode
             onPressed: {
-                modelsStack.currentIndex = index
-                modelsStack.currentItem.folder = ""
+                root.label = label
+                root.mode = mode
+                root.folder = ""
             }
         }
         SubfolderList {
             mode: "lora"
-            index: 2
-            stack: modelsStack
+            label: "LoRAs"
+            folder: root.folder
+            active: root.mode == mode
+            onPressed: {
+                root.label = label
+                root.mode = mode
+                root.folder = folder
+            }
         }
         SColumnButton {
+            property var mode: "hypernet"
             label: "Hypernets"
-            property var index: 3
-            active: modelsStack.currentIndex == index
+            active: root.mode == mode
             onPressed: {
-                modelsStack.currentIndex = index
-                modelsStack.currentItem.folder = ""
+                root.label = label
+                root.mode = mode
+                root.folder = ""
             }
         }
         SubfolderList {
             mode: "hypernet"
-            index: 3
-            stack: modelsStack
+            label: "Hypernets"
+            folder: root.folder
+            active: root.mode == mode
+            onPressed: {
+                root.label = label
+                root.mode = mode
+                root.folder = folder
+            }
         }
         SColumnButton {
+            property var mode: "embedding"
             label: "Embeddings"
-            property var index: 4
-            active: modelsStack.currentIndex == index
+            active: root.mode == mode
             onPressed: {
-                modelsStack.currentIndex = index
-                modelsStack.currentItem.folder = ""
+                root.label = label
+                root.mode = mode
+                root.folder = ""
             }
         }
         SubfolderList {
             mode: "embedding"
-            index: 4
-            stack: modelsStack
+            label: "Embeddings"
+            folder: root.folder
+            active: root.mode == mode
+            onPressed: {
+                root.label = label
+                root.mode = mode
+                root.folder = folder
+            }
         }
         SColumnButton {
+            property var mode: "wildcard"
             label: "Wildcards"
-            property var index: 5
-            active: modelsStack.currentIndex == index
+            active: root.mode == mode
             onPressed: {
-                modelsStack.currentIndex = index
-                modelsStack.currentItem.folder = ""
+                root.label = label
+                root.mode = mode
+                root.folder = ""
             }
         }
         SubfolderList {
             mode: "wildcard"
-            index: 2
-            stack: modelsStack
+            label: "Wildcards"
+            folder: root.folder
+            active: root.mode == mode
+            onPressed: {
+                root.label = label
+                root.mode = mode
+                root.folder = folder
+            }
         }
     }
     Rectangle {
@@ -180,54 +226,29 @@ Item {
             anchors.fill: parent
             anchors.topMargin: search.height
 
-            StackLayout {
-                id: modelsStack
-                currentIndex: 0
+            ModelGrid {
+                id: grid
                 anchors.fill: parent
-                property var currentItem: modelsStack.children[modelsStack.currentIndex]
-                property var searchText: search.text
-
-                ModelGrid {
-                    label: "Checkpoints"
-                    mode: "checkpoint"
-                }
-                ModelGrid {
-                    label: "Components"
-                    mode: "component"
-                }
-                ModelGrid {
-                    label: "LoRAs"
-                    mode: "lora"
-                }
-                ModelGrid {
-                    label: "Hypernets"
-                    mode: "hypernet"
-                }
-                ModelGrid {
-                    label: "Embeddings"
-                    mode: "embedding"
-                }
-                ModelGrid {
-                    label: "Wildcards"
-                    mode: "wildcard"
-                }
+                label: root.label
+                mode: root.mode
+                folder: root.folder
+                search: search.text
             }
         }
     }
 
     Keys.onPressed: {
-        var current = modelsStack.currentItem
         event.accepted = true
         if(event.modifiers & Qt.ControlModifier) {
             switch(event.key) {
             case Qt.Key_Minus:
-                if(current.cellSize > 150) {
-                    current.cellSize -= 100
+                if(grid.cellSize > 150) {
+                    grid.cellSize -= 100
                 }
                 break;
             case Qt.Key_Equal:
-                if(current.cellSize < 450) {
-                    current.cellSize += 100
+                if(grid.cellSize < 450) {
+                    grid.cellSize += 100
                 }
                 break;
             default:

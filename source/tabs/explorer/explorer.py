@@ -1,4 +1,4 @@
-from PyQt5.QtCore import pyqtProperty, pyqtSignal, QObject, pyqtSlot, QUrl
+from PyQt5.QtCore import pyqtProperty, pyqtSignal, QObject, pyqtSlot, QUrl, QThread
 from PyQt5.QtQml import qmlRegisterSingletonType
 from PyQt5.QtSql import QSqlQuery
 from PyQt5.QtGui import QImage, QDesktopServices
@@ -10,24 +10,21 @@ import misc
 import re
 import shutil
 
-class Explorer(QObject):
-    updated = pyqtSignal()
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.gui = parent
-        self.priority = 1
-        self.name = "Models"
-        self.gui = parent
+class Populater(QObject):
+    finished = pyqtSignal()
+    def __init__(self, gui):
+        super().__init__()
+        self.gui = gui
+        self.conn = None
 
-        qmlRegisterSingletonType(Explorer, "gui", 1, 0, "EXPLORER", lambda qml, js: self)
-
-        self.gui.optionsUpdated.connect(self.optionsUpdated)
-
+    @pyqtSlot()
+    def start(self):
         self.conn = sql.Connection(self)
         self.conn.connect()
-        self.conn.doQuery("CREATE TABLE models(name TEXT, category TEXT, type TEXT, file TEXT, folder TEXT, desc TEXT, idx INTEGER, width INTEGER, height INTEGER, CONSTRAINT unq UNIQUE (category, idx));")
         self.conn.enableNotifications("models")
-
+        self.optionsUpdated()
+        self.finished.emit()
+    
     def setModel(self, name, category, type, idx):
         q = QSqlQuery(self.conn.db)
 
@@ -80,10 +77,9 @@ class Explorer(QObject):
         q.bindValue(":total", total)
         self.conn.doQuery(q)
 
-    @pyqtSlot()
     def optionsUpdated(self):
         o = self.gui._options
-
+        wildcards = self.gui.wildcards._wildcards
         checkpoints = [a for a in o["UNET"] if a in o["VAE"] and a in o["CLIP"]]
         for idx, name in enumerate(checkpoints):
             self.setModel(name, "checkpoint", "", idx)
@@ -106,9 +102,55 @@ class Explorer(QObject):
             self.setModel(name, "embedding", "", idx)
         self.finishCategory("embedding", len(o["TI"]))
 
-        for idx, name in enumerate(self.gui.wildcards._wildcards):
+        for idx, name in enumerate(wildcards):
             self.setModel(os.path.join("WILDCARD", name + ".txt"), "wildcard", "", idx)
-        self.finishCategory("wildcard", len(self.gui.wildcards._wildcards))
+        self.finishCategory("wildcard", len(wildcards))
+
+class Explorer(QObject):
+    updated = pyqtSignal()
+    start = pyqtSignal()
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.gui = parent
+        self.priority = 1
+        self.name = "Models"
+        self.gui = parent
+        self.populater = Populater(self.gui)
+        self.start.connect(self.populater.start)
+        self.populater.finished.connect(self.finished)
+        self.populaterThread = QThread()
+        self.populaterThread.start()
+        self.optionsRunning = False
+        self.optionsOutdated = False
+
+        qmlRegisterSingletonType(Explorer, "gui", 1, 0, "EXPLORER", lambda qml, js: self)
+
+        self.gui.optionsUpdated.connect(self.optionsUpdated)
+        self.gui.aboutToQuit.connect(self.stop)
+
+        self.conn = sql.Connection(self)
+        self.conn.connect()
+        self.conn.doQuery("CREATE TABLE models(name TEXT, category TEXT, type TEXT, file TEXT, folder TEXT, desc TEXT, idx INTEGER, width INTEGER, height INTEGER, CONSTRAINT unq UNIQUE (category, idx));")
+    
+    @pyqtSlot()
+    def stop(self):
+        self.populaterThread.quit()
+        self.populaterThread.wait()
+
+    @pyqtSlot()
+    def optionsUpdated(self):
+        if self.optionsRunning:
+            self.optionsOutdated = True
+            return
+        self.optionsRunning = True
+        self.start.emit()
+
+    @pyqtSlot()
+    def finished(self):
+        self.optionsRunning = False
+        if self.optionsOutdated:
+            self.optionsOutdated = False
+            self.optionsUpdated()
 
     @pyqtSlot(misc.MimeData, str)
     def doReplace(self, mimedata, file):
