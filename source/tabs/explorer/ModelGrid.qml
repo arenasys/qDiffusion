@@ -266,10 +266,9 @@ Item {
                     onPressed: {
                         var now = Date.now()
                         if(descItem.visible) {
-                            if(now - last < 200) {
-                                BASIC.parameters.doToggle(sql_name)
+                            if(now - last >= 200) {
+                                mouse.accepted = false
                             }
-                            mouse.accepted = false
                         }
                         last = now
                         modelCard.select()
