@@ -257,7 +257,6 @@ Item {
                         }
                     }
                 }
-
                 MouseArea {
                     id: mouseArea
                     anchors.fill: parent
@@ -277,6 +276,17 @@ Item {
                     }
                     onDoubleClicked: {
                         BASIC.parameters.doToggle(sql_name)
+                    }
+                    onWheel: {
+                        if(modelCard.selected) {
+                            wheel.accepted = false
+                        } else {
+                            if(wheel.angleDelta.y < 0) {
+                                scrollBar.increase()
+                            } else {
+                                scrollBar.decrease()
+                            }
+                        }
                     }
                 }
 
