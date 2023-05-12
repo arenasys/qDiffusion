@@ -112,23 +112,29 @@ Item {
                 property var selected: false
                 property var showing: false
                 property var editing: false
-                property var active: BASIC.parameters.active.includes(sql_name) 
+                property var active: BASIC.parameters.active.includes(sql_name)
+
+                function setSelected(s) {
+                    if(modelCard.selected != s) {
+                        modelCard.selected = s
+                    }
+                }
 
                 Connections {
                     target: root
                     function onDeselect(i) {
                         if(i != index) {
-                            modelCard.selected = false
+                            modelCard.setSelected(false)
                             modelCard.editing = false
                             modelCard.showing = false
-                            descText.text = sql_desc
+                            descText.text = Qt.binding(function() { return descText.processedText; })
                             labelTextEdit.text = GUI.modelFileName(sql_name)
                         }
                     }
                 }
 
                 function select() {
-                    modelCard.selected = true
+                    modelCard.setSelected(true)
                     root.deselect(index)
                 }
 
@@ -138,13 +144,13 @@ Item {
                 }
 
                 function show() {
-                    modelCard.selected = true
+                    modelCard.setSelected(true)
                     modelCard.showing = true
                     root.deselect(index)
                 }
 
                 function edit() {
-                    modelCard.selected = true
+                    modelCard.setSelected(true)
                     modelCard.showing = true
                     modelCard.editing = true
                     labelTextEdit.cursorPosition = 0
@@ -246,7 +252,8 @@ Item {
                         readOnly: !modelCard.editing
                         font.pointSize: 9.8
                         area.color: sql_width == 0 ? COMMON.fg2 : COMMON.fg1
-                        text: sql_desc
+                        property var processedText: modelCard.selected ? sql_desc : (sql_desc.length > 500 ? sql_desc.substring(0, 500) : sql_desc)
+                        text: processedText
                         scrollBar.opacity: 0.5
                         scrollBar.color: COMMON.fg3
 

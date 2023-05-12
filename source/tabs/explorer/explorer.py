@@ -11,8 +11,6 @@ import re
 import shutil
 import time
 
-DESCRIPTION_LIMIT = 2000
-
 class Populater(QObject):
     finished = pyqtSignal()
     def __init__(self, gui):
@@ -60,9 +58,6 @@ class Populater(QObject):
         if os.path.exists(desc):
             with open(desc, "r", encoding='utf-8') as f:
                 description = f.read().strip()
-
-        if len(description) > DESCRIPTION_LIMIT :
-            description = description[:DESCRIPTION_LIMIT] + f"... ({len(description)-DESCRIPTION_LIMIT})"
         
         q.prepare("INSERT OR REPLACE INTO models(name, category, type, file, folder, desc, idx, width, height) VALUES (:name, :category, :type, :file, :folder, :desc, :idx, :width, :height);")
         q.bindValue(":name", name)
