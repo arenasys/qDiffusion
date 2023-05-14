@@ -9,3 +9,4 @@ psutil==5.9.2
 cryptography==38.0.1
 numpy==1.24.1
 setproctitle==1.3.2
+pygit2==1.12.1

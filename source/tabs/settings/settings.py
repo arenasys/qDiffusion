@@ -3,6 +3,7 @@ import os
 import subprocess
 import platform
 import datetime
+import pygit2
 IS_WIN = platform.system() == 'Windows'
 
 from PyQt5.QtCore import pyqtProperty, pyqtSignal, QObject, pyqtSlot, QUrl, QThread
@@ -11,13 +12,17 @@ from PyQt5.QtQml import qmlRegisterSingletonType
 from misc import MimeData
 
 class Update(QThread):
+    def reset(self, path, origin):
+        repo = pygit2.Repository(os.path.abspath(path))
+        repo.remotes.set_url("origin", origin)
+        repo.remotes[0].fetch()
+        repo.reset(repo.head.raw_target, pygit2.GIT_RESET_HARD)
+
     def run(self):
-        subprocess.run(["git", "fetch"], capture_output=True, shell=IS_WIN)
-        subprocess.run(["git", "reset", "--hard", "origin/master"], capture_output=True, shell=IS_WIN)
+        self.reset(".", "https://github.com/arenasys/qDiffusion")
         inf = os.path.join("source", "sd-inference-server")
         if os.path.exists(inf):
-            subprocess.run(["git", "fetch"], capture_output=True, shell=IS_WIN, cwd=inf)
-            subprocess.run(["git", "reset", "--hard", "origin/master"], capture_output=True, shell=IS_WIN, cwd=inf)
+            self.reset(inf, "https://github.com/arenasys/sd-inference-server")
 
 class Settings(QObject):
     updated = pyqtSignal()
