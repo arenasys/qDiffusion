@@ -18,6 +18,7 @@ class Update(QThread):
         repo.remotes[0].fetch()
         head = repo.lookup_reference("refs/remotes/origin/master").raw_target
         repo.reset(head, pygit2.GIT_RESET_HARD)
+        #blah
 
     def run(self):
         self.reset(".", "https://github.com/arenasys/qDiffusion")
