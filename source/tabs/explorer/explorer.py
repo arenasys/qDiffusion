@@ -10,6 +10,7 @@ import misc
 import re
 import shutil
 import time
+import json
 
 class Populater(QObject):
     finished = pyqtSignal()
@@ -34,12 +35,6 @@ class Populater(QObject):
         parts = re.split(r'/|\\', name)
         if len(parts) > 2:
             folder = parts[1]
-        
-        if os.path.exists(file + ".civitai.info"):
-            desc = file + ".civitai.info"
-        else:
-            desc = file + ".txt"
-
 
         if os.path.exists(file + ".preview.png"):
             preview = file + ".preview.png"
@@ -55,8 +50,21 @@ class Populater(QObject):
                 pass
         
         description = ""
-        if os.path.exists(desc):
-            with open(desc, "r", encoding='utf-8') as f:
+        if os.path.exists(file + ".civitai.info"):
+            with open(file + ".civitai.info", "r", encoding='utf-8') as f:
+                try:
+                    data = json.load(f)
+                    description = f"""
+                        <p><b>Name</b>: {data['model']['name']}<br>
+                        <b>Type</b>: {data['model']['type']}<br>
+                        <b>Activation</b>: {', '.join(data['trainedWords'])}<br>
+                        <b>Base model</b>: {data['baseModel']}<br>
+                        <b>Description</b>: </p>{data['description']}
+                    """
+                except:
+                    pass
+        if os.path.exists(file + ".txt"):
+            with open(file + ".txt", "r", encoding='utf-8') as f:
                 description = f.read().strip()
         
         q.prepare("INSERT OR REPLACE INTO models(name, category, type, file, folder, desc, idx, width, height) VALUES (:name, :category, :type, :file, :folder, :desc, :idx, :width, :height);")

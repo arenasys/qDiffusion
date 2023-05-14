@@ -14,6 +14,7 @@ Item {
     property var folder: ""
     property var label: ""
     property var cellSize: 150
+    property var descLength: (cellSize*cellSize)/100
     property var shift: false
     property var search: ""
     MouseArea {
@@ -252,7 +253,8 @@ Item {
                         readOnly: !modelCard.editing
                         font.pointSize: 9.8
                         area.color: sql_width == 0 ? COMMON.fg2 : COMMON.fg1
-                        property var processedText: modelCard.selected ? sql_desc : (sql_desc.length > 500 ? sql_desc.substring(0, 500) : sql_desc)
+                        area.textFormat: TextEdit.AutoText
+                        property var processedText: modelCard.selected ? sql_desc : (sql_desc.length > root.descLength ? sql_desc.substring(0, root.descLength) + "..." : sql_desc)
                         text: processedText
                         scrollBar.opacity: 0.5
                         scrollBar.color: COMMON.fg3
@@ -261,6 +263,9 @@ Item {
                             if(area.activeFocus) {
                                 modelCard.select()
                             }
+                        }
+                        area.onLinkActivated: {
+                            GUI.openLink(link)
                         }
                     }
                 }

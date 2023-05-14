@@ -510,4 +510,11 @@ class GUI(QObject):
             QDesktopServices.openUrl(QUrl.fromLocalFile(found))
         except Exception:
             pass
+    
+    @pyqtSlot(str)
+    def openLink(self, link):
+        try:
+            QDesktopServices.openUrl(QUrl.fromUserInput(link))
+        except Exception:
+            pass
         
