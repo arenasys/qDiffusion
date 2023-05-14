@@ -118,6 +118,11 @@ class GUI(QObject):
     def currentTab(self): 
         return self._currentTab
     
+    @currentTab.setter
+    def currentTab(self, tab):
+        self._currentTab = tab
+        self.tabUpdated.emit()
+
     @pyqtProperty(list, notify=tabUpdated)
     def workingTabs(self):
         return self._workingTabs
@@ -131,10 +136,7 @@ class GUI(QObject):
             self._workingTabs.remove(tab)
             self.tabUpdated.emit()
 
-    @currentTab.setter
-    def currentTab(self, tab):
-        self._currentTab = tab
-        self.tabUpdated.emit()
+
 
     @pyqtProperty('QString', notify=statusUpdated)
     def title(self):
@@ -415,6 +417,10 @@ class GUI(QObject):
         self.backend.wait()
         self.backend.setEndpoint(endpoint, password)
         self.reset.emit(-1)
+
+    @pyqtSlot()
+    def quit(self):
+        QApplication.quit()
 
     @pyqtSlot(str, str)
     def remoteDownload(self, type, url):

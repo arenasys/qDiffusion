@@ -57,7 +57,8 @@ Item {
         contentHeight: 30
 
         Repeater {
-            model: shown
+            property var tmp: shown
+            model: tmp
             STabButton {
                 text: qsTr(modelData)
                 selected: root.currentTab == modelData
@@ -102,7 +103,8 @@ Item {
             id: dropdownContextMenu
 
             Repeater {
-                model: GUI.tabNames.slice(0,-1)
+                property var tmp: GUI.tabNames.slice(0,-1)
+                model: tmp
                 SContextMenuItem {
                     text: modelData
                     checkable: true

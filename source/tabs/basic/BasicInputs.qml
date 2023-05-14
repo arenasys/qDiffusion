@@ -322,7 +322,8 @@ Item {
                                 width: 100
                                 Repeater {
                                     id: controlRepeater
-                                    model: BASIC.parameters.values.get("CN_modes")
+                                    property var tmp: BASIC.parameters.values.get("CN_modes")
+                                    model: tmp
                                     SContextMenuItem {
                                         width: 100
                                         text: modelData
@@ -562,7 +563,8 @@ Item {
                             width: 100
                             Repeater {
                                 id: controlRepeater
-                                model: BASIC.parameters.values.get("CN_modes")
+                                property var tmp: BASIC.parameters.values.get("CN_modes")
+                                model: tmp
                                 SContextMenuItem {
                                     width: 100
                                     text: modelData

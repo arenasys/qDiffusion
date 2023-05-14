@@ -21,17 +21,17 @@ Item {
 
         SColumnButton {
             label: "Remote"
-            active: settingsStack.currentIndex == 0
+            active: SETTINGS.currentTab == label
             onPressed: {
-                settingsStack.currentIndex = 0
+                SETTINGS.currentTab = label
             }
         }
         SColumnButton {
             label: "Program"
-            active: settingsStack.currentIndex == 1
+            active: SETTINGS.currentTab == label
             onPressed: {
                 SETTINGS.getGitInfo()
-                settingsStack.currentIndex = 1
+                SETTINGS.currentTab = label
             }
         }
     }
@@ -54,6 +54,7 @@ Item {
         StackLayout {
             id: settingsStack
             anchors.fill: parent
+            currentIndex: ["Remote", "Program"].indexOf(SETTINGS.currentTab)
             RemoteSettings { }
             ProgramSettings { }
         }

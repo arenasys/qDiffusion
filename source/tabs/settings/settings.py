@@ -26,6 +26,7 @@ class Settings(QObject):
         self.priority = math.inf
         self.name = "Settings"
         self.gui = parent
+        self._currentTab = "Remote"
 
         self._log = ""
 
@@ -39,6 +40,15 @@ class Settings(QObject):
         self._triedGitInit = False
         self._updating = False
         self.getGitInfo()
+
+    @pyqtProperty(str, notify=updated)
+    def currentTab(self): 
+        return self._currentTab
+    
+    @currentTab.setter
+    def currentTab(self, tab):
+        self._currentTab = tab
+        self.updated.emit()
 
     @pyqtProperty(str, notify=updated)
     def log(self):
