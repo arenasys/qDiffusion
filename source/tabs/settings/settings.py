@@ -16,7 +16,8 @@ class Update(QThread):
         repo = pygit2.Repository(os.path.abspath(path))
         repo.remotes.set_url("origin", origin)
         repo.remotes[0].fetch()
-        repo.reset(repo.head.raw_target, pygit2.GIT_RESET_HARD)
+        head = repo.lookup_reference("refs/remotes/origin/master").raw_target
+        repo.reset(head, pygit2.GIT_RESET_HARD)
 
     def run(self):
         self.reset(".", "https://github.com/arenasys/qDiffusion")
