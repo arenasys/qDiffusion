@@ -177,7 +177,7 @@ class Coordinator(QObject):
             self._modes = ["nvidia", "remote"]
 
         self._mode = 0
-        self.in_venv = "VIRTUAL_ENV" in os.environ and os.path.join(os.getcwd(), "venv") == os.environ["VIRTUAL_ENV"]
+        self.in_venv = "VIRTUAL_ENV" in os.environ# and os.path.join(os.getcwd(), "venv") == os.environ["VIRTUAL_ENV"]
         self.override = False
 
         try:
