@@ -19,7 +19,7 @@ except Exception:
     MISSING_QT = True
 
 def get_env():
-    env = os.environ.copy()
+    env = {k:v for k,v in os.environ.items() if not k.startswith("QT")}
     env["VIRTUAL_ENV"] = VENV_DIR
     if IS_WIN:
         env["PATH"] = VENV_DIR+"\\Scripts;" + env["PATH"]
