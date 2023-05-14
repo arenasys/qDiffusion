@@ -3,11 +3,13 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 
 import gui 1.0
+import "../components"
 
 TabButton {
     id: control
     width: implicitWidth
     property var selected: false
+    property var working: false
 
     signal dragEnter()
 
@@ -59,6 +61,20 @@ TabButton {
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment:  Text.AlignVCenter
                 elide: Text.ElideRight
+            }
+
+            LoadingSpinner {
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                anchors.right: parent.right
+                anchors.margins: -10
+                anchors.topMargin: -9
+                anchors.rightMargin: -6
+                source: "qrc:/icons/loading_big.svg"
+                width: height
+                running: control.working
+                duration: 300
+                opacity: 0.65
             }
         }
 

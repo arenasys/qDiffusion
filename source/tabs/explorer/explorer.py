@@ -14,17 +14,20 @@ import json
 
 class Populater(QObject):
     finished = pyqtSignal()
-    def __init__(self, gui):
+    def __init__(self, gui, name):
         super().__init__()
         self.gui = gui
+        self.name = name
         self.conn = None
 
     @pyqtSlot()
     def start(self):
+        self.gui.setTabWorking(self.name, True)
         self.conn = sql.Connection(self)
         self.conn.connect()
         self.conn.enableNotifications("models")
         self.optionsUpdated()
+        self.gui.setTabWorking(self.name, False)
         self.finished.emit()
     
     def setModel(self, name, category, type, idx):
@@ -124,7 +127,7 @@ class Explorer(QObject):
         self.priority = 1
         self.name = "Models"
         self.gui = parent
-        self.populater = Populater(self.gui)
+        self.populater = Populater(self.gui, self.name)
         self.populaterThread = QThread()
         self.populater.moveToThread(self.populaterThread)
         self.start.connect(self.populater.start)

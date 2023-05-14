@@ -15,9 +15,11 @@ import parameters
 
 class Populater(QObject):
     stop = pyqtSignal(str)
-    def __init__(self):
+    def __init__(self, gui, name):
         super().__init__()
         self.paths = []
+        self.gui = gui
+        self.name = name
 
         self.conn = None
         self.watcher = filesystem.Watcher.instance
@@ -57,6 +59,7 @@ class Populater(QObject):
         self.conn.doQuery(q)
         
         self.conn.enableNotifications("images")
+        self.gui.setTabWorking(self.name, False)
 
     @pyqtSlot(str, str, int)
     def onResult(self, folder, file, idx):
@@ -77,10 +80,10 @@ class Populater(QObject):
             return
         
         if idx == 0:
+            self.gui.setTabWorking(self.name, True)
             self.conn.disableNotifications("images")
         if idx % 1000 == 999:
             self.conn.relayNotification("images")
-
 
         parameters = parameters.replace("'", "''")
         q = QSqlQuery(self.conn.db)
@@ -117,7 +120,7 @@ class Gallery(QObject):
 
         qmlRegisterSingletonType(Gallery, "gui", 1, 0, "GALLERY", lambda qml, js: self)
 
-        self.populater = Populater()
+        self.populater = Populater(self.gui, self.name)
         self.add_folder.connect(self.populater.addFolder)
 
         self.populaterThread = QThread()

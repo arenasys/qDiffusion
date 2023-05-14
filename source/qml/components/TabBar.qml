@@ -10,6 +10,7 @@ Item {
     id: root
 
     property var currentTab: GUI.tabNames[0]
+    property var working: GUI.workingTabs
     property var shown: GUI.tabNames.slice(0,-1)
 
     Connections {
@@ -60,6 +61,7 @@ Item {
             STabButton {
                 text: qsTr(modelData)
                 selected: root.currentTab == modelData
+                working: root.working.includes(modelData)
                 onPressed: {
                     root.currentTab = modelData
                 }

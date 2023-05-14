@@ -63,6 +63,7 @@ class GUI(QObject):
         self.requestProgress = 0.0
         self.tabs = []
         self._currentTab = "Basic"
+        self._workingTabs = []
 
         self._statusMode = StatusMode.STARTING
         self._statusText = "Inactive"
@@ -116,6 +117,19 @@ class GUI(QObject):
     @pyqtProperty(str, notify=tabUpdated)
     def currentTab(self): 
         return self._currentTab
+    
+    @pyqtProperty(list, notify=tabUpdated)
+    def workingTabs(self):
+        return self._workingTabs
+    
+    @pyqtSlot(str, bool)
+    def setTabWorking(self, tab, working):
+        if working and not tab in self._workingTabs:
+            self._workingTabs += [tab]
+            self.tabUpdated.emit()
+        if not working and tab in self._workingTabs:
+            self._workingTabs.remove(tab)
+            self.tabUpdated.emit()
 
     @currentTab.setter
     def currentTab(self, tab):

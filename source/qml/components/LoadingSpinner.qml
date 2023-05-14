@@ -8,11 +8,13 @@ Item {
     property var size: Math.max(root.width, root.height) / 4
     property var running
     visible: running
+    property var source: "qrc:/icons/loading.svg"
+    property var duration: 1000
 
     Image {
         opacity: 0.5
         id: spinner
-        source: "qrc:/icons/loading.svg"
+        source: root.source
         width: root.size
         height: root.size
         sourceSize: Qt.size(width, height)
@@ -26,7 +28,7 @@ Item {
         loops: Animation.Infinite
         from: 0
         to: 360
-        duration: 1000
+        duration: root.duration
         running: true
     }
 }
