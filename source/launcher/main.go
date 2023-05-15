@@ -6,11 +6,23 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"syscall"
 
 	"github.com/hairyhenderson/go-which"
 	"github.com/schollz/progressbar/v3"
 	"github.com/walle/targz"
+	"golang.org/x/sys/windows"
 )
+
+func attach() {
+	proc := syscall.MustLoadDLL("kernel32.dll").MustFindProc("AllocConsole")
+	proc.Call()
+	out, _ := windows.GetStdHandle(windows.STD_OUTPUT_HANDLE)
+	outF := os.NewFile(uintptr(out), "/dev/stdout")
+	windows.SetStdHandle(windows.STD_OUTPUT_HANDLE, windows.Handle(outF.Fd()))
+	os.Stdout = outF
+	os.Stderr = outF
+}
 
 func download(path, url string) error {
 	req, _ := http.NewRequest("GET", url, nil)
@@ -60,18 +72,20 @@ func main() {
 		if which.Which("python") == "" {
 			python = ".\\python\\python.exe"
 			if !exists(".\\python") {
-				fmt.Println("DOWNLOADING PYTHON")
+				attach()
+				fmt.Println("DOWNLOADING PYTHON...")
 				err := download("python-3.10.11.tar.gz", "https://github.com/indygreg/python-build-standalone/releases/download/20230507/cpython-3.10.11+20230507-x86_64-pc-windows-msvc-shared-install_only.tar.gz")
 				if err != nil {
 					fmt.Println(err)
 					return
 				}
-				fmt.Println("EXTRACTING PYTHON")
+				fmt.Println("EXTRACTING PYTHON...")
 				err = targz.Extract("python-3.10.11.tar.gz", ".")
 				if err != nil {
 					fmt.Println(err)
 					return
 				}
+				os.Remove("python-3.10.11.tar.gz")
 			}
 		}
 	}
