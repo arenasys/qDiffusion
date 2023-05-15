@@ -47,15 +47,19 @@ def install_qt():
 if __name__ == "__main__":
     if sys.version_info[0] < 3 or sys.version_info[1] < 8:
         print(f"Python 3.8 or greater is required. Have Python {sys.version_info[0]}.{sys.version_info[1]}.")
+        input()
         exit()
     if not importlib.util.find_spec("pip"):
         print("PIP module is required.")
+        input()
         exit()
     if not importlib.util.find_spec("venv"):
         print("VENV module is required.")
+        input()
         exit()
     if not shutil.which("git"):
         print("Git is required.")
+        input()
         exit()
     
     if len(sys.argv) > 1:
@@ -70,6 +74,7 @@ if __name__ == "__main__":
             print(f"USING {VENV_DIR} INSTEAD")
         else:
             print("FAILED")
+            input()
             exit()
 
     inside_venv = VENV_DIR in sys.executable and VENV_DIR in os.environ["PATH"]

@@ -2,7 +2,7 @@ import math
 import os
 import subprocess
 import platform
-import datetime
+import time
 import pygit2
 IS_WIN = platform.system() == 'Windows'
 
@@ -11,20 +11,56 @@ from PyQt5.QtQml import qmlRegisterSingletonType
 
 from misc import MimeData
 
-class Update(QThread):
-    def reset(self, path, origin):
-        repo = pygit2.Repository(os.path.abspath(path))
-        repo.remotes.set_url("origin", origin)
-        repo.remotes[0].fetch()
-        head = repo.lookup_reference("refs/remotes/origin/master").raw_target
-        repo.reset(head, pygit2.GIT_RESET_HARD)
-        #blah
+QDIFF_URL = "https://github.com/arenasys/qDiffusion"
+INFER_URL = "https://github.com/arenasys/sd-inference-server"
 
+def git_reset(path, origin):
+    repo = pygit2.Repository(os.path.abspath(path))
+    repo.remotes.set_url("origin", origin)
+    repo.remotes[0].fetch()
+    head = repo.lookup_reference("refs/remotes/origin/master").raw_target
+    print(head)
+    repo.reset(head, pygit2.GIT_RESET_HARD)
+
+def git_last(path):
+    try:
+        repo = pygit2.Repository(os.path.abspath(path))
+        commit = repo[repo.head.target]
+        message = commit.raw_message.decode('utf-8').strip()
+        delta = time.time() - commit.commit_time
+    except:
+        return None, None
+    
+    spans = [
+        ('year', 60*60*24*365),
+        ('month', 60*60*24*30),
+        ('day', 60*60*24),
+        ('hour', 60*60),
+        ('minute', 60),
+        ('second', 1)
+    ]
+    when = "?"
+    for label, span in spans:
+        if delta >= span:
+            count = int(delta//span)
+            suffix = "" if count == 1 else "s"
+            when = f"{count} {label}{suffix} ago"
+            break
+
+    return commit, f"{message} ({commit.short_id}) ({when})"
+
+def git_init(path, origin):
+    repo = pygit2.init_repository(os.path.abspath(path), False)
+    if not "origin" in repo.remotes:
+        repo.create_remote("origin", origin)
+    git_reset(path, origin)
+
+class Update(QThread):
     def run(self):
-        self.reset(".", "https://github.com/arenasys/qDiffusion")
+        git_reset(".", QDIFF_URL)
         inf = os.path.join("source", "sd-inference-server")
         if os.path.exists(inf):
-            self.reset(inf, "https://github.com/arenasys/sd-inference-server")
+            git_reset(inf, INFER_URL)
 
 class Settings(QObject):
     updated = pyqtSignal()
@@ -137,32 +173,24 @@ class Settings(QObject):
     def getGitInfo(self):
         self._gitInfo = "Unknown"
         self._gitServerInfo = ""
-        r = subprocess.run(["git", "log", "-1", "--format=%B (%h) (%cr)"], capture_output=True, shell=IS_WIN)
-        if r.returncode == 0:
-            m = r.stdout.decode('utf-8').replace("\n","")
-            cm = m.rsplit(") (", 1)[0]
+
+        commit, label = git_last(".")
+
+        if commit:
             if self._currentGitInfo == None:
-                self._currentGitInfo = cm
-            self._gitInfo = "GUI commit: " + m
-            self._needRestart = self._currentGitInfo != cm
-        else:
-            m = r.stderr.decode('utf-8')
-            if not self._triedGitInit and m.startswith("fatal: not a git repository"):
-                self._triedGitInit = True
-                r = subprocess.run(["git", "init"], capture_output=True, shell=IS_WIN)
-                r = subprocess.run(["git", "remote", "add", "origin", "https://github.com/arenasys/qDiffusion.git"], capture_output=True, shell=IS_WIN)
-                r = subprocess.run(["git", "fetch"], capture_output=True, shell=IS_WIN)
-                r = subprocess.run(["git", "reset", "--hard", "origin/master"], capture_output=True, shell=IS_WIN)
+                self._currentGitInfo = commit
+            self._gitInfo = "GUI commit: " + label
+            self._needRestart = self._currentGitInfo != commit
+        elif not self._triedGitInit:
+            self._triedGitInit = True
+            git_init(".", QDIFF_URL)
 
         server_dir = os.path.join("source","sd-inference-server")
         if os.path.exists(server_dir):
-            r = subprocess.run(["git", "log", "-1", "--format=%B (%h) (%cr)"], capture_output=True, shell=IS_WIN, cwd=server_dir)
-            if r.returncode == 0:
-                m = r.stdout.decode('utf-8').replace("\n","")
-                cm = m.rsplit(") (", 1)[0]
-                if self._currentGitServerInfo == None:
-                    self._currentGitServerInfo = cm
-                self._gitServerInfo = "Inference commit: " + m
-                self._needRestart = self._needRestart or (self._currentGitServerInfo != cm)
+            commit, label = git_last(server_dir)
+            if self._currentGitServerInfo == None:
+                self._currentGitServerInfo = commit
+            self._gitServerInfo = "Inference commit: " + label
+            self._needRestart = self._needRestart or (self._currentGitServerInfo != commit)
 
         self.updated.emit()
