@@ -10,7 +10,6 @@ def git_reset(path, origin):
     repo.remotes.set_url("origin", origin)
     repo.remotes[0].fetch()
     head = repo.lookup_reference("refs/remotes/origin/master").raw_target
-    print(head)
     repo.reset(head, pygit2.GIT_RESET_HARD)
 
 def git_last(path):
