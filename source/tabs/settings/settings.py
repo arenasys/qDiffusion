@@ -1,66 +1,20 @@
 import math
 import os
-import subprocess
 import platform
-import time
-import pygit2
 IS_WIN = platform.system() == 'Windows'
 
 from PyQt5.QtCore import pyqtProperty, pyqtSignal, QObject, pyqtSlot, QUrl, QThread
 from PyQt5.QtQml import qmlRegisterSingletonType
 
 from misc import MimeData
-
-QDIFF_URL = "https://github.com/arenasys/qDiffusion"
-INFER_URL = "https://github.com/arenasys/sd-inference-server"
-
-def git_reset(path, origin):
-    repo = pygit2.Repository(os.path.abspath(path))
-    repo.remotes.set_url("origin", origin)
-    repo.remotes[0].fetch()
-    head = repo.lookup_reference("refs/remotes/origin/master").raw_target
-    print(head)
-    repo.reset(head, pygit2.GIT_RESET_HARD)
-
-def git_last(path):
-    try:
-        repo = pygit2.Repository(os.path.abspath(path))
-        commit = repo[repo.head.target]
-        message = commit.raw_message.decode('utf-8').strip()
-        delta = time.time() - commit.commit_time
-    except:
-        return None, None
-    
-    spans = [
-        ('year', 60*60*24*365),
-        ('month', 60*60*24*30),
-        ('day', 60*60*24),
-        ('hour', 60*60),
-        ('minute', 60),
-        ('second', 1)
-    ]
-    when = "?"
-    for label, span in spans:
-        if delta >= span:
-            count = int(delta//span)
-            suffix = "" if count == 1 else "s"
-            when = f"{count} {label}{suffix} ago"
-            break
-
-    return commit, f"{message} ({commit.short_id}) ({when})"
-
-def git_init(path, origin):
-    repo = pygit2.init_repository(os.path.abspath(path), False)
-    if not "origin" in repo.remotes:
-        repo.create_remote("origin", origin)
-    git_reset(path, origin)
+import git
 
 class Update(QThread):
     def run(self):
-        git_reset(".", QDIFF_URL)
+        git.git_reset(".", git.QDIFF_URL)
         inf = os.path.join("source", "sd-inference-server")
         if os.path.exists(inf):
-            git_reset(inf, INFER_URL)
+            git.git_reset(inf, git.INFER_URL)
 
 class Settings(QObject):
     updated = pyqtSignal()
@@ -174,7 +128,7 @@ class Settings(QObject):
         self._gitInfo = "Unknown"
         self._gitServerInfo = ""
 
-        commit, label = git_last(".")
+        commit, label = git.git_last(".")
 
         if commit:
             if self._currentGitInfo == None:
@@ -183,14 +137,15 @@ class Settings(QObject):
             self._needRestart = self._currentGitInfo != commit
         elif not self._triedGitInit:
             self._triedGitInit = True
-            git_init(".", QDIFF_URL)
+            git.git_init(".", git.QDIFF_URL)
 
         server_dir = os.path.join("source","sd-inference-server")
         if os.path.exists(server_dir):
-            commit, label = git_last(server_dir)
-            if self._currentGitServerInfo == None:
-                self._currentGitServerInfo = commit
-            self._gitServerInfo = "Inference commit: " + label
-            self._needRestart = self._needRestart or (self._currentGitServerInfo != commit)
+            commit, label = git.git_last(server_dir)
+            if commit:
+                if self._currentGitServerInfo == None:
+                    self._currentGitServerInfo = commit
+                self._gitServerInfo = "Inference commit: " + label
+                self._needRestart = self._needRestart or (self._currentGitServerInfo != commit)
 
         self.updated.emit()

@@ -17,6 +17,7 @@ from PyQt5.QtCore import pyqtSlot, pyqtSignal, QThread
 from PyQt5.QtWidgets import QApplication
 
 from parameters import save_image
+import git
 
 def log_traceback(label):
     exc_type, exc_value, exc_tb = sys.exc_info()
@@ -39,9 +40,7 @@ class InferenceProcessThread(threading.Thread):
 
         if not os.path.exists(sd_path):
             self.responses.put({"type":"status", "data":{"message":"Downloading"}})
-            ret = subprocess.run(["git", "clone", "https://github.com/arenasys/sd-inference-server/", sd_path], capture_output=True, shell=IS_WIN)
-            if ret.returncode:
-                raise RuntimeError(ret.stderr.decode("utf-8").split("fatal: ", 1)[1])
+            git.git_clone(sd_path, git.INFER_URL)
 
         if not os.path.exists(model_directory):
             shutil.copytree(os.path.join(sd_path, "models"), model_directory)

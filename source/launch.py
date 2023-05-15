@@ -56,10 +56,6 @@ if __name__ == "__main__":
         print("VENV module is required.")
         input()
         exit()
-    if not shutil.which("git"):
-        print("Git is required.")
-        input()
-        exit()
     
     if len(sys.argv) > 1:
         VENV_DIR = sys.argv[1]

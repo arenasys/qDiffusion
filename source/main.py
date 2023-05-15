@@ -68,7 +68,7 @@ def buildQMLPy():
     if os.path.exists(qml_py):
         os.remove(qml_py)
     
-    status = subprocess.run(["pyrcc5", "-o", qml_py, qml_rc], env=os.environ.copy(), capture_output=True, shell=IS_WIN)
+    status = subprocess.run(["pyrcc5", "-o", qml_py, qml_rc], capture_output=True, shell=IS_WIN)
     if status.returncode != 0:
         raise Exception(status.stderr)
 
