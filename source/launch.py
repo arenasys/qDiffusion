@@ -29,7 +29,6 @@ def restart():
     if IS_WIN:
         subprocess.Popen([os.path.join(VENV_DIR, "Scripts\\pythonw"), "source\\launch.py"], env=get_env(), creationflags=0x00000008|0x00000200)
     else:
-        print(os.getcwd())
         subprocess.Popen([os.path.join(VENV_DIR, "bin/python"), "source/launch.py"], env=get_env())
     exit()
 
@@ -77,7 +76,7 @@ if __name__ == "__main__":
             input()
             exit()
 
-    inside_venv = VENV_DIR in sys.executable and VENV_DIR in os.environ["PATH"]
+    inside_venv = VENV_DIR in sys.executable and VENV_DIR in os.environ["PATH"] and VENV_DIR == os.environ.get("VIRTUAL_ENV", "")
     missing_venv = not os.path.exists(VENV_DIR)
 
     if not inside_venv:
