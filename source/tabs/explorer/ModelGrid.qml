@@ -115,6 +115,9 @@ Item {
                 property var editing: false
                 property var active: BASIC.parameters.active.includes(sql_name)
 
+                property var info: modelCard.showing || sql_width == 0 || modelCard.editing
+                property var desc: (sql_desc != "" && modelCard.showing) || (sql_desc != "" && sql_width == 0) || modelCard.editing
+
                 function setSelected(s) {
                     if(modelCard.selected != s) {
                         modelCard.selected = s
@@ -165,7 +168,7 @@ Item {
 
                 LoadingSpinner {
                     anchors.fill: parent
-                    running: sql_width != 0 && thumbnail.status !== Image.Ready
+                    running: thumbnail.visible && thumbnail.status !== Image.Ready
                 }
 
                 Item {
@@ -183,7 +186,7 @@ Item {
 
                     Image {
                         id: placeholder
-                        visible: sql_width == 0 && descText.text == ""
+                        visible: !modelCard.desc
                         source: "qrc:/icons/placeholder_black.svg"
                         height: parent.width/4
                         width: height
@@ -201,7 +204,7 @@ Item {
 
                 Image {
                     id: thumbnail
-                    visible: sql_width != 0
+                    visible: sql_width != 0 && !modelCard.info
                     anchors.fill: parent
                     anchors.margins: 1
                     property var trueSource: visible ? ("image://async/" + sql_file) : ""
@@ -213,7 +216,7 @@ Item {
 
                 Image {
                     id: fullThumbnail
-                    visible: sql_width != 0 && height >= 256
+                    visible: sql_width != 0 && height >= 256 && !modelCard.info
                     anchors.fill: parent
                     anchors.margins: 1
                     property var trueSource: visible ? ("image://big/" + sql_file) : ""
@@ -225,34 +228,16 @@ Item {
 
                 Item {
                     id: descItem
-                    visible: (sql_desc != "" && modelCard.showing) || (sql_desc != "" && sql_width == 0) || modelCard.editing
+                    visible: modelCard.desc
                     anchors.fill: interior
                     anchors.margins: 1
-                    property var inset: sql_width == 0 ? 2 : 4
 
-                    Rectangle {
-                        anchors.fill: parent
-                        anchors.margins: parent.inset
-                        color: COMMON.bg2
-                        opacity: sql_width == 0 ? 0 : 0.75
-                        border.color: COMMON.bg6
-                    }
-                    Glow {
-                        visible: sql_width != 0
-                        opacity: 0.4
-                        anchors.fill: descText
-                        radius: 5
-                        samples: 8
-                        color: "#000000"
-                        source: descText
-                    }
                     STextArea {
                         id: descText
                         anchors.fill: parent
-                        anchors.margins: parent.inset
                         readOnly: !modelCard.editing
                         font.pointSize: 9.8
-                        area.color: sql_width == 0 ? COMMON.fg2 : COMMON.fg1
+                        area.color: COMMON.fg2
                         area.textFormat: TextEdit.AutoText
                         property var processedText: modelCard.selected ? sql_desc : (sql_desc.length > root.descLength ? sql_desc.substring(0, root.descLength) + "..." : sql_desc)
                         text: processedText
@@ -303,24 +288,14 @@ Item {
 
                 Rectangle {
                     id: typeBg
-                    visible: sql_type != ""
+                    visible: modelCard.info
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.top: parent.top
-                    height: 20
+                    height: visible ? 20 : 0
                     opacity: 0.8
                     color: COMMON.bg2
                     border.color: COMMON.bg4
-
-                    Glow {
-                        visible: sql_width != 0
-                        opacity: 0.4
-                        anchors.fill: typeText
-                        radius: 5
-                        samples: 8
-                        color: "#000000"
-                        source: typeText
-                    }
 
                     SText {
                         id: typeText
@@ -335,8 +310,16 @@ Item {
                         font.pointSize: 9.2
                         opacity: 0.8
                     }
-                }
 
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.bottomMargin: -1
+                        color: "transparent"
+                        border.color: COMMON.bg0
+                        border.width: 1
+                    }
+                }
+                
                 Rectangle {
                     id: labelBg
                     anchors.left: parent.left
@@ -361,9 +344,6 @@ Item {
                         anchors.fill: parent
                         hoverEnabled: true
                         acceptedButtons: Qt.LeftButton
-                        onPressed: {
-                            modelCard.show()
-                        }
                         onDoubleClicked: {
                             BASIC.parameters.doToggle(sql_name)
                             modelCard.hide()
@@ -376,7 +356,6 @@ Item {
                         text: labelText.text
                     }
                 }
-
 
                 Item {
                     clip: true
@@ -488,12 +467,137 @@ Item {
                 }
             }
 
-
             Rectangle {
                 anchors.fill: modelCard
                 color: "transparent"
                 border.width: 2
                 border.color: COMMON.bg00
+            }
+
+            Item {
+                property var frameVisible: modelCard.info
+                x: modelCard.x
+                y: modelCard.y
+                height: 21
+                width: height
+
+                Rectangle {
+                    visible: parent.frameVisible
+                    anchors.fill: parent
+                    anchors.topMargin: 1
+                    anchors.bottomMargin: typeBg.height > 0 ? 2 : 0
+                    color: "transparent"
+                    border.color: COMMON.bg0
+                    border.width: 1
+                }
+                Rectangle {
+                    visible: parent.frameVisible
+                    anchors.fill: parent
+                    anchors.rightMargin: 1
+                    anchors.bottomMargin: 1
+                    color: "transparent"
+                    border.color: COMMON.bg4
+                    border.width: 1
+                }
+
+                Glow {
+                    visible: !parent.frameVisible
+                    opacity: 0.3
+                    anchors.fill: starButton
+                    radius: 7
+                    samples: 8
+                    color: "#000000"
+                    source: starButton
+                }
+
+                Glow {
+                    visible: !parent.frameVisible
+                    opacity: 0.4
+                    anchors.fill: starButton
+                    radius: 4
+                    samples: 8
+                    color: "#000000"
+                    source: starButton
+                }
+
+                SIconButton {
+                    id: starButton
+                    color: parent.frameVisible ? COMMON.bg3 : "transparent"
+                    iconColor: parent.frameVisible ? COMMON.bg6 : COMMON.fg1_5
+                    anchors.fill: parent
+                    anchors.margins: 2
+                    smooth: false
+                    inset: 0
+                    icon: "qrc:/icons/star-outline-big.svg"
+                }
+            }
+
+            Item {
+                visible: sql_desc != "" && sql_width != 0
+                property var frameVisible: modelCard.info
+                x: modelCard.x + modelCard.width - width
+                y: modelCard.y
+                height: 21
+                width: height
+
+                Rectangle {
+                    visible: parent.frameVisible
+                    anchors.fill: parent
+                    anchors.topMargin: 1
+                    anchors.bottomMargin: typeBg.height > 0 ? 2 : 0
+                    anchors.rightMargin: 1
+                    color: "transparent"
+                    border.color: COMMON.bg0
+                    border.width: 1
+                }
+                Rectangle {
+                    visible: parent.frameVisible
+                    anchors.fill: parent
+                    anchors.leftMargin: 1
+                    anchors.bottomMargin: 1
+                    color: "transparent"
+                    border.color: COMMON.bg4
+                    border.width: 1
+                }
+
+                Glow {
+                    visible: !parent.frameVisible
+                    opacity: 0.3
+                    anchors.fill: infoButton
+                    radius: 7
+                    samples: 8
+                    color: "#000000"
+                    source: infoButton
+                }
+
+                Glow {
+                    visible: !parent.frameVisible
+                    opacity: 0.4
+                    anchors.fill: infoButton
+                    radius: 4
+                    samples: 8
+                    color: "#000000"
+                    source: infoButton
+                }
+
+                SIconButton {
+                    id: infoButton
+                    color: parent.frameVisible ? COMMON.bg3 : "transparent"
+                    iconColor: parent.frameVisible ? COMMON.bg6 : COMMON.fg1_5
+                    anchors.fill: parent
+                    anchors.margins: 2
+                    smooth: false
+                    inset: 0
+                    icon: modelCard.showing ? "qrc:/icons/info-big.svg" : "qrc:/icons/info-outline-big.svg"
+
+                    onPressed: {
+                        if (modelCard.showing) {
+                            modelCard.hide()
+                        } else {
+                            modelCard.show()
+                        }
+                    }
+                }
             }
 
             Rectangle {

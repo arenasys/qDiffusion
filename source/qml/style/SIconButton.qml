@@ -17,6 +17,7 @@ Rectangle {
     property var hovered: false
     property var underscore: false
     property var sidescore: false
+    property var smooth: true
     height: 35
     width: 35
     
@@ -71,6 +72,8 @@ Rectangle {
         height: width
         sourceSize: Qt.size(parent.width, parent.height)
         anchors.centerIn: parent
+        smooth: parent.smooth
+        antialiasing: parent.smooth
     }
 
     ColorOverlay {
