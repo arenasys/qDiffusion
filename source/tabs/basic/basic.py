@@ -413,12 +413,6 @@ class BasicOutput(QObject):
             return self._image
         return self._artifacts[self._display]
     
-    @pyqtProperty(QImage, notify=updated)
-    def display(self):
-        if not self._display:
-            return self._image
-        return self._artifacts[self._display]
-    
     @pyqtProperty(str, notify=updated)
     def displayName(self):
         return self._display
@@ -471,11 +465,11 @@ class BasicOutput(QObject):
     
     @pyqtProperty(int, notify=updated)
     def width(self):
-        return self._image.width()
+        return self.display.width()
     
     @pyqtProperty(int, notify=updated)
     def height(self):
-        return self._image.height()
+        return self.display.height()
 
     @pyqtProperty(bool, notify=updated)
     def empty(self):
@@ -1126,7 +1120,7 @@ class Basic(QObject):
         unet = self._parameters._values.get("UNET")
         vae = self._parameters._values.get("VAE")
         clip = self._parameters._values.get("CLIP")
-        request = {"type":"manage", "data":{"operation": "build", "unet":unet, "vae":vae, "clip":clip, "filename":filename}}
+        request = {"type":"manage", "data":{"operation": "build", "unet":unet, "vae":vae, "clip":clip, "file":filename}}
         self.gui.makeRequest(request)    
 
     @pyqtSlot(CanvasWrapper, BasicInput)

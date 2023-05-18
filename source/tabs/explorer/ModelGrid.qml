@@ -62,6 +62,10 @@ Item {
         cellWidth: Math.max((modelsView.width - 15)/Math.max(Math.ceil((modelsView.width - 5)/root.cellSize), 1), 50)
         cellHeight: Math.floor(cellWidth*1.33)
         anchors.fill: parent
+        footer: Item {
+            width: parent.width
+            height: 10
+        }
         model: Sql {
             id: modelsSql
             query: "SELECT name, type, desc, file, width, height FROM models WHERE category = '" + root.mode + "' AND folder = '" + root.folder + "' AND name LIKE '%" + root.search +"%' ORDER BY idx ASC;"
@@ -326,10 +330,15 @@ Item {
                     anchors.right: parent.right
                     anchors.bottom: parent.bottom
                     height: 25
-                    color: COMMON.bg2
-                    opacity: 0.8
-                    border.width: sql_width == 0 ? 2 : 1
-                    border.color: sql_width == 0 ? COMMON.bg0 : COMMON.bg4
+                    color: "transparent"
+
+                    Rectangle {
+                        anchors.fill: parent
+                        color: COMMON.bg2
+                        opacity: 0.8
+                        border.width: sql_width == 0 ? 2 : 1
+                        border.color: sql_width == 0 ? COMMON.bg0 : COMMON.bg4
+                    }
 
                     Rectangle {
                         visible: sql_width == 0
@@ -440,6 +449,13 @@ Item {
                     }
 
                     SContextMenuSeparator {}
+
+                    SContextMenuItem {
+                        text: "Prune"
+                        onPressed: {
+                            EXPLORER.doPrune(sql_name)
+                        }
+                    }
 
                     SContextMenuItem {
                         text: "Delete"

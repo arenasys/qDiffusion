@@ -197,6 +197,11 @@ class Explorer(QObject):
         self.gui.makeRequest(request)
 
     @pyqtSlot(str)
+    def doPrune(self, file):
+        request = {"type":"manage", "data": {"operation": "prune", "file": file}}
+        self.gui.makeRequest(request)
+
+    @pyqtSlot(str)
     def doVisit(self, file):
         path = os.path.abspath(os.path.join(self.gui.modelDirectory(), os.path.dirname(file)))
         try:
