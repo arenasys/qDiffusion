@@ -58,6 +58,8 @@ class BasicInput(QObject):
 
         self._areas = []
 
+        self._offset = 0.5
+
         basic.parameters._values.updated.connect(self.updateImage)
 
     def updateImage(self):
@@ -77,8 +79,8 @@ class BasicInput(QObject):
 
     def resizeImage(self, size):
         image = self._original.scaled(size, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
-        dx = int((image.width()-size.width())//2)
-        dy = int((image.height()-size.height())//2)
+        dx = int((image.width()-size.width())*self._offset)
+        dy = int((image.height()-size.height())*self._offset)
         self._image = image.copy(dx, dy, size.width(), size.height())
 
     def setLinked(self, linked):
@@ -120,6 +122,24 @@ class BasicInput(QObject):
     @pyqtProperty(int, notify=updated)
     def height(self):
         return self._image.height()
+    
+    @pyqtProperty(float, notify=updated)
+    def offset(self):
+        return self._offset
+    
+    @offset.setter
+    def offset(self, offset):
+        if self._role == BasicInputRole.IMAGE:
+            self._offset = max(0.0, min(1.0, offset))
+            self.updateImage()
+    
+    @pyqtProperty(int, notify=updated)
+    def originalWidth(self):
+        return self._original.width()
+    
+    @pyqtProperty(int, notify=updated)
+    def originalHeight(self):
+        return self._original.height()
 
     @pyqtProperty(bool, notify=updated)
     def empty(self):
@@ -197,12 +217,6 @@ class BasicInput(QObject):
         else:
             self._display = None
         self.updated.emit()
-
-    @pyqtProperty(QImage, notify=updated)
-    def display(self):
-        if not self._display:
-            return self._image
-        return self._artifacts[self._display]
     
     @pyqtProperty(QImage, notify=updated)
     def display(self):
@@ -260,6 +274,17 @@ class BasicInput(QObject):
             self.annotate()
         else:
             self.setArtifacts({})
+
+    def getAreas(self):
+        out = []
+        for a in self._areas:
+            size = self._image.size()
+            a = a.scaled(size, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+            dx = int((a.width()-size.width())*self._offset)
+            dy = int((a.height()-size.height())*self._offset)
+            a = a.copy(dx, dy, size.width(), size.height())
+            out += [a]
+        return out
 
     @pyqtSlot(QUrl)
     def setImageFile(self, path):
@@ -545,30 +570,65 @@ class Basic(QObject):
     def buildRequest(self):
         if self._remaining != 0 and self._requests:
             return self._requests[self._remaining-1]
-    
+
+        order = []
         images = []
+        offsets = []
         masks = []
         areas = []
         controls = []
+
+        mapped_masks = {}
+        mapped_areas = {}
+        mapped_controls = {}
 
         if self._inputs:
             for i in self._inputs:
                 if i._role == BasicInputRole.IMAGE:
                     if not i._image.isNull():
+                        order += [i]
                         images += [encode_image(i._original)]
+                        offsets += [i._offset]
                 if i._role == BasicInputRole.MASK:
-                    if not i._image.isNull() and i._linked:
+                    if not i._image.isNull():
                         masks += [encode_image(i._image)]
+                        if i._linked:
+                            mapped_masks[i._linked] = masks[-1]
                 if i._role == BasicInputRole.SUBPROMPT:
                     if not i._image.isNull() and i._areas:
-                        areas += [[encode_image(a) for a in i._areas]]
+                        areas += [[encode_image(a) for a in i.getAreas()]]
+                        if i._linked:
+                            mapped_areas[i._linked] = areas[-1]
                 if i._role == BasicInputRole.CONTROL:
                     if not i._image.isNull():
                         controls += [(i._mode, encode_image(i._image))]
-        
+                        if i._linked:
+                            mapped_controls[i._linked] = controls[-1]
+
+        if order:
+            masks = []
+            areas = []
+            controls = []
+            
+            for i in order:
+                if i in mapped_masks:
+                    masks += [mapped_masks[i]]
+                elif mapped_masks:
+                    masks += [None]
+
+                if i in mapped_areas:
+                    areas += [mapped_areas[i]]
+                elif mapped_areas:
+                    areas += [[]]
+            
+                if i in controls:
+                    controls += [controls[i]]
+                elif mapped_controls:
+                    controls += [None]
+
         self._requests = []
         for i in range(self._remaining):
-            self._requests += [self._parameters.buildRequest(images, masks, areas, controls)]
+            self._requests += [self._parameters.buildRequest(images, offsets, masks, areas, controls)]
         return self._requests[self._remaining-1]
 
     @pyqtSlot()
@@ -640,7 +700,7 @@ class Basic(QObject):
             for i in range(len(results)-1, -1, -1):
                 if not self._outputs[out]._ready:
                     self._outputs[out].setResult(results[i], metadata[i])
-                self._outputs[out].setArtifacts({k:v[i] for k,v in artifacts.items()})
+                self._outputs[out].setArtifacts({k:v[i] for k,v in artifacts.items() if v[i]})
                 out += 1
             if sticky:
                 self.stick()

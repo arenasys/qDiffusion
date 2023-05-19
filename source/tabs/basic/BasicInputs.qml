@@ -153,8 +153,8 @@ Item {
 
                             x: modelData.extent.x*factor
                             y: modelData.extent.y*factor
-                            width: modelData.extent.width*factor
-                            height: modelData.extent.height*factor
+                            width: Math.floor(modelData.extent.width*factor)
+                            height: Math.floor(modelData.extent.height*factor)
                         }
                     }
 
@@ -165,6 +165,7 @@ Item {
                         y: valid ? itemImage.trueY: 0
                         width: valid ? itemImage.trueWidth+2 : parent.width
                         height: valid ? itemImage.trueHeight+2 : parent.height
+                        
 
                         Rectangle {
                             anchors.fill: roleLabel
@@ -253,15 +254,17 @@ Item {
 
                 MouseArea {
                     anchors.fill: parent
-                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
                     property var startPosition: Qt.point(0,0)
+                    property var startOffset: 0
                     property bool ready: false
                     property var image
                     onPressed: {
+                        startPosition = Qt.point(mouse.x, mouse.y)
+                        startOffset = modelData.offset
                         if (mouse.button == Qt.LeftButton) {
                             inputListView.currentIndex = index
                             itemFrame.forceActiveFocus()
-                            startPosition = Qt.point(mouse.x, mouse.y)
                             ready = false
                             itemFrame.grabToImage(function(result) {
                                 image = result.image;
@@ -280,11 +283,24 @@ Item {
                     }
 
                     onPositionChanged: {
-                        if(pressed && ready) {
+                        if((pressedButtons & Qt.LeftButton) && ready) {
                             var delta = Qt.point(mouse.x-startPosition.x, mouse.y-startPosition.y)
                             if(Math.pow(delta.x*delta.x + delta.y*delta.y, 0.5) > 5) {
                                 modelData.drag(index, image)
                             }
+                        }
+                        if(pressedButtons & Qt.MiddleButton) {
+                            var d = 0
+                            var z = 0
+                            if(modelData.originalWidth < modelData.originalHeight) {
+                                d = mouse.y-startPosition.y
+                                z = ((trueFrame.width/modelData.originalWidth)*modelData.originalHeight) - trueFrame.height
+                            } else {
+                                d = mouse.x-startPosition.x
+                                z = ((trueFrame.height/modelData.originalHeight)*modelData.originalWidth) - trueFrame.width
+                            }
+
+                            modelData.offset = startOffset - (d/z)
                         }
                     }
 

@@ -291,13 +291,13 @@ class GUI(QObject):
         if not id in self._results:
             self._results[id] = {}
         self._results[id][name] = []
-        if type(data[0]) == bytes or type(data[0]) == bytearray:
-            for i, b in enumerate(data):
+        for d in data:
+            if type(d) == bytes or type(d) == bytearray:
                 img = QImage()
-                img.loadFromData(b, "png")
+                img.loadFromData(d, "png")
                 self._results[id][name] += [img]
-        else:
-            self._results[id][name] = data
+            else:
+                self._results[id][name] += [d]
         self.result.emit(id, name)
     
     @pyqtSlot(str, int)

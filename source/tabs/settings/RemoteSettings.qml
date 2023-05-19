@@ -100,7 +100,7 @@ Item {
                 width: 120
                 height: 30
                 label: "Type"
-                model: ["SD", "LoRA", "HN", "TI", "SR"]
+                model: ["SD", "LoRA", "HN", "TI", "SR", "CN"]
                 disabled: !root.show
             }
             OTextInput {
@@ -141,7 +141,7 @@ Item {
                 width: 120
                 height: 30
                 label: "Type"
-                model: ["SD", "LoRA", "HN", "TI", "SR"]
+                model: ["SD", "LoRA", "HN", "TI", "SR", "CN"]
                 disabled: !root.show
             }
             OTextInput {
