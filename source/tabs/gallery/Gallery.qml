@@ -127,6 +127,7 @@ Rectangle {
             SContextMenu {
                 id: copyToMenu
                 title: "Copy to"
+                width: 120
                 Instantiator {
                     model: destinationsSql
                     SContextMenuItem {
@@ -143,6 +144,7 @@ Rectangle {
             SContextMenu {
                 id: moveToMenu
                 title: "Move to"
+                width: 120
                 Instantiator {
                     model: destinationsSql
                     SContextMenuItem {

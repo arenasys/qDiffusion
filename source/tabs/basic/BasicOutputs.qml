@@ -202,7 +202,7 @@ Item {
                     SContextMenu {
                         y: 35
                         id: contextMenu
-                        width: 100
+                        width: 120
                         SContextMenuItem {
                             text: "Clear"
                             onPressed: {
@@ -242,6 +242,7 @@ Item {
                         SContextMenu {
                             id: copyToMenu
                             title: "Copy to"
+                            width: 120
                             Instantiator {
                                 model: destinationsSql
                                 SContextMenuItem {

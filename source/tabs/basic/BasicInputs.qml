@@ -319,7 +319,7 @@ Item {
                             }
                         }
                         SContextMenu {
-                            width: 100
+                            width: 90
                             title: "Set role"
                             SContextMenuItem {
                                 text: "Image"
@@ -335,13 +335,12 @@ Item {
                             }
                             SContextMenu {
                                 title: "Control"
-                                width: 100
+                                width: 90
                                 Repeater {
                                     id: controlRepeater
                                     property var tmp: BASIC.parameters.values.get("CN_modes")
                                     model: tmp
                                     SContextMenuItem {
-                                        width: 100
                                         text: modelData
                                         onPressed: {
                                             item.input.role = 4
@@ -552,7 +551,7 @@ Item {
                     SContextMenu {
                         y: 35
                         id: addContextMenu
-                        width: 100
+                        width: 110
                         SContextMenuItem {
                             text: "Image"
                             onPressed: {
@@ -576,13 +575,12 @@ Item {
                         }
                         SContextMenu {
                             title: "Control"
-                            width: 100
+                            width: 90
                             Repeater {
                                 id: controlRepeater
                                 property var tmp: BASIC.parameters.values.get("CN_modes")
                                 model: tmp
                                 SContextMenuItem {
-                                    width: 100
                                     text: modelData
                                     onPressed: {
                                         BASIC.addControl(modelData)
