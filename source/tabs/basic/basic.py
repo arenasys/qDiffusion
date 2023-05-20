@@ -580,7 +580,6 @@ class Basic(QObject):
 
         mapped_masks = {}
         mapped_areas = {}
-        mapped_controls = {}
 
         if self._inputs:
             for i in self._inputs:
@@ -602,13 +601,10 @@ class Basic(QObject):
                 if i._role == BasicInputRole.CONTROL:
                     if not i._image.isNull():
                         controls += [(i._mode, encode_image(i._image))]
-                        if i._linked:
-                            mapped_controls[i._linked] = controls[-1]
 
         if order:
             masks = []
             areas = []
-            controls = []
             
             for i in order:
                 if i in mapped_masks:
@@ -620,11 +616,6 @@ class Basic(QObject):
                     areas += [mapped_areas[i]]
                 elif mapped_areas:
                     areas += [[]]
-            
-                if i in controls:
-                    controls += [controls[i]]
-                elif mapped_controls:
-                    controls += [None]
 
         self._requests = []
         for i in range(self._remaining):
