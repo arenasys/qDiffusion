@@ -511,7 +511,7 @@ class Parameters(QObject):
         neg = self.parsePrompt(self._values._map['negative_prompt'], batch_size)
         return list(zip(pos, neg))
 
-    def buildRequest(self, images=[], offsets=[], masks=[], areas=[], control=[]):
+    def buildRequest(self, batch_size, images=[], offsets=[], masks=[], areas=[], control=[]):
         request = {}
         data = {}
 
@@ -519,8 +519,12 @@ class Parameters(QObject):
             if not k in self._client_only:
                 data[k] = v
 
-        batch_size = int(data['batch_size'])
-        batch_size = max(batch_size, len(images), len(masks), len(areas))
+        data['batch_size'] = int(batch_size)
+        
+        images = [images[i%len(images)] for i in range(batch_size)] if images else []
+        offsets = [offsets[i%len(offsets)] for i in range(batch_size)] if offsets else []
+        masks = [masks[i%len(masks)] for i in range(batch_size)] if masks else []
+        areas = [areas[i%len(areas)] for i in range(batch_size)] if areas else []
 
         data['prompt'] = self.buildPrompts(batch_size)
 

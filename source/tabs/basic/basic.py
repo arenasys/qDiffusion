@@ -14,6 +14,7 @@ from canvas.canvas import Canvas
 import sql
 import time
 import json
+import random
 
 def encode_image(img):
     ba = QByteArray()
@@ -602,6 +603,10 @@ class Basic(QObject):
                     if not i._image.isNull():
                         controls += [(i._mode, encode_image(i._image))]
 
+        batch_size = int(self._parameters._values.get("batch_size"))
+        batch_count = int(self._parameters._values.get("batch_count"))
+        total = max(len(order), batch_count * batch_size)
+
         if order:
             masks = []
             areas = []
@@ -617,19 +622,35 @@ class Basic(QObject):
                 elif mapped_areas:
                     areas += [[]]
 
+        def get_portion(data, start, amount):
+            if not data:
+                return []
+            out = []
+            for i in range(amount):
+                out += [data[(start+i)%len(data)]]
+            return out
+
         self._requests = []
-        for i in range(self._remaining):
-            self._requests += [self._parameters.buildRequest(images, offsets, masks, areas, controls)]
+        i = 0
+        while total > 0:
+            size = min(total, batch_size)
+            batch_images = get_portion(images, i, size)
+            batch_offsets = get_portion(offsets, i, size)
+            batch_masks = get_portion(masks, i, size)
+            batch_areas = get_portion(areas, i, size)
+            
+            i += batch_size
+            total -= batch_size
+            
+            self._requests += [self._parameters.buildRequest(size, batch_images, batch_offsets, batch_masks, batch_areas, controls)]
+        
+        self._remaining = len(self._requests)
+
         return self._requests[self._remaining-1]
 
     @pyqtSlot()
     def generate(self, user=True):
         if not self._ids:
-            if self._remaining == 0:
-                self._remaining = int(self._parameters._values.get("batch_count"))
-                self._requests = []
-            elif user:
-                self._requests = []
             request = self.buildRequest()
             self._ids += [self.gui.makeRequest(request)]
             self.updated.emit()
@@ -691,7 +712,7 @@ class Basic(QObject):
             for i in range(len(results)-1, -1, -1):
                 if not self._outputs[out]._ready:
                     self._outputs[out].setResult(results[i], metadata[i])
-                self._outputs[out].setArtifacts({k:v[i] for k,v in artifacts.items() if v[i]})
+                self._outputs[out].setArtifacts({k:v[i%len(v)] for k,v in artifacts.items() if v[i%len(v)]})
                 out += 1
             if sticky:
                 self.stick()
