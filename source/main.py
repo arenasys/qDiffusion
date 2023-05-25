@@ -9,7 +9,6 @@ import shutil
 import importlib
 import pkg_resources
 import json
-import select
 
 import platform
 IS_WIN = platform.system() == 'Windows'
@@ -127,20 +126,25 @@ class Installer(QThread):
         for p in self.packages:
             self.installing.emit(p)
             args = ["pip", "install", "-U", p]
-            if p[:5] == "torch":
+            pkg = p.split("=",1)[0]
+            if pkg in {"torch", "torchvision"}:
                 args += ["--index-url", "https://download.pytorch.org/whl/" + p.rsplit("+",1)[-1]]
             self.proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, shell=IS_WIN)
 
+            output = ""
             while self.proc.poll() == None:
                 while line := self.proc.stdout.readline():
                     if line:
-                        self.output.emit(line.strip())
+                        line = line.strip()
+                        output += line + "\n"
+                        self.output.emit(line)
                     if self.stopping:
                         return
             if self.stopping:
                 return
             if self.proc.returncode:
-                raise RuntimeError("Failed to install: ", p)
+                raise RuntimeError("Failed to install: ", p, "\n", output)
+            
             self.installed.emit(p)
         self.proc = None
 
@@ -173,8 +177,6 @@ class Coordinator(QObject):
         self._installing = ""
 
         self._modes = ["nvidia", "amd", "remote"]
-        if IS_WIN:
-            self._modes = ["nvidia", "remote"]
 
         self._mode = 0
         self.in_venv = "VIRTUAL_ENV" in os.environ
@@ -201,6 +203,7 @@ class Coordinator(QObject):
         self.torch_version = ""
         self.torchvision_version = ""
         self.xformers_version = ""
+        self.directml_version = ""
 
         try:
             self.torch_version = str(pkg_resources.get_distribution("torch"))
@@ -217,11 +220,17 @@ class Coordinator(QObject):
         except:
             pass
 
+        try:
+            self.directml_version = str(pkg_resources.get_distribution("torch-directml"))
+        except:
+            pass
+
         self.nvidia_torch_version = "2.0.0+cu117"
         self.nvidia_torchvision_version = "0.15.1+cu117"
 
         self.amd_torch_version = "2.0.0+rocm5.4.2"
         self.amd_torchvision_version = "0.15.1+rocm5.4.2"
+        self.amd_torch_directml_version = "0.2.0.dev230426"
 
         self.need_xformers_version = "0.0.18"
         
@@ -230,10 +239,7 @@ class Coordinator(QObject):
     
     @pyqtProperty(list, constant=True)
     def modes(self):
-        if IS_WIN:
-            return ["Nvidia", "Remote"]
-        else:
-            return ["Nvidia", "AMD", "Remote"]
+        return ["Nvidia", "AMD", "Remote"]
 
     @pyqtProperty(int, notify=updated)
     def mode(self):
@@ -276,10 +282,14 @@ class Coordinator(QObject):
                 needed += ["xformers=="+self.need_xformers_version]
             needed += self.optional_need
         if mode == "amd":
-            if not "+rocm" in self.torch_version:
-                needed += ["torch=="+self.amd_torch_version]
-            if not "+rocm" in self.torchvision_version:
-                needed += ["torchvision=="+self.amd_torchvision_version]
+            if IS_WIN:
+                if not self.directml_version:
+                    needed += ["torch-directml==" + self.amd_torch_directml_version]
+            else:
+                if not "+rocm" in self.torch_version:
+                    needed += ["torch=="+self.amd_torch_version]
+                if not "+rocm" in self.torchvision_version:
+                    needed += ["torchvision=="+self.amd_torchvision_version]
             needed += self.optional_need
 
         needed += self.required_need

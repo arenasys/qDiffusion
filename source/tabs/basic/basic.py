@@ -49,7 +49,11 @@ class BasicInput(QObject):
         self._dragging = False
         self._extent = QRect()
         self._extentWarning = False
-        self._mode = None
+        self._settings = parameters.VariantMap(self, {
+            "mode": "", "CN_preprocessors": [], "CN_preprocessor": "", "CN_bools": ["False", "True"],
+            "CN_bool": "False", "CN_bool_label": "", "CN_slider_a": 0.0, "CN_slider_a_label": "", "CN_slider_b": 0.0, "CN_slider_b_label": ""
+            })
+        self._settings.updated.connect(self.onSettingsUpdated)
         self._id = INPUT_ID
         INPUT_ID += 1
 
@@ -108,7 +112,7 @@ class BasicInput(QObject):
     def role(self, role):
         self._role = BasicInputRole(role)
         if self._role != BasicInputRole.CONTROL:
-            self._mode = None
+            self._settings.set("mode", "")
         self.updated.emit()
         self.parent().updated.emit()
 
@@ -189,22 +193,48 @@ class BasicInput(QObject):
     def extentWarning(self):
         return self._extentWarning
     
-    @pyqtProperty(str, notify=updated)
-    def mode(self):
-        if self._mode:
-            return self._mode
-        else:
-            return ""
-        
-    @mode.setter
-    def mode(self, mode):
-        self._mode = mode
-        if self._display:
-            self.annotate()
-        else:
-            self.setArtifacts({})
-        self.updated.emit()
-        self.parent().updated.emit()
+    @pyqtProperty(parameters.VariantMap, notify=updated)
+    def settings(self):
+        return self._settings
+    
+    @pyqtSlot(str)
+    def onSettingsUpdated(self, key):
+        if key == "mode":
+            value = self._settings.get("mode")
+
+            self._settings.set("CN_preprocessors", self.basic._parameters._values.get("CN_preprocessors"))
+            self._settings.set("CN_preprocessor", value)
+
+            if self._display:
+                self.annotate()
+            else:
+                self.setArtifacts({})
+            self.updated.emit()
+            self.parent().updated.emit()
+        if key == "CN_preprocessor":
+            value = self._settings.get("CN_preprocessor")
+            settings = {
+                "CN_bool_label": "", "CN_slider_a_label": "", "CN_slider_b_label": ""
+            }
+            if value == "Canny":
+                settings = {
+                    "CN_bool_label": "",
+                    "CN_slider_a": 0.4, "CN_slider_a_label": "Lower threshold",
+                    "CN_slider_b": 0.8, "CN_slider_b_label": "Upper threshold"
+                }
+            if value == "Mlsd":
+                settings = {
+                    "CN_bool_label": "",
+                    "CN_slider_a": 0.1, "CN_slider_a_label": "Score threshold",
+                    "CN_slider_b": 0.1, "CN_slider_b_label": "Distance threshold"
+                }
+            if value == "Pose":
+                settings = {
+                    "CN_bool": "False", "CN_bool_label": "Hands and Face",
+                    "CN_slider_a_label": "", "CN_slider_b_label": ""
+                }
+            for k,v in settings.items():
+                self._settings.set(k,v)
 
     @pyqtSlot()
     def annotate(self):
@@ -601,7 +631,7 @@ class Basic(QObject):
                             mapped_areas[i._linked] = areas[-1]
                 if i._role == BasicInputRole.CONTROL:
                     if not i._image.isNull():
-                        controls += [(i._mode, encode_image(i._image))]
+                        controls += [(i._settings.get("mode"), encode_image(i._image))]
 
         batch_size = int(self._parameters._values.get("batch_size"))
         batch_count = int(self._parameters._values.get("batch_count"))
@@ -638,7 +668,7 @@ class Basic(QObject):
             batch_offsets = get_portion(offsets, i, size)
             batch_masks = get_portion(masks, i, size)
             batch_areas = get_portion(areas, i, size)
-            
+
             i += batch_size
             total -= batch_size
             
@@ -792,7 +822,7 @@ class Basic(QObject):
     @pyqtSlot(str)
     def addControl(self, mode):
         i = BasicInput(self, QImage(), BasicInputRole.CONTROL)
-        i._mode = mode
+        i._settings.set("mode", mode)
         self._inputs += [i]
         self.updated.emit()
 
@@ -1244,7 +1274,7 @@ class Basic(QObject):
             target._areas = target._areas[:layerCount]
 
     def annotate(self, input):
-        request = self._parameters.buildAnnotateRequest(input._mode, encode_image(input._image))
+        request = self._parameters.buildAnnotateRequest(input._settings.get("mode"), encode_image(input._image))
         id = self.gui.makeRequest(request)
         self._annotations[id] = input._id
 

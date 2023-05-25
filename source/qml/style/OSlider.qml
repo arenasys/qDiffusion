@@ -22,8 +22,11 @@ Item {
     property var disabled: false
     property var overlay: root.disabled
 
+    property alias control: control
+
     property variant bindMap: null
     property var bindKey: null
+    property var bindKeyLabel: null
 
     signal selected()
     signal finished()
@@ -35,6 +38,9 @@ Item {
             if(v != root.value) {
                 root.value = v
             }
+            if(root.bindKeyLabel != null) {
+                root.label = root.bindMap.get(root.bindKeyLabel);
+            }
         }
     }
 
@@ -45,6 +51,10 @@ Item {
 
         if(root.defaultValue == null) {
             root.defaultValue = root.value;
+        }
+
+        if(root.bindKeyLabel != null) {
+            root.label = root.bindMap.get(root.bindKeyLabel);
         }
     }
 

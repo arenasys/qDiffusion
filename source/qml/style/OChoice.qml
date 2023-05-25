@@ -22,6 +22,7 @@ Item {
     property variant bindMap: null
     property var bindKeyCurrent: null
     property var bindKeyModel: null
+    property var bindKeyLabel: null
 
     property alias popupHeight: control.popupHeight
 
@@ -48,6 +49,9 @@ Item {
             } else {
                 root.currentIndex = root.model.indexOf(c);
             }
+            if(root.bindKeyLabel != null) {
+                root.label = root.bindMap.get(root.bindKeyLabel);
+            }
         }
     }
 
@@ -57,6 +61,10 @@ Item {
             var c = root.bindMap.get(root.bindKeyCurrent);
             root.model = m;
             root.currentIndex = m.indexOf(c);
+
+            if(root.bindKeyLabel != null) {
+                root.label = root.bindMap.get(root.bindKeyLabel);
+            }
         }
     }
 

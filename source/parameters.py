@@ -315,13 +315,13 @@ class Parameters(QObject):
         self._client_only = [
             "models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "SR", "LoRAs", "HNs", "LoRA", "HN", "TIs", "TI", "CN", "CNs", "hr_upscalers", "img2img_upscalers", 
             "attentions", "device", "devices", "batch_count", "prompt", "negative_prompt", "vram_usages", "artifact_modes", "preview_modes", "schedules",
-            "CN_modes", "vram_modes", "true_samplers", "schedule"
+            "CN_modes", "CN_preprocessors", "vram_modes", "true_samplers", "schedule"
         ]
         self._values = VariantMap(self, {
             "prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7, "strength": 0.75, "seed": -1, "eta": 1.0,
             "hr_factor": 1.0, "hr_strength":  0.7, "hr_sampler": "Euler a", "hr_steps": 25, "hr_eta": 1.0, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "subseed":-1, "subseed_strength": 0.0,
             "model":"", "models":[], "sampler":"Euler a", "samplers":[], "hr_upscaler":"Latent (nearest)", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
-            "UNET":"", "UNETs":"", "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[], "CN":"", "CNs":[], "CN_modes": [],
+            "UNET":"", "UNETs":"", "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[], "CN":"", "CNs":[], "CN_modes": [], "CN_preprocessors": [],
             "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "cn_strength":1.0, "schedule": "Default", "schedules": ["Default", "Karras"],
             "vram_mode": "Default", "vram_modes": ["Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"], "preview_mode": "Disabled",
             "preview_modes": ["Disabled", "Light", "Medium", "Full"], "preview_interval":1, "true_samplers": [], "true_sampler": "Euler a"
@@ -503,6 +503,7 @@ class Parameters(QObject):
                 if not m in modes and m in cn.rsplit(os.path.sep, 1)[-1]:
                     modes += [m.capitalize()]
         self._values.set("CN_modes", modes)
+        self._values.set("CN_preprocessors", ["None"] + modes)
         
         self.updated.emit()
 
@@ -520,11 +521,6 @@ class Parameters(QObject):
                 data[k] = v
 
         data['batch_size'] = int(batch_size)
-        
-        images = [images[i%len(images)] for i in range(batch_size)] if images else []
-        offsets = [offsets[i%len(offsets)] for i in range(batch_size)] if offsets else []
-        masks = [masks[i%len(masks)] for i in range(batch_size)] if masks else []
-        areas = [areas[i%len(areas)] for i in range(batch_size)] if areas else []
 
         data['prompt'] = self.buildPrompts(batch_size)
 

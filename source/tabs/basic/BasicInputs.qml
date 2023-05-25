@@ -53,8 +53,10 @@ Item {
                 anchors.margins: 9
                 anchors.leftMargin: 0
                 color: COMMON.bg00
+                clip: true
 
                 property var highlight: activeFocus || inputContextMenu.opened || inputFileDialog.visible || centerDrop.containsDrag
+                property var settings: false
                 
                 Item {
                     anchors.fill: parent
@@ -195,10 +197,11 @@ Item {
                             border.color: COMMON.bg3
                         }
 
-                        SText {
+                        OText {
                             id: modeLabel
                             visible: text != ""
-                            text: modelData.mode
+                            bindMap: modelData.settings
+                            bindKey: "mode"
                             anchors.top: roleLabel.bottom
                             anchors.topMargin: -1
                             anchors.left: parent.left
@@ -234,10 +237,21 @@ Item {
 
                         Rectangle {
                             anchors.bottom: parent.bottom
+                            anchors.left: parent.left
+                            width: 21
+                            height: 22
+                            visible: settingsButton.visible
+                            color: "#e0101010"
+                            border.width: 1
+                            border.color: COMMON.bg3
+                        }
+
+                        Rectangle {
+                            anchors.bottom: parent.bottom
                             anchors.right: parent.right
-                            width: 20
-                            height: 20
-                            visible: indexButton.visible
+                            width: 21
+                            height: 22
+                            visible: refreshButton.visible
                             color: "#e0101010"
                             border.width: 1
                             border.color: COMMON.bg3
@@ -344,7 +358,7 @@ Item {
                                         text: modelData
                                         onPressed: {
                                             item.input.role = 4
-                                            item.input.mode = modelData
+                                            item.input.settings.set("mode", modelData)
                                         }
                                     }
                                 }
@@ -353,8 +367,33 @@ Item {
                     }
                 }
 
+                Rectangle {
+                    visible: settingsArea.visible
+                    x: borderFrame.x + 1
+                    y: borderFrame.y + borderFrame.height - settingsArea.height
+                    width: borderFrame.width - 2
+                    height: settingsArea.height - 22
+                    color: "#e0101010"
+                }
+
                 SIconButton {
-                    id: indexButton
+                    id: settingsButton
+                    visible: modelData.role == 4
+                    color: "transparent"
+                    icon: "qrc:/icons/settings.svg"
+                    x: borderFrame.x + 1
+                    y: borderFrame.y + borderFrame.height - 20.5
+                    height: 20
+                    width: 20
+                    inset: 5
+
+                    onPressed: {
+                        parent.settings = !parent.settings
+                    }
+                }
+
+                SIconButton {
+                    id: refreshButton
                     visible: modelData.role == 4
                     color: "transparent"
                     icon: "qrc:/icons/refresh.svg"
@@ -401,6 +440,76 @@ Item {
                         border.color: COMMON.bg4
                         border.width: 1
                         color: COMMON.bg1
+                    }
+                }
+
+                Item {
+                    id: settingsArea
+                    visible: parent.settings && !modelData.empty && modelData.role == 4
+                    x: borderFrame.x + 20
+                    y: borderFrame.y + borderFrame.height - height
+                    width: borderFrame.width - 40
+                    height: settingsColumn.implicitHeight + 2 + Math.min(0, width - 170)*2
+                    
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.margins: 1
+                        color: COMMON.bg0
+                    }
+
+                    Column {
+                        id: settingsColumn
+                        anchors.fill: parent
+                        opacity: 0.85
+                        OChoice {
+                            label: "Preprocessor"
+                            width: parent.width
+                            height: 22
+
+                            bindMap: modelData.settings
+                            bindKeyCurrent: "CN_preprocessor"
+                            bindKeyModel: "CN_preprocessors"
+                        }
+                        OChoice {
+                            visible: label != ""
+                            width: parent.width
+                            height: visible ? 22 : 0
+
+                            bindMap: modelData.settings
+                            bindKeyCurrent: "CN_bool"
+                            bindKeyModel: "CN_bools"
+                            bindKeyLabel: "CN_bool_label"
+                        }
+                        OSlider {
+                            visible: label != ""
+                            width: parent.width
+                            height: visible ? 22 : 0
+
+                            bindMap: modelData.settings
+                            bindKey: "CN_slider_a"
+                            bindKeyLabel: "CN_slider_a_label"
+
+                            minValue: 0
+                            maxValue: 1
+                            precValue: 2
+                            incValue: 0.01
+                            snapValue: 0.05
+                        }
+                        OSlider {
+                            visible: label != ""
+                            width: parent.width
+                            height: visible ? 22 : 0
+
+                            bindMap: modelData.settings
+                            bindKey: "CN_slider_b"
+                            bindKeyLabel: "CN_slider_b_label"
+
+                            minValue: 0
+                            maxValue: 1
+                            precValue: 2
+                            incValue: 0.01
+                            snapValue: 0.05
+                        }
                     }
                 }
 
