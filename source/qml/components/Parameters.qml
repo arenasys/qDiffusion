@@ -577,6 +577,16 @@ Item {
                             }
                         }
                     }
+                    OChoice {
+                        label: "Mode"
+                        width: parent.width
+                        bottomPadded: true
+                        height: 23
+
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "network_mode"
+                        bindKeyModel: "network_modes"
+                    }
                 }
                 OColumn {
                     id: ipColumn

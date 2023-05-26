@@ -15,6 +15,7 @@ Item {
     property var disabled: false
     property var overlay: root.disabled
     property var padded: true
+    property var bottomPadded: false
 
     property alias control: control
     property alias delegate: control.delegate
@@ -93,7 +94,8 @@ Item {
         id: control
         anchors.fill: parent
         anchors.margins: root.padded ? 2 : 0
-        anchors.bottomMargin: 0
+        anchors.topMargin: root.padded ? (root.bottomPadded ? 0 : 2) : 0
+        anchors.bottomMargin: root.padded ? (root.bottomPadded ? 2 : 0) : 0
         focusPolicy: Qt.NoFocus
 
         property var popupHeight: 300
