@@ -10,3 +10,4 @@ models
 outputs
 source/sd-inference-server
 config.json
+fav.json

@@ -15,7 +15,7 @@ Item {
     property var label: ""
     property var cellSize: 150
     property var descLength: (cellSize*cellSize)/100
-    property var shift: false
+    property var showInfo: false
     property var search: ""
     MouseArea {
         anchors.fill: parent
@@ -35,7 +35,7 @@ Item {
     signal deselect(int index)
 
     SButton {
-        visible: modelsView.count == 0 && (GUI.remoteStatus == 0 || root.mode == "wildcard")
+        visible: modelsView.count == 0 && (GUI.remoteStatus == 0 || root.mode == "wildcard") && root.mode != "favourite"
         anchors.centerIn: root
         width: 150
         height: 27
@@ -125,6 +125,13 @@ Item {
 
                 property var fav: GUI.favourites.includes(sql_name)
 
+                Connections {
+                    target: root
+                    function onShowInfoChanged() {
+                        modelCard.showing = root.showInfo
+                    }
+                }
+
                 function setSelected(s) {
                     if(modelCard.selected != s) {
                         modelCard.selected = s
@@ -137,7 +144,7 @@ Item {
                         if(i != index) {
                             modelCard.setSelected(false)
                             modelCard.editing = false
-                            modelCard.showing = false
+                            modelCard.showing = root.showInfo
                             descText.text = Qt.binding(function() { return descText.processedText; })
                             labelTextEdit.text = GUI.modelFileName(sql_name)
                         }

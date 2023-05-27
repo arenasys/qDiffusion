@@ -300,6 +300,11 @@ Item {
             }
         } else {
             switch(event.key) {
+            case Qt.Key_Shift: 
+                if(!searchInput.activeFocus) {
+                    grid.showInfo = !grid.showInfo
+                }
+                break
             case Qt.Key_Escape:
                 if(searchInput.activeFocus) {
                     search.text = ""
