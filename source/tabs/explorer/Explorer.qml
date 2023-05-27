@@ -11,9 +11,7 @@ import "../../components"
 
 Item {
     id: root
-
-    property var label: "Favourites"
-    property var mode: "favourite"
+    
     property var folder: ""
 
     function releaseFocus() {
@@ -24,181 +22,174 @@ Item {
         anchors.fill: column
         color: COMMON.bg0
     }
-    Column {
+    Flickable {
         id: column
         width: 150
         height: parent.height
+        contentHeight: columnContent.height
+        contentWidth: width
+        boundsBehavior: Flickable.StopAtBounds
+        clip: true
+        interactive: false
 
-        SColumnButton {
-            property var mode: "favourite"
-            label: "Favourites"
-            active: root.mode == mode
-            onPressed: {
-                root.label = label
-                root.mode = mode
-                root.folder = ""
-            }
-        }
-        SubfolderList {
-            mode: "favourite"
-            label: "Favourites"
-            folder: root.folder
-            active: root.mode == mode
-            onPressed: {
-                root.label = label
-                root.mode = mode
-                root.folder = folder
-            }
+        ScrollBar.vertical: SScrollBarV {
+            id: scrollBar
         }
 
-        SColumnButton {
-            property var mode: "checkpoint"
-            label: "Checkpoints"
-            active: root.mode == mode
-            onPressed: {
-                root.label = label
-                root.mode = mode
-                root.folder = ""
+        Column {
+            id: columnContent
+            width: 150
+
+            SColumnButton {
+                property var mode: "favourite"
+                label: EXPLORER.getLabel(mode)
+                active: EXPLORER.currentTab == mode
+                onPressed: {
+                    EXPLORER.currentTab = mode
+                }
             }
-        }
-        SubfolderList {
-            mode: "checkpoint"
-            label: "Checkpoints"
-            folder: root.folder
-            active: root.mode == mode
-            onPressed: {
-                root.label = label
-                root.mode = mode
-                root.folder = folder
+
+            SColumnButton {
+                property var mode: "checkpoint"
+                label: EXPLORER.getLabel(mode)
+                active: EXPLORER.currentTab == mode
+                onPressed: {
+                    EXPLORER.currentTab = mode
+                }
             }
-        }
-        SColumnButton {
-            property var mode: "component"
-            label: "Components"
-            active: root.mode == mode
-            onPressed: {
-                root.label = label
-                root.mode = mode
-                root.folder = ""
+            SubfolderList {
+                mode: "checkpoint"
+                label: EXPLORER.getLabel(mode)
+                folder: grid.folder
+                active: EXPLORER.currentTab == mode
+                onPressed: {
+                    EXPLORER.currentTab = mode
+                    grid.folder = folder
+                }
             }
-        }
-        SubfolderList {
-            mode: "component"
-            label: "Components"
-            folder: root.folder
-            active: root.mode == mode
-            onPressed: {
-                root.label = label
-                root.mode = mode
-                root.folder = folder
+            SColumnButton {
+                property var mode: "component"
+                label: EXPLORER.getLabel(mode)
+                active: EXPLORER.currentTab == mode
+                onPressed: {
+                    EXPLORER.currentTab = mode
+                }
             }
-        }
-        SColumnButton {
-            property var mode: "lora"
-            label: "LoRAs"
-            active: root.mode == mode
-            onPressed: {
-                root.label = label
-                root.mode = mode
-                root.folder = ""
+            SubfolderList {
+                mode: "component"
+                label: EXPLORER.getLabel(mode)
+                folder: grid.folder
+                active: EXPLORER.currentTab == mode
+                onPressed: {
+                    EXPLORER.currentTab = mode
+                    grid.folder = folder
+                }
             }
-        }
-        SubfolderList {
-            mode: "lora"
-            label: "LoRAs"
-            folder: root.folder
-            active: root.mode == mode
-            onPressed: {
-                root.label = label
-                root.mode = mode
-                root.folder = folder
+            SColumnButton {
+                property var mode: "lora"
+                label: EXPLORER.getLabel(mode)
+                active: EXPLORER.currentTab == mode
+                onPressed: {
+                    EXPLORER.currentTab = mode
+                }
             }
-        }
-        SColumnButton {
-            property var mode: "hypernet"
-            label: "Hypernets"
-            active: root.mode == mode
-            onPressed: {
-                root.label = label
-                root.mode = mode
-                root.folder = ""
+            SubfolderList {
+                mode: "lora"
+                label: EXPLORER.getLabel(mode)
+                folder: grid.folder
+                active: EXPLORER.currentTab == mode
+                onPressed: {
+                    EXPLORER.currentTab = mode
+                    grid.folder = folder
+                }
             }
-        }
-        SubfolderList {
-            mode: "hypernet"
-            label: "Hypernets"
-            folder: root.folder
-            active: root.mode == mode
-            onPressed: {
-                root.label = label
-                root.mode = mode
-                root.folder = folder
+            SColumnButton {
+                property var mode: "hypernet"
+                label: EXPLORER.getLabel(mode)
+                active: EXPLORER.currentTab == mode
+                onPressed: {
+                    EXPLORER.currentTab = mode
+                }
             }
-        }
-        SColumnButton {
-            property var mode: "embedding"
-            label: "Embeddings"
-            active: root.mode == mode
-            onPressed: {
-                root.label = label
-                root.mode = mode
-                root.folder = ""
+            SubfolderList {
+                mode: "hypernet"
+                label: EXPLORER.getLabel(mode)
+                folder: grid.folder
+                active: EXPLORER.currentTab == mode
+                onPressed: {
+                    EXPLORER.currentTab = mode
+                    grid.folder = folder
+                }
             }
-        }
-        SubfolderList {
-            mode: "embedding"
-            label: "Embeddings"
-            folder: root.folder
-            active: root.mode == mode
-            onPressed: {
-                root.label = label
-                root.mode = mode
-                root.folder = folder
+            SColumnButton {
+                property var mode: "embedding"
+                label: EXPLORER.getLabel(mode)
+                active: EXPLORER.currentTab == mode
+                onPressed: {
+                    EXPLORER.currentTab = mode
+                }
             }
-        }
-        SColumnButton {
-            property var mode: "upscaler"
-            label: "Upscalers"
-            active: root.mode == mode
-            onPressed: {
-                root.label = label
-                root.mode = mode
-                root.folder = ""
+            SubfolderList {
+                mode: "embedding"
+                label: EXPLORER.getLabel(mode)
+                folder: grid.folder
+                active: EXPLORER.currentTab == mode
+                onPressed: {
+                    EXPLORER.currentTab = mode
+                    grid.folder = folder
+                }
             }
-        }
-        SubfolderList {
-            mode: "upscaler"
-            label: "Upscalers"
-            folder: root.folder
-            active: root.mode == mode
-            onPressed: {
-                root.label = label
-                root.mode = mode
-                root.folder = folder
+            SColumnButton {
+                property var mode: "upscaler"
+                label: EXPLORER.getLabel(mode)
+                active: EXPLORER.currentTab == mode
+                onPressed: {
+                    EXPLORER.currentTab = mode
+                }
             }
-        }
-        SColumnButton {
-            property var mode: "wildcard"
-            label: "Wildcards"
-            active: root.mode == mode
-            onPressed: {
-                root.label = label
-                root.mode = mode
-                root.folder = ""
+            SubfolderList {
+                mode: "upscaler"
+                label: EXPLORER.getLabel(mode)
+                folder: grid.folder
+                active: EXPLORER.currentTab == mode
+                onPressed: {
+                    EXPLORER.currentTab = mode
+                    grid.folder = folder
+                }
             }
-        }
-        SubfolderList {
-            mode: "wildcard"
-            label: "Wildcards"
-            folder: root.folder
-            active: root.mode == mode
-            onPressed: {
-                root.label = label
-                root.mode = mode
-                root.folder = folder
+            SColumnButton {
+                property var mode: "wildcard"
+                label: EXPLORER.getLabel(mode)
+                active: EXPLORER.currentTab == mode
+                onPressed: {
+                    EXPLORER.currentTab = mode
+                }
+            }
+            SubfolderList {
+                mode: "wildcard"
+                label: EXPLORER.getLabel(mode)
+                folder: grid.folder
+                active: EXPLORER.currentTab == mode
+                onPressed: {
+                    EXPLORER.currentTab = mode
+                    grid.folder = folder
+                }
             }
         }
     }
+
+    MouseArea {
+        anchors.fill: column
+        acceptedButtons: Qt.NoButton
+        onWheel: {
+            if(wheel.angleDelta.y < 0) {
+                scrollBar.increase()
+            } else {
+                scrollBar.decrease()
+            }
+        }
+    }
+
     Rectangle {
         id: divider
         anchors.top: column.top
@@ -272,10 +263,14 @@ Item {
             ModelGrid {
                 id: grid
                 anchors.fill: parent
-                label: root.label
-                mode: root.mode
-                folder: root.folder
+                mode: EXPLORER.currentTab
+                label: EXPLORER.getLabel(mode)
+                folder: ""
                 search: search.text
+
+                onModeChanged: {
+                    folder = ""
+                }
             }
         }
     }

@@ -27,6 +27,17 @@ from parameters import VariantMap
 
 NAME = "qDiffusion"
 
+MODE_FOLDERS = {
+    "checkpoint": ["SD", "Stable-diffusion"],
+    "component": ["SD", "Stable-diffusion", "VAE"],
+    "upscale": ["SR", "ESRGAN", "RealESRGAN"], 
+    "embedding": ["TI", "embeddings", os.path.join("..", "embeddings")], 
+    "lora": ["LoRA"], 
+    "hypernet": ["HN", "hypernetworks"],
+    "wildcard": ["WILDCARD"],
+    "controlnet": ["CN"]
+}
+
 class StatusMode(Enum):
     STARTING = 0
     IDLE = 1
@@ -509,16 +520,6 @@ class GUI(QObject):
     
     @pyqtSlot(str)
     def openModelFolder(self, mode):
-        MODE_FOLDERS = {
-            "checkpoint": ["SD", "Stable-diffusion", "VAE"],
-            "component": ["SD", "Stable-diffusion", "VAE"],
-            "upscale": ["SR", "ESRGAN", "RealESRGAN"], 
-            "embedding": ["TI", "embeddings", os.path.join("..", "embeddings")], 
-            "lora": ["LoRA"], 
-            "hypernet": ["HN", "hypernetworks"],
-            "wildcard": ["WILDCARD"],
-            "controlnet": ["CN"]
-        }
         dir = self.modelDirectory()
         found = None
         for f in MODE_FOLDERS[mode]:
@@ -583,3 +584,22 @@ class GUI(QObject):
                         json.dump(data, f)
                 except Exception:
                     pass
+
+    @pyqtSlot(str, str)
+    def importModel(self, mode, file):
+        old = QUrl(file).toLocalFile()
+
+        base = self.modelDirectory()
+        folder = None
+        for f in MODE_FOLDERS[mode]:
+            tmp = os.path.join(base, f)
+            if os.path.exists(tmp):
+                folder = tmp
+
+        if not folder:
+            folder = os.path.join(base, MODE_FOLDERS[mode][0])
+
+        new = os.path.abspath(os.path.join(folder, old.rsplit(os.path.sep,1)[-1]))
+
+        request = {"type":"manage", "data": {"operation": "move", "old_file": old, "new_file": new}}
+        self.makeRequest(request)

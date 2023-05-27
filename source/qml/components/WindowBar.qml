@@ -1,5 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
+import Qt.labs.platform 1.1
 
 import gui 1.0
 
@@ -13,20 +14,35 @@ SMenuBar {
         SMenu {
             title: "Import"
             Repeater {
-                property var tmp: ["Checkpoints", "Components", "LoRAs", "Hypernets", "Embeddings", "Upscalers"]
+                property var tmp: ["Checkpoint", "Component", "LoRA", "Hypernet", "Embedding", "Upscaler"]
                 model: tmp
                 SMenuItem {
                     text: modelData
+
+                    onPressed: {
+                        importFileDialog.mode = EXPLORER.getMode(modelData+"s")
+                        importFileDialog.open()
+                    }
                 }
             }
-        }
-        SMenu {
-            title: "Visit"
-            Repeater {
-                property var tmp: ["Checkpoints", "Components", "LoRAs", "Hypernets", "Embeddings", "Upscalers"]
-                model: tmp
-                SMenuItem {
-                    text: modelData
+
+            FileDialog {
+                id: importFileDialog
+                nameFilters: ["Model file (*.pt *.pth *.ckpt *.bin *.safetensors *.st)"]
+                property var mode: ""
+
+                onAccepted: {
+                    
+                    if(GUI.remoteStatus != 0) {
+                        GUI.currentTab = "Settings"
+                        SETTINGS.currentTab = "Remote"
+                        SETTINGS.currentUpload = file
+                        SETTINGS.setUploadMode(mode)
+                    } else {
+                        GUI.currentTab = "Models"
+                        EXPLORER.currentTab = mode
+                        GUI.importModel(mode, file)
+                    }
                 }
             }
         }

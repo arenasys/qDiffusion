@@ -89,7 +89,6 @@ Item {
             height: 30
         }
 
-
         Item {
             width: parent.width
             height: 30
@@ -154,6 +153,17 @@ Item {
                 label: ""
                 placeholder: "File"
                 disabled: !root.show
+            }
+
+            Connections {
+                target: SETTINGS
+                function onCurrentUploadChanged() {
+                    uploadFileInput.value = SETTINGS.currentUpload
+                }
+
+                function onCurrentUploadModeChanged() {
+                    uploadTypeInput.currentIndex = SETTINGS.currentUploadMode
+                }
             }
 
             SIconButton {

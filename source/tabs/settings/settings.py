@@ -24,6 +24,8 @@ class Settings(QObject):
         self.name = "Settings"
         self.gui = parent
         self._currentTab = "Remote"
+        self._currentUpload = ""
+        self._currentUploadMode = 0
 
         self._log = ""
 
@@ -46,6 +48,37 @@ class Settings(QObject):
     def currentTab(self, tab):
         self._currentTab = tab
         self.updated.emit()
+
+    @pyqtProperty(str, notify=updated)
+    def currentUpload(self): 
+        return self._currentUpload
+    
+    @currentUpload.setter
+    def currentUpload(self, file):
+        self._currentUpload = QUrl(file).toLocalFile()
+        self.updated.emit()
+
+    @pyqtProperty(int, notify=updated)
+    def currentUploadMode(self): 
+        return self._currentUploadMode
+    
+    @currentUploadMode.setter
+    def currentUploadMode(self, mode):
+        self._currentUploadMode = mode
+        self.updated.emit()
+
+    @pyqtSlot(str)
+    def setUploadMode(self, mode):
+        idx = {
+            "checkpoint": 0,
+            "component": 0,
+            "lora": 1,
+            "hypernet": 2,
+            "embedding": 3,
+            "upscale": 4,
+            "controlnet": 6
+        }[mode]
+        self.currentUploadMode = idx
 
     @pyqtProperty(str, notify=updated)
     def log(self):

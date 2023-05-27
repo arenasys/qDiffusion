@@ -147,7 +147,7 @@ Item {
         anchors.topMargin: root.padded ? (root.bottomPadded ? 0 : 2) : 0
         anchors.bottomMargin: root.padded ? (root.bottomPadded ? 2 : 0) : 0
         focusPolicy: Qt.NoFocus
-        currentIndex: -1
+        currentIndex: 0
 
         property var popupHeight: 300
 

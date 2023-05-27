@@ -12,6 +12,18 @@ import shutil
 import time
 import json
 
+LABELS =  {
+    "favourite": "Favourites",
+    "checkpoint": "Checkpoints",
+    "component": "Components",
+    "lora": "LoRAs",
+    "hypernet": "Hypernets",
+    "embedding": "Embeddings",
+    "upscaler": "Upscalers",
+    "wildcard": "Wildcards"
+}
+MODES = {v:k for k,v in LABELS.items()}
+
 class Populater(QObject):
     finished = pyqtSignal()
     def __init__(self, gui, name):
@@ -185,6 +197,7 @@ class Populater(QObject):
 
 class Explorer(QObject):
     updated = pyqtSignal()
+    tabUpdated = pyqtSignal()
     updateOptions = pyqtSignal()
     updateFavourites = pyqtSignal()
     def __init__(self, parent=None):
@@ -213,6 +226,25 @@ class Explorer(QObject):
         self.conn.connect()
         self.conn.doQuery("CREATE TABLE models(name TEXT, category TEXT, type TEXT, file TEXT, folder TEXT, desc TEXT, idx INTEGER, width INTEGER, height INTEGER, CONSTRAINT unq UNIQUE (category, idx));")
     
+        self._currentTab = "favourite"
+
+    @pyqtProperty(str, notify=tabUpdated)
+    def currentTab(self): 
+        return self._currentTab
+    
+    @currentTab.setter
+    def currentTab(self, tab):
+        self._currentTab = tab
+        self.tabUpdated.emit()
+
+    @pyqtSlot(str, result=str)
+    def getLabel(self, mode):
+        return LABELS[mode]
+    
+    @pyqtSlot(str, result=str)
+    def getMode(self, label):
+        return MODES[label]
+
     @pyqtSlot()
     def stop(self):
         self.populaterThread.quit()
