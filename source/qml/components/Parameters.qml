@@ -354,6 +354,8 @@ Item {
                             return GUI.modelName(text)
                         }
 
+                        filter: true
+
                         onSelected: {
                             root.binding.values.set("VAE", value)
                             root.binding.values.set("UNET", value)
@@ -507,7 +509,15 @@ Item {
                                     anchors.topMargin: -1
                                     padded: false
                                     label: ""
-                                    model: root.binding.availableNetworks
+
+                                    model: GUI.filterFavourites(root.binding.availableNetworks)
+
+                                    Connections {
+                                        target: GUI
+                                        function onFavUpdated() {
+                                            netChoice.model = GUI.filterFavourites(root.binding.availableNetworks)
+                                        }
+                                    }
 
                                     function decoration(text) {
                                         return GUI.netType(text)

@@ -207,6 +207,7 @@ class VariantMap(QObject):
             self.updating.emit(key, self._map[key], value)
         else:
             self.updating.emit(key, QVariant(), value)
+
         self._map[key] = value
         self.updated.emit(key)
 
@@ -320,8 +321,8 @@ class Parameters(QObject):
         self._values = VariantMap(self, {
             "prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7, "strength": 0.75, "seed": -1, "eta": 1.0,
             "hr_factor": 1.0, "hr_strength":  0.7, "hr_sampler": "Euler a", "hr_steps": 25, "hr_eta": 1.0, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "subseed":-1, "subseed_strength": 0.0,
-            "model":"", "models":[], "sampler":"Euler a", "samplers":[], "hr_upscaler":"Latent (nearest)", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
-            "UNET":"", "UNETs":"", "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[], "CN":"", "CNs":[], "CN_modes": [], "CN_preprocessors": [],
+            "sampler":"Euler a", "samplers":[], "hr_upscaler":"Latent (nearest)", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
+            "model":"", "models":[], "UNET":"", "UNETs":"", "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[], "CN":"", "CNs":[], "CN_modes": [], "CN_preprocessors": [],
             "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "cn_strength":1.0, "schedule": "Default", "schedules": ["Default", "Karras"],
             "vram_mode": "Default", "vram_modes": ["Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"], "preview_mode": "Disabled",
             "preview_modes": ["Disabled", "Light", "Medium", "Full"], "preview_interval":1, "true_samplers": [], "true_sampler": "Euler a",
@@ -439,7 +440,10 @@ class Parameters(QObject):
         for k in self.gui._options:
             kk = k + "s"
             if kk in self._values._map:
-                self._values.set(kk, self.gui._options[k])
+                opts = self.gui._options[k]
+                if k in {"UNET", "CLIP", "VAE", "SR", "LoRA", "HN", "TI"}:
+                    opts = sorted(opts, key=lambda m: self.gui.modelName(m.lower()))
+                self._values.set(kk, opts)
             if not self._values.get(k) or not self._values.get(k) in self.gui._options[k]:
                 if self.gui._options[k]:
                     self._values.set(k, self.gui._options[k][0])
@@ -450,8 +454,6 @@ class Parameters(QObject):
             if k in self.gui._options["CLIP"] and k in self.gui._options["VAE"]:
                 models += [k]
         self._values.set("models", models)
-        if models and (not self._values.get("model") or not self._values.get("model") in models):
-            self._values.set("model", models[0])
 
         unets = self._values.get("UNETs")
         unets = [u for u in unets if not u in models] + [u for u in unets if u in models]
@@ -464,6 +466,13 @@ class Parameters(QObject):
         clips = self._values.get("CLIPs")
         clips = [c for c in clips if not c in models] + [c for c in clips if c in models]
         self._values.set("CLIPs", clips)
+
+        if models and (not self._values.get("model") or not self._values.get("model") in models):
+            model = self.gui.filterFavourites(models)[0]
+            self._values.set("model", model)
+            self._values.set("UNET", model)
+            self._values.set("VAE", model)
+            self._values.set("CLIP", model)
 
         self._availableNetworks = self._values.get("LoRAs") + self._values.get("HNs")
         self._activeNetworks = [n for n in self._activeNetworks if n in self._availableNetworks]
@@ -580,7 +589,7 @@ class Parameters(QObject):
             del data["subseed"]
         del data["subseed_strength"]
 
-        data["device_name"] = self._values._map["device"]
+        data["device_name"] = self._values.get("device")
 
         if control:
             images = [i for m,i in control]
@@ -789,6 +798,14 @@ class Parameters(QObject):
         for model in [self._values.get(m) for m in ["UNET", "VAE", "CLIP"]]:
             if model and "." in model and not model in self._active:
                 self._active += [model]
+        
+        hr = self._values.get("hr_upscaler")
+        img = self._values.get("img2img_upscaler")
+        sr = self._values.get("SRs")
+        if hr in sr:
+            self._active += [hr]
+        if img in sr:
+            self._active += [img]
 
     @pyqtSlot(str)
     def doActivate(self, file):
@@ -817,6 +834,10 @@ class Parameters(QObject):
             else:
                 append(name)
 
+        if file in self._values.get("SRs"):
+            self._values.set("hr_upscaler", file)
+            self._values.set("img2img_upscaler", file)
+
         if file.startswith("WILDCARD") and name in self.gui.wildcards._wildcards:
             append(f"__{name}__")
         
@@ -843,6 +864,10 @@ class Parameters(QObject):
 
         if file in self._values.get("TIs"):
             remove(fr"{name}")
+
+        if file in self._values.get("SRs"):
+            self._values.set("hr_upscaler", "Latent (nearest)")
+            self._values.set("img2img_upscaler", "Lanczos")
 
         if file.startswith("WILDCARD") and name in self.gui.wildcards._wildcards:
             remove(fr"__{name}__")

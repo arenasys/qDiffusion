@@ -10,9 +10,3 @@ class Editor(QObject):
         self.priority = 4
         self.hidden = True
         self.name = "Editor"
-        self._parameters = parameters.Parameters(parent)
-        qmlRegisterSingletonType(Editor, "gui", 1, 0, "EDITOR", lambda qml, js: self)
-
-    @pyqtProperty(parameters.Parameters, notify=updated)
-    def parameters(self):
-        return self._parameters

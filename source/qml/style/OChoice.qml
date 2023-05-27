@@ -10,8 +10,13 @@ Item {
     property var tooltip: ""
     property alias model: control.model
     property var mini: height == 20
-    property var value: control.model.length == 0 ? "" : control.model[control.currentIndex]
+    property var value: control.currentIndex == -1 ? overloadValue : (control.model.length == 0 ? "" : control.model[control.currentIndex])
     property alias currentIndex: control.currentIndex
+
+    property var filter: false
+
+    property var overloadValue: ""
+
     property var disabled: false
     property var overlay: root.disabled
     property var padded: true
@@ -35,33 +40,76 @@ Item {
         return text
     }
 
+    function filterModel(model) {
+        if(!root.filter) {
+            return model
+        }
+
+        if(model) {
+            return GUI.filterFavourites(model)
+        } else {
+            return []
+        }
+    }
+
+    function setCurrent(c, m, all_m) {
+        var i = root.model.indexOf(c);
+
+        if(i == -1 && all_m.includes(c)) {
+            root.overloadValue = c
+        } else {
+            root.overloadValue = ""
+        }
+
+        root.currentIndex = i
+    }
+
+    function update() {
+        var all_m = root.bindMap.get(root.bindKeyModel);
+        var m = filterModel(all_m);
+        var c = root.bindMap.get(root.bindKeyCurrent);
+
+        if(m != root.model) {
+            var diff = (m == null || root.model == null || root.model.length != m.length)
+            root.model = m;
+
+            root.setCurrent(c, m, all_m);
+
+            if(diff) {
+                root.optionsChanged()
+            }
+        } else {
+            root.setCurrent(c, m, all_m);
+        }
+        if(root.bindKeyLabel != null) {
+            root.label = root.bindMap.get(root.bindKeyLabel);
+        }
+    }
+
     Connections {
         target: bindMap
         function onUpdated() {
-            var m = root.bindMap.get(root.bindKeyModel);
-            var c = root.bindMap.get(root.bindKeyCurrent);
-            if(m != root.model) {
-                var diff = (m == null || root.model == null || root.model.length != m.length)
-                root.model = m;
-                root.currentIndex = root.model.indexOf(c);
-                if(diff) {
-                    root.optionsChanged()
-                }
-            } else {
-                root.currentIndex = root.model.indexOf(c);
-            }
-            if(root.bindKeyLabel != null) {
-                root.label = root.bindMap.get(root.bindKeyLabel);
+            root.update()
+        }
+    }
+
+    Connections {
+        target: GUI
+        function onFavUpdated() {
+            if(root.filter) {
+                root.update()
             }
         }
     }
 
     Component.onCompleted: {
         if(root.bindMap != null && root.bindKeyCurrent != null && root.bindKeyModel != null) {
-            var m = root.bindMap.get(root.bindKeyModel);
+            var all_m = root.bindMap.get(root.bindKeyModel);
+            var m = filterModel(all_m)
             var c = root.bindMap.get(root.bindKeyCurrent);
             root.model = m;
-            root.currentIndex = m.indexOf(c);
+
+            root.setCurrent(c, m, all_m);
 
             if(root.bindKeyLabel != null) {
                 root.label = root.bindMap.get(root.bindKeyLabel);
@@ -69,10 +117,12 @@ Item {
         }
     }
 
-    onCurrentIndexChanged: {
-        if(root.bindMap != null && root.bindKeyCurrent != null && root.bindKeyModel != null) {
-            var m = root.bindMap.get(root.bindKeyModel);
-            root.bindMap.set(root.bindKeyCurrent, m[root.currentIndex]);
+    onSelected: {
+        if(root.bindMap != null && root.bindKeyCurrent != null && root.bindKeyModel != null && root.value != "") {
+            var all_m = root.bindMap.get(root.bindKeyModel);
+            if(all_m.includes(root.value)) {
+                root.bindMap.set(root.bindKeyCurrent, root.value);
+            }
         }
     }
 
@@ -97,6 +147,7 @@ Item {
         anchors.topMargin: root.padded ? (root.bottomPadded ? 0 : 2) : 0
         anchors.bottomMargin: root.padded ? (root.bottomPadded ? 2 : 0) : 0
         focusPolicy: Qt.NoFocus
+        currentIndex: -1
 
         property var popupHeight: 300
 
@@ -205,7 +256,7 @@ Item {
                 leftPadding: 5
                 rightPadding: 7
 
-                text: root.display(control.displayText)
+                text: root.display(root.value)
                 font.pointSize: root.mini ? 7.7 : COMMON.pointValue
                 color: COMMON.fg0
                 horizontalAlignment: Text.AlignRight

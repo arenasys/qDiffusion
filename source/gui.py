@@ -48,6 +48,7 @@ class GUI(QObject):
     errorUpdated = pyqtSignal()
     optionsUpdated = pyqtSignal()
     tabUpdated = pyqtSignal()
+    favUpdated = pyqtSignal()
     result = pyqtSignal(int, str)
     response = pyqtSignal(int, object)
     aboutToQuit = pyqtSignal()
@@ -82,6 +83,9 @@ class GUI(QObject):
 
         self.wildcards = wildcards.Wildcards(self)
         self.wildcards.reload()
+
+        self._favourites = None
+        self.syncFavourites()
 
         self.backend = backend.Backend(self)
         self.backend.response.connect(self.onResponse)
@@ -537,4 +541,45 @@ class GUI(QObject):
             QDesktopServices.openUrl(QUrl.fromUserInput(link))
         except Exception:
             pass
-        
+    
+    @pyqtProperty(list, notify=favUpdated)
+    def favourites(self):
+        return self._favourites
+
+    @pyqtSlot(str)
+    def toggleFavourite(self, value):
+        if value in self._favourites:
+            self._favourites.remove(value)
+        else:
+            self._favourites.append(value)
+        self.favUpdated.emit()
+        self.syncFavourites()
+
+    @pyqtSlot(list, result=list)
+    def filterFavourites(self, model):
+        filtered = [m for m in model if m in self._favourites]
+        if not filtered:
+            return model
+        return filtered
+
+    @pyqtSlot()
+    def syncFavourites(self):
+        if self._favourites == None:
+            data = []
+            try:
+                with open("fav.json", 'r', encoding="utf-8") as f:
+                    data = json.load(f)
+            except Exception:
+                pass
+            self._favourites = data
+        else:
+            if self._favourites == []:
+                if os.path.exists("fav.json"):
+                    os.remove("fav.json")
+            else:
+                data = list(self._favourites)
+                try:
+                    with open("fav.json", 'w', encoding="utf-8") as f:
+                        json.dump(data, f)
+                except Exception:
+                    pass

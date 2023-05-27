@@ -21,22 +21,38 @@ class Populater(QObject):
         self.conn = None
 
     @pyqtSlot()
-    def start(self):
+    def populateOptions(self):
         self.gui.setTabWorking(self.name, True)
+
         self.conn = sql.Connection(self)
         self.conn.connect()
         self.conn.enableNotifications("models")
+
         self.optionsUpdated()
+        self.favouritesUpdated()
+
         self.gui.setTabWorking(self.name, False)
         self.finished.emit()
+
+    @pyqtSlot()
+    def populateFavourites(self):
+        self.gui.setTabWorking(self.name, True)
+        
+        self.conn = sql.Connection(self)
+        self.conn.connect()
+        self.conn.enableNotifications("models")
+
+        self.favouritesUpdated()
+        
+        self.gui.setTabWorking(self.name, False)
     
-    def setModel(self, name, category, type, idx):
+    def setModel(self, name, category, type, idx, allow_folder = True):
         q = QSqlQuery(self.conn.db)
 
         file =  os.path.abspath(os.path.join(self.gui.modelDirectory(), name.rsplit(".",1)[0]))
         folder = ""
         parts = re.split(r'/|\\', name)
-        if len(parts) > 2:
+        if len(parts) > 2 and allow_folder:
             folder = parts[1]
 
         if os.path.exists(file + ".preview.png"):
@@ -114,13 +130,63 @@ class Populater(QObject):
             self.setModel(name, "embedding", "", idx)
         self.finishCategory("embedding", len(o["TI"]))
 
+        for idx, name in enumerate(o["SR"]):
+            self.setModel(name, "upscaler", "", idx)
+        self.finishCategory("upscaler", len(o["SR"]))
+
         for idx, name in enumerate(wildcards):
             self.setModel(os.path.join("WILDCARD", name + ".txt"), "wildcard", "", idx)
         self.finishCategory("wildcard", len(wildcards))
 
+    def favouritesUpdated(self):
+        o = self.gui._options.copy()
+        f = self.gui._favourites
+
+        for k in list(o.keys()):
+            if type(o[k]) == list:
+                o[k] = [a for a in o[k] if a in f]
+
+        wildcards = [os.path.join("WILDCARD", name + ".txt") for name in self.gui.wildcards._wildcards]
+        wildcards = [a for a in wildcards if a in f]
+        checkpoints = [a for a in o["UNET"] if a in o["VAE"] and a in o["CLIP"]]
+
+        idx = 0
+
+        for name in checkpoints:
+            self.setModel(name, "favourite", "Checkpoint", idx, False)
+            idx += 1
+
+        for name in [a for a in o["VAE"] if not a in checkpoints]:
+            self.setModel(name, "favourite", "VAE", idx, False)
+            idx += 1
+
+        for name in o["LoRA"]:
+            self.setModel(name, "favourite", "LoRA", idx, False)
+            idx += 1
+        
+        for name in o["HN"]:
+            self.setModel(name, "favourite", "Hypenet", idx, False)
+            idx += 1
+
+        for name in o["TI"]:
+            self.setModel(name, "favourite", "Embedding", idx, False)
+            idx += 1
+
+        for name in o["SR"]:
+            self.setModel(name, "favourite", "Upscaler", idx, False)
+            idx += 1
+
+        for name in wildcards:
+            self.setModel(name, "favourite", "Wildcard", idx, False)
+            idx += 1
+
+        self.finishCategory("favourite", idx)
+
+
 class Explorer(QObject):
     updated = pyqtSignal()
-    start = pyqtSignal()
+    updateOptions = pyqtSignal()
+    updateFavourites = pyqtSignal()
     def __init__(self, parent=None):
         super().__init__(parent)
         self.gui = parent
@@ -130,7 +196,8 @@ class Explorer(QObject):
         self.populater = Populater(self.gui, self.name)
         self.populaterThread = QThread()
         self.populater.moveToThread(self.populaterThread)
-        self.start.connect(self.populater.start)
+        self.updateOptions.connect(self.populater.populateOptions)
+        self.updateFavourites.connect(self.populater.populateFavourites)
         self.populater.finished.connect(self.finished)
         self.populaterThread.start()
         self.optionsRunning = False
@@ -139,6 +206,7 @@ class Explorer(QObject):
         qmlRegisterSingletonType(Explorer, "gui", 1, 0, "EXPLORER", lambda qml, js: self)
 
         self.gui.optionsUpdated.connect(self.optionsUpdated)
+        self.gui.favUpdated.connect(self.favouritesUpdated)
         self.gui.aboutToQuit.connect(self.stop)
 
         self.conn = sql.Connection(self)
@@ -156,7 +224,11 @@ class Explorer(QObject):
             self.optionsOutdated = True
             return
         self.optionsRunning = True
-        self.start.emit()
+        self.updateOptions.emit()
+
+    @pyqtSlot()
+    def favouritesUpdated(self):
+        self.updateFavourites.emit()
 
     @pyqtSlot()
     def finished(self):

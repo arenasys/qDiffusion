@@ -70,6 +70,7 @@ Item {
             id: modelsSql
             query: "SELECT name, type, desc, file, width, height FROM models WHERE category = '" + root.mode + "' AND folder = '" + root.folder + "' AND name LIKE '%" + root.search +"%' ORDER BY idx ASC;"
             property bool reset: false
+            debug: root.mode == 'favourite'
             function refresh() {
                 modelsView.positionViewAtBeginning()
             }
@@ -121,6 +122,8 @@ Item {
 
                 property var info: modelCard.showing || sql_width == 0 || modelCard.editing
                 property var desc: (sql_desc != "" && modelCard.showing) || (sql_desc != "" && sql_width == 0) || modelCard.editing
+
+                property var fav: GUI.favourites.includes(sql_name)
 
                 function setSelected(s) {
                     if(modelCard.selected != s) {
@@ -304,6 +307,8 @@ Item {
                     SText {
                         id: typeText
                         anchors.fill: parent
+                        anchors.leftMargin: 21
+                        anchors.rightMargin: (sql_desc != "" && sql_width != 0) ? 21 : 3
                         text: sql_type
                         verticalAlignment: Text.AlignVCenter
                         horizontalAlignment: Text.AlignHCenter
@@ -544,7 +549,10 @@ Item {
                     anchors.margins: 2
                     smooth: false
                     inset: 0
-                    icon: "qrc:/icons/star-outline-big.svg"
+                    icon: modelCard.fav ? "qrc:/icons/star.svg" : "qrc:/icons/star-outline-big.svg"
+                    onPressed: {
+                        GUI.toggleFavourite(sql_name)
+                    }
                 }
             }
 

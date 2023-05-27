@@ -12,8 +12,8 @@ import "../../components"
 Item {
     id: root
 
-    property var label: "Checkpoints"
-    property var mode: "checkpoint"
+    property var label: "Favourites"
+    property var mode: "favourite"
     property var folder: ""
 
     function releaseFocus() {
@@ -28,6 +28,28 @@ Item {
         id: column
         width: 150
         height: parent.height
+
+        SColumnButton {
+            property var mode: "favourite"
+            label: "Favourites"
+            active: root.mode == mode
+            onPressed: {
+                root.label = label
+                root.mode = mode
+                root.folder = ""
+            }
+        }
+        SubfolderList {
+            mode: "favourite"
+            label: "Favourites"
+            folder: root.folder
+            active: root.mode == mode
+            onPressed: {
+                root.label = label
+                root.mode = mode
+                root.folder = folder
+            }
+        }
 
         SColumnButton {
             property var mode: "checkpoint"
@@ -126,6 +148,27 @@ Item {
         SubfolderList {
             mode: "embedding"
             label: "Embeddings"
+            folder: root.folder
+            active: root.mode == mode
+            onPressed: {
+                root.label = label
+                root.mode = mode
+                root.folder = folder
+            }
+        }
+        SColumnButton {
+            property var mode: "upscaler"
+            label: "Upscalers"
+            active: root.mode == mode
+            onPressed: {
+                root.label = label
+                root.mode = mode
+                root.folder = ""
+            }
+        }
+        SubfolderList {
+            mode: "upscaler"
+            label: "Upscalers"
             folder: root.folder
             active: root.mode == mode
             onPressed: {

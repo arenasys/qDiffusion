@@ -113,8 +113,18 @@ class Sql(QAbstractListModel):
         self.reloadTimer = QTimer(self)
         self.reloadTimer.setSingleShot(True)
         self.reloadTimer.timeout.connect(self.reload)
+
+        self._debug = False
+
+    @pyqtProperty(bool, notify=queryChanged)
+    def debug(self):
+        return self._debug
+
+    @debug.setter
+    def debug(self, value):
+        self._debug = value
         
-    @pyqtProperty('QString', notify=queryChanged)
+    @pyqtProperty(str, notify=queryChanged)
     def query(self):
         return self.currentQuery
 
@@ -247,15 +257,6 @@ class Sql(QAbstractListModel):
     @pyqtProperty(int, notify=resultsChanged)
     def length(self):
         return len(self.results)
-    
-    @pyqtSlot()
-    def debug(self):
-        def pr(r):
-            out = {}
-            for i in range(len(r)):
-               out[r.fieldName(i)] = r.field(i).value()
-            return out
-        print(len(self.results))
 
     def updateFieldNames(self, record):
         self.fieldNames = {}
