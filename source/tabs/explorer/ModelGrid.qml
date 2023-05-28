@@ -116,7 +116,7 @@ Item {
                 color: COMMON.bg1
 
                 property var selected: false
-                property var showing: false
+                property var showing: root.showInfo
                 property var editing: false
                 property var active: BASIC.parameters.active.includes(sql_name)
 

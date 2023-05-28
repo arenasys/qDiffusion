@@ -228,7 +228,7 @@ class Coordinator(QObject):
         self.nvidia_torch_version = "2.0.0+cu117"
         self.nvidia_torchvision_version = "0.15.1+cu117"
 
-        self.amd_torch_version = "2.0.0+rocm5.4.2"
+        self.amd_torch_version = "2.0.1+rocm5.4.2"
         self.amd_torchvision_version = "0.15.1+rocm5.4.2"
         self.amd_torch_directml_version = "0.2.0.dev230426"
 
