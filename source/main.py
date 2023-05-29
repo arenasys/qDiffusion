@@ -108,8 +108,12 @@ def check(dependancies):
     for d in dependancies:
         try:
             pkg_resources.require(d)
-        except Exception:
+        except pkg_resources.DistributionNotFound:
             needed += [d]
+        except pkg_resources.VersionConflict:
+            pass
+        except Exception:
+            pass
     return needed
 
 class Installer(QThread):
@@ -128,7 +132,7 @@ class Installer(QThread):
             args = ["pip", "install", "-U", p]
             pkg = p.split("=",1)[0]
             if pkg in {"torch", "torchvision"}:
-                args += ["--index-url", "https://download.pytorch.org/whl/" + p.rsplit("+",1)[-1]]
+                args = ["pip", "install", "-U", pkg, "--index-url", "https://download.pytorch.org/whl/" + p.rsplit("+",1)[-1]]
             self.proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, shell=IS_WIN)
 
             output = ""
@@ -225,11 +229,11 @@ class Coordinator(QObject):
         except:
             pass
 
-        self.nvidia_torch_version = "2.0.0+cu117"
-        self.nvidia_torchvision_version = "0.15.1+cu117"
+        self.nvidia_torch_version = "2.0.1+cu117"
+        self.nvidia_torchvision_version = "0.15.2+cu117"
 
         self.amd_torch_version = "2.0.1+rocm5.4.2"
-        self.amd_torchvision_version = "0.15.1+rocm5.4.2"
+        self.amd_torchvision_version = "0.15.2+rocm5.4.2"
         self.amd_torch_directml_version = "0.2.0.dev230426"
 
         self.need_xformers_version = "0.0.18"

@@ -11,6 +11,14 @@ import "components"
 FocusReleaser {
     anchors.fill: parent
 
+    Connections {
+        target: COORDINATOR
+        function onProceed() {
+            button.disabled = true
+            choice.disabled = true
+        }
+    }
+
     Rectangle {
         anchors.fill: parent
         color: COMMON.bg00
@@ -31,6 +39,7 @@ FocusReleaser {
             }
 
             OChoice {
+                id: choice
                 width: 300
                 height: 30
                 label: "Mode"
@@ -105,6 +114,7 @@ FocusReleaser {
             }
 
             SButton {
+                id: button
                 width: 300
                 height: 30
                 label: COORDINATOR.disable ? "Cancel" : (COORDINATOR.packages.length == 0 ? "Proceed" : "Install")

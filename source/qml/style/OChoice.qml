@@ -13,8 +13,6 @@ Item {
     property var value: control.currentIndex == -1 ? overloadValue : (control.model.length == 0 ? "" : control.model[control.currentIndex])
     property alias currentIndex: control.currentIndex
 
-    property var filter: false
-
     property var overloadValue: ""
 
     property var disabled: false
@@ -32,6 +30,12 @@ Item {
 
     property alias popupHeight: control.popupHeight
 
+    signal doUpdate()
+
+    onDoUpdate: {
+        root.update()
+    }
+
     function decoration(value) {
         return ""
     }
@@ -41,15 +45,7 @@ Item {
     }
 
     function filterModel(model) {
-        if(!root.filter) {
-            return model
-        }
-
-        if(model) {
-            return GUI.filterFavourites(model)
-        } else {
-            return []
-        }
+        return model
     }
 
     function setCurrent(c, m, all_m) {
@@ -90,15 +86,6 @@ Item {
         target: bindMap
         function onUpdated() {
             root.update()
-        }
-    }
-
-    Connections {
-        target: GUI
-        function onFavUpdated() {
-            if(root.filter) {
-                root.update()
-            }
         }
     }
 

@@ -354,7 +354,20 @@ Item {
                             return GUI.modelName(text)
                         }
 
-                        filter: true
+                        function filterModel(model) {
+                            if(model) {
+                                return GUI.filterFavourites(model)
+                            } else {
+                                return []
+                            }
+                        }
+
+                        Connections {
+                            target: GUI
+                            function onFavUpdated() {
+                                modelInput.doUpdate()
+                            }
+                        }
 
                         onSelected: {
                             root.binding.values.set("VAE", value)
