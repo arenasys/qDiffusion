@@ -510,6 +510,20 @@ Item {
                             incValue: 0.01
                             snapValue: 0.05
                         }
+                        OSlider {
+                            width: parent.width
+                            height: 22
+                            label: "Strength"
+
+                            bindMap: modelData.settings
+                            bindKey: "CN_strength"
+
+                            minValue: 0
+                            maxValue: 1
+                            precValue: 2
+                            incValue: 0.01
+                            snapValue: 0.05
+                        }
                     }
                 }
 

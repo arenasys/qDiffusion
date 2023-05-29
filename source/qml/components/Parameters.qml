@@ -905,21 +905,6 @@ Item {
                     }
 
                     OSlider {
-                        label: "CN Strength"
-                        width: parent.width
-                        height: 30
-
-                        bindMap: root.binding.values
-                        bindKey: "cn_strength"
-
-                        minValue: 0
-                        maxValue: 1
-                        precValue: 2
-                        incValue: 0.01
-                        snapValue: 0.05
-                    }
-
-                    OSlider {
                         id: subseedStrInput
                         label: "Subseed strength"
                         width: parent.width

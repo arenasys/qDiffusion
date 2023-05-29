@@ -323,7 +323,7 @@ class Parameters(QObject):
             "hr_factor": 1.0, "hr_strength":  0.7, "hr_sampler": "Euler a", "hr_steps": 25, "hr_eta": 1.0, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "subseed":-1, "subseed_strength": 0.0,
             "sampler":"Euler a", "samplers":[], "hr_upscaler":"Latent (nearest)", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
             "model":"", "models":[], "UNET":"", "UNETs":"", "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[], "CN":"", "CNs":[], "CN_modes": [], "CN_preprocessors": [],
-            "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "cn_strength":1.0, "schedule": "Default", "schedules": ["Default", "Karras"],
+            "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "schedule": "Default", "schedules": ["Default", "Karras"],
             "vram_mode": "Default", "vram_modes": ["Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"], "preview_mode": "Disabled",
             "preview_modes": ["Disabled", "Light", "Medium", "Full"], "preview_interval":1, "true_samplers": [], "true_sampler": "Euler a",
             "network_mode": "Dynamic", "network_modes": ["Dynamic", "Static"]
@@ -590,23 +590,22 @@ class Parameters(QObject):
         del data["subseed_strength"]
 
         data["device_name"] = self._values.get("device")
-
         if control:
-            images = [i for m,i in control]
-            modes = [m.lower() for m,i in control]
+            images = []
+            opts = []
             models = []
-            for m in modes:
+
+            for m,o,i in control:
                 for cn in self._values.get("CNs"):
                     if m in cn.rsplit(os.path.sep, 1)[-1]:
                         models += [cn]
+                        opts += [o]
+                        images += [i]
                         break
+
             data["cn_image"] = images
             data["cn"] = models
-            data["cn_annotator"] = modes
-            data["cn_args"] = [()] * len(modes)
-            data["cn_scale"] = [data["cn_strength"]] * len(control)
-        else:
-            del data["cn_strength"]
+            data["cn_opts"] = opts
 
         if request["type"] != "img2img" and "strength" in data:
             del data["strength"]
@@ -634,15 +633,12 @@ class Parameters(QObject):
 
         return request
 
-    def buildAnnotateRequest(self, mode, image):
-        mode = mode.lower()
-        data = {}
-        args = []
-        if mode == "canny":
-            args = [100,200]
-        data["cn_image"] = [image]
-        data["cn_annotator"] = [mode.lower()]
-        data["cn_args"] = [args]
+    def buildAnnotateRequest(self, mode, args, image):
+        data = {
+            "cn_image": [image],
+            "cn_annotator": [mode],
+            "cn_args": [args],
+        }
         return {"type":"annotate", "data": data}
 
     @pyqtSlot()

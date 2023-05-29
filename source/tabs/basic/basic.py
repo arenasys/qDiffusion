@@ -50,7 +50,7 @@ class BasicInput(QObject):
         self._extent = QRect()
         self._extentWarning = False
         self._settings = parameters.VariantMap(self, {
-            "mode": "", "CN_preprocessors": [], "CN_preprocessor": "", "CN_bools": ["False", "True"],
+            "mode": "", "CN_strength":1.0, "CN_preprocessors": [], "CN_preprocessor": "", "CN_bools": ["False", "True"],
             "CN_bool": "False", "CN_bool_label": "", "CN_slider_a": 0.0, "CN_slider_a_label": "", "CN_slider_b": 0.0, "CN_slider_b_label": ""
             })
         self._settings.updated.connect(self.onSettingsUpdated)
@@ -239,6 +239,16 @@ class BasicInput(QObject):
     @pyqtSlot()
     def annotate(self):
         self.basic.annotate(self)
+
+    def getCNArgs(self):
+        args = []
+        if self._settings.get("CN_slider_a_label"):
+            args += [self._settings.get("CN_slider_a")]
+        if self._settings.get("CN_slider_b_label"):
+            args += [self._settings.get("CN_slider_b")]
+        if self._settings.get("CN_bool_label"):
+            args += [self._settings.get("CN_bool") == "True"]
+        return args
     
     def setArtifacts(self, artifacts):
         self._artifacts = artifacts
@@ -631,7 +641,13 @@ class Basic(QObject):
                             mapped_areas[i._linked] = areas[-1]
                 if i._role == BasicInputRole.CONTROL:
                     if not i._image.isNull():
-                        controls += [(i._settings.get("mode"), encode_image(i._image))]
+                        model = i._settings.get("mode").lower()
+                        opts = {
+                            "scale": i._settings.get("CN_strength"),
+                            "annotator": i._settings.get("CN_preprocessor").lower(),
+                            "args": i.getCNArgs()
+                        }
+                        controls += [(model, opts, encode_image(i._image))]
 
         batch_size = int(self._parameters._values.get("batch_size"))
         batch_count = int(self._parameters._values.get("batch_count"))
@@ -1274,7 +1290,10 @@ class Basic(QObject):
             target._areas = target._areas[:layerCount]
 
     def annotate(self, input):
-        request = self._parameters.buildAnnotateRequest(input._settings.get("mode"), encode_image(input._image))
+        annotator = input._settings.get("CN_preprocessor").lower()
+        args = input.getCNArgs()
+
+        request = self._parameters.buildAnnotateRequest(annotator, args, encode_image(input._image))
         id = self.gui.makeRequest(request)
         self._annotations[id] = input._id
 
