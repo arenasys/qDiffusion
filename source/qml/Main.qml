@@ -55,7 +55,7 @@ FocusReleaser {
         width: errorText.contentWidth + 50
         height: errorText.contentHeight + 80
 
-        SText {
+        STextSelectable {
             id: errorText
             anchors.centerIn: parent
             padding: 5
@@ -64,6 +64,20 @@ FocusReleaser {
             verticalAlignment: Text.AlignVCenter
             width: Math.min(errorText.implicitWidth, 500)
             wrapMode: Text.Wrap
+        }
+
+        SIconButton {
+            visible: GUI.errorTrace != ""
+            x: parent.width - width
+            y: -height - 2
+            width: 16
+            height: 16
+            inset: 0
+            icon: "qrc:/icons/info-big.svg"
+            tooltip: "Copy trace"
+            onPressed: {
+                GUI.copyError()
+            }
         }
 
         onClosed: {

@@ -84,6 +84,7 @@ class GUI(QObject):
 
         self._errorStatus = ""
         self._errorText = ""
+        self._errorTrace = ""
 
         self._config = config.Config(self, "config.json", {"endpoint": "", "password": "", "output_directory":"outputs", "model_directory":"models", "device": "", "swap": False})
         self._remoteStatus = RemoteStatusMode.INACTIVE
@@ -193,6 +194,10 @@ class GUI(QObject):
     def errorText(self):
         return self._errorText
     
+    @pyqtProperty('QString', notify=errorUpdated)
+    def errorTrace(self):
+        return self._errorTrace
+    
     @pyqtProperty('QString', notify=statusUpdated)
     def errorStatus(self):
         return self._errorStatus
@@ -258,16 +263,23 @@ class GUI(QObject):
         if response["type"] == "error":
             self._errorStatus = self._statusText
             self._errorText = response["data"]["message"]
+            self._errorTrace = ""
+            if "trace" in response["data"]:
+                self._errorTrace = response["data"]["trace"]
+                with open("crash.log", "a", encoding='utf-8') as f:
+                    f.write(f"INFERENCE {datetime.datetime.now()}\n{self._errorTrace}\n")
             self.statusUpdated.emit()
             self.errorUpdated.emit()
             self.reset.emit(id)
-            if "traceback" in response["data"]:
-                with open("crash.log", "a", encoding='utf-8') as f:
-                    f.write(f"INFERENCE {datetime.datetime.now()}\n{response['data']['traceback']}\n")
-
+            
         if response["type"] == "remote_error":
             self._errorStatus = self._statusText
             self._errorText = response["data"]["message"]
+            self._errorTrace = ""
+            if "trace" in response["data"]:
+                self._errorTrace = response["data"]["trace"]
+                with open("crash.log", "a", encoding='utf-8') as f:
+                    f.write(f"REMOTE {datetime.datetime.now()}\n{self._errorTrace}\n")
             self._remoteStatus = RemoteStatusMode.ERRORED
             self.statusUpdated.emit()
             self.errorUpdated.emit()
@@ -334,6 +346,10 @@ class GUI(QObject):
             self._statusMode = StatusMode.IDLE
         self._statusProgress = -1.0
         self.statusUpdated.emit()
+
+    @pyqtSlot()
+    def copyError(self):
+        self.copyText(self._errorTrace)
 
     @pyqtSlot(QNetworkRequest)
     def makeNetworkRequest(self, request):

@@ -27,6 +27,7 @@ def log_traceback(label):
     with open("crash.log", "a", encoding='utf-8') as f:
         f.write(f"{label} {datetime.datetime.now()}\n{tb}\n")
     print(label, tb)
+    return tb
 
 def get_scheme(password):
     password = password.encode("utf8")

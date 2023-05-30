@@ -35,7 +35,7 @@ def hideBytes(d):
 
 SEP = os.path.sep
 INV_SEP = {"\\": '/', '/':'\\'}[os.path.sep]
-NO_CONV = {"prompt", "negative_prompt", "url"}
+NO_CONV = {"prompt", "negative_prompt", "url", "trace"}
 
 def convert_path(p):
     return p.replace(INV_SEP, SEP)

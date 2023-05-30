@@ -25,6 +25,7 @@ def log_traceback(label):
     with open("crash.log", "a", encoding='utf-8') as f:
         f.write(f"{label} {datetime.datetime.now()}\n{tb}\n")
     print(label, tb)
+    return tb
 
 class InferenceProcessThread(threading.Thread):
     def __init__(self, requests, responses, model_directory):
@@ -97,18 +98,20 @@ class InferenceProcessThread(threading.Thread):
                     self.responses.put({"type":"aborted", "id": self.current, "data":{}})
                     continue
                 additional = ""
+                trace = ""
                 try:
-                    log_traceback("LOCAL THREAD")
-                    s = traceback.extract_tb(e.__traceback__).format()
-                    s = [e for e in s if not "site-packages" in e][-1]
-                    s = s.split(", ")
-                    file = s[0].split(os.path.sep)[-1][:-1]
-                    line = s[1].split(" ")[1]
+                    trace = log_traceback("LOCAL THREAD")
+
+                    frames = traceback.extract_tb(e.__traceback__).format()
+                    frame = [e for e in frames if not "site-packages" in e][-1]
+                    frame = frame.split(", ")
+                    file = frame[0].split(os.path.sep)[-1][:-1]
+                    line = frame[1].split(" ")[1]
                     additional = f" ({file}:{line})"
                 except Exception:
                     pass
 
-                self.responses.put({"type":"error", "id": self.current,  "data":{"message":str(e) + additional}})
+                self.responses.put({"type":"error", "id": self.current,  "data":{"message":str(e) + additional, "trace": trace}})
 
     def onResponse(self, response):
         if self.current:
@@ -133,8 +136,8 @@ class InferenceProcess(multiprocessing.Process):
         try:
             self.inference = InferenceProcessThread(inference_requests, self.responses, self.model_directory)
         except Exception as e:
-            log_traceback("LOCAL PROCESS")
-            self.responses.put({"type":"error", "data":{"message":str(e)}})
+            trace = log_traceback("LOCAL PROCESS")
+            self.responses.put({"type":"error", "data":{"message":str(e), "trace":trace}})
             return
     
         self.inference.start()
