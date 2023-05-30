@@ -697,6 +697,9 @@ class Basic(QObject):
     @pyqtSlot()
     def generate(self, user=True):
         if not self._ids:
+            if user:
+                self._remaining = 0
+                self._requests = None
             request = self.buildRequest()
             self._ids += [self.gui.makeRequest(request)]
             self.updated.emit()
