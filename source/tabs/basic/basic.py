@@ -15,6 +15,7 @@ import sql
 import time
 import json
 import random
+import math
 
 def encode_image(img):
     ba = QByteArray()
@@ -42,6 +43,7 @@ class BasicInput(QObject):
         global INPUT_ID
         super().__init__(basic)
         self.basic = basic
+        self._original_crop = None
         self._original = image.copy()
         self._image = image
         self._role = role
@@ -75,6 +77,7 @@ class BasicInput(QObject):
             else:
                 if self._role == BasicInputRole.IMAGE and self.basic.hasMask(self):
                     self._image = self._original
+                    self._original_crop = None
                 else:
                     w,h = self.basic.parameters.values.get("width"),  self.basic.parameters.values.get("height")
                     self.resizeImage(QSize(int(w),int(h)))
@@ -82,11 +85,25 @@ class BasicInput(QObject):
         self.updateExtent()
         self.updated.emit()
 
-    def resizeImage(self, size):
-        image = self._original.scaled(size, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
-        dx = int((image.width()-size.width())*self._offset)
-        dy = int((image.height()-size.height())*self._offset)
-        self._image = image.copy(dx, dy, size.width(), size.height())
+    def resizeImage(self, out_z):
+        in_z = self._original.size()
+        
+        ar = out_z.width()/out_z.height()
+
+        rh = in_z.height()/out_z.height()
+        rw = in_z.width()/out_z.width()
+
+        w, h = in_z.width(), in_z.height()
+
+        if out_z.width() * rh > in_z.width():
+            h = math.ceil(w / ar)
+        elif out_z.height() * rw > in_z.height():
+            w = math.ceil(h * ar)
+
+        dx = int((in_z.width()-w)*self._offset)
+        dy = int((in_z.height()-h)*self._offset)
+        self._original_crop = self._original.copy(dx, dy, w, h)
+        self._image = self._original_crop.scaled(out_z, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
 
     def setLinked(self, linked):
         prevLinked = self._linked
@@ -134,9 +151,9 @@ class BasicInput(QObject):
     
     @offset.setter
     def offset(self, offset):
-        if self._role == BasicInputRole.IMAGE:
-            self._offset = max(0.0, min(1.0, offset))
-            self.updateImage()
+        #if self._role == BasicInputRole.IMAGE:
+        self._offset = max(0.0, min(1.0, offset))
+        self.updateImage()
     
     @pyqtProperty(int, notify=updated)
     def originalWidth(self):
@@ -614,7 +631,6 @@ class Basic(QObject):
 
         order = []
         images = []
-        offsets = []
         masks = []
         areas = []
         controls = []
@@ -627,8 +643,7 @@ class Basic(QObject):
                 if i._role == BasicInputRole.IMAGE:
                     if not i._image.isNull():
                         order += [i]
-                        images += [encode_image(i._original)]
-                        offsets += [i._offset]
+                        images += [encode_image(i._original_crop or i._original)]
                 if i._role == BasicInputRole.MASK:
                     if not i._image.isNull():
                         masks += [encode_image(i._image)]
@@ -647,7 +662,7 @@ class Basic(QObject):
                             "annotator": i._settings.get("CN_preprocessor").lower(),
                             "args": i.getCNArgs()
                         }
-                        controls += [(model, opts, encode_image(i._image))]
+                        controls += [(model, opts, encode_image(i._original_crop or i._original))]
 
         batch_size = int(self._parameters._values.get("batch_size"))
         batch_count = int(self._parameters._values.get("batch_count"))
@@ -681,14 +696,13 @@ class Basic(QObject):
         while total > 0:
             size = min(total, batch_size)
             batch_images = get_portion(images, i, size)
-            batch_offsets = get_portion(offsets, i, size)
             batch_masks = get_portion(masks, i, size)
             batch_areas = get_portion(areas, i, size)
 
             i += batch_size
             total -= batch_size
             
-            self._requests += [self._parameters.buildRequest(size, batch_images, batch_offsets, batch_masks, batch_areas, controls)]
+            self._requests += [self._parameters.buildRequest(size, batch_images, batch_masks, batch_areas, controls)]
         
         self._remaining = len(self._requests)
 

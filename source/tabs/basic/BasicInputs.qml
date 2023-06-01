@@ -53,7 +53,7 @@ Item {
                 anchors.margins: 9
                 anchors.leftMargin: 0
                 color: COMMON.bg00
-                clip: true
+                clip: false
 
                 property var highlight: activeFocus || inputContextMenu.opened || inputFileDialog.visible || centerDrop.containsDrag
                 property var settings: false

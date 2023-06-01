@@ -15,11 +15,8 @@ ListView {
     height: contentHeight
     property var index: 0
     property var mode: ""
-    property var label: ""
-    property var folder: ""
-    property var active: false
 
-    signal pressed(string folder)
+    signal move(string model, string folder, string subfolder)
 
     model: Sql {
         query: "SELECT DISTINCT folder FROM models WHERE category = '" + root.mode + "' AND folder != '' ORDER BY folder ASC;"
@@ -34,9 +31,35 @@ ListView {
             label: modelData
             height: 25
             width: parent.width
-            active: root.active && root.folder == modelData
+            active: EXPLORER.currentTab == mode && EXPLORER.currentFolder == modelData
             onPressed: {
-                root.pressed(modelData)
+                EXPLORER.currentTab = mode
+                EXPLORER.currentFolder = modelData
+            }
+            AdvancedDropArea {
+                id: basicDrop
+                anchors.fill: parent
+                onContainsDragChanged: {
+                    if(containsDrag) {
+                        dragTimer.start()
+                    } else {
+                        dragTimer.stop()
+                    }
+                }
+                Timer {
+                    id: dragTimer
+                    interval: 200
+                    onTriggered: {
+                        EXPLORER.currentTab = mode
+                        EXPLORER.currentFolder = modelData
+                    }
+                }
+                onDropped: {
+                    var model = EXPLORER.onDrop(mimeData)
+                    if(model != "") {
+                        root.move(model, mode, modelData)
+                    }
+                }
             }
         }
     }

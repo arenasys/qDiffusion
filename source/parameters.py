@@ -522,7 +522,7 @@ class Parameters(QObject):
         neg = self.parsePrompt(self._values._map['negative_prompt'], batch_size)
         return list(zip(pos, neg))
 
-    def buildRequest(self, batch_size, images=[], offsets=[], masks=[], areas=[], control=[]):
+    def buildRequest(self, batch_size, images=[], masks=[], areas=[], control=[]):
         request = {}
         data = {}
 
@@ -547,7 +547,6 @@ class Parameters(QObject):
             data["image"] = images
             if masks:
                 data["mask"] = masks
-            data["offsets"] = offsets
         else:
             request["type"] = "txt2img"
             del data["mask_blur"]

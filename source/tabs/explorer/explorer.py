@@ -1,7 +1,7 @@
-from PyQt5.QtCore import pyqtProperty, pyqtSignal, QObject, pyqtSlot, QUrl, QThread
+from PyQt5.QtCore import Qt, pyqtProperty, pyqtSignal, QObject, pyqtSlot, QUrl, QThread, QMimeData, QByteArray
 from PyQt5.QtQml import qmlRegisterSingletonType
 from PyQt5.QtSql import QSqlQuery
-from PyQt5.QtGui import QImage, QDesktopServices
+from PyQt5.QtGui import QImage, QDesktopServices, QDrag
 
 import sql
 import os
@@ -11,6 +11,8 @@ import re
 import shutil
 import time
 import json
+from misc import MimeData
+from gui import MODE_FOLDERS
 
 LABELS =  {
     "favourite": "Favourites",
@@ -23,6 +25,8 @@ LABELS =  {
     "wildcard": "Wildcards"
 }
 MODES = {v:k for k,v in LABELS.items()}
+
+MIME_EXPLORER_MODEL = "application/x-qd-explorer-model"
 
 class Populater(QObject):
     finished = pyqtSignal()
@@ -200,6 +204,7 @@ class Explorer(QObject):
     tabUpdated = pyqtSignal()
     updateOptions = pyqtSignal()
     updateFavourites = pyqtSignal()
+    dragSignal = pyqtSignal(str)
     def __init__(self, parent=None):
         super().__init__(parent)
         self.gui = parent
@@ -227,6 +232,9 @@ class Explorer(QObject):
         self.conn.doQuery("CREATE TABLE models(name TEXT, category TEXT, type TEXT, file TEXT, folder TEXT, desc TEXT, idx INTEGER, width INTEGER, height INTEGER, CONSTRAINT unq UNIQUE (category, idx));")
     
         self._currentTab = "favourite"
+        self._currentFolder = ""
+
+        self.dragSignal.connect(self.drag, Qt.QueuedConnection)
 
     @pyqtProperty(str, notify=tabUpdated)
     def currentTab(self): 
@@ -235,6 +243,16 @@ class Explorer(QObject):
     @currentTab.setter
     def currentTab(self, tab):
         self._currentTab = tab
+        self._currentFolder = ""
+        self.tabUpdated.emit()
+
+    @pyqtProperty(str, notify=tabUpdated)
+    def currentFolder(self): 
+        return self._currentFolder
+    
+    @currentFolder.setter
+    def currentFolder(self, folder):
+        self._currentFolder = folder
         self.tabUpdated.emit()
 
     @pyqtSlot(str, result=str)
@@ -337,3 +355,29 @@ class Explorer(QObject):
             self.gui.makeRequest(request)
 
         self.optionsUpdated()
+
+    @pyqtSlot(str)
+    def drag(self, model):
+        drag = QDrag(self)
+        mimeData = QMimeData()
+        mimeData.setData(MIME_EXPLORER_MODEL, QByteArray(model.encode()))
+        drag.setMimeData(mimeData)
+        drag.exec()
+
+    @pyqtSlot(str)
+    def doDrag(self, model):
+        self.dragSignal.emit(model)
+
+    @pyqtSlot(MimeData, result=str)
+    def onDrop(self, mimeData):
+        mimeData = mimeData.mimeData
+        if MIME_EXPLORER_MODEL in mimeData.formats():
+            return str(mimeData.data(MIME_EXPLORER_MODEL), 'utf-8')
+        else:
+            return ""
+    
+    @pyqtSlot(str, str, str)
+    def doMove(self, model, folder, subfolder):
+        folder = MODE_FOLDERS[folder][0]
+        request = {"type":"manage", "data": {"operation": "move", "old_file": model, "new_folder": folder, "new_subfolder": subfolder}}
+        self.gui.makeRequest(request)

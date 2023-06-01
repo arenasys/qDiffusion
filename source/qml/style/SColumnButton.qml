@@ -10,6 +10,7 @@ Item {
     property var mini: height < 30
 
     signal pressed()
+    signal contextMenu()
     
     width: 150
     height: 35
@@ -27,10 +28,14 @@ Item {
         MouseArea {
             id: mouseArea
             anchors.fill: parent
-            hoverEnabled: true
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
 
             onPressed: {
-                root.pressed()
+                if(mouse.button == Qt.LeftButton) {
+                    root.pressed()
+                } else {
+                    root.contextMenu()
+                }
             }
         }
 

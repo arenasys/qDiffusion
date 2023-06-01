@@ -617,5 +617,5 @@ class GUI(QObject):
 
         new = os.path.abspath(os.path.join(folder, old.rsplit(os.path.sep,1)[-1]))
 
-        request = {"type":"manage", "data": {"operation": "move", "old_file": old, "new_file": new}}
+        request = {"type":"manage", "data": {"operation": "rename", "old_file": old, "new_file": new}}
         self.makeRequest(request)

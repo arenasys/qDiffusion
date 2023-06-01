@@ -11,8 +11,6 @@ import "../../components"
 
 Item {
     id: root
-    
-    property var folder: ""
 
     function releaseFocus() {
         parent.releaseFocus()
@@ -22,6 +20,7 @@ Item {
         anchors.fill: column
         color: COMMON.bg0
     }
+    
     Flickable {
         id: column
         width: 150
@@ -40,139 +39,27 @@ Item {
             id: columnContent
             width: 150
 
-            SColumnButton {
-                property var mode: "favourite"
-                label: EXPLORER.getLabel(mode)
-                active: EXPLORER.currentTab == mode
-                onPressed: {
-                    EXPLORER.currentTab = mode
-                }
+            CategoryButton {
+                mode: "favourite"
             }
 
-            SColumnButton {
-                property var mode: "checkpoint"
-                label: EXPLORER.getLabel(mode)
-                active: EXPLORER.currentTab == mode
-                onPressed: {
-                    EXPLORER.currentTab = mode
-                }
-            }
-            SubfolderList {
-                mode: "checkpoint"
-                label: EXPLORER.getLabel(mode)
-                folder: grid.folder
-                active: EXPLORER.currentTab == mode
-                onPressed: {
-                    EXPLORER.currentTab = mode
-                    grid.folder = folder
-                }
-            }
-            SColumnButton {
-                property var mode: "component"
-                label: EXPLORER.getLabel(mode)
-                active: EXPLORER.currentTab == mode
-                onPressed: {
-                    EXPLORER.currentTab = mode
-                }
-            }
-            SubfolderList {
-                mode: "component"
-                label: EXPLORER.getLabel(mode)
-                folder: grid.folder
-                active: EXPLORER.currentTab == mode
-                onPressed: {
-                    EXPLORER.currentTab = mode
-                    grid.folder = folder
-                }
-            }
-            SColumnButton {
-                property var mode: "lora"
-                label: EXPLORER.getLabel(mode)
-                active: EXPLORER.currentTab == mode
-                onPressed: {
-                    EXPLORER.currentTab = mode
-                }
-            }
-            SubfolderList {
-                mode: "lora"
-                label: EXPLORER.getLabel(mode)
-                folder: grid.folder
-                active: EXPLORER.currentTab == mode
-                onPressed: {
-                    EXPLORER.currentTab = mode
-                    grid.folder = folder
-                }
-            }
-            SColumnButton {
-                property var mode: "hypernet"
-                label: EXPLORER.getLabel(mode)
-                active: EXPLORER.currentTab == mode
-                onPressed: {
-                    EXPLORER.currentTab = mode
-                }
-            }
-            SubfolderList {
-                mode: "hypernet"
-                label: EXPLORER.getLabel(mode)
-                folder: grid.folder
-                active: EXPLORER.currentTab == mode
-                onPressed: {
-                    EXPLORER.currentTab = mode
-                    grid.folder = folder
-                }
-            }
-            SColumnButton {
-                property var mode: "embedding"
-                label: EXPLORER.getLabel(mode)
-                active: EXPLORER.currentTab == mode
-                onPressed: {
-                    EXPLORER.currentTab = mode
-                }
-            }
-            SubfolderList {
-                mode: "embedding"
-                label: EXPLORER.getLabel(mode)
-                folder: grid.folder
-                active: EXPLORER.currentTab == mode
-                onPressed: {
-                    EXPLORER.currentTab = mode
-                    grid.folder = folder
-                }
-            }
-            SColumnButton {
-                property var mode: "upscaler"
-                label: EXPLORER.getLabel(mode)
-                active: EXPLORER.currentTab == mode
-                onPressed: {
-                    EXPLORER.currentTab = mode
-                }
-            }
-            SubfolderList {
-                mode: "upscaler"
-                label: EXPLORER.getLabel(mode)
-                folder: grid.folder
-                active: EXPLORER.currentTab == mode
-                onPressed: {
-                    EXPLORER.currentTab = mode
-                    grid.folder = folder
-                }
-            }
-            SColumnButton {
-                property var mode: "wildcard"
-                label: EXPLORER.getLabel(mode)
-                active: EXPLORER.currentTab == mode
-                onPressed: {
-                    EXPLORER.currentTab = mode
-                }
-            }
-            SubfolderList {
-                mode: "wildcard"
-                label: EXPLORER.getLabel(mode)
-                folder: grid.folder
-                active: EXPLORER.currentTab == mode
-                onPressed: {
-                    EXPLORER.currentTab = mode
-                    grid.folder = folder
+            Repeater {
+                model: ["checkpoint", "component", "lora", "hypernet", "embedding", "upscaler", "wildcard"]
+
+                Column {
+                    width: 150
+                    CategoryButton {
+                        mode: modelData
+                        onMove: {
+                            moveDialog.show(model, folder, subfolder)
+                        }
+                    }
+                    SubfolderList {
+                        mode: modelData
+                        onMove: {
+                            moveDialog.show(model, folder, subfolder)
+                        }
+                    }
                 }
             }
         }
@@ -265,13 +152,87 @@ Item {
                 anchors.fill: parent
                 mode: EXPLORER.currentTab
                 label: EXPLORER.getLabel(mode)
-                folder: ""
+                folder: EXPLORER.currentFolder
                 search: search.text
 
-                onModeChanged: {
-                    folder = ""
+                onDeleteModel: {
+                    deleteDialog.show(model)
                 }
             }
+        }
+    }
+
+    SDialog {
+        id: deleteDialog
+        title: "Confirmation"
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        modal: true
+        property var file: ""
+
+        function show(file) {
+            deleteDialog.file = file
+            deleteDialog.open()
+        }
+
+        height: Math.max(120, deleteMessage.height + 60)
+        width: 300
+
+        SText {
+            id: deleteMessage
+            anchors.centerIn: parent
+            padding: 5
+            text: "Delete " + deleteDialog.file + "?"
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            width: parent.width
+            wrapMode: Text.Wrap
+        }       
+
+        onAccepted: {
+            EXPLORER.doDelete(deleteDialog.file)
+        }
+
+        onClosed: {
+            root.forceActiveFocus()
+        }
+    }
+
+    SDialog {
+        id: moveDialog
+        title: "Confirmation"
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        modal: true
+        property var model: ""
+        property var folder: ""
+        property var subfolder: ""
+
+        function show(model, folder, subfolder) {
+            moveDialog.model = model
+            moveDialog.folder = folder
+            moveDialog.subfolder = subfolder
+            moveDialog.open()
+        }
+
+        height: Math.max(120, moveMessage.height + 60)
+        width: 300
+
+        SText {
+            id: moveMessage
+            anchors.centerIn: parent
+            padding: 5
+            text: "Move " + moveDialog.model + "?"
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            width: parent.width
+            wrapMode: Text.Wrap
+        }       
+
+        onAccepted: {
+            EXPLORER.doMove(moveDialog.model, moveDialog.folder, moveDialog.subfolder)
+        }
+
+        onClosed: {
+            root.forceActiveFocus()
         }
     }
 
