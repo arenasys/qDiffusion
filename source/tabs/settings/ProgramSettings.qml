@@ -207,5 +207,16 @@ Item {
                 GUI.config.set("debug", currentIndex != 0)
             }
         }
+        OChoice {
+            x: -2
+            width: parent.width+2
+            height: 30
+            label: "Advanced Parameters"
+            currentIndex: GUI.config.get("advanced") ? 1 : 0 
+            model: ["Disabled", "Enabled"]
+            onCurrentIndexChanged: {
+                GUI.config.set("advanced", currentIndex != 0)
+            }
+        }
     }
 }

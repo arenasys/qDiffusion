@@ -12,6 +12,7 @@ Item {
     id: root
     anchors.fill: parent
     property var swap: false
+    property var advanced: GUI.config != null ? GUI.config.get("advanced") : false
 
     signal generate()
     signal cancel()
@@ -795,6 +796,23 @@ Item {
                         }
                     }
                     OSlider {
+                        visible: root.advanced
+                        label: "HR ToMe Ratio"
+                        width: parent.width
+                        height: 30
+
+                        disabled: hrFactorInput.value == 1.0
+
+                        bindMap: root.binding.values
+                        bindKey: "hr_tome_ratio"
+
+                        minValue: 0
+                        maxValue: 1
+                        precValue: 2
+                        incValue: 0.01
+                        snapValue: 0.05
+                    }
+                    OSlider {
                         id: hrStepsInput
                         label: "HR Steps"
                         width: parent.width
@@ -815,6 +833,7 @@ Item {
                         bounded: false
                     }
                     OChoice {
+                        visible: root.advanced
                         id: hrSamplerInput
                         label: "HR Sampler"
                         width: parent.width
@@ -826,7 +845,7 @@ Item {
                         bindKeyModel: "true_samplers"
                     }
                     OSlider {
-                        visible: !samplerColumn.isCollapsed
+                        visible: !samplerColumn.isCollapsed && root.advanced
                         id: hrEtaInput
                         label: "HR Eta"
                         width: parent.width
@@ -902,6 +921,24 @@ Item {
                         incValue: 1
                         snapValue: 1
                         bounded: false
+                    }
+
+                    OSlider {
+                        visible: root.advanced
+                        label: "ToMe Ratio"
+                        width: parent.width
+                        height: 30
+                        
+                        disabled: hrFactorInput.value == 1.0
+
+                        bindMap: root.binding.values
+                        bindKey: "tome_ratio"
+
+                        minValue: 0
+                        maxValue: 1
+                        precValue: 2
+                        incValue: 0.01
+                        snapValue: 0.05
                     }
 
                     OSlider {

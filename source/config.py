@@ -5,6 +5,7 @@ from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, QThread
 from parameters import VariantMap
 
 class Config(QObject):
+    updated = pyqtSignal()
     def __init__(self, parent, file, defaults):
         super().__init__(parent)
         self._file = file
@@ -32,3 +33,4 @@ class Config(QObject):
                 json.dump(data, f)
         except Exception:
             return
+        self.updated.emit()

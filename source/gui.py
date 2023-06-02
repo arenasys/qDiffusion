@@ -60,6 +60,7 @@ class GUI(QObject):
     optionsUpdated = pyqtSignal()
     tabUpdated = pyqtSignal()
     favUpdated = pyqtSignal()
+    configUpdated = pyqtSignal()
     result = pyqtSignal(int, str)
     response = pyqtSignal(int, object)
     aboutToQuit = pyqtSignal()
@@ -86,7 +87,8 @@ class GUI(QObject):
         self._errorText = ""
         self._errorTrace = ""
 
-        self._config = config.Config(self, "config.json", {"endpoint": "", "password": "", "output_directory":"outputs", "model_directory":"models", "device": "", "swap": False})
+        self._config = config.Config(self, "config.json", {"endpoint": "", "password": "", "output_directory":"outputs", "model_directory":"models", "device": "", "swap": False, "advanced": False})
+        self._config.updated.connect(self.onConfigUpdated)
         self._remoteStatus = RemoteStatusMode.INACTIVE
 
         self._modelFolders = []
@@ -390,10 +392,14 @@ class GUI(QObject):
         drag.setMimeData(self.getFilesMimeData(files))
         drag.exec()
     
-    @pyqtProperty(VariantMap, constant=True)
+    @pyqtProperty(VariantMap, notify=configUpdated)
     def config(self):
         return self._config._values
     
+    @pyqtSlot()
+    def onConfigUpdated(self):
+        self.configUpdated.emit()
+
     @pyqtProperty(str, notify=statusUpdated)
     def remoteEndpoint(self):
         endpoint = self._config._values.get("endpoint")
