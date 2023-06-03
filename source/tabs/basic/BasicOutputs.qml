@@ -1,7 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtGraphicalEffects 1.15
-import Qt.labs.platform 1.1
+import QtQuick.Dialogs 1.0
 
 import gui 1.0
 import "../../style"
@@ -82,6 +82,11 @@ Item {
                     spread: 0.2
                     color: "black"
                     cornerRadius: 10
+                }
+
+                TransparencyShader {
+                    visible: trueFrame.valid != undefined ? trueFrame.valid : false
+                    anchors.fill: trueFrame
                 }
 
                 ImageDisplay {
@@ -219,6 +224,15 @@ Item {
                         SContextMenuSeparator { }
 
                         SContextMenuItem {
+                            text: "Save"
+                            onTriggered: {
+                                saveDialog.open()
+                            }
+                        }
+
+                        SContextMenuSeparator { }
+
+                        SContextMenuItem {
                             text: "Open"
                             onTriggered: {
                                 GALLERY.doOpenImage([modelObj.file])
@@ -254,6 +268,17 @@ Item {
                                 onObjectAdded: copyToMenu.insertItem(index, object)
                                 onObjectRemoved: copyToMenu.removeItem(object)
                             }
+                        }
+                    }
+
+                    FileDialog {
+                        id: saveDialog
+                        title: "Save image"
+                        nameFilters: ["Image files (*.png)"]
+                        selectExisting: false
+                        defaultSuffix: "png"
+                        onAccepted: {
+                            modelObj.saveImage(saveDialog.fileUrl)
                         }
                     }
                 }

@@ -380,9 +380,17 @@ class GUI(QObject):
         gnome = "copy\n"+'\n'.join(["file://"+url.toLocalFile() for url in urls])
         mimedata.setData("x-special/gnome-copied-files", gnome.encode("utf-8"))
         return mimedata
+    
+    def getImageMimeData(self, img):
+        mimedata = QMimeData()
+        mimedata.setImageData(img)
+        return mimedata
 
     def copyFiles(self, files):
         QApplication.clipboard().setMimeData(self.getFilesMimeData(files))
+    
+    def copyImage(self, img):
+        QApplication.clipboard().setMimeData(self.getImageMimeData(img))
 
     def copyText(self, text):
         QApplication.clipboard().setText(text)
@@ -390,6 +398,11 @@ class GUI(QObject):
     def dragFiles(self, files):
         drag = QDrag(self)
         drag.setMimeData(self.getFilesMimeData(files))
+        drag.exec()
+    
+    def dragImage(self, img):
+        drag = QDrag(self)
+        drag.setMimeData(self.getImageMimeData(img))
         drag.exec()
     
     @pyqtProperty(VariantMap, notify=configUpdated)

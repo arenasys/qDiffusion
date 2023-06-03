@@ -1,7 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtGraphicalEffects 1.15
-import Qt.labs.platform 1.1
+import QtQuick.Dialogs 1.0
 
 import gui 1.0
 import "../../style"
@@ -323,15 +323,22 @@ Item {
                         id: inputContextMenu
                         width: 100
                         SContextMenuItem {
-                            text: modelData.empty ? "Delete" : "Clear"
+                            visible: !modelData.empty
+                            text: "Save"
                             onPressed: {
-                                if(modelData.empty) {
-                                    BASIC.deleteInput(index)
-                                } else {
-                                    modelData.clearImage()
-                                }
+                                saveDialog.open()
                             }
                         }
+
+                        SContextMenuSeparator {}
+
+                        SContextMenuItem {
+                            text: "Clear"
+                            onPressed: {
+                                BASIC.deleteInput(index)
+                            }
+                        }
+                        
                         SContextMenu {
                             width: 90
                             title: "Set role"
@@ -365,6 +372,17 @@ Item {
                             }
                         }
                     }
+
+                    FileDialog {
+                        id: saveDialog
+                        title: "Save image"
+                        nameFilters: ["Image files (*.png)"]
+                        selectExisting: false
+                        defaultSuffix: "png"
+                        onAccepted: {
+                            input.saveImage(saveDialog.fileUrl)
+                        }
+                    }
                 }
 
                 Rectangle {
@@ -378,7 +396,7 @@ Item {
 
                 SIconButton {
                     id: settingsButton
-                    visible: modelData.role == 4
+                    visible: modelData.role == 4 && !modelData.empty
                     color: "transparent"
                     icon: "qrc:/icons/settings.svg"
                     x: borderFrame.x + 1
@@ -394,7 +412,7 @@ Item {
 
                 SIconButton {
                     id: refreshButton
-                    visible: modelData.role == 4
+                    visible: modelData.role == 4 && !modelData.empty
                     color: "transparent"
                     icon: "qrc:/icons/refresh.svg"
                     x: borderFrame.x + borderFrame.width - 20
@@ -430,7 +448,7 @@ Item {
                     }
 
                     SIconButton {
-                        visible: modelData.empty && modelData.role != 1
+                        visible: modelData.empty && (modelData.role == 2 || modelData.role == 3)
                         id: paintButton
                         icon: "qrc:/icons/paint.svg"
                         onPressed: {
@@ -450,6 +468,7 @@ Item {
                     y: borderFrame.y + borderFrame.height - height
                     width: borderFrame.width - 40
                     height: settingsColumn.implicitHeight + 2 + Math.min(0, width - 170)*2
+                    clip: true
                     
                     Rectangle {
                         anchors.fill: parent

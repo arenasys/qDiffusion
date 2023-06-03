@@ -213,7 +213,7 @@ Item {
             height: 30
             label: "Advanced Parameters"
             currentIndex: GUI.config.get("advanced") ? 1 : 0 
-            model: ["Disabled", "Enabled"]
+            model: ["Hide", "Show"]
             onCurrentIndexChanged: {
                 GUI.config.set("advanced", currentIndex != 0)
             }

@@ -395,6 +395,9 @@ def launch():
     app = Application([NAME])
     signal.signal(signal.SIGINT, lambda sig, frame: app.quit())
     app.startTimer(100)
+
+    app.setOrganizationName("qDiffusion")
+    app.setOrganizationDomain("qDiffusion")
     
     engine = QQmlApplicationEngine()
     engine.quit.connect(app.quit)

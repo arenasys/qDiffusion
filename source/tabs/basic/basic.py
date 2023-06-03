@@ -16,6 +16,7 @@ import time
 import json
 import random
 import math
+import os
 
 def encode_image(img):
     ba = QByteArray()
@@ -104,6 +105,16 @@ class BasicInput(QObject):
         dy = int((in_z.height()-h)*self._offset)
         self._original_crop = self._original.copy(dx, dy, w, h)
         self._image = self._original_crop.scaled(out_z, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+
+    @pyqtSlot(QUrl)
+    def saveImage(self, file):
+        file = file.toLocalFile()
+        if not "." in file.rsplit(os.path.sep,1)[-1]:
+            file = file + ".png"
+        try:
+            self.display.save(file)
+        except Exception:
+            pass
 
     def setLinked(self, linked):
         prevLinked = self._linked
@@ -482,6 +493,16 @@ class BasicOutput(QObject):
         self._display = None
         self.updated.emit()
 
+    @pyqtSlot(QUrl)
+    def saveImage(self, file):
+        file = file.toLocalFile()
+        if not "." in file.rsplit(os.path.sep,1)[-1]:
+            file = file + ".png"
+        try:
+            self.display.save(file)
+        except Exception:
+            pass
+
     @pyqtProperty(bool, notify=updated)
     def ready(self):
         return self._ready
@@ -570,11 +591,17 @@ class BasicOutput(QObject):
 
     @pyqtSlot()
     def drag(self):
-        self.basic.gui.dragFiles([self._file])
+        if not self._display:
+            self.basic.gui.dragFiles([self._file])
+        else:
+            self.basic.gui.dragImage(self.display)
 
     @pyqtSlot()
     def copy(self):
-        self.basic.gui.copyFiles([self._file])
+        if not self._display:
+            self.basic.gui.copyFiles([self._file])
+        else:
+            self.basic.gui.copyImage(self.display)
 
     @pyqtProperty(list, notify=updated)
     def artifacts(self):

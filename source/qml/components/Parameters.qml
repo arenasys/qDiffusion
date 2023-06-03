@@ -928,8 +928,6 @@ Item {
                         label: "ToMe Ratio"
                         width: parent.width
                         height: 30
-                        
-                        disabled: hrFactorInput.value == 1.0
 
                         bindMap: root.binding.values
                         bindKey: "tome_ratio"
