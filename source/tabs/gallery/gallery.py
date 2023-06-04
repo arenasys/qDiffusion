@@ -37,7 +37,7 @@ class Populater(QObject):
     def started(self):
         self.conn = sql.Connection(self)
         self.conn.connect()
-        self.conn.doQuery("CREATE TABLE folders(folder TEXT UNIQUE, name TEXT UNIQUE);")
+        self.conn.doQuery("CREATE TABLE folders(folder TEXT UNIQUE, name TEXT UNIQUE, idx INTEGER UNIQUE);")
         self.conn.doQuery("CREATE TABLE images(file TEXT UNIQUE, folder TEXT, parameters TEXT, idx INTEGER, width INTEGER, height INTEGER, CONSTRAINT unq UNIQUE (folder, idx));")
         self.conn.enableNotifications("folders")
         self.conn.enableNotifications("images")
@@ -51,25 +51,32 @@ class Populater(QObject):
     def addAllFolders(self):
         subfolders = [s.rsplit(os.path.sep,1)[-1] for s in list(filter(os.path.isdir, glob.glob(self.output + "/*")))]
         subfolders = [o for o in self.order if o in subfolders] + [s for s in subfolders if not s in self.order]
-        for name in subfolders:
+        for i, name in enumerate(subfolders):
             label = self.labels.get(name, name.capitalize())
-            self.addFolder(label, os.path.join(self.output, name))
+            self.addFolder(label, os.path.join(self.output, name), i)
+        self.finishFolders(len(subfolders))
+
+    def addFolder(self, name, folder, idx):
+        q = QSqlQuery(self.conn.db)
+        q.prepare("INSERT OR REPLACE INTO folders(folder, name, idx) VALUES (:folder, :name, :idx);")
+        q.bindValue(":folder", folder)
+        q.bindValue(":name", name)
+        q.bindValue(":idx", idx)
+        self.conn.doQuery(q)
+
+        self.folders.add(folder)
+        self.watcher.watchFolder(folder)
+
+    def finishFolders(self, total):
+        q = QSqlQuery(self.conn.db)
+        q.prepare("DELETE FROM folders WHERE idx >= :total;")
+        q.bindValue(":total", total)
+        self.conn.doQuery(q)
 
     @pyqtSlot(str)
     def onParentChanged(self, folder):
         if folder == self.output:
             self.addAllFolders()
-
-    @pyqtSlot(str, str)
-    def addFolder(self, name, folder):
-        q = QSqlQuery(self.conn.db)
-        q.prepare("INSERT OR REPLACE INTO folders(folder, name) VALUES (:folder, :name);")
-        q.bindValue(":folder", folder)
-        q.bindValue(":name", name)
-        self.conn.doQuery(q)
-        
-        self.folders.add(folder)
-        self.watcher.watchFolder(folder)
 
     @pyqtSlot(str, int)
     def onFinished(self, folder, total):
@@ -133,7 +140,6 @@ class Deleter(QThread):
 
 class Gallery(QObject):
     update = pyqtSignal()
-    add_folder = pyqtSignal(str, str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -144,7 +150,6 @@ class Gallery(QObject):
         qmlRegisterSingletonType(Gallery, "gui", 1, 0, "GALLERY", lambda qml, js: self)
 
         self.populater = Populater(self.gui, self.name)
-        self.add_folder.connect(self.populater.addFolder)
 
         self.populaterThread = QThread()
         self.populaterThread.started.connect(self.populater.started)
