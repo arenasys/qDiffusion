@@ -1,6 +1,6 @@
 import re
 
-from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent, QMimeData
+from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent, QMimeData, QByteArray, QBuffer, QIODevice
 from PyQt5.QtQuick import QQuickItem, QQuickPaintedItem
 from PyQt5.QtGui import QColor, QPen, QImage, QSyntaxHighlighter, QTextCharFormat
 from PyQt5.QtQml import qmlRegisterType
@@ -265,6 +265,13 @@ class SyntaxHighlighter(QSyntaxHighlighter):
         if text.startswith("Steps: "):
             for s, e in [m.span(1) for m in re.finditer("(?:\s)?([^,:]+):[^,]+(,)?", text.lower())]:
                 self.setFormat(s, e-s, field)
+
+def encode_image(img):
+    ba = QByteArray()
+    bf = QBuffer(ba)
+    bf.open(QIODevice.WriteOnly)
+    img.save(bf, "PNG")
+    return ba.data()
 
 def registerTypes():
     qmlRegisterType(ImageDisplay, "gui", 1, 0, "ImageDisplay")

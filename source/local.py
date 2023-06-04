@@ -16,7 +16,6 @@ IS_WIN = platform.system() == 'Windows'
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QThread
 from PyQt5.QtWidgets import QApplication
 
-from parameters import save_image
 import git
 
 def log_traceback(label):
@@ -200,10 +199,4 @@ class LocalInference(QThread):
         self.requests.put(request)
 
     def onResponse(self, response):
-        if response["type"] == "result":
-            self.saveResults(response["data"]["images"], response["data"]["metadata"])
         self.response.emit(response)
-
-    def saveResults(self, images, metadata):
-        for i in range(len(images)):
-            save_image(images[i], metadata[i], self.gui.outputDirectory())

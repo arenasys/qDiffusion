@@ -8,7 +8,7 @@ from enum import Enum
 
 import parameters
 import re
-from misc import MimeData, SyntaxHighlighter
+from misc import MimeData, SyntaxHighlighter, encode_image
 from canvas.shared import PILtoQImage, QImagetoPIL, CanvasWrapper
 from canvas.canvas import Canvas
 import sql
@@ -17,13 +17,6 @@ import json
 import random
 import math
 import os
-
-def encode_image(img):
-    ba = QByteArray()
-    bf = QBuffer(ba)
-    bf.open(QIODevice.WriteOnly)
-    img.save(bf, "PNG")
-    return ba.data()
 
 MIME_BASIC_INPUT = "application/x-qd-basic-input"
 MIME_BASIC_DIVIDER = "application/x-qd-basic-divider"
@@ -632,11 +625,10 @@ class Basic(QObject):
         self._requests = []
         self._mapping = {}
         self._annotations = {}
+        self._folders = {}
 
         self._openedIndex = -1
         self._openedArea = ""
-
-        self._bgCache = None
 
         self._replyIndex = None
 
@@ -695,6 +687,8 @@ class Basic(QObject):
         batch_count = int(self._parameters._values.get("batch_count"))
         total = max(len(order), batch_count * batch_size)
 
+        output_folder = self._parameters._values.get("batch_size")
+
         if order:
             masks = []
             areas = []
@@ -742,13 +736,17 @@ class Basic(QObject):
                 self._remaining = 0
                 self._requests = None
             request = self.buildRequest()
-            self._ids += [self.gui.makeRequest(request)]
+            id = self.gui.makeRequest(request)
+            self._folders[id] = self._parameters._values.get("output_folder")
+            self._ids += [id]
             self.updated.emit()
 
     @pyqtSlot(int, str)
     def result(self, id, name):
+        results = self.gui._results[id]
+
         if id in self._annotations:
-            img = self.gui._results[id]["result"][0]
+            img = results["result"][0]
             id = self._annotations[id]
             for i in self._inputs:
                 if i._id == id:
@@ -757,6 +755,11 @@ class Basic(QObject):
             return
         if not id in self._mapping:
             self._mapping[id] = (time.time_ns() // 1000000) % (2**31 - 1)
+
+        if "result" in results and "metadata" in results:
+            for i in range(len(results["result"])):
+                folder = self._folders.pop(id)
+                parameters.save_image(results["result"][i], results["metadata"][i], self.gui.outputDirectory(), folder)
 
         out = self._mapping[id]
         if not out in self._outputs:
@@ -1349,10 +1352,8 @@ class Basic(QObject):
         drag.setMimeData(mimeData)
         drag.exec()
 
-    @pyqtSlot(MimeData, result=bool)
+    @pyqtSlot(MimeData)
     def dividerDrop(self, mimeData):
         mimeData = mimeData.mimeData
         if MIME_BASIC_DIVIDER in mimeData.formats():
             self.gui.config.set("swap", not self.gui.config.get("swap", False))
-            return True
-        return False

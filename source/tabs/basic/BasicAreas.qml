@@ -23,6 +23,14 @@ Item {
         anchors.bottom: divider.top
     }
 
+    BasicOutputs {
+        id: outputArea
+        anchors.top: divider.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+    }
+
     SDividerHB {
         id: divider
         minOffset: 128
@@ -38,13 +46,5 @@ Item {
             anchors.topMargin: 1
             anchors.bottomMargin: 1
         }
-    }
-
-    BasicOutputs {
-        id: outputArea
-        anchors.top: divider.bottom
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
     }
 }

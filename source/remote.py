@@ -11,8 +11,6 @@ import sys
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QThread
 from PyQt5.QtWidgets import QApplication
 
-from parameters import save_image
-
 import base64
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -195,13 +193,7 @@ class RemoteInference(QThread):
         self.requests.put(request)
 
     def onResponse(self, response):
-        if response["type"] == "result":
-            self.saveResults(response["data"]["images"], response["data"]["metadata"])
         self.response.emit(response)
-
-    def saveResults(self, images, metadata):
-        for i in range(len(images)):
-            save_image(images[i], metadata[i], self.gui.outputDirectory())
 
     @pyqtSlot(str)
     def onUploadDone(self, file):

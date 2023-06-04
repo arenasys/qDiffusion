@@ -13,7 +13,7 @@ import "../../components"
 Item {
     id: root
     clip: true
-    property var swap: GUI.config.get("swap")
+    property var swap: GUI.config != null ? GUI.config.get("swap") : false
     onSwapChanged: {
         leftDivider.offset = 210
         rightDivider.offset = 210
@@ -105,6 +105,7 @@ Item {
 
     BasicAreas {
         id: areas
+        clip: true
         anchors.left: mainArea.left
         anchors.top: mainArea.top
         anchors.right: mainArea.right
@@ -377,9 +378,7 @@ Item {
         filters: ['application/x-qd-basic-divider']
 
         onDropped: {
-            if(BASIC.dividerDrop(mimeData)) {
-                root.swap = !root.swap
-            }
+            BASIC.dividerDrop(mimeData)
         }
 
         Rectangle {

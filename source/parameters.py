@@ -11,7 +11,10 @@ import PIL.PngImagePlugin
 
 from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QVariant, QSize
 from PyQt5.QtQml import qmlRegisterUncreatableType, qmlRegisterType
-from PyQt5.QtGui import QGuiApplication
+from PyQt5.QtGui import QImage
+
+from misc import encode_image
+
 IDX = -1
 
 LABELS = [
@@ -117,13 +120,20 @@ def get_index(folder):
     idx = max([get_idx(f) for f in os.listdir(folder)] + [0]) + 1
     return idx
 
-def save_image(img, metadata, outputs):
+def save_image(img, metadata, outputs, subfolder=""):
+    if type(img) == QImage:
+        img = encode_image(img)
+
     if type(img) == bytes:
         img = PIL.Image.open(io.BytesIO(img))
+
     m = PIL.PngImagePlugin.PngInfo()
     m.add_text("parameters", format_parameters(metadata))
 
-    folder = os.path.join(outputs, metadata["mode"])
+    if not subfolder:
+        subfolder = metadata["mode"]
+
+    folder = os.path.join(outputs, subfolder)
     os.makedirs(folder, exist_ok=True)
 
     idx = get_index(folder)
@@ -316,7 +326,7 @@ class Parameters(QObject):
         self._client_only = [
             "models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "SR", "LoRAs", "HNs", "LoRA", "HN", "TIs", "TI", "CN", "CNs", "hr_upscalers", "img2img_upscalers", 
             "attentions", "device", "devices", "batch_count", "prompt", "negative_prompt", "vram_usages", "artifact_modes", "preview_modes", "schedules",
-            "CN_modes", "CN_preprocessors", "vram_modes", "true_samplers", "schedule", "network_modes", "model"
+            "CN_modes", "CN_preprocessors", "vram_modes", "true_samplers", "schedule", "network_modes", "model", "output_folder"
         ]
         self._values = VariantMap(self, {
             "prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7, "strength": 0.75, "seed": -1, "eta": 1.0,
@@ -327,7 +337,7 @@ class Parameters(QObject):
             "vram_mode": "Default", "vram_modes": ["Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"], "preview_mode": "Disabled",
             "preview_modes": ["Disabled", "Light", "Medium", "Full"], "preview_interval":1, "true_samplers": [], "true_sampler": "Euler a",
             "network_mode": "Dynamic", "network_modes": ["Dynamic", "Static"],
-            "tome_ratio": 0.0, "hr_tome_ratio": 0.0
+            "tome_ratio": 0.0, "hr_tome_ratio": 0.0, "output_folder": ""
         })
         self._values.updating.connect(self.mapsUpdating)
         self._values.updated.connect(self.onUpdated)

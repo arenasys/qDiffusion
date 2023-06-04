@@ -131,7 +131,7 @@ class Watcher(QObject):
             return
         else:
             self.parent_changed.emit(folder)
-            for child, parent in self.parents.items():
+            for child, parent in list(self.parents.items()):
                 if parent == folder:
                     self.watcher.addPath(child)
                     self.watcherStart(child)

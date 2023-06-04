@@ -1067,6 +1067,16 @@ Item {
                             GUI.config.set("device", value)
                         }
                     }
+
+                    OTextInput {
+                        label: "Output Folder"
+                        width: parent.width
+                        height: 30
+                        placeholder: "Default"
+
+                        bindMap: root.binding.values
+                        bindKey: "output_folder"
+                    }
                 }
             }
         }

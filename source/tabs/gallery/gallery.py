@@ -21,6 +21,14 @@ class Populater(QObject):
         self.gui = gui
         self.name = name
 
+        self.output = self.gui.outputDirectory()
+
+        self.order = ["txt2img", "img2img", "favourites"]
+        self.labels = {"txt2img": "Txt2Img", "img2img": "Img2Img"}
+
+        for s in self.order:
+            os.makedirs(os.path.join(self.output, s), exist_ok=True)
+
         self.conn = None
         self.watcher = filesystem.Watcher.instance
         self.folders = set()
@@ -31,12 +39,27 @@ class Populater(QObject):
         self.conn.connect()
         self.conn.doQuery("CREATE TABLE folders(folder TEXT UNIQUE, name TEXT UNIQUE);")
         self.conn.doQuery("CREATE TABLE images(file TEXT UNIQUE, folder TEXT, parameters TEXT, idx INTEGER, width INTEGER, height INTEGER, CONSTRAINT unq UNIQUE (folder, idx));")
-        self.conn.enableNotifications("folder")
+        self.conn.enableNotifications("folders")
         self.conn.enableNotifications("images")
+
+        self.addAllFolders()
 
         self.watcher.finished.connect(self.onFinished)
         self.watcher.folder_changed.connect(self.onResult)
-        
+        self.watcher.parent_changed.connect(self.onParentChanged)
+
+    def addAllFolders(self):
+        subfolders = [s.rsplit(os.path.sep,1)[-1] for s in list(filter(os.path.isdir, glob.glob(self.output + "/*")))]
+        subfolders = [o for o in self.order if o in subfolders] + [s for s in subfolders if not s in self.order]
+        for name in subfolders:
+            label = self.labels.get(name, name.capitalize())
+            self.addFolder(label, os.path.join(self.output, name))
+
+    @pyqtSlot(str)
+    def onParentChanged(self, folder):
+        if folder == self.output:
+            self.addAllFolders()
+
     @pyqtSlot(str, str)
     def addFolder(self, name, folder):
         q = QSqlQuery(self.conn.db)
@@ -44,7 +67,7 @@ class Populater(QObject):
         q.bindValue(":folder", folder)
         q.bindValue(":name", name)
         self.conn.doQuery(q)
-
+        
         self.folders.add(folder)
         self.watcher.watchFolder(folder)
 
@@ -128,21 +151,6 @@ class Gallery(QObject):
 
         self.populater.moveToThread(self.populaterThread)
         self.populaterThread.start()
-
-        output = self.gui.outputDirectory()
-        order = ["txt2img", "img2img", "favourites"]
-        labels = {"txt2img": "Txt2Img", "img2img": "Img2Img"}
-
-        for s in order:
-            os.makedirs(os.path.join(output, s), exist_ok=True)
-
-        subfolders = [s.rsplit(os.path.sep,1)[-1] for s in list(filter(os.path.isdir, glob.glob(output + "/*")))]
-        subfolders = [o for o in order if o in subfolders] + [s for s in subfolders if not s in order]
-        for name in subfolders:
-            label = name.capitalize()
-            if name in labels:
-                label = labels[name]
-            self.add_folder.emit(label, os.path.join(output, name))
 
         parent.aboutToQuit.connect(self.stop)
 
