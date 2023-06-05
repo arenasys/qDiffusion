@@ -639,7 +639,7 @@ class Parameters(QObject):
                     del data[k]
 
         for k in ["hr_tome_ratio", "tome_ratio"]:
-            if k in data and data[k] == 0.0 or not self.gui.config.get("advanced"):
+            if k in data and (data[k] == 0.0 or not self.gui.config.get("advanced")):
                 del data[k]
         
         data = {k.lower():v for k,v in data.items()}
