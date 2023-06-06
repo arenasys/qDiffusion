@@ -610,6 +610,7 @@ class Basic(QObject):
     pastedText = pyqtSignal(str)
     pastedImage = pyqtSignal(QImage)
     openedUpdated = pyqtSignal()
+    startBuildModel = pyqtSignal()
     def __init__(self, parent=None):
         super().__init__(parent)
         self.gui = parent
@@ -1306,6 +1307,8 @@ class Basic(QObject):
     
     @pyqtSlot(CanvasWrapper, BasicInput)
     def syncCanvas(self, wrapper, target):
+        if target == None:
+            return
         canvas = wrapper.canvas
         if target._role == BasicInputRole.MASK:
             target.setImageData(canvas.getImage())
@@ -1357,3 +1360,7 @@ class Basic(QObject):
         mimeData = mimeData.mimeData
         if MIME_BASIC_DIVIDER in mimeData.formats():
             self.gui.config.set("swap", not self.gui.config.get("swap", False))
+    
+    @pyqtSlot()
+    def doBuildModel(self):
+        self.startBuildModel.emit()

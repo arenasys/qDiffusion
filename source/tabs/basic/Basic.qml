@@ -30,6 +30,13 @@ Item {
         modal: true
         dim: true
 
+        Connections {
+            target: BASIC
+            function onStartBuildModel() {
+                buildDialog.open()
+            }
+        }
+
         OTextInput {
             id: filenameInput
             width: 290
@@ -214,7 +221,7 @@ Item {
                 BASIC.forever = params.forever
             }
             onBuildModel: {
-                buildDialog.open()
+                BASIC.doBuildModel()
             }
             function sizeDrop(mimeData) {
                 BASIC.sizeDrop(mimeData)

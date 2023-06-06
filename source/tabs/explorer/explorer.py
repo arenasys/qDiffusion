@@ -233,6 +233,8 @@ class Explorer(QObject):
     
         self._currentTab = "favourite"
         self._currentFolder = ""
+        self._cellSize = 150
+        self._showInfo = False
 
         self.dragSignal.connect(self.drag, Qt.QueuedConnection)
 
@@ -381,3 +383,23 @@ class Explorer(QObject):
         folder = MODE_FOLDERS[folder][0]
         request = {"type":"manage", "data": {"operation": "move", "old_file": model, "new_folder": folder, "new_subfolder": subfolder}}
         self.gui.makeRequest(request)
+
+    @pyqtProperty(int, notify=updated)
+    def cellSize(self):
+        return self._cellSize
+
+    @pyqtSlot(int)
+    def adjustCellSize(self, adj):
+        cellSize = self._cellSize + adj
+        if cellSize >= 150 and cellSize <= 450:
+            self._cellSize = cellSize
+            self.updated.emit()
+
+    @pyqtProperty(bool, notify=updated)
+    def showInfo(self):
+        return self._showInfo
+    
+    @showInfo.setter
+    def showInfo(self, showInfo):
+        self._showInfo = showInfo
+        self.updated.emit()

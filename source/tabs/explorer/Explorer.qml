@@ -154,6 +154,7 @@ Item {
                 label: EXPLORER.getLabel(mode)
                 folder: EXPLORER.currentFolder
                 search: search.text
+                showInfo: EXPLORER.showInfo 
 
                 onDeleteModel: {
                     deleteDialog.show(model)
@@ -241,14 +242,10 @@ Item {
         if(event.modifiers & Qt.ControlModifier) {
             switch(event.key) {
             case Qt.Key_Minus:
-                if(grid.cellSize > 150) {
-                    grid.cellSize -= 100
-                }
+                EXPLORER.adjustCellSize(-100)
                 break;
             case Qt.Key_Equal:
-                if(grid.cellSize < 450) {
-                    grid.cellSize += 100
-                }
+                EXPLORER.adjustCellSize(100)
                 break;
             default:
                 event.accepted = false
@@ -258,7 +255,7 @@ Item {
             switch(event.key) {
             case Qt.Key_Shift: 
                 if(!searchInput.activeFocus) {
-                    grid.showInfo = !grid.showInfo
+                    EXPLORER.showInfo = !EXPLORER.showInfo
                 }
                 break
             case Qt.Key_Escape:

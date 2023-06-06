@@ -58,6 +58,7 @@ SMenuBar {
         SMenuItem {
             text: "Reload"
             shortcut: "Ctrl+R"
+            global: true
             onPressed: {
                 SETTINGS.restart()
             }
@@ -67,6 +68,7 @@ SMenuBar {
         SMenuItem {
             text: "Quit"
             shortcut: "Ctrl+Q"
+            global: true
             onPressed: {
                 GUI.quit()
             }
@@ -75,13 +77,82 @@ SMenuBar {
     SMenu {
         title: "Edit"
         SMenuItem {
-            text: "Action"
+            text: "Refresh models"   
+        }
+
+        SMenuItem {
+            visible: GUI.currentTab == "Basic"
+            height: visible ? 20 : 0
+            text: "Build model"
+            onPressed: {
+                BASIC.doBuildModel()
+            }
         }
     }
     SMenu {
         title: "View"
         SMenuItem {
-            text: "Action"
+            visible: GUI.currentTab == "Basic"
+            height: visible ? 20 : 0
+            text: "Swap side"
+            checkable: true
+            checked: GUI.config != null ? GUI.config.get("swap") : false
+            onCheckedChanged: {
+                GUI.config.set("swap", checked)
+                checked = Qt.binding(function () { return GUI.config != null ? GUI.config.get("swap") : false; })
+            }
+        }
+
+        SMenuItem {
+            visible: GUI.currentTab == "Models"
+            height: visible ? 20 : 0
+            text: "Thumbails"
+            shortcut: "Shift"
+            checkable: true
+            checked: !EXPLORER.showInfo
+            onCheckedChanged: {
+                if(checked != !EXPLORER.showInfo) {
+                    EXPLORER.showInfo = !checked
+                    checked = Qt.binding(function () { return !EXPLORER.showInfo; })
+                }
+            }
+        }
+        SMenuItem {
+            visible: GUI.currentTab == "Models"
+            height: visible ? 20 : 0
+            text: "Zoom in"
+            shortcut: "Ctrl+="
+            onPressed: {
+                EXPLORER.adjustCellSize(100)
+            }
+        }
+        SMenuItem {
+            visible: GUI.currentTab == "Models"
+            height: visible ? 20 : 0
+            text: "Zoom out"
+            shortcut: "Ctrl+-"
+            onPressed: {
+                EXPLORER.adjustCellSize(-100)
+            }
+        }
+
+        SMenuItem {
+            visible: GUI.currentTab == "Gallery"
+            height: visible ? 20 : 0
+            text: "Zoom in"
+            shortcut: "Ctrl+="
+            onPressed: {
+                GALLERY.adjustCellSize(50)
+            }
+        }
+        SMenuItem {
+            visible: GUI.currentTab == "Gallery"
+            height: visible ? 20 : 0
+            text: "Zoom out"
+            shortcut: "Ctrl+-"
+            onPressed: {
+                GALLERY.adjustCellSize(-50)
+            }
         }
     }
     SMenu {

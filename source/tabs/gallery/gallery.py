@@ -147,6 +147,8 @@ class Gallery(QObject):
         self.priority = 3
         self.name = "Gallery"
 
+        self._cellSize = 200
+
         qmlRegisterSingletonType(Gallery, "gui", 1, 0, "GALLERY", lambda qml, js: self)
 
         self.populater = Populater(self.gui, self.name)
@@ -203,3 +205,14 @@ class Gallery(QObject):
     def stop(self):
         self.populaterThread.quit()
         self.populaterThread.wait()
+
+    @pyqtProperty(int, notify=update)
+    def cellSize(self):
+        return self._cellSize
+
+    @pyqtSlot(int)
+    def adjustCellSize(self, adj):
+        cellSize = self._cellSize + adj
+        if cellSize >= 100 and cellSize <= 200:
+            self._cellSize = cellSize
+            self.update.emit()

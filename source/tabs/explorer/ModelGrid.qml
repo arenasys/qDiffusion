@@ -13,7 +13,7 @@ Item {
     property var mode: ""
     property var folder: ""
     property var label: ""
-    property var cellSize: 150
+    property var cellSize: EXPLORER.cellSize
     property var descLength: (cellSize*cellSize)/100
     property var showInfo: false
     property var search: ""

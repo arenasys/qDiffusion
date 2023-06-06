@@ -171,6 +171,13 @@ Rectangle {
         onDrag: {
             GALLERY.doDrag(gallery.getSelectedFiles())
         }
+
+        Connections {
+            target: GALLERY
+            function onCellSizeChanged() {
+                gallery.setCellSize(GALLERY.cellSize)
+            }
+        }
     }
 
     SDialog {
@@ -470,10 +477,10 @@ Rectangle {
                 }
                 break;
             case Qt.Key_Minus:
-                gallery.setCellSize(100)
+                GALLERY.adjustCellSize(-50)
                 break;
             case Qt.Key_Equal:
-                gallery.setCellSize(200)
+                GALLERY.adjustCellSize(50)
                 break;
             default:
                 event.accepted = false

@@ -12,6 +12,7 @@ MenuItem {
     font.pointSize: 10.5
 
     property var shortcut: ""
+    property var global: false
     property real menuItemSize: 20
 
     signal pressed()
@@ -21,6 +22,7 @@ MenuItem {
     }
 
     Shortcut {
+        enabled: menuItem.global
         sequence: menuItem.shortcut
         onActivated: menuItem.pressed()
     }
