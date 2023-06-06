@@ -375,7 +375,11 @@ class BasicInput(QObject):
         if MIME_BASIC_INPUT in mimeData.formats():
             source = int(str(mimeData.data(MIME_BASIC_INPUT), 'utf-8'))
             source = self.basic._inputs[source]
-            self._image = source.display
+            if not source._display:
+                self._image = source._original
+                self._offset = source._offset
+            else:
+                self._image = source.display
             found = True
         else:
             source = mimeData.imageData()
