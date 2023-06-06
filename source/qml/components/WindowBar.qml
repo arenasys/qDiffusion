@@ -11,8 +11,10 @@ SMenuBar {
     SMenu {
         id: menu
         title: "File"
+        clipShadow: true
         SMenu {
             title: "Import"
+            clipShadow: true
             Repeater {
                 property var tmp: ["Checkpoint", "Component", "LoRA", "Hypernet", "Embedding", "Upscaler"]
                 model: tmp
@@ -76,6 +78,7 @@ SMenuBar {
     }
     SMenu {
         title: "Edit"
+        clipShadow: true
         SMenuItem {
             text: "Refresh models"   
         }
@@ -91,6 +94,7 @@ SMenuBar {
     }
     SMenu {
         title: "View"
+        clipShadow: true
         SMenuItem {
             visible: GUI.currentTab == "Basic"
             height: visible ? 20 : 0
@@ -157,6 +161,7 @@ SMenuBar {
     }
     SMenu {
         title: "Help"
+        clipShadow: true
         SMenuItem {
             text: "About"
             onPressed: {

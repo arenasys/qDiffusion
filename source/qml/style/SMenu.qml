@@ -9,19 +9,32 @@ Menu {
     readonly property real menuItemSize: 20
     topPadding: 2
     bottomPadding: 2
+    property var clipShadow: false
 
     delegate: SContextMenuItem {
         menuItemSize: root.menuItemSize
     }
 
-    background: RectangularGlow {
+    background: Item {
         implicitWidth: 150
         implicitHeight: menuItemSize
-        glowRadius: 5
-        //spread: 0.2
-        color: "black"
-        cornerRadius: 10
 
+        Item {
+            clip: root.clipShadow
+            anchors.fill: parent
+            anchors.margins: -10
+            anchors.topMargin: 0
+            RectangularGlow {
+                anchors.fill: parent
+                anchors.margins: 10
+                anchors.topMargin: 0
+                glowRadius: 5
+                //spread: 0.2
+                color: "black"
+                cornerRadius: 10
+            }
+        }
+        
         Rectangle {
             anchors.fill: parent
             color: COMMON.bg3
@@ -29,4 +42,6 @@ Menu {
             border.color: COMMON.bg4
         }
     }
+
+    
 }

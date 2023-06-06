@@ -691,9 +691,10 @@ Item {
                     }
 
                     SContextMenu {
-                        y: 35
+                        y: 34
                         id: addContextMenu
                         width: 110
+                        clipShadow: true
                         SContextMenuItem {
                             text: "Image"
                             onPressed: {
