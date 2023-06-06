@@ -268,6 +268,34 @@ Rectangle {
         text: gallery.selectedLength > 1 ? gallery.selectedLength + " images selected"  : ""
     }
 
+    Rectangle {
+        id: sizeInfo
+        anchors.right: galleryDivider.left
+        anchors.top: parent.top
+        anchors.left: sizeInfoText.left
+        anchors.rightMargin: -5
+        anchors.topMargin: -5
+        opacity: 0.9
+        height: 25
+        visible: sizeInfoText.text != ""
+        color: "#e0101010"
+        border.width: 1
+        border.color: COMMON.bg3
+    }
+
+    SText {
+        id: sizeInfoText
+        anchors.top: parent.top
+        anchors.right: galleryDivider.left
+        verticalAlignment: Text.AlignVCenter
+        rightPadding: 8
+        leftPadding: 8
+        topPadding: 1
+        bottomPadding: 8
+        font.pointSize: 9
+        text: gallery.currentWidth + "x" + gallery.currentHeight
+    }
+
     SDividerVR {
         id: galleryDivider
         minOffset: 5
