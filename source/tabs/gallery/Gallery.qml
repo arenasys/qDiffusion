@@ -275,10 +275,10 @@ Rectangle {
         anchors.left: sizeInfoText.left
         anchors.rightMargin: -5
         anchors.topMargin: -5
-        opacity: 0.9
+        opacity: 0.8
         height: 25
         visible: sizeInfoText.text != ""
-        color: "#e0101010"
+        color: "#c0101010"
         border.width: 1
         border.color: COMMON.bg3
     }
@@ -293,6 +293,7 @@ Rectangle {
         topPadding: 1
         bottomPadding: 8
         font.pointSize: 9
+        color: COMMON.fg1_5
         text: gallery.currentWidth + "x" + gallery.currentHeight
     }
 
