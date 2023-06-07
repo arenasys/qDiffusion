@@ -374,13 +374,14 @@ class BasicInput(QObject):
         found = False
         if MIME_BASIC_INPUT in mimeData.formats():
             source = int(str(mimeData.data(MIME_BASIC_INPUT), 'utf-8'))
-            source = self.basic._inputs[source]
-            if not source._display:
-                self._image = source._original
-                self._offset = source._offset
-            else:
-                self._image = source.display
-            found = True
+            if source != index:
+                source = self.basic._inputs[source]
+                if not source._display:
+                    self._image = source._original
+                    self._offset = source._offset
+                else:
+                    self._image = source.display
+                found = True
         else:
             source = mimeData.imageData()
             if source and not source.isNull():
@@ -1291,7 +1292,12 @@ class Basic(QObject):
         unet = self._parameters._values.get("UNET")
         vae = self._parameters._values.get("VAE")
         clip = self._parameters._values.get("CLIP")
+
         request = {"type":"manage", "data":{"operation": "build", "unet":unet, "vae":vae, "clip":clip, "file":filename}}
+
+        if self._parameters._values.get("network_mode") == "Static":
+            request["data"]["prompt"] = self._parameters.buildPrompts(1)
+
         self.gui.makeRequest(request)    
 
     @pyqtSlot(CanvasWrapper, BasicInput)
