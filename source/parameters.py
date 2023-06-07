@@ -337,7 +337,7 @@ class Parameters(QObject):
             "vram_mode": "Default", "vram_modes": ["Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"], "preview_mode": "Disabled",
             "preview_modes": ["Disabled", "Light", "Medium", "Full"], "preview_interval":1, "true_samplers": [], "true_sampler": "Euler a",
             "network_mode": "Dynamic", "network_modes": ["Dynamic", "Static"],
-            "tome_ratio": 0.0, "hr_tome_ratio": 0.0, "output_folder": ""
+            "tome_ratio": 0.0, "hr_tome_ratio": 0.0, "output_folder": "", "autocast": "Disabled", "autocast_modes": ["Disabled", "Enabled"]
         })
         self._values.updating.connect(self.mapsUpdating)
         self._values.updated.connect(self.onUpdated)
@@ -633,14 +633,16 @@ class Parameters(QObject):
             data["show_preview"] = data["preview_mode"]
         del data["preview_mode"]
 
+        for k in ["hr_tome_ratio", "tome_ratio"]:
+            if k in data and (data[k] == 0.0 or not self.gui.config.get("advanced")):
+                del data[k]
+
+        data["autocast"] = data["autocast"] == "Enabled"
+
         if request["type"] == "upscale":
             for k in list(data.keys()):
                 if not k in {"img2img_upscaler", "width", "height", "image", "mask", "mask_blur", "padding"}:
                     del data[k]
-
-        for k in ["hr_tome_ratio", "tome_ratio"]:
-            if k in data and (data[k] == 0.0 or not self.gui.config.get("advanced")):
-                del data[k]
         
         data = {k.lower():v for k,v in data.items()}
 

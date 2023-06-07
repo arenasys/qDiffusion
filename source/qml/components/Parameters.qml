@@ -1055,6 +1055,16 @@ Item {
                     }
 
                     OChoice {
+                        label: "Autocast"
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "autocast"
+                        bindKeyModel: "autocast_modes"
+                    }
+
+                    OChoice {
                         label: "Device"
                         width: parent.width
                         height: 30
