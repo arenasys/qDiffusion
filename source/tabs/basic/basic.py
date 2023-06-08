@@ -1293,7 +1293,9 @@ class Basic(QObject):
         vae = self._parameters._values.get("VAE")
         clip = self._parameters._values.get("CLIP")
 
-        request = {"type":"manage", "data":{"operation": "build", "unet":unet, "vae":vae, "clip":clip, "file":filename}}
+        device = self._parameters._values.get("device")
+
+        request = {"type":"manage", "data":{"operation": "build", "unet":unet, "vae":vae, "clip":clip, "file":filename, "device_name": device}}
 
         if self._parameters._values.get("network_mode") == "Static":
             request["data"]["prompt"] = self._parameters.buildPrompts(1)
