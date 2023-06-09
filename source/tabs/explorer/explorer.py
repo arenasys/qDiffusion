@@ -12,7 +12,7 @@ import shutil
 import time
 import json
 from misc import MimeData
-from gui import MODE_FOLDERS
+from gui import MODEL_FOLDERS
 
 LABELS =  {
     "favourite": "Favourites",
@@ -380,7 +380,7 @@ class Explorer(QObject):
     
     @pyqtSlot(str, str, str)
     def doMove(self, model, folder, subfolder):
-        folder = MODE_FOLDERS[folder][0]
+        folder = MODEL_FOLDERS[folder][0]
         request = {"type":"manage", "data": {"operation": "move", "old_file": model, "new_folder": folder, "new_subfolder": subfolder}}
         self.gui.makeRequest(request)
 

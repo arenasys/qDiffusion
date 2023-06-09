@@ -280,7 +280,162 @@ Item {
         onInspect: {
             BASIC.pasteText(positivePrompt)
         }
+        onTab: {
+            if(suggestions.visible) {
+                suggestions.complete()
+            } else {
+                root.forceActiveFocus()
+                prompts.inactive.forceActiveFocus()
+            }
+        }
+        onMenu: {
+            if(suggestions.visible) {
+                if(dir == 0) {
+                    promptCursor.typed = false
+                } else if (dir == 1) {
+                    suggestions.incrementCurrentIndex()
+                    suggestions.positionViewAtIndex(suggestions.currentIndex, ListView.Contain)
+                } else if (dir == -1) {
+                    suggestions.decrementCurrentIndex()
+                    suggestions.positionViewAtIndex(suggestions.currentIndex, ListView.Contain)
+                }
+            }
+        }
+    }
 
+    Item {
+        id: promptCursor
+        visible: typed && prompts.cursorX != null && prompts.cursorText != ""
+        x: visible ? prompts.x + prompts.cursorX : 0
+        y: visible ? prompts.y + prompts.cursorY - height - 2 : 0
+        width: 200
+        height: 1
+
+        property var typed: false
+        property var targetStart: null
+        property var targetEnd: null
+
+        Connections {
+            target: prompts
+
+            function onInput() {
+                promptCursor.typed = true
+            }
+
+            function onCursorTextChanged() {
+                if(prompts.cursorText == null) {
+                    promptCursor.typed = false
+                } else if (promptCursor.typed) {
+                    BASIC.updateSuggestions(prompts.cursorText, prompts.cursorPosition)
+                    promptCursor.targetStart = BASIC.suggestionStart(prompts.cursorText, prompts.cursorPosition)
+                    promptCursor.targetEnd = BASIC.suggestionEnd(prompts.cursorText, prompts.cursorPosition)
+                }
+            }
+        }
+    }
+
+    Rectangle {
+        visible: suggestions.visible
+        anchors.fill: suggestions
+        color: COMMON.bg2
+        border.width: 1
+        border.color: COMMON.bg4
+        anchors.margins: -1
+    }
+    Rectangle {
+        visible: suggestions.visible
+        anchors.fill: suggestions
+        color: "transparent"
+        border.width: 1
+        border.color: COMMON.bg0
+        anchors.margins: -2
+    }
+
+    ListView {
+        id: suggestions
+        visible: promptCursor.visible && BASIC.suggestions.length != 0
+        anchors.left: promptCursor.left
+        anchors.right: promptCursor.right
+        anchors.bottom: promptCursor.bottom
+        height: Math.min(contentHeight, 3*20)
+        clip: true
+        model: BASIC.suggestions
+
+        verticalLayoutDirection: ListView.BottomToTop
+        boundsBehavior: Flickable.StopAtBounds
+        highlightFollowsCurrentItem: false
+
+        function complete() {
+            var curr = prompts.active
+            curr.completeText(suggestions.currentItem.text, promptCursor.targetStart, promptCursor.targetEnd)
+        }
+
+        ScrollBar.vertical: SScrollBarV {
+            id: suggestionsScrollBar
+            padding: 0
+            barWidth: 2
+            stepSize: 1/(BASIC.suggestions.length)
+            policy: suggestions.contentHeight > suggestions.height ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+        }
+
+        delegate: Rectangle {
+            width: suggestions.width
+            height: 20
+            property var selected: suggestions.currentIndex == index
+            property var text: BASIC.suggestionDisplay(modelData)
+            color: selected ?  COMMON.bg4 : COMMON.bg3
+
+            SText {
+                id: decoText
+                anchors.right: parent.right
+                width: contentWidth
+                height: 20
+                text: BASIC.suggestionDetail(modelData)
+                color: width < contentWidth ? "transparent" : COMMON.fg2
+                font.pointSize: 8.5
+                rightPadding: 8
+                horizontalAlignment: Text.AlignRight
+                verticalAlignment: Text.AlignVCenter
+            }
+            SText {
+                id: valueText
+                anchors.left: parent.left
+                anchors.right: decoText.left
+
+                height: 20
+                text: parent.text
+                color: BASIC.suggestionColor(modelData)
+                font.pointSize: 8.5
+                leftPadding: 5
+                rightPadding: 10
+                elide: Text.ElideRight
+
+                verticalAlignment: Text.AlignVCenter
+            }
+            MouseArea {
+                id: delegateMouse
+                anchors.fill: parent
+                hoverEnabled: true
+                preventStealing: true
+                onPressed: {
+                    suggestions.complete()
+                }
+                onEntered: {
+                    suggestions.currentIndex = index
+                }
+            }
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            onWheel: {
+                if(wheel.angleDelta.y < 0) {
+                    suggestionsScrollBar.increase()
+                } else {
+                    suggestionsScrollBar.decrease()
+                }
+            }
+        }
     }
 
     Rectangle {

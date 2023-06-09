@@ -275,13 +275,26 @@ Item {
 
             contentItem: ListView {
                 clip: true
-                implicitHeight: contentHeight
+                implicitHeight: contentHeight+2
                 model: control.popup.visible ? control.delegateModel : null
                 currentIndex: control.highlightedIndex
                 boundsBehavior: Flickable.StopAtBounds
-                ScrollIndicator.vertical: ScrollIndicator {
-                    anchors.right: parent.right
-                    anchors.rightMargin: -2
+                ScrollBar.vertical: SScrollBarV {
+                    id: scrollBar
+                    padding: 0
+                    barWidth: 2
+                    stepSize: 1/Math.ceil(parent.implicitHeight/22)
+                    policy: parent.contentHeight > parent.height ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+                }
+                MouseArea {
+                    anchors.fill: parent
+                    onWheel: {
+                        if(wheel.angleDelta.y < 0) {
+                            scrollBar.increase()
+                        } else {
+                            scrollBar.decrease()
+                        }
+                    }
                 }
             }
 

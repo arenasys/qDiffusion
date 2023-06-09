@@ -612,6 +612,7 @@ class BasicOutput(QObject):
 
 class Basic(QObject):
     updated = pyqtSignal()
+    suggestionsUpdated = pyqtSignal()
     results = pyqtSignal()
     pastedText = pyqtSignal(str)
     pastedImage = pyqtSignal(QImage)
@@ -637,12 +638,16 @@ class Basic(QObject):
         self._openedIndex = -1
         self._openedArea = ""
 
+        self._possible = []
+        self._suggestions = []
+
         self._replyIndex = None
 
         self.updated.connect(self.link)
         self.gui.result.connect(self.result)
         self.gui.reset.connect(self.reset)
         self.gui.networkReply.connect(self.onNetworkReply)
+        self.gui.optionsUpdated.connect(self.optionsUpdated)
 
         qmlRegisterSingletonType(Basic, "gui", 1, 0, "BASIC", lambda qml, js: self)
 
@@ -1377,3 +1382,88 @@ class Basic(QObject):
     @pyqtSlot()
     def doBuildModel(self):
         self.startBuildModel.emit()
+
+    @pyqtProperty(list, notify=suggestionsUpdated)
+    def suggestions(self):
+        return self._suggestions
+    
+    @pyqtSlot(str, int)
+    def updateSuggestions(self, text, pos):
+        self._suggestions = []
+        if text:
+
+            text = text[:pos].split()[-1].lower()
+            staging = {}
+            for p,_ in self._possible:
+                pl = p.lower()
+                dl = self.suggestionDisplay(p).lower()
+                if pl == text or dl == text:
+                    break
+                try:
+                    i = pl.index(text)
+                except:
+                    try:
+                        i = dl.index(text)
+                    except:
+                        continue
+                staging[p] = i
+            else:
+                self._suggestions = sorted(staging.keys(), key=lambda k: staging[k])
+                if len(self._suggestions) > 10:
+                    self._suggestions = self._suggestions[:10]
+
+        self.suggestionsUpdated.emit()
+
+    @pyqtSlot(str, result=str)
+    def suggestionDetail(self, text):
+        if text in self._possibleDetails:
+            return self._possibleDetails[text]
+        return ""
+    
+    @pyqtSlot(str, result=str)
+    def suggestionDisplay(self, text):
+        if text in self._possibleDetails:
+            detail = self._possibleDetails[text]
+            if detail == "LoRA":
+                return f"<lora:{text}>"
+            if detail == "HN":
+                return f"<hn:{text}>"
+            if detail == "Wild":
+                return f"__{text}__"
+        return text
+
+    @pyqtSlot(str, result=QColor)
+    def suggestionColor(self, text):
+        if text in self._possibleDetails:
+            return {
+                "TI": QColor("#ffd893"),
+                "LoRA": QColor("#f9c7ff"),
+                "HN": QColor("#c7fff6"),
+                "Wild": QColor("#c7ffd2")
+            }.get(self._possibleDetails[text], QColor("#cccccc"))
+        return QColor("#cccccc")
+
+    @pyqtSlot(str, int, result=int)
+    def suggestionStart(self, text, pos):
+        if text and text[:pos]:
+            text = text[:pos]
+            return len(text) - len(text.split()[-1])
+        return 0
+    
+    @pyqtSlot(str, int, result=int)
+    def suggestionEnd(self, text, pos):
+        if text and text[pos-1:].strip():
+            return pos + len(text[pos-1:].split()[0])
+        return 0
+
+    @pyqtSlot()
+    def optionsUpdated(self):
+        self._possible = []
+        if "TI" in self.gui._options:
+            self._possible += [(self.gui.modelName(n), "TI") for n in self.gui._options["TI"]]
+        if "LoRA" in self.gui._options:
+            self._possible += [(self.gui.modelName(n), "LoRA") for n in self.gui._options["LoRA"]]
+        if "HN" in self.gui._options:
+            self._possible += [(self.gui.modelName(n), "HN") for n in self.gui._options["HN"]]
+        self._possible += [(n, "Wild") for n in self.gui.wildcards._wildcards.keys()]
+        self._possibleDetails = {k:v for k,v in self._possible}

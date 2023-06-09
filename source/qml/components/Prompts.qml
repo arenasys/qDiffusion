@@ -15,9 +15,21 @@ Item {
     property alias positivePromptArea: promptPositive
     property alias negativePromptArea: promptNegative
 
+    property var active: promptPositive
+    property var inactive: promptNegative
+
+    property var cursorX: null
+    property var cursorY: null
+    property var cursorHeight: 0
+    property var cursorText: null
+    property var cursorPosition: null
+
     property variant bindMap: null
 
     signal inspect()
+    signal tab()
+    signal input()
+    signal menu(int dir)
 
     Connections {
         target: bindMap
@@ -125,8 +137,35 @@ Item {
                 anchors.bottom: parent.bottom
                 anchors.margins: 1
 
+                property var cursorX: promptPositive.area.cursorRectangle.x
+                property var cursorY: promptPositive.area.cursorRectangle.y
+
+                onInput: {
+                    root.input()
+                }
+                
+                onMenu: {
+                    root.menu(dir)
+                }
+
+                area.onActiveFocusChanged: {
+                    if(promptPositive.area.activeFocus) {
+                        root.cursorX = Qt.binding(function () {return promptPositive.mapToItem(root, 0, 0).x + cursorX; })
+                        root.cursorY = Qt.binding(function () {return promptPositive.mapToItem(root, 0, 0).y + cursorY; })
+                        root.cursorText = Qt.binding(function () {return promptPositive.area.text; })
+                        root.cursorPosition = Qt.binding(function () {return promptPositive.area.cursorPosition; })
+                        root.cursorHeight = promptPositive.area.cursorRectangle.height
+                        root.active = promptPositive
+                        root.inactive = promptNegative
+                    } else {
+                        root.cursorX = null
+                        root.cursorY = null
+                        root.cursorText = null
+                    }
+                }
+
                 onTab: {
-                    promptNegative.forceActiveFocus()
+                    root.tab()
                 }
             }
         }
@@ -195,8 +234,35 @@ Item {
                 anchors.bottom: parent.bottom
                 anchors.margins: 1
 
+                property var cursorX: promptNegative.area.cursorRectangle.x
+                property var cursorY: promptNegative.area.cursorRectangle.y
+
+                onInput: {
+                    root.input()
+                }
+
+                onMenu: {
+                    root.menu(dir)
+                }
+
+                area.onActiveFocusChanged: {
+                    if(promptNegative.area.activeFocus) {
+                        root.cursorX = Qt.binding(function () {return promptNegative.mapToItem(root, 0, 0).x + cursorX; })
+                        root.cursorY = Qt.binding(function () {return promptNegative.mapToItem(root, 0, 0).y + cursorY; })
+                        root.cursorText = Qt.binding(function () {return promptNegative.area.text; })
+                        root.cursorPosition = Qt.binding(function () {return promptNegative.area.cursorPosition; })
+                        root.cursorHeight = promptNegative.area.cursorRectangle.height
+                        root.active = promptNegative
+                        root.inactive = promptPositive
+                    } else {
+                        root.cursorX = null
+                        root.cursorY = null
+                        root.cursorText = null
+                    }
+                }
+
                 onTab: {
-                    promptPositive.forceActiveFocus()
+                    root.tab()
                 }
             }
         }

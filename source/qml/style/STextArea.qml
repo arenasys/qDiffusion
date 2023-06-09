@@ -18,8 +18,15 @@ Rectangle {
             textArea.forceActiveFocus()
         }
     }
+
+    function completeText(text, start, end) {
+        textArea.remove(start, end)
+        textArea.insert(start, text)
+    }
     
     signal tab()
+    signal input()
+    signal menu(int dir)
 
     color: "transparent"
 
@@ -103,12 +110,24 @@ Rectangle {
                     case Qt.Key_Tab:
                         root.tab()
                         break;
+                    case Qt.Key_Escape:
+                        root.menu(0)
+                        break;
+                    case Qt.Key_Up:
+                        root.menu(1)
+                        break;
+                    case Qt.Key_Down:
+                        root.menu(-1)
+                        break;
                     default:
                         event.accepted = false
                         break;
                     }
                 } else {
                     event.accepted = false
+                }
+                if(!event.accepted && event.key != Qt.Key_Left  && event.key != Qt.Key_Right) {
+                    root.input()
                 }
             }
         }

@@ -27,7 +27,7 @@ from parameters import VariantMap
 
 NAME = "qDiffusion"
 
-MODE_FOLDERS = {
+MODEL_FOLDERS = {
     "checkpoint": ["SD", "Stable-diffusion"],
     "component": ["SD", "Stable-diffusion", "VAE"],
     "upscale": ["SR", "ESRGAN", "RealESRGAN"], 
@@ -557,13 +557,13 @@ class GUI(QObject):
     def openModelFolder(self, mode):
         dir = self.modelDirectory()
         found = None
-        for f in MODE_FOLDERS[mode]:
+        for f in MODEL_FOLDERS[mode]:
             path = os.path.join(dir, f)
             if os.path.exists(path):
                 found = path
                 break
         if not found:
-            found = os.path.join(dir, MODE_FOLDERS[mode][0])
+            found = os.path.join(dir, MODEL_FOLDERS[mode][0])
             os.makedirs(found)
         try:
             found = os.path.abspath(found)
@@ -626,13 +626,13 @@ class GUI(QObject):
 
         base = self.modelDirectory()
         folder = None
-        for f in MODE_FOLDERS[mode]:
+        for f in MODEL_FOLDERS[mode]:
             tmp = os.path.join(base, f)
             if os.path.exists(tmp):
                 folder = tmp
 
         if not folder:
-            folder = os.path.join(base, MODE_FOLDERS[mode][0])
+            folder = os.path.join(base, MODEL_FOLDERS[mode][0])
 
         new = os.path.abspath(os.path.join(folder, old.rsplit(os.path.sep,1)[-1]))
 

@@ -50,6 +50,7 @@ Item {
 
                 onPressed: {
                     endpointInput.value = ""
+                    passwordInput.value = ""
                     SETTINGS.restart()
                 }
             }
