@@ -263,6 +263,9 @@ Item {
         anchors.right: mainArea.right
         anchors.bottom: mainArea.bottom
         anchors.top: promptDivider.bottom
+        
+        positivePromptArea.menuActive: suggestions.visible
+        negativePromptArea.menuActive: suggestions.visible
 
         bindMap: BASIC.parameters.values
 
@@ -292,12 +295,8 @@ Item {
             if(suggestions.visible) {
                 if(dir == 0) {
                     promptCursor.typed = false
-                } else if (dir == 1) {
-                    suggestions.incrementCurrentIndex()
-                    suggestions.positionViewAtIndex(suggestions.currentIndex, ListView.Contain)
-                } else if (dir == -1) {
-                    suggestions.decrementCurrentIndex()
-                    suggestions.positionViewAtIndex(suggestions.currentIndex, ListView.Contain)
+                } else {
+                    suggestions.move(dir)
                 }
             }
         }
@@ -307,9 +306,9 @@ Item {
         id: promptCursor
         visible: typed && prompts.cursorX != null && prompts.cursorText != ""
         x: visible ? prompts.x + prompts.cursorX : 0
-        y: visible ? prompts.y + prompts.cursorY - height - 2 : 0
+        y: visible ? prompts.y + prompts.cursorY : 0
         width: 200
-        height: 1
+        height: prompts.cursorHeight
 
         property var typed: false
         property var targetStart: null
@@ -354,20 +353,34 @@ Item {
     ListView {
         id: suggestions
         visible: promptCursor.visible && BASIC.suggestions.length != 0
+        property var flip: promptCursor.y + promptCursor.height + 60 > root.height
         anchors.left: promptCursor.left
         anchors.right: promptCursor.right
-        anchors.bottom: promptCursor.bottom
-        height: Math.min(contentHeight, 3*20)
+        anchors.bottom: flip ? promptCursor.top : undefined
+        anchors.top: flip ? undefined : promptCursor.bottom
+        anchors.topMargin: 3
+        anchors.bottomMargin: 3
+        height: Math.min(BASIC.suggestions.length, 3)*20
         clip: true
         model: BASIC.suggestions
 
-        verticalLayoutDirection: ListView.BottomToTop
+        verticalLayoutDirection: flip ? ListView.BottomToTop : ListView.TopToBottom
         boundsBehavior: Flickable.StopAtBounds
         highlightFollowsCurrentItem: false
 
         function complete() {
             var curr = prompts.active
             curr.completeText(suggestions.currentItem.text, promptCursor.targetStart, promptCursor.targetEnd)
+        }
+
+        function move(dir) {
+            dir *= flip ? -1 : 1
+            if(dir == 1) {
+                decrementCurrentIndex()
+            } else if (dir == -1) {
+                incrementCurrentIndex()
+            }
+            positionViewAtIndex(currentIndex, ListView.Contain)
         }
 
         ScrollBar.vertical: SScrollBarV {

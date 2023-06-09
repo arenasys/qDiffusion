@@ -27,6 +27,7 @@ Rectangle {
     signal tab()
     signal input()
     signal menu(int dir)
+    property var menuActive: false
 
     color: "transparent"
 
@@ -111,13 +112,25 @@ Rectangle {
                         root.tab()
                         break;
                     case Qt.Key_Escape:
-                        root.menu(0)
+                        if(root.menuActive) {
+                            root.menu(0)
+                        } else {
+                            event.accepted = false
+                        }
                         break;
                     case Qt.Key_Up:
-                        root.menu(1)
+                        if(root.menuActive) {
+                            root.menu(1)
+                        } else {
+                            event.accepted = false
+                        }
                         break;
                     case Qt.Key_Down:
-                        root.menu(-1)
+                        if(root.menuActive) {
+                            root.menu(-1)
+                        } else {
+                            event.accepted = false
+                        }
                         break;
                     default:
                         event.accepted = false
@@ -126,7 +139,7 @@ Rectangle {
                 } else {
                     event.accepted = false
                 }
-                if(!event.accepted && event.key != Qt.Key_Left  && event.key != Qt.Key_Right) {
+                if(!event.accepted && !(event.key >= Qt.Key_Left && event.key <= Qt.Key_Down)) {
                     root.input()
                 }
             }

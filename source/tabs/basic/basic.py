@@ -21,6 +21,8 @@ import os
 MIME_BASIC_INPUT = "application/x-qd-basic-input"
 MIME_BASIC_DIVIDER = "application/x-qd-basic-divider"
 
+DELIMITERS = {' ', '\n', '\t', ','}
+
 class BasicInputRole(Enum):
     IMAGE = 1
     MASK = 2
@@ -1386,15 +1388,17 @@ class Basic(QObject):
     @pyqtProperty(list, notify=suggestionsUpdated)
     def suggestions(self):
         return self._suggestions
-    
+
     def beforePos(self, text, pos):
         if len(text) == 0 or len(text) < pos:
             return None, 0
         start = pos-1
         end = pos
-        while start >= 0 and not text[start].isspace():
+        while start >= 0 and not text[start] in DELIMITERS:
             start -= 1
-        start = max(0,start+1)
+        if start >= 0 and text[start] in DELIMITERS:
+            start += 1
+        start = max(0,start)
         return text[start:end], start
     
     def afterPos(self, text, pos):
@@ -1402,9 +1406,11 @@ class Basic(QObject):
             return None, 0
         start = pos
         end = pos+1
-        while end < len(text) and not text[end].isspace():
+        while end < len(text) and not text[end] in DELIMITERS:
             end += 1
-        end = min(end-1,len(text))
+        if end < len(text) and text[end-1] in DELIMITERS:
+            end -= 1
+        end = min(len(text),end)
         return text[start:end], end
 
     @pyqtSlot(str, int)
