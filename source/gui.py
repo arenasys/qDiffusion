@@ -87,7 +87,7 @@ class GUI(QObject):
         self._errorText = ""
         self._errorTrace = ""
 
-        self._config = config.Config(self, "config.json", {"endpoint": "", "password": "", "output_directory":"outputs", "model_directory":"models", "device": "", "swap": False, "advanced": False})
+        self._config = config.Config(self, "config.json", {"endpoint": "", "password": "", "output_directory":"outputs", "model_directory":"models", "device": "", "swap": False, "advanced": False, "autocomplete": 1})
         self._config.updated.connect(self.onConfigUpdated)
         self._remoteStatus = RemoteStatusMode.INACTIVE
 

@@ -108,6 +108,26 @@ SMenuBar {
         }
 
         SMenuItem {
+            visible: GUI.currentTab == "Basic"
+            height: visible ? 20 : 0
+            text: "Autocomplete"
+            checkable: true
+            checked: GUI.config != null ? GUI.config.get("autocomplete") > 0 : false
+            onCheckedChanged: {
+                if(GUI.config.get("autocomplete") > 0 == checked) {
+                    return
+                }
+
+                if(checked) {
+                    GUI.config.set("autocomplete", 1)
+                } else {
+                    GUI.config.set("autocomplete", 0)
+                }
+                checked = Qt.binding(function () { return GUI.config != null ? GUI.config.get("autocomplete") > 0 : false; })
+            }
+        }
+
+        SMenuItem {
             visible: GUI.currentTab == "Models"
             height: visible ? 20 : 0
             text: "Thumbails"

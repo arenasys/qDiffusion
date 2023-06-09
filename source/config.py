@@ -30,7 +30,7 @@ class Config(QObject):
         data = self._values._map
         try:
             with open(self._file, 'w', encoding="utf-8") as f:
-                json.dump(data, f)
+                json.dump(data, f, indent=4)
         except Exception:
             return
         self.updated.emit()

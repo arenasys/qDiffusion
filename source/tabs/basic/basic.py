@@ -1411,8 +1411,10 @@ class Basic(QObject):
     def updateSuggestions(self, text, pos):
         self._suggestions = []
 
+        sensitivity = self.gui.config.get("autocomplete")
+
         text, _ = self.beforePos(text, pos)
-        if text:
+        if text and sensitivity and len(text) >= sensitivity:
             text = text.lower()
             staging = {}
             for p,_ in self._possible:
