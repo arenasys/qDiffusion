@@ -1456,7 +1456,7 @@ class Basic(QObject):
             if detail == "LoRA":
                 return f"<lora:{text}>"
             if detail == "HN":
-                return f"<hn:{text}>"
+                return f"<hypernet:{text}>"
             if detail == "Wild":
                 return f"__{text}__"
         return text
