@@ -288,6 +288,7 @@ Item {
                 }
                 MouseArea {
                     anchors.fill: parent
+                    acceptedButtons: Qt.NoButton
                     onWheel: {
                         if(wheel.angleDelta.y < 0) {
                             scrollBar.increase()
