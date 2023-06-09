@@ -1387,12 +1387,33 @@ class Basic(QObject):
     def suggestions(self):
         return self._suggestions
     
+    def beforePos(self, text, pos):
+        if len(text) == 0 or len(text) < pos:
+            return None, 0
+        start = pos-1
+        end = pos
+        while start >= 0 and not text[start].isspace():
+            start -= 1
+        start = max(0,start+1)
+        return text[start:end], start
+    
+    def afterPos(self, text, pos):
+        if len(text) == 0 or len(text) < pos:
+            return None, 0
+        start = pos
+        end = pos+1
+        while end < len(text) and not text[end].isspace():
+            end += 1
+        end = min(end-1,len(text))
+        return text[start:end], end
+
     @pyqtSlot(str, int)
     def updateSuggestions(self, text, pos):
         self._suggestions = []
-        if text:
 
-            text = text[:pos].split()[-1].lower()
+        text, _ = self.beforePos(text, pos)
+        if text:
+            text = text.lower()
             staging = {}
             for p,_ in self._possible:
                 pl = p.lower()
@@ -1445,16 +1466,13 @@ class Basic(QObject):
 
     @pyqtSlot(str, int, result=int)
     def suggestionStart(self, text, pos):
-        if text and text[:pos]:
-            text = text[:pos]
-            return len(text) - len(text.split()[-1])
-        return 0
+        text, start = self.beforePos(text, pos)
+        return start
     
     @pyqtSlot(str, int, result=int)
     def suggestionEnd(self, text, pos):
-        if text and text[pos-1:].strip():
-            return pos + len(text[pos-1:].split()[0])
-        return 0
+        text, end = self.afterPos(text, pos)
+        return end
 
     @pyqtSlot()
     def optionsUpdated(self):
