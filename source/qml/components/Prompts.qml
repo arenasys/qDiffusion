@@ -143,15 +143,15 @@ Item {
                 onInput: {
                     root.input()
                 }
-                
+
                 onMenu: {
                     root.menu(dir)
                 }
 
                 area.onActiveFocusChanged: {
                     if(promptPositive.area.activeFocus) {
-                        root.cursorX = Qt.binding(function () {return promptPositive.mapToItem(root, 0, 0).x + cursorX; })
-                        root.cursorY = Qt.binding(function () {return promptPositive.mapToItem(root, 0, 0).y + cursorY; })
+                        root.cursorX = Qt.binding(function () {return promptPositive.area.mapToItem(root, 0, 0).x + cursorX; })
+                        root.cursorY = Qt.binding(function () {return promptPositive.area.mapToItem(root, 0, 0).y + cursorY; })
                         root.cursorText = Qt.binding(function () {return promptPositive.area.text; })
                         root.cursorPosition = Qt.binding(function () {return promptPositive.area.cursorPosition; })
                         root.cursorHeight = promptPositive.area.cursorRectangle.height
