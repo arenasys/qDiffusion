@@ -285,7 +285,7 @@ Item {
         }
         onTab: {
             if(suggestions.visible) {
-                suggestions.complete()
+                suggestions.complete(suggestions.currentItem.text)
             } else {
                 root.forceActiveFocus()
                 prompts.inactive.forceActiveFocus()
@@ -368,9 +368,9 @@ Item {
         boundsBehavior: Flickable.StopAtBounds
         highlightFollowsCurrentItem: false
 
-        function complete() {
+        function complete(text) {
             var curr = prompts.active
-            curr.completeText(suggestions.currentItem.text, promptCursor.targetStart, promptCursor.targetEnd)
+            curr.completeText(text, promptCursor.targetStart, promptCursor.targetEnd)
         }
 
         function move(dir) {
@@ -396,7 +396,7 @@ Item {
             height: 20
             property var selected: suggestions.currentIndex == index
             property var text: BASIC.suggestionCompletion(modelData, prompts.cursorPosition-promptCursor.targetStart)
-            color: selected ?  COMMON.bg4 : COMMON.bg3
+            color: selected ? COMMON.bg4 : (delegateMouse.containsMouse ? COMMON.bg3_5 : COMMON.bg3)
 
             SText {
                 id: decoText
@@ -431,10 +431,7 @@ Item {
                 hoverEnabled: true
                 preventStealing: true
                 onPressed: {
-                    suggestions.complete()
-                }
-                onEntered: {
-                    suggestions.currentIndex = index
+                    suggestions.complete(parent.text)
                 }
             }
         }
