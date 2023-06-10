@@ -154,8 +154,6 @@ class GUI(QObject):
             self._workingTabs.remove(tab)
             self.tabUpdated.emit()
 
-
-
     @pyqtProperty('QString', notify=statusUpdated)
     def title(self):
         if self._remoteStatus != RemoteStatusMode.INACTIVE:

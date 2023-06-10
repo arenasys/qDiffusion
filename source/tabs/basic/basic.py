@@ -206,7 +206,8 @@ class BasicInput(QObject):
     def size(self):
         if self._image.isNull():
             return ""
-        return f"{self._image.width()}x{self._image.height()}"
+        o = self._original_crop or self._original
+        return f"{o.width()}x{o.height()}"
     
     @pyqtProperty(QRect, notify=extentUpdated)
     def extent(self):
@@ -673,29 +674,28 @@ class Basic(QObject):
 
         if self._inputs:
             for i in self._inputs:
+                if not i._image or i._image.isNull():
+                    continue
                 if i._role == BasicInputRole.IMAGE:
-                    if not i._image.isNull():
-                        order += [i]
-                        images += [encode_image(i._original_crop or i._original)]
+                    order += [i]
+                    images += [encode_image(i._original_crop or i._original)]
                 if i._role == BasicInputRole.MASK:
-                    if not i._image.isNull():
-                        masks += [encode_image(i._image)]
-                        if i._linked:
-                            mapped_masks[i._linked] = masks[-1]
+                    masks += [encode_image(i._image)]
+                    if i._linked:
+                        mapped_masks[i._linked] = masks[-1]
                 if i._role == BasicInputRole.SUBPROMPT:
-                    if not i._image.isNull() and i._areas:
+                    if not i._areas:
                         areas += [[encode_image(a) for a in i.getAreas()]]
                         if i._linked:
                             mapped_areas[i._linked] = areas[-1]
                 if i._role == BasicInputRole.CONTROL:
-                    if not i._image.isNull():
-                        model = i._settings.get("mode").lower()
-                        opts = {
-                            "scale": i._settings.get("CN_strength"),
-                            "annotator": i._settings.get("CN_preprocessor").lower(),
-                            "args": i.getCNArgs()
-                        }
-                        controls += [(model, opts, encode_image(i._original_crop or i._original))]
+                    model = i._settings.get("mode").lower()
+                    opts = {
+                        "scale": i._settings.get("CN_strength"),
+                        "annotator": i._settings.get("CN_preprocessor").lower(),
+                        "args": i.getCNArgs()
+                    }
+                    controls += [(model, opts, encode_image(i._original_crop or i._original))]
 
         batch_size = int(self._parameters._values.get("batch_size"))
         batch_count = int(self._parameters._values.get("batch_count"))
