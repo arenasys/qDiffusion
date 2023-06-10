@@ -23,6 +23,11 @@ def get_env():
         env["PATH"] = VENV_DIR+"\\Scripts;" + env["PATH"]
     else:
         env["PATH"] = VENV_DIR+"/bin:" + env["PATH"]
+    
+    if not IS_WIN and not "HSA_OVERRIDE_GFX_VERSION" in env:
+        env["HSA_OVERRIDE_GFX_VERSION"] = "10.3.0"
+    if not IS_WIN and not "MIOPEN_LOG_LEVEL" in env:
+        env["MIOPEN_LOG_LEVEL"] = "4"
     return env
 
 def restart():
