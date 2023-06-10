@@ -160,6 +160,12 @@ class BasicInput(QObject):
         #if self._role == BasicInputRole.IMAGE:
         self._offset = max(0.0, min(1.0, offset))
         self.updateImage()
+
+    @pyqtProperty(bool, notify=updated)
+    def offsetDirection(self):
+        rw = self._image.width() / self._original.width()
+        rh = self._image.height() / self._original.height()
+        return rw > rh
     
     @pyqtProperty(int, notify=updated)
     def originalWidth(self):

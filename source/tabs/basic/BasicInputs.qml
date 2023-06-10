@@ -306,7 +306,7 @@ Item {
                         if(pressedButtons & Qt.MiddleButton) {
                             var d = 0
                             var z = 0
-                            if(modelData.originalWidth < modelData.originalHeight) {
+                            if(modelData.offsetDirection) {
                                 d = mouse.y-startPosition.y
                                 z = ((trueFrame.width/modelData.originalWidth)*modelData.originalHeight) - trueFrame.height
                             } else {
