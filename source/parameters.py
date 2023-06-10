@@ -70,22 +70,23 @@ def format_parameters(json):
     return formatted
 
 def parse_parameters(formatted):
-    lines = formatted.strip().split("\n")
+    params, positive, negative = "", "", ""
 
-    params = lines[-1]
-    positive = []
-    negative = []
-    for line in lines[:-1]:
-        if negative:
-            negative += [line.strip()]
-        elif line[0:17] == "Negative prompt: ":
-            negative += [line[17:].strip()]
-        else:
-            positive += [line.strip()]
+    blocks = re.split(r"^(?=[\w\s]+:)", "Prompt: "+formatted, flags=re.MULTILINE)
+    for b in blocks:
+        if not b:
+            continue
+        d = b.split(":",1)[-1].strip()
+        if b.startswith("Prompt:"):
+            positive = d
+        if b.startswith("Negative prompt:"):
+            negative = d
+        if b.startswith("Steps:"):
+            params = b
     
     json = {}
-    json["prompt"] = "\n".join(positive)
-    json["negative_prompt"] = "\n".join(negative)
+    json["prompt"] = positive
+    json["negative_prompt"] = negative
 
     p = params.split(":")
     for i in range(1, len(p)):
@@ -97,6 +98,7 @@ def parse_parameters(formatted):
                 name = n
         if name:
             json[name] = value
+    
     return json
 
 def get_parameters(img):
