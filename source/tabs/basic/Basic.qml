@@ -395,7 +395,7 @@ Item {
             width: suggestions.width
             height: 20
             property var selected: suggestions.currentIndex == index
-            property var text: BASIC.suggestionDisplay(modelData)
+            property var text: BASIC.suggestionCompletion(modelData, prompts.cursorPosition-promptCursor.targetStart)
             color: selected ?  COMMON.bg4 : COMMON.bg3
 
             SText {
@@ -416,7 +416,7 @@ Item {
                 anchors.right: decoText.left
 
                 height: 20
-                text: parent.text
+                text: BASIC.suggestionDisplay(modelData)
                 color: BASIC.suggestionColor(modelData)
                 font.pointSize: 8.5
                 leftPadding: 5

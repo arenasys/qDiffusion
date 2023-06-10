@@ -21,6 +21,8 @@ import os
 MIME_BASIC_INPUT = "application/x-qd-basic-input"
 MIME_BASIC_DIVIDER = "application/x-qd-basic-divider"
 
+SUGGESTION_BLOCK_REGEX = lambda spaces: r'(?=\n|,|(?<!lora|rnet):|\||\[|\]|\(|\)'+ ('|\s)' if spaces else r')')
+
 class BasicInputRole(Enum):
     IMAGE = 1
     MASK = 2
@@ -1399,7 +1401,8 @@ class Basic(QObject):
         return self._suggestions
     
     def suggestionBlocks(self, text, pos):
-        blocks = re.split(r'(?=\n|,|(?<!lora|rnet):|\||\[|\]|\(|\))', text)
+        spaces = self.gui.config.get("autocomplete_words", False)
+        blocks = re.split(SUGGESTION_BLOCK_REGEX(spaces), text)
         i = 0
         before, after = "", ""
         for block in blocks:
@@ -1423,7 +1426,7 @@ class Basic(QObject):
         _, after = self.suggestionBlocks(text, pos)
 
         if after:
-            after = after.split("<")[0]
+            after = after.split("<",1)[0]
 
         return after, pos+len(after)
     
@@ -1446,9 +1449,15 @@ class Basic(QObject):
         
         for t in self._dictionary:
             tl = t.lower()
-            if text == tl:
-                continue
-            if text in tl:
+
+            i = -1
+            try:
+                i = tl.index(text)
+            except: pass
+
+            if i == 0:
+                i = 1 - (len(text.split()[0])/len(tl.split()[0]))
+            elif i > 0:
                 i = 1 - (len(text)/len(tl))
             else:
                 continue
@@ -1465,8 +1474,6 @@ class Basic(QObject):
 
         before, _ = self.beforePos(text, pos)
         if before and sensitivity and len(before) >= sensitivity:
-            after, _ = self.afterPos(text, pos)
-            complete = before+after
             staging = self.getSuggestions(before.lower())
             if staging:
                 key = lambda k: (staging[k], self._dictionary[k] if k in self._dictionary else 0)
@@ -1494,6 +1501,21 @@ class Basic(QObject):
                 return f"<hypernet:{text}>"
             if detail == "Wild":
                 return f"__{text}__"
+        return text
+    
+    @pyqtSlot(str, int, result=str)
+    def suggestionCompletion(self, text, start):
+        if not text:
+            return text
+        if text in self._collectionDetails:
+            return self.suggestionDisplay(text)
+        elif self.gui.config.get("autocomplete_single", False):
+            words = text.split()
+            if len(words) == 1:
+                return words[0]
+            if len(words[0]) == start:
+                return words[0] + " " + words[1]
+            return words[0]
         return text
 
     @pyqtSlot(str, result=QColor)
