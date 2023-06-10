@@ -1402,7 +1402,17 @@ class Basic(QObject):
     
     def suggestionBlocks(self, text, pos):
         spaces = self.gui.config.get("autocomplete_words", False)
-        blocks = re.split(SUGGESTION_BLOCK_REGEX(spaces), text)
+
+        blank = lambda m: '#' * len(m.group())
+        safe = re.sub(r'__.+?__|<.+?>', blank, text)
+        safe_blocks = re.split(SUGGESTION_BLOCK_REGEX(spaces), safe)
+
+        blocks = []
+        i = 0
+        for b in safe_blocks:
+            blocks += [text[i:i+len(b)]]
+            i += len(b)
+
         i = 0
         before, after = "", ""
         for block in blocks:
