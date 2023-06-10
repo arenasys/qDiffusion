@@ -62,7 +62,7 @@ class Populater(QObject):
         
         self.gui.setTabWorking(self.name, False)
     
-    def setModel(self, name, category, type, idx, allow_folder = True):
+    def setModel(self, name, category, display, type, idx, allow_folder = True):
         q = QSqlQuery(self.conn.db)
 
         file =  os.path.abspath(os.path.join(self.gui.modelDirectory(), name.rsplit(".",1)[0]))
@@ -102,9 +102,10 @@ class Populater(QObject):
             with open(file + ".txt", "r", encoding='utf-8') as f:
                 description = f.read().strip()
         
-        q.prepare("INSERT OR REPLACE INTO models(name, category, type, file, folder, desc, idx, width, height) VALUES (:name, :category, :type, :file, :folder, :desc, :idx, :width, :height);")
+        q.prepare("INSERT OR REPLACE INTO models(name, category, display, type, file, folder, desc, idx, width, height) VALUES (:name, :category, :display, :type, :file, :folder, :desc, :idx, :width, :height);")
         q.bindValue(":name", name)
         q.bindValue(":category", category)
+        q.bindValue(":display", display)
         q.bindValue(":type", type)
         q.bindValue(":file", preview)
         q.bindValue(":folder", folder)
@@ -126,32 +127,32 @@ class Populater(QObject):
         wildcards = self.gui.wildcards._wildcards
         checkpoints = [a for a in o["UNET"] if a in o["VAE"] and a in o["CLIP"]]
         for idx, name in enumerate(checkpoints):
-            self.setModel(name, "checkpoint", "", idx)
+            self.setModel(name, "checkpoint", "", "checkpoint", idx)
         self.finishCategory("checkpoint", len(checkpoints))
         
         components = [a for a in o["VAE"] if not a in checkpoints]
         for idx, name in enumerate(components):
-            self.setModel(name, "component", "VAE", idx)
+            self.setModel(name, "component", "VAE", "component", idx)
         self.finishCategory("component", len(components))
 
         for idx, name in enumerate(o["LoRA"]):
-            self.setModel(name, "lora", "", idx)
+            self.setModel(name, "lora", "", "lora", idx)
         self.finishCategory("lora", len(o["LoRA"]))
         
         for idx, name in enumerate(o["HN"]):
-            self.setModel(name, "hypernet", "", idx)
+            self.setModel(name, "hypernet", "", "hypernet", idx)
         self.finishCategory("hypernet", len(o["HN"]))
 
         for idx, name in enumerate(o["TI"]):
-            self.setModel(name, "embedding", "", idx)
+            self.setModel(name, "embedding", "", "embedding", idx)
         self.finishCategory("embedding", len(o["TI"]))
 
         for idx, name in enumerate(o["SR"]):
-            self.setModel(name, "upscaler", "", idx)
+            self.setModel(name, "upscaler", "", "upscaler", idx)
         self.finishCategory("upscaler", len(o["SR"]))
 
         for idx, name in enumerate(wildcards):
-            self.setModel(os.path.join("WILDCARD", name + ".txt"), "wildcard", "", idx)
+            self.setModel(os.path.join("WILDCARD", name + ".txt"), "wildcard", "", "wildcard", idx)
         self.finishCategory("wildcard", len(wildcards))
 
     def favouritesUpdated(self):
@@ -169,31 +170,31 @@ class Populater(QObject):
         idx = 0
 
         for name in checkpoints:
-            self.setModel(name, "favourite", "Checkpoint", idx, False)
+            self.setModel(name, "favourite", "Checkpoint", "checkpoint", idx, False)
             idx += 1
 
         for name in [a for a in o["VAE"] if not a in checkpoints]:
-            self.setModel(name, "favourite", "VAE", idx, False)
+            self.setModel(name, "favourite", "VAE", "component", idx, False)
             idx += 1
 
         for name in o["LoRA"]:
-            self.setModel(name, "favourite", "LoRA", idx, False)
+            self.setModel(name, "favourite", "LoRA", "lora", idx, False)
             idx += 1
         
         for name in o["HN"]:
-            self.setModel(name, "favourite", "Hypenet", idx, False)
+            self.setModel(name, "favourite", "Hypenet", "hypernet", idx, False)
             idx += 1
 
         for name in o["TI"]:
-            self.setModel(name, "favourite", "Embedding", idx, False)
+            self.setModel(name, "favourite", "Embedding", "embedding", idx, False)
             idx += 1
 
         for name in o["SR"]:
-            self.setModel(name, "favourite", "Upscaler", idx, False)
+            self.setModel(name, "favourite", "Upscaler", "upscaler", idx, False)
             idx += 1
 
         for name in wildcards:
-            self.setModel(name, "favourite", "Wildcard", idx, False)
+            self.setModel(name, "favourite", "Wildcard", "wildcard", idx, False)
             idx += 1
 
         self.finishCategory("favourite", idx)
@@ -229,7 +230,7 @@ class Explorer(QObject):
 
         self.conn = sql.Connection(self)
         self.conn.connect()
-        self.conn.doQuery("CREATE TABLE models(name TEXT, category TEXT, type TEXT, file TEXT, folder TEXT, desc TEXT, idx INTEGER, width INTEGER, height INTEGER, CONSTRAINT unq UNIQUE (category, idx));")
+        self.conn.doQuery("CREATE TABLE models(name TEXT, category TEXT, display TEXT, type TEXT, file TEXT, folder TEXT, desc TEXT, idx INTEGER, width INTEGER, height INTEGER, CONSTRAINT unq UNIQUE (category, idx));")
     
         self._currentTab = "favourite"
         self._currentFolder = ""

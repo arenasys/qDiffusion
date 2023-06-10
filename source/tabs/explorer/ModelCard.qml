@@ -170,7 +170,9 @@ Item {
                 font.pointSize: 9.8
                 area.color: COMMON.fg2
                 area.textFormat: TextEdit.AutoText
-                property var processedText: modelCard.selected ? sql_desc : (sql_desc.length > grid.descLength ? sql_desc.substring(0, grid.descLength) + "..." : sql_desc)
+                property var shortText: (sql_desc.length > grid.descLength ? sql_desc.substring(0, grid.descLength) + "..." : sql_desc)
+                property var longText: (sql_desc.length > 10*grid.descLength ? sql_desc.substring(0, 10*grid.descLength) + "..." : sql_desc)
+                property var processedText: modelCard.selected ? longText : shortText
                 text: processedText
                 scrollBar.opacity: 0.5
                 scrollBar.color: COMMON.fg3
@@ -253,7 +255,7 @@ Item {
                 anchors.fill: parent
                 anchors.leftMargin: 21
                 anchors.rightMargin: (sql_desc != "" && sql_width != 0) ? 21 : 3
-                text: sql_type
+                text: sql_display
                 verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignHCenter
                 color: sql_width != 0 ? COMMON.fg1 : COMMON.fg2
@@ -400,6 +402,8 @@ Item {
             SContextMenuSeparator {}
 
             SContextMenuItem {
+                visible: sql_type != "wildcard" && sql_type != "hypernet"
+                height: visible ? 20 : 0
                 text: "Prune"
                 onPressed: {
                     EXPLORER.doPrune(sql_name)
@@ -410,6 +414,30 @@ Item {
                 text: "Delete"
                 onPressed: {
                     root.deleteModel(sql_name)
+                }
+            }
+
+            SContextMenuSeparator {
+                visible: sql_type == "wildcard"
+                height: visible ? 13 : 0
+            }
+
+            SContextMenuItem {
+                visible: sql_type == "wildcard"
+                height: visible ? 20 : 0
+                text: "Vocab"
+                checkable: true
+                checked: GUI.config != null ? GUI.config.get("vocab").includes(sql_name) : false
+                onCheckedChanged: {
+                    if(checked == GUI.config.get("vocab").includes(sql_name)) {
+                        return
+                    }
+                    if(checked) {
+                        BASIC.vocabAdd(sql_name)
+                    } else {
+                        BASIC.vocabRemove(sql_name)
+                    }
+
                 }
             }
 

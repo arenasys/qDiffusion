@@ -21,8 +21,6 @@ import os
 MIME_BASIC_INPUT = "application/x-qd-basic-input"
 MIME_BASIC_DIVIDER = "application/x-qd-basic-divider"
 
-DELIMITERS = {' ', '\n', '\t', ','}
-
 class BasicInputRole(Enum):
     IMAGE = 1
     MASK = 2
@@ -647,8 +645,13 @@ class Basic(QObject):
         self._openedIndex = -1
         self._openedArea = ""
 
-        self._possible = []
+        self._collection = []
+        self._collectionDetails = {}
+        self._dictionary = {}
+        self._dictionaryDetails = {}
+
         self._suggestions = []
+        self._vocab = {}
 
         self._replyIndex = None
 
@@ -1394,56 +1397,80 @@ class Basic(QObject):
     @pyqtProperty(list, notify=suggestionsUpdated)
     def suggestions(self):
         return self._suggestions
+    
+    def suggestionBlocks(self, text, pos):
+        blocks = re.split(r'(?=\n|,|(?<!lora|rnet):|\||\[|\]|\(|\))', text)
+        i = 0
+        before, after = "", ""
+        for block in blocks:
+            if pos <= i + len(block):
+                before, after = block[:pos-i], block[pos-i:]
+                break
+            i += len(block)
+        if before and before[0] in "\n,:|[]()":
+            before = before[1:]
+        return before, after
 
     def beforePos(self, text, pos):
-        if len(text) == 0 or len(text) < pos:
-            return None, 0
-        start = pos-1
-        end = pos
-        while start >= 0 and not text[start] in DELIMITERS:
-            start -= 1
-        if start >= 0 and text[start] in DELIMITERS:
-            start += 1
-        start = max(0,start)
-        return text[start:end], start
+        before, _ = self.suggestionBlocks(text, pos)
+
+        while before and before[0] in "\n\t, ":
+            before = before[1:]
+
+        return before, pos-len(before)
     
     def afterPos(self, text, pos):
-        if len(text) == 0 or len(text) < pos:
-            return None, 0
-        start = pos
-        end = pos+1
-        while end < len(text) and not text[end] in DELIMITERS:
-            end += 1
-        if end < len(text) and text[end-1] in DELIMITERS:
-            end -= 1
-        end = min(len(text),end)
-        return text[start:end], end
+        _, after = self.suggestionBlocks(text, pos)
+
+        if after:
+            after = after.split("<")[0]
+
+        return after, pos+len(after)
+    
+    def getSuggestions(self, text):
+        text = text.lower().strip()
+        if not text:
+            return {}
+        staging = {}
+
+        for p,_ in self._collection:
+            pl = p.lower()
+            dl = self.suggestionDisplay(p).lower()
+            if pl == text or dl == text:
+                return {}
+            if text in pl or text in dl:
+                i = 1 - (len(text)/len(pl))
+            else:
+                continue
+            staging[p] = i
+        
+        for t in self._dictionary:
+            tl = t.lower()
+            if text == tl:
+                continue
+            if text in tl:
+                i = 1 - (len(text)/len(tl))
+            else:
+                continue
+            staging[t] = i
+        
+        return staging
 
     @pyqtSlot(str, int)
     def updateSuggestions(self, text, pos):
         self._suggestions = []
 
         sensitivity = self.gui.config.get("autocomplete")
+        self.vocabSync()
 
-        text, _ = self.beforePos(text, pos)
-        if text and sensitivity and len(text) >= sensitivity:
-            text = text.lower()
-            staging = {}
-            for p,_ in self._possible:
-                pl = p.lower()
-                dl = self.suggestionDisplay(p).lower()
-                if pl == text or dl == text:
-                    break
-                try:
-                    i = pl.index(text)
-                except:
-                    try:
-                        i = dl.index(text)
-                    except:
-                        continue
-                staging[p] = i
-            else:
-                self._suggestions = sorted(staging.keys(), key=lambda k: staging[k])
+        before, _ = self.beforePos(text, pos)
+        if before and sensitivity and len(before) >= sensitivity:
+            after, _ = self.afterPos(text, pos)
+            complete = before+after
+            staging = self.getSuggestions(before.lower())
+            if staging:
+                key = lambda k: (staging[k], self._dictionary[k] if k in self._dictionary else 0)
+                self._suggestions = sorted(staging.keys(), key=key)
                 if len(self._suggestions) > 10:
                     self._suggestions = self._suggestions[:10]
 
@@ -1451,14 +1478,16 @@ class Basic(QObject):
 
     @pyqtSlot(str, result=str)
     def suggestionDetail(self, text):
-        if text in self._possibleDetails:
-            return self._possibleDetails[text]
+        if text in self._collectionDetails:
+            return self._collectionDetails[text]
+        if text in self._dictionaryDetails:
+            return self._dictionaryDetails[text]
         return ""
     
     @pyqtSlot(str, result=str)
     def suggestionDisplay(self, text):
-        if text in self._possibleDetails:
-            detail = self._possibleDetails[text]
+        if text in self._collectionDetails:
+            detail = self._collectionDetails[text]
             if detail == "LoRA":
                 return f"<lora:{text}>"
             if detail == "HN":
@@ -1469,13 +1498,13 @@ class Basic(QObject):
 
     @pyqtSlot(str, result=QColor)
     def suggestionColor(self, text):
-        if text in self._possibleDetails:
+        if text in self._collectionDetails:
             return {
                 "TI": QColor("#ffd893"),
                 "LoRA": QColor("#f9c7ff"),
                 "HN": QColor("#c7fff6"),
                 "Wild": QColor("#c7ffd2")
-            }.get(self._possibleDetails[text], QColor("#cccccc"))
+            }.get(self._collectionDetails[text], QColor("#cccccc"))
         return QColor("#cccccc")
 
     @pyqtSlot(str, int, result=int)
@@ -1487,15 +1516,54 @@ class Basic(QObject):
     def suggestionEnd(self, text, pos):
         text, end = self.afterPos(text, pos)
         return end
+    
+    def vocabSync(self):
+        vocab = self.gui.config.get("vocab", [])
+        if all([v in self._vocab for v in vocab]):
+            return
+
+        self._vocab = {k:v for k,v in self._vocab.items() if k in vocab}
+        for k in vocab:
+            if not k in self._vocab:
+                p = k
+                if not os.path.isabs(p):
+                    p = os.path.join(self.gui.modelDirectory(), k)
+                if os.path.exists(p):
+                    with open(p, "r", encoding="utf-8") as f:
+                        self._vocab[k] = f.readlines()
+                else:
+                    self.vocabRemove(k)
+
+        self._dictionary = {}
+        self._dictionaryDetails = {}
+        for k in self._vocab:
+            total = len(self._vocab[k])
+            for i, line in enumerate(self._vocab[k]):
+                line = line.strip()
+                tag, order = line, int(((i+1)/total)*1000000)
+                if "," in line:
+                    tag, deco = line.split(",",1)[0].strip(), line.rsplit(",",1)[-1].strip()
+                    self._dictionaryDetails[tag] = deco
+                self._dictionary[tag] = order
+
+    @pyqtSlot(str)
+    def vocabAdd(self, file):
+        vocab = self.gui.config.get("vocab", []) + [file]
+        self.gui.config.set("vocab", vocab)
+    
+    @pyqtSlot(str)
+    def vocabRemove(self, file):
+        vocab = [v for v in self.gui.config.get("vocab", []) if not v == file]
+        self.gui.config.set("vocab", vocab)
 
     @pyqtSlot()
     def optionsUpdated(self):
-        self._possible = []
+        self._collection = []
         if "TI" in self.gui._options:
-            self._possible += [(self.gui.modelName(n), "TI") for n in self.gui._options["TI"]]
+            self._collection += [(self.gui.modelName(n), "TI") for n in self.gui._options["TI"]]
         if "LoRA" in self.gui._options:
-            self._possible += [(self.gui.modelName(n), "LoRA") for n in self.gui._options["LoRA"]]
+            self._collection += [(self.gui.modelName(n), "LoRA") for n in self.gui._options["LoRA"]]
         if "HN" in self.gui._options:
-            self._possible += [(self.gui.modelName(n), "HN") for n in self.gui._options["HN"]]
-        self._possible += [(n, "Wild") for n in self.gui.wildcards._wildcards.keys()]
-        self._possibleDetails = {k:v for k,v in self._possible}
+            self._collection += [(self.gui.modelName(n), "HN") for n in self.gui._options["HN"]]
+        self._collection += [(n, "Wild") for n in self.gui.wildcards._wildcards.keys()]
+        self._collectionDetails = {k:v for k,v in self._collection}
