@@ -328,7 +328,7 @@ class Parameters(QObject):
         self._client_only = [
             "models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "SR", "LoRAs", "HNs", "LoRA", "HN", "TIs", "TI", "CN", "CNs", "hr_upscalers", "img2img_upscalers", 
             "attentions", "device", "devices", "batch_count", "prompt", "negative_prompt", "vram_usages", "artifact_modes", "preview_modes", "schedules",
-            "CN_modes", "CN_preprocessors", "vram_modes", "true_samplers", "schedule", "network_modes", "model", "output_folder"
+            "CN_modes", "CN_preprocessors", "vram_modes", "true_samplers", "schedule", "network_modes", "model", "output_folder", "mask_fill_modes"
         ]
         self._values = VariantMap(self, {
             "prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7, "strength": 0.75, "seed": -1, "eta": 1.0,
@@ -338,8 +338,8 @@ class Parameters(QObject):
             "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "schedule": "Default", "schedules": ["Default", "Karras"],
             "vram_mode": "Default", "vram_modes": ["Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"], "preview_mode": "Disabled",
             "preview_modes": ["Disabled", "Light", "Medium", "Full"], "preview_interval":1, "true_samplers": [], "true_sampler": "Euler a",
-            "network_mode": "Dynamic", "network_modes": ["Dynamic", "Static"],
-            "tome_ratio": 0.0, "hr_tome_ratio": 0.0, "output_folder": "", "autocast": "Disabled", "autocast_modes": ["Disabled", "Enabled"]
+            "network_mode": "Dynamic", "network_modes": ["Dynamic", "Static"], "mask_fill": "Original", "mask_fill_modes": ["Original", "Noise"],
+            "tome_ratio": 0.0, "hr_tome_ratio": 0.0, "output_folder": "", "autocast": "Disabled", "autocast_modes": ["Disabled", "Enabled"],
         })
         self._values.updating.connect(self.mapsUpdating)
         self._values.updated.connect(self.onUpdated)
@@ -562,7 +562,10 @@ class Parameters(QObject):
                 data["mask"] = masks
         else:
             request["type"] = "txt2img"
+
+        if not "mask" in data:
             del data["mask_blur"]
+            del data["mask_fill"]
 
         if areas:
             s = len(self.subprompts)

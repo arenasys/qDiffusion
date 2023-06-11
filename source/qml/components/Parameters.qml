@@ -696,6 +696,16 @@ Item {
                         snapValue: 1
                         bounded: false
                     }
+
+                    OChoice {
+                        label: "Mask fill"
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "mask_fill"
+                        bindKeyModel: "mask_fill_modes"
+                    }
                 }
                 OColumn {
                     id: hrColumn
