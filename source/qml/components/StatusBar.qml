@@ -45,7 +45,7 @@ Rectangle {
         anchors.bottomMargin: 4
         verticalAlignment: Text.AlignVCenter
         horizontalAlignment: Text.AlignHCenter
-        text: GUI.statusText
+        text: TRANSLATOR.instance.translate(GUI.statusText, "Status")
         font.bold: true
         font.pointSize: 9.8
         color: COMMON.fg1_5

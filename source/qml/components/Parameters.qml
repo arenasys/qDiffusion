@@ -14,6 +14,10 @@ Item {
     property var swap: false
     property var advanced: GUI.config != null ? GUI.config.get("advanced") : false
 
+    function tr(str, file = "Parameters.qml") {
+        return TRANSLATOR.instance.translate(str, file)
+    }
+
     signal generate()
     signal cancel()
     signal buildModel()
@@ -88,7 +92,7 @@ Item {
             SContextMenu {
                 id: genContextMenu
                 SContextMenuItem {
-                    text: "Generate Forever"
+                    text: root.tr("Generate Forever")
                     checkable: true
                     onCheckedChanged: {
                         root.forever = checked
@@ -97,7 +101,7 @@ Item {
                 SContextMenuItem {
                     height: visible ? 25 : 0
                     visible: GUI.statusMode == 2
-                    text: "Cancel"
+                    text: root.tr("Cancel")
                     onPressed: {
                         root.cancel()
                     }
@@ -139,7 +143,7 @@ Item {
                 width: paramScroll.width
                 OColumn {
                     id: optColumn
-                    text: "Options"
+                    text: root.tr("Options")
                     width: parent.width
 
                     onExpanded: {
@@ -148,7 +152,7 @@ Item {
 
                     OSlider {
                         id: widthInput
-                        label: "Width"
+                        label: root.tr("Width")
                         width: parent.width
                         height: 30
 
@@ -176,7 +180,7 @@ Item {
                     }
                     OSlider {
                         id: heightInput
-                        label: "Height"
+                        label: root.tr("Height")
                         width: parent.width
                         height: 30
 
@@ -204,7 +208,7 @@ Item {
                     }
                     OSlider {
                         id: stepsInput
-                        label: "Steps"
+                        label: root.tr("Steps")
                         width: parent.width
                         height: 30
 
@@ -220,7 +224,7 @@ Item {
                     }
                     OSlider {
                         id: scaleInput
-                        label: "Scale"
+                        label: root.tr("Scale")
                         width: parent.width
                         height: 30
                         
@@ -236,7 +240,7 @@ Item {
                     }
                     OTextInput {
                         id: seedInput
-                        label: "Seed"
+                        label: root.tr("Seed")
                         width: parent.width
                         height: 30
 
@@ -259,7 +263,7 @@ Item {
                 }
                 OColumn {
                     id: samplerColumn
-                    text: "Sampler"
+                    text: root.tr("Sampler")
                     width: parent.width
                     isCollapsed: true
 
@@ -280,7 +284,7 @@ Item {
 
                     OChoice {
                         id: scheduleInput
-                        label: "Schedule"
+                        label: root.tr("Schedule")
                         width: parent.width
                         height: 25
                         
@@ -310,7 +314,7 @@ Item {
 
                     OSlider {
                         id: etaInput
-                        label: "Eta"
+                        label: root.tr("Eta")
                         width: parent.width
                         height: 25
                         
@@ -326,7 +330,7 @@ Item {
                 }
                 OColumn {
                     id: modelColumn
-                    text: "Model"
+                    text: root.tr("Model")
                     width: parent.width
                     isCollapsed: true
 
@@ -379,30 +383,13 @@ Item {
                         onContextMenu: {
                             modelsContextMenu.popup()
                         }
-
-                        SContextMenu {
-                            id: modelsContextMenu
-                            SContextMenuItem {
-                                text: "Force Refresh"
-                                onPressed: {
-                                    GUI.refreshModels()
-                                }
-                            }
-                            SContextMenuItem {
-                                text: "Build model"
-                                onPressed: {
-                                    root.buildModel()
-                                    modelsContextMenu.close()
-                                }
-                            }
-                        }
                     }
 
                     property var models: root.binding.values.get("models")
 
                     OChoice {
                         id: unetInput
-                        label: "UNET"
+                        label: root.tr("UNET")
                         width: parent.width
                         height: 25
                         
@@ -430,7 +417,7 @@ Item {
                     }
                     OChoice {
                         id: vaeInput
-                        label: "VAE"
+                        label: root.tr("VAE")
                         width: parent.width
                         height: 25
 
@@ -443,7 +430,7 @@ Item {
 
                         function decoration(value) {
                             if(!modelColumn.models.includes(value)) {
-                                return "External"
+                                return root.tr("External")
                             }
                             return ""
                         }
@@ -454,7 +441,7 @@ Item {
                     }
                     OChoice {
                         id: clipInput
-                        label: "CLIP"
+                        label: root.tr("CLIP")
                         width: parent.width
                         height: 25
 
@@ -467,7 +454,7 @@ Item {
 
                         function decoration(value) {
                             if(!modelColumn.models.includes(value)) {
-                                return "External"
+                                return root.tr("External")
                             }
                             return ""
                         }
@@ -480,7 +467,7 @@ Item {
 
                 OColumn {
                     id: netColumn
-                    text: "Networks"
+                    text: root.tr("Networks")
                     width: parent.width
                     padding: false
                     isCollapsed: true
@@ -602,7 +589,7 @@ Item {
                         }
                     }
                     OChoice {
-                        label: "Mode"
+                        label: root.tr("Mode")
                         width: parent.width
                         bottomPadded: true
                         height: 23
@@ -614,7 +601,7 @@ Item {
                 }
                 OColumn {
                     id: ipColumn
-                    text: "Inpainting"
+                    text: root.tr("Inpainting")
                     width: parent.width
                     isCollapsed: true
 
@@ -624,7 +611,7 @@ Item {
 
                     OSlider {
                         id: strengthInput
-                        label: "Strength"
+                        label: root.tr("Strength")
                         width: parent.width
                         height: 30
                         
@@ -639,7 +626,7 @@ Item {
                     }
 
                     OChoice {
-                        label: "Upscaler"
+                        label: root.tr("Upscaler")
                         width: parent.width
                         height: 30
 
@@ -653,12 +640,12 @@ Item {
 
                         function decoration(value) {
                             if(sr.includes(value)) {
-                                return "SR"
+                                return root.tr("SR")
                             }
                             if(value.startsWith("Latent")) {
-                                return "Latent"
+                                return root.tr("Latent")
                             }
-                            return "Pixel"
+                            return root.tr("Pixel")
                         }
 
                         function display(text) {
@@ -666,7 +653,7 @@ Item {
                         }
                     }
                     OSlider {
-                        label: "Padding"
+                        label: root.tr("Padding")
                         width: parent.width
                         height: 30
                         overlay: value == -1
@@ -682,7 +669,7 @@ Item {
                         bounded: false
                     }
                     OSlider {
-                        label: "Mask Blur"
+                        label: root.tr("Mask Blur")
                         width: parent.width
                         height: 30
 
@@ -698,7 +685,7 @@ Item {
                     }
 
                     OChoice {
-                        label: "Mask fill"
+                        label: root.tr("Mask fill")
                         width: parent.width
                         height: 30
 
@@ -709,7 +696,7 @@ Item {
                 }
                 OColumn {
                     id: hrColumn
-                    text: "Highres"
+                    text: root.tr("Highres")
                     width: parent.width
                     isCollapsed: true
 
@@ -744,7 +731,7 @@ Item {
 
                     OSlider {
                         id: hrFactorInput
-                        label: "HR Factor"
+                        label: root.tr("HR Factor")
                         width: parent.width
                         height: 30
 
@@ -761,7 +748,7 @@ Item {
                         bounded: false
                     }
                     OSlider {
-                        label: "HR Strength"
+                        label: root.tr("HR Strength")
                         width: parent.width
                         height: 30
 
@@ -777,7 +764,7 @@ Item {
                         snapValue: 0.05
                     }
                     OChoice {
-                        label: "HR Upscaler"
+                        label: root.tr("HR Upscaler")
                         width: parent.width
                         height: 30
 
@@ -793,12 +780,12 @@ Item {
 
                         function decoration(value) {
                             if(sr.includes(value)) {
-                                return "SR"
+                                return root.tr("SR")
                             }
                             if(value.startsWith("Latent")) {
-                                return "Latent"
+                                return root.tr("Latent")
                             }
-                            return "Pixel"
+                            return root.tr("Pixel")
                         }
 
                         function display(text) {
@@ -807,7 +794,7 @@ Item {
                     }
                     OSlider {
                         visible: root.advanced
-                        label: "HR ToMe Ratio"
+                        label: root.tr("HR ToMe Ratio")
                         width: parent.width
                         height: 30
 
@@ -824,7 +811,7 @@ Item {
                     }
                     OSlider {
                         id: hrStepsInput
-                        label: "HR Steps"
+                        label: root.tr("HR Steps")
                         width: parent.width
                         height: 30
 
@@ -845,7 +832,7 @@ Item {
                     OChoice {
                         visible: root.advanced
                         id: hrSamplerInput
-                        label: "HR Sampler"
+                        label: root.tr("HR Sampler")
                         width: parent.width
                         height: 30
                         disabled: hrFactorInput.value == 1.0
@@ -857,7 +844,7 @@ Item {
                     OSlider {
                         visible: !samplerColumn.isCollapsed && root.advanced
                         id: hrEtaInput
-                        label: "HR Eta"
+                        label: root.tr("HR Eta")
                         width: parent.width
                         height: 25
                         
@@ -877,7 +864,7 @@ Item {
                 }
                 OColumn {
                     id: miscColumn
-                    text: "Misc"
+                    text: root.tr("Misc")
                     width: parent.width
                     isCollapsed: true
 
@@ -886,7 +873,7 @@ Item {
                     }
 
                     OSlider {
-                        label: "CLIP Skip"
+                        label: root.tr("CLIP Skip")
                         width: parent.width
                         height: 30
 
@@ -902,7 +889,7 @@ Item {
                     }
 
                     OSlider {
-                        label: "Batch Count"
+                        label: root.tr("Batch Count")
                         width: parent.width
                         height: 30
 
@@ -918,7 +905,7 @@ Item {
                     }
 
                     OSlider {
-                        label: "Batch Size"
+                        label: root.tr("Batch Size")
                         width: parent.width
                         height: 30
 
@@ -935,7 +922,7 @@ Item {
 
                     OSlider {
                         visible: root.advanced
-                        label: "ToMe Ratio"
+                        label: root.tr("ToMe Ratio")
                         width: parent.width
                         height: 30
 
@@ -951,7 +938,7 @@ Item {
 
                     OSlider {
                         id: subseedStrInput
-                        label: "Subseed strength"
+                        label: root.tr("Subseed strength")
                         width: parent.width
                         height: 30
                         overlay: subseedStrInput.value == 0.0
@@ -969,7 +956,7 @@ Item {
 
                     OTextInput {
                         id: subseedInput
-                        label: "Subseed"
+                        label: root.tr("Subseed")
                         width: parent.width
                         height: 30
                         disabled: subseedStrInput.overlay
@@ -985,7 +972,7 @@ Item {
                 }
                 OColumn {
                     id: opColumn
-                    text: "Operation"
+                    text: root.tr("Operation")
                     width: parent.width
                     isCollapsed: true
 
@@ -994,7 +981,7 @@ Item {
                     }
 
                     OChoice {
-                        label: "Preview"
+                        label: root.tr("Preview")
                         width: parent.width
                         height: 30
 
@@ -1008,7 +995,7 @@ Item {
                     }
 
                     OSlider {
-                        label: "Preview interval"
+                        label: root.tr("Preview interval")
                         width: parent.width
                         height: 30
                         
@@ -1027,7 +1014,7 @@ Item {
                     }
 
                     OChoice {
-                        label: "Artifacts"
+                        label: root.tr("Artifacts")
                         width: parent.width
                         height: 30
 
@@ -1041,7 +1028,7 @@ Item {
                     }
 
                     OChoice {
-                        label: "VRAM"
+                        label: root.tr("VRAM")
                         width: parent.width
                         height: 30
 
@@ -1055,7 +1042,7 @@ Item {
                     }
 
                     OChoice {
-                        label: "Attention"
+                        label: root.tr("Attention")
                         width: parent.width
                         height: 30
 
@@ -1065,7 +1052,7 @@ Item {
                     }
 
                     OChoice {
-                        label: "Autocast"
+                        label: root.tr("Autocast")
                         width: parent.width
                         height: 30
 
@@ -1075,7 +1062,7 @@ Item {
                     }
 
                     OChoice {
-                        label: "Device"
+                        label: root.tr("Device")
                         width: parent.width
                         height: 30
 
@@ -1089,7 +1076,7 @@ Item {
                     }
 
                     OTextInput {
-                        label: "Output Folder"
+                        label: root.tr("Output Folder")
                         width: parent.width
                         height: 30
                         placeholder: "Default"

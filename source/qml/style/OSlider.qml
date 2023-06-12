@@ -31,6 +31,10 @@ Item {
     signal selected()
     signal finished()
 
+    function label_display(text) {
+        return text
+    }
+
     Connections {
         target: bindMap
         function onUpdated() {
@@ -125,7 +129,7 @@ Item {
 
         SText {
             id: labelText
-            text: root.label
+            text: root.label_display(root.label)
             anchors.left: parent.left
             anchors.top: parent.top
             anchors.bottom: parent.bottom

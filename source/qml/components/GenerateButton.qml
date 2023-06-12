@@ -12,6 +12,9 @@ Rectangle {
     property var info: ""
     property var remaining: 0
 
+    function tr(str, file = "GenerateButton.qml") {
+        return TRANSLATOR.instance.translate(str, file)
+    }
 
     property var hue: 0.0
     property var label: null
@@ -149,7 +152,7 @@ Rectangle {
 
     SText {
         anchors.fill: parent
-        text: root.working ? (mouseArea.containsMouse && root.info != "" ? root.info : "Working...") : "Generate"
+        text: root.working ? (mouseArea.containsMouse && root.info != "" ? root.info : root.tr("Working...")) : root.tr("Generate")
         color: Qt.lighter(COMMON.fg0, mouseArea.down ? 0.85 : 1.0)
         font.bold: true
         horizontalAlignment: Text.AlignHCenter

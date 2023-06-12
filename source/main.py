@@ -18,6 +18,8 @@ from PyQt5.QtQml import QQmlApplicationEngine, qmlRegisterSingletonType, qmlRegi
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QIcon
 
+from translation import Translator
+
 NAME = "qDiffusion"
 
 import warnings
@@ -189,8 +191,8 @@ class Coordinator(QObject):
         try:
             with open("config.json", "r", encoding="utf-8") as f:
                 cfg = json.load(f)
-                self.override = 'show' in cfg
-                mode = self._modes.index(cfg['mode'].lower())
+                self.override = "show" in cfg and cfg["show"]
+                mode = self._modes.index(cfg["mode"].lower())
                 self._mode = mode
         except Exception:
             pass
@@ -202,6 +204,8 @@ class Coordinator(QObject):
             self.optional = [line.rstrip() for line in file]
 
         self.find_needed()
+
+        qmlRegisterSingletonType(Coordinator, "gui", 1, 0, "COORDINATOR", lambda qml, js: self)
 
     def find_needed(self):
         self.torch_version = ""
@@ -401,9 +405,9 @@ def launch():
     
     engine = QQmlApplicationEngine()
     engine.quit.connect(app.quit)
-
+    
+    translator = Translator(app)
     coordinator = Coordinator(app, engine)
-    qmlRegisterSingletonType(Coordinator, "gui", 1, 0, "COORDINATOR", lambda qml, js: coordinator)
 
     engine.load(QUrl('file:source/qml/Splash.qml'))
 

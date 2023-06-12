@@ -18,6 +18,10 @@ Item {
     property var showInfo: false
     property var search: ""
 
+    function tr(str, file = "ModelGrid.qml") {
+        return TRANSLATOR.instance.translate(str, file)
+    }
+
     MouseArea {
         anchors.fill: parent
         acceptedButtons: Qt.LeftButton
@@ -41,7 +45,7 @@ Item {
         anchors.centerIn: root
         width: 150
         height: 27
-        label: "Open " + root.label
+        label: root.tr("Open %1").arg(root.label)
         color: COMMON.fg1_5
 
         onPressed: {
@@ -52,7 +56,7 @@ Item {
     SText {
         anchors.centerIn: parent
         visible: modelsView.count == 0 && GUI.remoteStatus != 0 && root.mode != "wildcard"
-        text: "Remote has no " + root.label
+        text: root.tr("Remote has no %1").arg(root.label)
         color: COMMON.fg2
         font.pointSize: 9.8
     }

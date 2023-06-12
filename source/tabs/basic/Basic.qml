@@ -19,13 +19,17 @@ Item {
         rightDivider.offset = 210
     }
 
+    function tr(str, file = "Basic.qml") {
+        return TRANSLATOR.instance.translate(str, file)
+    }
+
     function releaseFocus() {
         parent.releaseFocus()
     }
 
     SDialog {
         id: buildDialog
-        title: "Build model"
+        title: root.tr("Build model")
         standardButtons: Dialog.Ok | Dialog.Cancel
         modal: true
         dim: true
@@ -41,7 +45,7 @@ Item {
             id: filenameInput
             width: 290
             height: 30
-            label: "Filename"
+            label: root.tr("Filename")
             value: GUI.modelName(BASIC.parameters.values.get("UNET")) + ".safetensors"
         }
 
@@ -133,7 +137,7 @@ Item {
             id: fullContextMenu
 
             SContextMenuItem {
-                text: "Show Parameters"
+                text: root.tr("Show Parameters")
                 checkable: true
                 checked: fullParams.show
                 onCheckedChanged: {
@@ -153,14 +157,14 @@ Item {
             SContextMenuItem {
                 id: outputContext
                 visible: fullContextMenu.output
-                text: "Open"
+                text: root.tr("Open", "General")
                 onTriggered: {
                     GALLERY.doOpenImage([full.file])
                 }
             }
 
             SContextMenuItem {
-                text: "Visit"
+                text: root.tr("Visit", "General")
                 visible: fullContextMenu.output
                 onTriggered: {
                     GALLERY.doOpenFolder([full.file])
@@ -178,7 +182,7 @@ Item {
 
             SContextMenu {
                 id: fullCopyToMenu
-                title: "Copy to"
+                title: root.tr("Copy to", "General")
                 Instantiator {
                     model: destinationsSql
                     SContextMenuItem {
@@ -475,7 +479,7 @@ Item {
                 color: COMMON.bg3
                 SText {
                     anchors.fill: parent
-                    text: "Parameters"
+                    text: root.tr("Parameters")
                     color: COMMON.fg1_5
                     leftPadding: 5
                     verticalAlignment: Text.AlignVCenter
@@ -489,7 +493,7 @@ Item {
                     anchors.margins: 1
                     height: 23
                     width: 23
-                    tooltip: "Hide Parameters"
+                    tooltip: root.tr("Hide Parameters")
                     icon: "qrc:/icons/eye.svg"
                     onPressed: {
                         fullParams.show = false
@@ -594,7 +598,7 @@ Item {
 
     ImportDialog  {
         id: importDialog
-        title: "Import"
+        title: root.tr("Import")
         standardButtons: Dialog.Ok | Dialog.Cancel
         modal: true
         dim: true

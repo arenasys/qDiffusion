@@ -166,7 +166,7 @@ class Settings(QObject):
         if commit:
             if self._currentGitInfo == None:
                 self._currentGitInfo = commit
-            self._gitInfo = "GUI commit: " + label
+            self._gitInfo = label
             self._needRestart = self._currentGitInfo != commit
         elif not self._triedGitInit:
             self._triedGitInit = True
@@ -178,7 +178,7 @@ class Settings(QObject):
             if commit:
                 if self._currentGitServerInfo == None:
                     self._currentGitServerInfo = commit
-                self._gitServerInfo = "Inference commit: " + label
+                self._gitServerInfo = label
                 self._needRestart = self._needRestart or (self._currentGitServerInfo != commit)
 
         self.updated.emit()

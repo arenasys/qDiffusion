@@ -8,18 +8,23 @@ import "../style"
 
 SMenuBar {
     id: root
+
+    function tr(str, file = "WindowBar.qml") {
+        return TRANSLATOR.instance.translate(str, file)
+    }
+
     SMenu {
         id: menu
-        title: "File"
+        title: root.tr("File")
         clipShadow: true
         SMenu {
-            title: "Import"
+            title: root.tr("Import")
             clipShadow: true
             Repeater {
                 property var tmp: ["Checkpoint", "Component", "LoRA", "Hypernet", "Embedding", "Upscaler"]
                 model: tmp
                 SMenuItem {
-                    text: modelData
+                    text: root.tr(modelData)
 
                     onPressed: {
                         importFileDialog.mode = EXPLORER.getMode(modelData+"s")
@@ -30,7 +35,7 @@ SMenuBar {
 
             FileDialog {
                 id: importFileDialog
-                nameFilters: ["Model file (*.pt *.pth *.ckpt *.bin *.safetensors *.st)"]
+                nameFilters: [root.tr("Model files") + " (*.pt *.pth *.ckpt *.bin *.safetensors *.st)"]
                 property var mode: ""
 
                 onAccepted: {
@@ -50,7 +55,7 @@ SMenuBar {
         }
         SMenuSeparator {}
         SMenuItem {
-            text: "Update"
+            text: root.tr("Update")
             onPressed: {
                 GUI.currentTab = "Settings"
                 SETTINGS.currentTab = "Program"
@@ -58,7 +63,7 @@ SMenuBar {
             }
         }
         SMenuItem {
-            text: "Reload"
+            text: root.tr("Reload")
             shortcut: "Ctrl+R"
             global: true
             onPressed: {
@@ -68,7 +73,7 @@ SMenuBar {
         }
         SMenuSeparator {}
         SMenuItem {
-            text: "Quit"
+            text: root.tr("Quit")
             shortcut: "Ctrl+Q"
             global: true
             onPressed: {
@@ -77,28 +82,28 @@ SMenuBar {
         }
     }
     SMenu {
-        title: "Edit"
+        title: root.tr("Edit")
         clipShadow: true
         SMenuItem {
-            text: "Refresh models"   
+            text: root.tr("Refresh models")
         }
 
         SMenuItem {
             visible: GUI.currentTab == "Basic"
             height: visible ? 20 : 0
-            text: "Build model"
+            text: root.tr("Build model")
             onPressed: {
                 BASIC.doBuildModel()
             }
         }
     }
     SMenu {
-        title: "View"
+        title: root.tr("View")
         clipShadow: true
         SMenuItem {
             visible: GUI.currentTab == "Basic"
             height: visible ? 20 : 0
-            text: "Swap side"
+            text: root.tr("Swap side")
             checkable: true
             checked: GUI.config != null ? GUI.config.get("swap") : false
             onCheckedChanged: {
@@ -110,7 +115,7 @@ SMenuBar {
         SMenuItem {
             visible: GUI.currentTab == "Basic"
             height: visible ? 20 : 0
-            text: "Autocomplete"
+            text: root.tr("Autocomplete")
             checkable: true
             checked: GUI.config != null ? GUI.config.get("autocomplete") > 0 : false
             onCheckedChanged: {
@@ -130,7 +135,7 @@ SMenuBar {
         SMenuItem {
             visible: GUI.currentTab == "Models"
             height: visible ? 20 : 0
-            text: "Thumbails"
+            text: root.tr("Thumbails")
             shortcut: "Shift"
             checkable: true
             checked: !EXPLORER.showInfo
@@ -144,7 +149,7 @@ SMenuBar {
         SMenuItem {
             visible: GUI.currentTab == "Models"
             height: visible ? 20 : 0
-            text: "Zoom in"
+            text: root.tr("Zoom in")
             shortcut: "Ctrl+="
             onPressed: {
                 EXPLORER.adjustCellSize(100)
@@ -153,7 +158,7 @@ SMenuBar {
         SMenuItem {
             visible: GUI.currentTab == "Models"
             height: visible ? 20 : 0
-            text: "Zoom out"
+            text: root.tr("Zoom out")
             shortcut: "Ctrl+-"
             onPressed: {
                 EXPLORER.adjustCellSize(-100)
@@ -163,7 +168,7 @@ SMenuBar {
         SMenuItem {
             visible: GUI.currentTab == "Gallery"
             height: visible ? 20 : 0
-            text: "Zoom in"
+            text: root.tr("Zoom in")
             shortcut: "Ctrl+="
             onPressed: {
                 GALLERY.adjustCellSize(50)
@@ -172,7 +177,7 @@ SMenuBar {
         SMenuItem {
             visible: GUI.currentTab == "Gallery"
             height: visible ? 20 : 0
-            text: "Zoom out"
+            text: root.tr("Zoom out")
             shortcut: "Ctrl+-"
             onPressed: {
                 GALLERY.adjustCellSize(-50)
@@ -180,10 +185,10 @@ SMenuBar {
         }
     }
     SMenu {
-        title: "Help"
+        title: root.tr("Help")
         clipShadow: true
         SMenuItem {
-            text: "About"
+            text: root.tr("About")
             onPressed: {
                 GUI.openLink("https://github.com/arenasys/qDiffusion")
             }

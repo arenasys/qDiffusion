@@ -22,6 +22,7 @@ import thumbnails
 import backend
 import config
 import wildcards
+import translation
 from misc import SyntaxHighlighter
 from parameters import VariantMap
 
@@ -416,7 +417,7 @@ class GUI(QObject):
     def remoteEndpoint(self):
         endpoint = self._config._values.get("endpoint")
         if not endpoint:
-            return "Local"
+            return ""
         return endpoint
     
     @pyqtProperty(int, notify=statusUpdated)
@@ -424,13 +425,13 @@ class GUI(QObject):
         return self._remoteStatus.value
     
     @pyqtProperty(str, notify=statusUpdated)
-    def remoteInfo(self):
-        endpoint = self._config._values.get("endpoint")
-        
-        mode = ""
+    def remoteInfoMode(self):
+        return "Remote" if self._config._values.get("endpoint") else "Local"
+    
+    @pyqtProperty(str, notify=statusUpdated)
+    def remoteInfoStatus(self):
         status = ""
-        if endpoint:
-            mode = "Remote"
+        if self._config._values.get("endpoint"):
             if self._remoteStatus == RemoteStatusMode.CONNECTING:
                 status = "Connecting"
             elif self._remoteStatus == RemoteStatusMode.ERRORED:
@@ -438,7 +439,6 @@ class GUI(QObject):
             else:
                 status = "Connected"
         else:
-            mode = "Local"
             if self._statusMode == StatusMode.STARTING:
                 status = "Initializing"
             elif self._statusMode == StatusMode.INACTIVE:
@@ -446,7 +446,7 @@ class GUI(QObject):
             else:
                 status = "Ready"
 
-        return mode + ", " + status
+        return status
 
     @pyqtSlot()
     def restartBackend(self):

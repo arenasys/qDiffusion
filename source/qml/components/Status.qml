@@ -6,9 +6,14 @@ import gui 1.0
 import "../style"
 
 Item {
+    id: root
     anchors.margins: 2
     clip: true
     property var swap: false
+
+    function tr(str, file = "Status.qml") {
+        return TRANSLATOR.instance.translate(str, file)
+    }
 
     Rectangle {
         anchors.top: parent.top
@@ -33,7 +38,7 @@ Item {
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignHCenter
             elide: Text.ElideRight
-            text: GUI.remoteEndpoint
+            text: GUI.remoteEndpoint ? GUI.remoteEndpoint : root.tr("Local", "Status")
             font.bold: true
             color: COMMON.fg2
         }

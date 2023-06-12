@@ -10,6 +10,12 @@ import "../../style"
 import "../../components"
 
 Item {
+    id: root
+
+    function tr(str, file = "Settings.qml") {
+        return TRANSLATOR.instance.translate(str, file)
+    }
+
     Rectangle {
         anchors.fill: column
         color: COMMON.bg0
@@ -20,18 +26,20 @@ Item {
         height: parent.height
 
         SColumnButton {
-            label: "Remote"
-            active: SETTINGS.currentTab == label
+            property var name: "Remote"
+            label: root.tr(name)
+            active: SETTINGS.currentTab == name
             onPressed: {
-                SETTINGS.currentTab = label
+                SETTINGS.currentTab = name
             }
         }
         SColumnButton {
-            label: "Program"
-            active: SETTINGS.currentTab == label
+            property var name: "Program"
+            label: root.tr(name)
+            active: SETTINGS.currentTab == name
             onPressed: {
                 SETTINGS.getGitInfo()
-                SETTINGS.currentTab = label
+                SETTINGS.currentTab = name
             }
         }
     }

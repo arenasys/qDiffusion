@@ -13,6 +13,10 @@ Item {
     property var working: GUI.workingTabs
     property var shown: GUI.tabNames.slice(0,-1)
 
+    function tr(str, file = "TabBar.qml") {
+        return TRANSLATOR.instance.translate(str, file)
+    }
+
     Connections {
         target: GUI
         function onCurrentTabChanged() {
@@ -60,7 +64,7 @@ Item {
             property var tmp: shown
             model: tmp
             STabButton {
-                text: qsTr(modelData)
+                text: root.tr(modelData)
                 selected: root.currentTab == modelData
                 working: root.working.includes(modelData)
                 onPressed: {
@@ -82,7 +86,7 @@ Item {
         property var settingsName: GUI.tabNames.slice(-1)[0] 
 
         STabButton {
-            text: qsTr(rightBar.settingsName)
+            text: root.tr(rightBar.settingsName)
             selected: root.currentTab == rightBar.settingsName
             onPressed: {
                 root.currentTab = rightBar.settingsName

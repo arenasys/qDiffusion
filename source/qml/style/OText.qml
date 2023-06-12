@@ -12,19 +12,23 @@ SText {
     property variant bindMap: null
     property var bindKey: null
 
+    function display(text) {
+        return text
+    }
+
     Connections {
         target: bindMap
         function onUpdated() {
             var v = control.bindMap.get(control.bindKey)
             if(v != control.text) {
-                control.text = v
+                control.text = control.display(v)
             }
         }
     }
 
     Component.onCompleted: {
         if(control.bindMap != null && control.bindKey != null) {
-            control.text = control.bindMap.get(control.bindKey)
+            control.text = control.display(control.bindMap.get(control.bindKey))
         }
         if(control.defaultText == null) {
             control.defaultText = control.text;

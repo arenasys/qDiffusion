@@ -14,6 +14,10 @@ Item {
     height: modelsView.cellHeight
     property var grid
 
+    function tr(str, file = "ModelCard.qml") {
+        return TRANSLATOR.instance.translate(str, file)
+    }
+
     signal deleteModel(string model)
 
     RectangularGlow {
@@ -255,7 +259,7 @@ Item {
                 anchors.fill: parent
                 anchors.leftMargin: 21
                 anchors.rightMargin: (sql_desc != "" && sql_width != 0) ? 21 : 3
-                text: sql_display
+                text: root.tr(sql_display, "Category")
                 verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignHCenter
                 color: sql_width != 0 ? COMMON.fg1 : COMMON.fg2
@@ -373,7 +377,7 @@ Item {
             width: 80
 
             SContextMenuItem {
-                text: modelCard.editing ? "Save" : "Edit"
+                text: modelCard.editing ? root.tr("Save", "General") : root.tr("Edit", "General")
                 onPressed: {
                     if(modelCard.editing) {
                         modelCard.save()
@@ -386,14 +390,14 @@ Item {
             SContextMenuSeparator {}
 
             SContextMenuItem {
-                text: "Visit"
+                text: root.tr("Visit", "General")
                 onPressed: {
                     EXPLORER.doVisit(sql_name)
                 }
             }
 
             SContextMenuItem {
-                text: "Clear"
+                text: root.tr("Clear", "General")
                 onPressed: {
                     EXPLORER.doClear(sql_file)
                 }
@@ -404,14 +408,14 @@ Item {
             SContextMenuItem {
                 visible: sql_type != "wildcard" && sql_type != "hypernet"
                 height: visible ? 20 : 0
-                text: "Prune"
+                text: root.tr("Prune")
                 onPressed: {
                     EXPLORER.doPrune(sql_name)
                 }
             }
 
             SContextMenuItem {
-                text: "Delete"
+                text: root.tr("Delete", "General")
                 onPressed: {
                     root.deleteModel(sql_name)
                 }
@@ -425,7 +429,7 @@ Item {
             SContextMenuItem {
                 visible: sql_type == "wildcard"
                 height: visible ? 20 : 0
-                text: "Vocab"
+                text: root.tr("Vocab")
                 checkable: true
                 checked: GUI.config != null ? GUI.config.get("vocab").includes(sql_name) : false
                 onCheckedChanged: {

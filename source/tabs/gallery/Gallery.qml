@@ -14,6 +14,10 @@ Rectangle {
     clip: true
     property var asleep: true
 
+    function tr(str, file = "Gallery.qml") {
+        return TRANSLATOR.instance.translate(str, file)
+    }
+
     Connections {
         target: GUI
         function onCurrentTabChanged() {
@@ -109,14 +113,14 @@ Rectangle {
             }
 
             SContextMenuItem {
-                text: "Open"
+                text: root.tr("Open", "General")
                 onTriggered: {
                     GALLERY.doOpenImage(galleryContextMenu.files)
                 }
             }
 
             SContextMenuItem {
-                text: "Visit"
+                text: root.tr("Visit", "General")
                 onTriggered: {
                     GALLERY.doOpenFolder(galleryContextMenu.files)
                 }
@@ -126,7 +130,7 @@ Rectangle {
 
             SContextMenu {
                 id: copyToMenu
-                title: "Copy to"
+                title: root.tr("Copy to", "General")
                 width: 120
                 Instantiator {
                     model: destinationsSql
@@ -143,7 +147,7 @@ Rectangle {
 
             SContextMenu {
                 id: moveToMenu
-                title: "Move to"
+                title: root.tr("Move to", "General")
                 width: 120
                 Instantiator {
                     model: destinationsSql
@@ -161,7 +165,7 @@ Rectangle {
             SContextMenuSeparator { }
 
             SContextMenuItem {
-                text: "Delete"
+                text: root.tr("Delete", "General")
                 onTriggered: {
                     deleteDialog.show(galleryContextMenu.files)
                 }
@@ -182,7 +186,7 @@ Rectangle {
 
     SDialog {
         id: deleteDialog
-        title: "Confirmation"
+        title: root.tr("Confirmation")
         standardButtons: Dialog.Ok | Dialog.Cancel
         modal: true
         property var files: []
@@ -197,7 +201,7 @@ Rectangle {
         SText {
             anchors.fill: parent
             padding: 5
-            text: "Delete " + deleteDialog.files.length + " images?"
+            text: root.tr("Delete %1 images?").arg(deleteDialog.files.length)
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
         }       
@@ -237,7 +241,7 @@ Rectangle {
         topPadding: 8
         bottomPadding: 1
         font.pointSize: 9
-        text: gallery.count + " images"
+        text: root.tr("%1 images").arg(gallery.count)
     }
 
     Rectangle {
@@ -265,7 +269,7 @@ Rectangle {
         topPadding: 8
         bottomPadding: 1
         font.pointSize: 9
-        text: gallery.selectedLength > 1 ? gallery.selectedLength + " images selected"  : ""
+        text: gallery.selectedLength > 1 ? root.tr("%1 images selected").arg(gallery.selectedLength)  : ""
     }
 
     Rectangle {
@@ -277,7 +281,7 @@ Rectangle {
         anchors.topMargin: -5
         opacity: 0.8
         height: 25
-        visible: sizeInfoText.text != ""
+        visible: sizeInfoText.visible
         color: "#c0101010"
         border.width: 1
         border.color: COMMON.bg3
@@ -285,6 +289,7 @@ Rectangle {
 
     SText {
         id: sizeInfoText
+        visible: text != ""
         anchors.top: parent.top
         anchors.right: galleryDivider.left
         verticalAlignment: Text.AlignVCenter
@@ -294,7 +299,7 @@ Rectangle {
         bottomPadding: 8
         font.pointSize: 9
         color: COMMON.fg1_5
-        text: gallery.currentWidth + "x" + gallery.currentHeight
+        text: gallery.currentWidth != 0 ? gallery.currentWidth + "x" + gallery.currentHeight : ""
     }
 
     SDividerVR {
@@ -335,7 +340,7 @@ Rectangle {
             color: COMMON.bg3
             SText {
                 anchors.fill: parent
-                text: "Parameters"
+                text: root.tr("Parameters")
                 color: COMMON.fg1_5
                 leftPadding: 5
                 verticalAlignment: Text.AlignVCenter
@@ -348,7 +353,7 @@ Rectangle {
                 anchors.margins: 1
                 height: 23
                 width: 23
-                tooltip: "Import"
+                tooltip: root.tr("Import")
                 icon: "qrc:/icons/back.svg"
                 inset: 8
                 onPressed: {
@@ -365,7 +370,7 @@ Rectangle {
                 anchors.margins: 1
                 height: 23
                 width: 23
-                tooltip: "Inspect"
+                tooltip: root.tr("Inspect")
                 icon: "qrc:/icons/search.svg"
                 inset: 8
                 onPressed: {
@@ -451,7 +456,7 @@ Rectangle {
         }
 
         SText {
-            text: "Search..."
+            text: root.tr("Search...")
             anchors.fill: parent
             verticalAlignment: Text.AlignVCenter
             font.bold: false

@@ -10,6 +10,10 @@ Dialog {
     width: 300
     dim: true
 
+    function tr(str, file = "SDialog.qml") {
+        return TRANSLATOR.instance.translate(str, file)
+    }
+
     onOpened: {
         buttonBox.forceActiveFocus()
     }
@@ -88,7 +92,7 @@ Dialog {
                 contentItem: SText {
                     id: contentText
                     color: COMMON.fg1
-                    text: control.text
+                    text: dialog.tr(control.text, "General")
                     font.pointSize: 9
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter

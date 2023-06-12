@@ -50,6 +50,7 @@ class BasicInput(QObject):
         self._dragging = False
         self._extent = QRect()
         self._extentWarning = False
+        self._mode = ""
         self._settings = parameters.VariantMap(self, {
             "mode": "", "CN_strength":1.0, "CN_preprocessors": [], "CN_preprocessor": "", "CN_bools": ["False", "True"],
             "CN_bool": "False", "CN_bool_label": "", "CN_slider_a": 0.0, "CN_slider_a_label": "", "CN_slider_b": 0.0, "CN_slider_b_label": ""
@@ -234,6 +235,7 @@ class BasicInput(QObject):
     def onSettingsUpdated(self, key):
         if key == "mode":
             value = self._settings.get("mode")
+            self._mode = value
 
             self._settings.set("CN_preprocessors", self.basic._parameters._values.get("CN_preprocessors"))
             self._settings.set("CN_preprocessor", value)
@@ -268,6 +270,10 @@ class BasicInput(QObject):
                 }
             for k,v in settings.items():
                 self._settings.set(k,v)
+
+    @pyqtProperty(str, notify=updated)
+    def mode(self):
+        return self._mode
 
     @pyqtSlot()
     def annotate(self):

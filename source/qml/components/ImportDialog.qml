@@ -15,6 +15,10 @@ Dialog {
     property alias parser: parser
     property var raw: false
 
+    function tr(str, file = "ImportDialog.qml") {
+        return TRANSLATOR.instance.translate(str, file)
+    }
+
     height: paramList.contentHeight + 77
 
     padding: 5
@@ -88,7 +92,7 @@ Dialog {
         SIconButton {
             color: "transparent"
             icon: "qrc:/icons/eye.svg"
-            tooltip: dialog.raw ? "Show parsed parameters" : "Show raw parameters"
+            tooltip: dialog.raw ? dialog.tr("Show parsed parameters") : dialog.tr("Show raw parameters")
             anchors.top: parent.top
             anchors.right: parent.right
             height: 20
@@ -174,7 +178,7 @@ Dialog {
                     width: contentWidth+10
                     leftPadding: 5
                     rightPadding: 5
-                    text: modelData.label
+                    text: dialog.tr(modelData.label)
                     color: COMMON.fg1
                     opacity: 0.8
                     font.pointSize: 9.8

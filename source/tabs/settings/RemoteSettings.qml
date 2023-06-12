@@ -12,6 +12,10 @@ import "../../components"
 Item {
     id: root
 
+    function tr(str, file = "RemoteSettings.qml") {
+        return TRANSLATOR.instance.translate(str, file)
+    }
+
     property var show: GUI.remoteStatus == 2
 
     Column {
@@ -27,8 +31,8 @@ Item {
                 anchors.left: parent.left
                 anchors.right: disconnectButton.visible ? disconnectButton.left : parent.right
                 height: 30
-                label: "Endpoint"
-                placeholder: "Local"
+                label: root.tr("Endpoint")
+                placeholder: root.tr("Local")
 
                 bindMap: GUI.config
                 bindKey: "endpoint"
@@ -44,7 +48,7 @@ Item {
                 height: 28
                 width: visible ? 28 : 0
                 anchors.margins: 0
-                tooltip: "Disconnect"
+                tooltip: root.tr("Disconnect")
                 icon: "qrc:/icons/disconnect.svg"
                 border.color: COMMON.bg4
 
@@ -60,8 +64,8 @@ Item {
             id: passwordInput
             width: parent.width
             height: 30
-            label: "Password"
-            placeholder: "None"
+            label: root.tr("Password")
+            placeholder: root.tr("None")
             bindMap: GUI.config
             bindKey: "password"
         }
@@ -69,14 +73,14 @@ Item {
         SButton {
             width: parent.width
             height: 30
-            label: endpointInput.value == "" ? "Reload" : "Reconnect"
+            label: endpointInput.value == "" ? root.tr("Reload") : root.tr("Reconnect")
             onPressed: {
                 SETTINGS.restart()
             }
         }
 
         SText {
-            text: GUI.remoteInfo
+            text: root.tr(GUI.remoteInfoMode, "Status") + ", " + root.tr(GUI.remoteInfoStatus, "Status")
             width: parent.width
             height: 30
             verticalAlignment: Text.AlignVCenter
@@ -99,7 +103,7 @@ Item {
                 id: modelTypeInput
                 width: 120
                 height: 30
-                label: "Type"
+                label: root.tr("Type")
                 model: ["SD", "LoRA", "HN", "TI", "SR", "CN"]
                 disabled: !root.show
             }
@@ -118,7 +122,7 @@ Item {
         SButton {
             width: parent.width
             height: 30
-            label: "Download"
+            label: root.tr("Download")
             onPressed: {
                 SETTINGS.download(modelTypeInput.model[modelTypeInput.currentIndex], modelUrlInput.value)
             }
@@ -140,7 +144,7 @@ Item {
                 id: uploadTypeInput
                 width: 120
                 height: 30
-                label: "Type"
+                label: root.tr("Type")
                 model: ["SD", "LoRA", "HN", "TI", "SR", "CN"]
                 disabled: !root.show
             }
@@ -152,7 +156,7 @@ Item {
                 id: uploadFileInput
                 height: 30
                 label: ""
-                placeholder: "File"
+                placeholder: root.tr("File")
                 disabled: !root.show
             }
 
@@ -174,7 +178,7 @@ Item {
                 anchors.top: parent.top
                 anchors.right: parent.right
                 anchors.margins: 2
-                tooltip: "Select file"
+                tooltip: root.tr("Select file")
                 icon: "qrc:/icons/folder.svg"
                 border.color: COMMON.bg4
 
@@ -186,7 +190,7 @@ Item {
 
             FileDialog {
                 id: uploadFileDialog
-                nameFilters: ["Model files (*.ckpt *.safetensors *.pt *.pth)"]
+                nameFilters: [root.tr("Model files") + " (*.ckpt *.safetensors *.pt *.pth)"]
 
                 onAccepted: {
                     uploadFileInput.value = SETTINGS.toLocal(uploadFileDialog.file)
@@ -220,7 +224,7 @@ Item {
         SButton {
             width: parent.width
             height: 30
-            label: "Upload"
+            label: root.tr("Upload")
             onPressed: {
                 SETTINGS.upload(uploadTypeInput.model[uploadTypeInput.currentIndex], uploadFileInput.value)
             }
@@ -256,27 +260,6 @@ Item {
                 visible: !root.show
                 color: "#80101010"
             }
-        }
-    }
-
-    Rectangle {
-        visible: false
-        anchors.fill: parent
-        color: "#101010"
-        MouseArea {
-            anchors.fill: parent
-            hoverEnabled: true
-            acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
-        }
-
-        SText {
-            anchors.fill: parent
-            font.pointSize: 20
-            font.bold: true
-            color: COMMON.fg1
-            verticalAlignment: Text.AlignVCenter
-            horizontalAlignment: Text.AlignHCenter
-            text: "Not ready"
         }
     }
 }

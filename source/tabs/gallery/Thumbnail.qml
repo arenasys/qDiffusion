@@ -75,7 +75,7 @@ Item {
         y: img.y + Math.max(0, Math.floor((img.height - img.paintedHeight) / 2))
         width: Math.min(img.width, img.paintedWidth)
         height: Math.min(img.height, img.paintedHeight)
-        color: /*thumbMouse.containsMouse ? "#30ffffff" :*/ "#00000000"
+        color: "#00000000"
 
         MouseArea {
             id: thumbMouse

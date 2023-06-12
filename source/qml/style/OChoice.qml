@@ -44,6 +44,10 @@ Item {
         return text
     }
 
+    function label_display(text) {
+        return text
+    }
+
     function filterModel(model) {
         return model
     }
@@ -227,7 +231,7 @@ Item {
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
                 leftPadding: 5
-                text: root.label
+                text: root.label_display(root.label)
                 font.pointSize: root.mini ? 7.85 : COMMON.pointLabel
                 color: COMMON.fg1_5
                 verticalAlignment: Text.AlignVCenter

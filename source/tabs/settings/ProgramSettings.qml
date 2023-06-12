@@ -10,6 +10,12 @@ import "../../style"
 import "../../components"
 
 Item {
+    id: root
+
+    function tr(str, file = "ProgramSettings.qml") {
+        return TRANSLATOR.instance.translate(str, file)
+    }
+
     Column {
         anchors.centerIn: parent
         height: parent.height-100
@@ -18,13 +24,13 @@ Item {
         SButton {
             width: parent.width
             height: 30
-            label: "Update"
+            label: root.tr("Update")
             onPressed: {
                 SETTINGS.update()
             }
         }
         STextSelectable {
-            text: SETTINGS.gitInfo
+            text: root.tr("GUI commit: %1").arg(SETTINGS.gitInfo)
             width: parent.width
             height: 30
             verticalAlignment: Text.AlignVCenter
@@ -33,9 +39,9 @@ Item {
             color: COMMON.fg2
         }
         STextSelectable {
-            text: SETTINGS.gitServerInfo
+            text: root.tr("Inference commit: %1").arg(SETTINGS.gitServerInfo)
             width: parent.width
-            height: text != "" ? 10 : 0
+            height: SETTINGS.gitServerInfo != "" ? 10 : 0
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignHCenter
             font.pointSize: 9.8
@@ -51,7 +57,7 @@ Item {
                 anchors.fill: parent
             }
             SText {
-                text: "Restart required"
+                text: root.tr("Restart required")
                 visible: !SETTINGS.updating && SETTINGS.needRestart
                 anchors.fill: parent
                 verticalAlignment: Text.AlignVCenter
@@ -76,7 +82,7 @@ Item {
                 anchors.top: parent.top
                 id: outputFolderInput
                 height: 30
-                label: "Output Folder"
+                label: root.tr("Output Folder")
                 placeholder: "outputs"
                 value: GUI.config.get("output_directory")
 
@@ -141,7 +147,7 @@ Item {
                 anchors.top: parent.top
                 id: modelFolderInput
                 height: 30
-                label: "Model Folder"
+                label: root.tr("Model Folder")
                 placeholder: "models"
 
                 value: GUI.config.get("model_directory")
@@ -200,9 +206,9 @@ Item {
             x: -2
             width: parent.width+2
             height: 30
-            label: "Debug Logging"
+            label: root.tr("Debug Logging")
             currentIndex: GUI.config.get("debug") ? 1 : 0 
-            model: ["Disabled", "Enabled"]
+            model: [root.tr("Disabled", "General"), root.tr("Enabled", "General")]
             onCurrentIndexChanged: {
                 GUI.config.set("debug", currentIndex != 0)
             }
@@ -211,9 +217,9 @@ Item {
             x: -2
             width: parent.width+2
             height: 30
-            label: "Advanced Parameters"
+            label: root.tr("Advanced Parameters")
             currentIndex: GUI.config.get("advanced") ? 1 : 0 
-            model: ["Hide", "Show"]
+            model: [root.tr("Hide", "General"), root.tr("Show", "General")]
             onCurrentIndexChanged: {
                 GUI.config.set("advanced", currentIndex != 0)
             }

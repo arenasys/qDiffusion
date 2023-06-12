@@ -8,7 +8,11 @@ import "../../style"
 import "../../components"
 
 Item {
-    id: area
+    id: root
+
+    function tr(str, file = "BasicInputs.qml") {
+        return TRANSLATOR.instance.translate(str, file)
+    }
 
     ListView {
         anchors.left: parent.left
@@ -209,13 +213,13 @@ Item {
                         id: contextMenu
                         width: 120
                         SContextMenuItem {
-                            text: "Clear"
+                            text: root.tr("Clear", "General")
                             onPressed: {
                                 BASIC.deleteOutput(sql_id)
                             }
                         }
                         SContextMenuItem {
-                            text: "Clear to right"
+                            text: root.tr("Clear to right", "General")
                             onPressed: {
                                 BASIC.deleteOutputAfter(sql_id)
                             }
@@ -224,7 +228,7 @@ Item {
                         SContextMenuSeparator { }
 
                         SContextMenuItem {
-                            text: "Save"
+                            text: root.tr("Save", "General")
                             onTriggered: {
                                 saveDialog.open()
                             }
@@ -233,14 +237,14 @@ Item {
                         SContextMenuSeparator { }
 
                         SContextMenuItem {
-                            text: "Open"
+                            text: root.tr("Open", "General")
                             onTriggered: {
                                 GALLERY.doOpenImage([modelObj.file])
                             }
                         }
 
                         SContextMenuItem {
-                            text: "Visit"
+                            text: root.tr("Visit", "General")
                             onTriggered: {
                                 GALLERY.doOpenFolder([modelObj.file])
                             }
@@ -255,7 +259,7 @@ Item {
 
                         SContextMenu {
                             id: copyToMenu
-                            title: "Copy to"
+                            title: root.tr("Copy to", "General")
                             width: 120
                             Instantiator {
                                 model: destinationsSql
@@ -273,8 +277,8 @@ Item {
 
                     FileDialog {
                         id: saveDialog
-                        title: "Save image"
-                        nameFilters: ["Image files (*.png)"]
+                        title: root.tr("Save image", "General")
+                        nameFilters: [root.tr("Image files") + " (*.png)"]
                         selectExisting: false
                         defaultSuffix: "png"
                         onAccepted: {

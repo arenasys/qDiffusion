@@ -9,7 +9,12 @@ import "style"
 import "components"
 
 FocusReleaser {
+    id: root
     anchors.fill: parent
+
+    function tr(str, file = "Installer.qml") {
+        return TRANSLATOR.instance.translate(str, file)
+    }
 
     Connections {
         target: COORDINATOR
@@ -29,7 +34,7 @@ FocusReleaser {
             height: parent.height - 200
 
             SText {
-                text: "Requirements"
+                text: root.tr("Requirements")
                 width: parent.width
                 height: 40
                 verticalAlignment: Text.AlignVCenter
@@ -42,13 +47,17 @@ FocusReleaser {
                 id: choice
                 width: 300
                 height: 30
-                label: "Mode"
+                label: root.tr("Mode")
                 disabled: COORDINATOR.disable
                 currentIndex: COORDINATOR.mode
                 model: COORDINATOR.modes
                 onCurrentIndexChanged: {
                     currentIndex = currentIndex
                     COORDINATOR.mode = currentIndex
+                }
+
+                function display(text) {
+                    return root.tr(text)
                 }
             }
 
@@ -117,7 +126,7 @@ FocusReleaser {
                 id: button
                 width: 300
                 height: 30
-                label: COORDINATOR.disable ? "Cancel" : (COORDINATOR.packages.length == 0 ? "Proceed" : "Install")
+                label: COORDINATOR.disable ? root.tr("Cancel") : (COORDINATOR.packages.length == 0 ? root.tr("Proceed") : root.tr("Install"))
                 
                 onPressed: {
                     if(!COORDINATOR.disable) {
@@ -129,7 +138,7 @@ FocusReleaser {
 
             SText {
                 visible: COORDINATOR.needRestart
-                text: "Restart required"
+                text: root.tr("Restart required")
                 width: parent.width
                 height: 30
                 verticalAlignment: Text.AlignVCenter

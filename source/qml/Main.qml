@@ -10,16 +10,20 @@ import "components"
 
 FocusReleaser {
     property var window
-    anchors.fill: parent
-
+    anchors.fill: parent  
+    
     Component.onCompleted: {
-        window.title = Qt.binding(function() { return GUI.title; })
+        window.title = Qt.binding(function() { return root.tr(GUI.title); })
     }
 
     Rectangle {
         id: root
         anchors.fill: parent
         color: COMMON.bg0
+        
+        function tr(str, file = "Main.qml") {
+            return TRANSLATOR.instance.translate(str, file)
+        }
     }
 
     WindowBar {
@@ -45,51 +49,8 @@ FocusReleaser {
         color: COMMON.bg4
     }
 
-    SDialog {
-        id: dialog
-        title: "Error"
-        standardButtons: Dialog.Ok
-        modal: true
-        dim: true
-
-        width: errorText.contentWidth + 50
-        height: errorText.contentHeight + 80
-
-        STextSelectable {
-            id: errorText
-            anchors.centerIn: parent
-            padding: 5
-            text: "Error while " + GUI.errorStatus + ".\n" + GUI.errorText
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-            width: Math.min(errorText.implicitWidth, 500)
-            wrapMode: Text.Wrap
-        }
-
-        SIconButton {
-            visible: GUI.errorTrace != ""
-            x: parent.width - width
-            y: -height - 2
-            width: 16
-            height: 16
-            inset: 0
-            icon: "qrc:/icons/info-big.svg"
-            tooltip: "Copy trace"
-            onPressed: {
-                GUI.copyError()
-            }
-        }
-
-        onClosed: {
-            GUI.clearError()
-        }
-
-        Connections {
-            target: GUI
-            function onErrorTextChanged() {
-                dialog.open()
-            }
-        }
+    ErrorDialog {
+        id: errorDialog
     }
 
     StackLayout {

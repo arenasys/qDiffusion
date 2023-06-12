@@ -11,8 +11,13 @@ import "../../components"
 
 SColumnButton {
     id: root
+
+    function tr(str, file = "CategoryButton.qml") {
+        return TRANSLATOR.instance.translate(str, file)
+    }
+
     property var mode
-    label: EXPLORER.getLabel(mode)
+    label: root.tr(EXPLORER.getLabel(mode), "Category")
     active: EXPLORER.currentTab == mode
 
     signal move(string model, string folder, string subfolder)

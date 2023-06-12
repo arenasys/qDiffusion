@@ -12,6 +12,10 @@ import "../../components"
 Item {
     id: root
 
+    function tr(str, file = "Explorer.qml") {
+        return TRANSLATOR.instance.translate(str, file)
+    }
+
     function releaseFocus() {
         parent.releaseFocus()
     }
@@ -123,7 +127,7 @@ Item {
                 }
 
                 SText {
-                    text: "Search..."
+                    text: root.tr("Search...")
                     anchors.fill: parent
                     verticalAlignment: Text.AlignVCenter
                     font.bold: false
@@ -151,7 +155,7 @@ Item {
                 id: grid
                 anchors.fill: parent
                 mode: EXPLORER.currentTab
-                label: EXPLORER.getLabel(mode)
+                label: root.tr(EXPLORER.getLabel(mode), "Category")
                 folder: EXPLORER.currentFolder
                 search: search.text
                 showInfo: EXPLORER.showInfo 
@@ -165,7 +169,7 @@ Item {
 
     SDialog {
         id: deleteDialog
-        title: "Confirmation"
+        title: root.tr("Confirmation")
         standardButtons: Dialog.Ok | Dialog.Cancel
         modal: true
         property var file: ""
@@ -182,7 +186,7 @@ Item {
             id: deleteMessage
             anchors.centerIn: parent
             padding: 5
-            text: "Delete " + deleteDialog.file + "?"
+            text: root.tr("Delete %1?").arg(deleteDialog.file)
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             width: parent.width
@@ -200,7 +204,7 @@ Item {
 
     SDialog {
         id: moveDialog
-        title: "Confirmation"
+        title: root.tr("Confirmation")
         standardButtons: Dialog.Ok | Dialog.Cancel
         modal: true
         property var model: ""
@@ -221,7 +225,7 @@ Item {
             id: moveMessage
             anchors.centerIn: parent
             padding: 5
-            text: "Move " + moveDialog.model + "?"
+            text: root.tr("Move %1?").arg(moveDialog.model)
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             width: parent.width

@@ -8,7 +8,11 @@ import "../../style"
 import "../../components"
 
 Item {
-    id: inputArea
+    id: root
+
+    function tr(str, file = "BasicInputs.qml") {
+        return TRANSLATOR.instance.translate(str, file)
+    }
 
     ListView {
         anchors.left: parent.left
@@ -178,7 +182,7 @@ Item {
 
                         SText {
                             id: roleLabel
-                            text: modelData.displayName
+                            text: root.tr(modelData.displayName, "Role")
                             anchors.top: parent.top
                             anchors.left: parent.left
                             leftPadding: 3
@@ -197,11 +201,10 @@ Item {
                             border.color: COMMON.bg3
                         }
 
-                        OText {
+                        SText {
                             id: modeLabel
+                            text: root.tr(modelData.mode)
                             visible: text != ""
-                            bindMap: modelData.settings
-                            bindKey: "mode"
                             anchors.top: roleLabel.bottom
                             anchors.topMargin: -1
                             anchors.left: parent.left
@@ -324,16 +327,20 @@ Item {
                         width: 100
                         SContextMenuItem {
                             visible: !modelData.empty
-                            text: "Save"
+                            height: visible ? 20 : 0
+                            text: root.tr("Save", "General")
                             onPressed: {
                                 saveDialog.open()
                             }
                         }
 
-                        SContextMenuSeparator {}
+                        SContextMenuSeparator {
+                            visible: !modelData.empty
+                            height: visible ? 13 : 0
+                        }
 
                         SContextMenuItem {
-                            text: "Clear"
+                            text: root.tr("Clear", "General")
                             onPressed: {
                                 BASIC.deleteInput(index)
                             }
@@ -341,28 +348,28 @@ Item {
                         
                         SContextMenu {
                             width: 90
-                            title: "Set role"
+                            title: root.tr("Set role")
                             SContextMenuItem {
-                                text: "Image"
+                                text: root.tr("Image", "Role")
                                 onPressed: {
                                     modelData.role = 1
                                 }
                             }
                             SContextMenuItem {
-                                text: "Mask"
+                                text: root.tr("Mask", "Role")
                                 onPressed: {
                                     modelData.role = 2
                                 }
                             }
                             SContextMenu {
-                                title: "Control"
+                                title: root.tr("Control", "Role")
                                 width: 90
                                 Repeater {
                                     id: controlRepeater
                                     property var tmp: BASIC.parameters.values.get("CN_modes")
                                     model: tmp
                                     SContextMenuItem {
-                                        text: modelData
+                                        text: root.tr(modelData, "Role")
                                         onPressed: {
                                             item.input.role = 4
                                             item.input.settings.set("mode", modelData)
@@ -375,8 +382,8 @@ Item {
 
                     FileDialog {
                         id: saveDialog
-                        title: "Save image"
-                        nameFilters: ["Image files (*.png)"]
+                        title: root.tr("Save image", "General")
+                        nameFilters: [root.tr("Image files") + " (*.png)"]
                         selectExisting: false
                         defaultSuffix: "png"
                         onAccepted: {
@@ -481,7 +488,7 @@ Item {
                         anchors.fill: parent
                         opacity: 0.85
                         OChoice {
-                            label: "Preprocessor"
+                            label: root.tr("Preprocessor")
                             width: parent.width
                             height: 22
 
@@ -498,6 +505,10 @@ Item {
                             bindKeyCurrent: "CN_bool"
                             bindKeyModel: "CN_bools"
                             bindKeyLabel: "CN_bool_label"
+
+                            function label_display(text) {
+                                return root.tr(text)
+                            }
                         }
                         OSlider {
                             visible: label != ""
@@ -507,6 +518,10 @@ Item {
                             bindMap: modelData.settings
                             bindKey: "CN_slider_a"
                             bindKeyLabel: "CN_slider_a_label"
+
+                            function label_display(text) {
+                                return root.tr(text)
+                            }
 
                             minValue: 0
                             maxValue: 1
@@ -523,6 +538,10 @@ Item {
                             bindKey: "CN_slider_b"
                             bindKeyLabel: "CN_slider_b_label"
 
+                            function label_display(text) {
+                                return root.tr(text)
+                            }
+
                             minValue: 0
                             maxValue: 1
                             precValue: 2
@@ -532,7 +551,7 @@ Item {
                         OSlider {
                             width: parent.width
                             height: 22
-                            label: "Strength"
+                            label: root.tr("Strength")
 
                             bindMap: modelData.settings
                             bindKey: "CN_strength"
@@ -548,7 +567,7 @@ Item {
 
                 FileDialog {
                     id: inputFileDialog
-                    nameFilters: ["Image files (*.png *.jpg *.jpeg)"]
+                    nameFilters: [root.tr("Image files") + " (*.png *.jpg *.jpeg)"]
 
                     onAccepted: {
                         modelData.setImageFile(inputFileDialog.file)
@@ -696,35 +715,35 @@ Item {
                         width: 110
                         clipShadow: true
                         SContextMenuItem {
-                            text: "Image"
+                            text: root.tr("Image", "Role")
                             onPressed: {
                                 BASIC.addImage()
                                 addContextMenu.close()
                             }
                         }
                         SContextMenuItem {
-                            text: "Mask"
+                            text: root.tr("Mask", "Role")
                             onPressed: {
                                 BASIC.addMask()
                                 addContextMenu.close()
                             }
                         }
                         SContextMenuItem {
-                            text: "Subprompts"
+                            text: root.tr("Subprompts", "Role")
                             onPressed: {
                                 BASIC.addSubprompt()
                                 addContextMenu.close()
                             }
                         }
                         SContextMenu {
-                            title: "Control"
+                            title: root.tr("Control", "Role")
                             width: 90
                             Repeater {
                                 id: controlRepeater
                                 property var tmp: BASIC.parameters.values.get("CN_modes")
                                 model: tmp
                                 SContextMenuItem {
-                                    text: modelData
+                                    text: root.tr(modelData, "Role")
                                     onPressed: {
                                         BASIC.addControl(modelData)
                                         addContextMenu.close()

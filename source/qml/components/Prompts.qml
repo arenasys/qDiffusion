@@ -26,6 +26,10 @@ Item {
 
     property variant bindMap: null
 
+    function tr(str, file = "Prompts.qml") {
+        return TRANSLATOR.instance.translate(str, file)
+    }
+
     signal inspect()
     signal tab()
     signal input()
@@ -90,7 +94,7 @@ Item {
                 color: COMMON.bg3
                 SText {
                     anchors.fill: parent
-                    text: "Prompt"
+                    text: root.tr("Prompt")
                     color: COMMON.fg1_5
                     leftPadding: 5
                     verticalAlignment: Text.AlignVCenter
@@ -103,7 +107,7 @@ Item {
                     anchors.margins: 1
                     height: 23
                     width: 23
-                    tooltip: "Inspect"
+                    tooltip: root.tr("Inspect")
                     icon: "qrc:/icons/search.svg"
                     inset: 8
                     onPressed: {
@@ -120,7 +124,7 @@ Item {
                     anchors.margins: 1
                     height: 23
                     width: 23
-                    tooltip: "Show Negative prompt"
+                    tooltip: root.tr("Show Negative prompt")
                     icon: "qrc:/icons/eye.svg"
                     onPressed: {
                         promptDivider.offset = area.width/2
@@ -203,7 +207,7 @@ Item {
                 color: COMMON.bg3
                 SText {
                     anchors.fill: parent
-                    text: "Negative Prompt"
+                    text: root.tr("Negative Prompt")
                     color: COMMON.fg1_5
                     leftPadding: 5
                     verticalAlignment: Text.AlignVCenter
@@ -216,7 +220,7 @@ Item {
                     anchors.margins: 1
                     height: 23
                     width: 23
-                    tooltip: "Hide Negative prompt"
+                    tooltip: root.tr("Hide Negative prompt")
                     icon: "qrc:/icons/eye.svg"
 
                     onPressed: {
