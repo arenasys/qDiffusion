@@ -7,7 +7,7 @@ import bson
 import platform
 IS_WIN = platform.system() == 'Windows'
 
-from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent, QMimeData, QUrl, QSize
+from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent, QMimeData, QUrl, QSize, QThreadPool
 from PyQt5.QtQuick import QQuickItem, QQuickPaintedItem
 from PyQt5.QtGui import QImage, QColor, QDrag, QDesktopServices
 from PyQt5.QtQml import qmlRegisterType
@@ -75,6 +75,7 @@ class GUI(QObject):
         self.network = QNetworkAccessManager(self)
         self.requestProgress = 0.0
         self.tabs = []
+        
         self._currentTab = "Basic"
         self._workingTabs = []
 

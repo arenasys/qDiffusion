@@ -55,7 +55,7 @@ class Watcher(QObject):
         self.folders = set()
         self.parents = {}
 
-        self.pool = QThreadPool()
+        self.pool = QThreadPool.globalInstance()
         self.running = {}
 
         Watcher.instance = self

@@ -108,7 +108,7 @@ class AsyncThumbnailProvider(QQuickAsyncImageProvider):
         super(AsyncThumbnailProvider, self).__init__()
         self.size = size
         self.quality = quality
-        self.pool = QThreadPool()
+        self.pool = QThreadPool.globalInstance()
 
     def requestImageResponse(self, path, size):
         file = QUrl.fromPercentEncoding(path.encode('utf-8'))

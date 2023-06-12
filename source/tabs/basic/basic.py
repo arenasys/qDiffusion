@@ -1,4 +1,4 @@
-from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, QObject, QSize, QUrl, QMimeData, QByteArray, QBuffer, Qt, QRegExp, QIODevice, QRect
+from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, QObject, QSize, QUrl, QMimeData, QByteArray, QThreadPool, Qt, QRect, QRunnable
 from PyQt5.QtQml import qmlRegisterSingletonType
 from PyQt5.QtGui import QImage, QDrag, QPixmap, QColor
 from PyQt5.QtWidgets import QApplication
@@ -13,10 +13,13 @@ from canvas.shared import PILtoQImage, QImagetoPIL, CanvasWrapper
 from canvas.canvas import Canvas
 import sql
 import time
-import json
-import random
+import io
+import datetime
 import math
 import os
+
+import PIL.Image
+import PIL.PngImagePlugin
 
 MIME_BASIC_INPUT = "application/x-qd-basic-input"
 MIME_BASIC_DIVIDER = "application/x-qd-basic-divider"
@@ -619,6 +622,41 @@ class BasicOutput(QObject):
     def artifact(self, name):
         return self._artifacts[name]
 
+class BasicImageWriter(QRunnable):
+    def __init__(self, img, metadata, outputs, subfolder=""):
+        super(BasicImageWriter, self).__init__()
+        self.setAutoDelete(True)
+
+        m = PIL.PngImagePlugin.PngInfo()
+        m.add_text("parameters", parameters.format_parameters(metadata))
+
+        if not subfolder:
+            subfolder = metadata["mode"]
+
+        folder = os.path.join(outputs, subfolder)
+        os.makedirs(folder, exist_ok=True)
+
+        idx = parameters.get_index(folder)
+        name = f"{idx:08d}-" + datetime.datetime.now().strftime("%m%d%H%M")
+
+        self.img = img
+        self.tmp = os.path.join(folder, f"{name}.tmp")
+        self.real = os.path.join(folder, f"{name}.png")
+        self.metadata = m
+
+        metadata["file"] = self.real
+
+    @pyqtSlot()
+    def run(self):
+        if type(self.img) == QImage:
+            self.img = encode_image(self.img)
+
+        if type(self.img) == bytes:
+            self.img = PIL.Image.open(io.BytesIO(self.img))
+
+        self.img.save(self.tmp, format="PNG", pnginfo=self.metadata)
+        os.replace(self.tmp, self.real)
+
 class Basic(QObject):
     updated = pyqtSignal()
     suggestionsUpdated = pyqtSignal()
@@ -630,6 +668,7 @@ class Basic(QObject):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.gui = parent
+        self.pool = QThreadPool.globalInstance()
         self.priority = 0
         self.name = "Basic"
         self._parameters = parameters.Parameters(parent)
@@ -784,7 +823,8 @@ class Basic(QObject):
         if "result" in results and "metadata" in results:
             for i in range(len(results["result"])):
                 folder = self._folders.pop(id)
-                parameters.save_image(results["result"][i], results["metadata"][i], self.gui.outputDirectory(), folder)
+                writer = BasicImageWriter(results["result"][i], results["metadata"][i], self.gui.outputDirectory(), folder)
+                self.pool.start(writer)
 
         out = self._mapping[id]
         if not out in self._outputs:

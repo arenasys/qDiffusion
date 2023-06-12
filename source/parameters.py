@@ -122,33 +122,6 @@ def get_index(folder):
     idx = max([get_idx(f) for f in os.listdir(folder)] + [0]) + 1
     return idx
 
-def save_image(img, metadata, outputs, subfolder=""):
-    if type(img) == QImage:
-        img = encode_image(img)
-
-    if type(img) == bytes:
-        img = PIL.Image.open(io.BytesIO(img))
-
-    m = PIL.PngImagePlugin.PngInfo()
-    m.add_text("parameters", format_parameters(metadata))
-
-    if not subfolder:
-        subfolder = metadata["mode"]
-
-    folder = os.path.join(outputs, subfolder)
-    os.makedirs(folder, exist_ok=True)
-
-    idx = get_index(folder)
-    name = f"{idx:08d}-" + datetime.datetime.now().strftime("%m%d%H%M")
-
-    tmp = os.path.join(folder, f"{name}.tmp")
-    real = os.path.join(folder, f"{name}.png")
-
-    img.save(tmp, format="PNG", pnginfo=m)
-    os.replace(tmp, real)
-    
-    metadata["file"] = real
-
 def get_extent(bound, padding, src, wrk):
     if padding == None or padding < 0:
         padding = 10240
