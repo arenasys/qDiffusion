@@ -13,6 +13,7 @@ Item {
     anchors.fill: parent
     property var swap: false
     property var advanced: GUI.config != null ? GUI.config.get("advanced") : false
+    property alias button: genButton
 
     function tr(str, file = "Parameters.qml") {
         return TRANSLATOR.instance.translate(str, file)
@@ -72,7 +73,7 @@ Item {
 
             progress: -1
             working: false
-            disabled: GUI.statusMode == 0 || GUI.statusMode == 3
+            disabled: GUI.statusMode == 0 || GUI.statusMode == 3 || root.binding.values.get("models").length == 0
             info: GUI.statusInfo
             remaining: root.remaining
 

@@ -569,7 +569,11 @@ Item {
 
     Shortcut {
         sequences: COMMON.keys_generate
-        onActivated: BASIC.generate()
+        onActivated: {
+            if(!params.button.disabled) {
+                BASIC.generate()
+            }
+        }
     }
     Shortcut {
         sequences: COMMON.keys_cancel
