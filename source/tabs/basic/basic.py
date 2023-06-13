@@ -1,4 +1,4 @@
-from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, QObject, QSize, QUrl, QMimeData, QByteArray, QThreadPool, Qt, QRect, QRunnable
+from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, QObject, QSize, QUrl, QMimeData, QByteArray, QThreadPool, Qt, QRect, QRunnable, QMutex
 from PyQt5.QtQml import qmlRegisterSingletonType
 from PyQt5.QtGui import QImage, QDrag, QPixmap, QColor
 from PyQt5.QtWidgets import QApplication
@@ -629,9 +629,14 @@ class BasicOutput(QObject):
         return self._artifacts[name]
 
 class BasicImageWriter(QRunnable):
+    guard = QMutex()
     def __init__(self, img, metadata, outputs, subfolder=""):
         super(BasicImageWriter, self).__init__()
         self.setAutoDelete(True)
+
+        if not BasicImageWriter.guard.tryLock(5000):
+            BasicImageWriter.guard.unlock()
+            BasicImageWriter.guard.lock()
 
         m = PIL.PngImagePlugin.PngInfo()
         m.add_text("parameters", parameters.format_parameters(metadata))
@@ -662,6 +667,8 @@ class BasicImageWriter(QRunnable):
 
         self.img.save(self.tmp, format="PNG", pnginfo=self.metadata)
         os.replace(self.tmp, self.real)
+
+        BasicImageWriter.guard.unlock()
 
 class Basic(QObject):
     updated = pyqtSignal()
@@ -805,6 +812,7 @@ class Basic(QObject):
             if user:
                 self._remaining = 0
                 self._requests = None
+                self._folders = {}
             request = self.buildRequest()
             id = self.gui.makeRequest(request)
             self._folders[id] = self._parameters._values.get("output_folder")
@@ -828,7 +836,7 @@ class Basic(QObject):
 
         if "result" in results and "metadata" in results:
             for i in range(len(results["result"])):
-                folder = self._folders.pop(id)
+                folder = self._folders[id]
                 writer = BasicImageWriter(results["result"][i], results["metadata"][i], self.gui.outputDirectory(), folder)
                 self.pool.start(writer)
 
