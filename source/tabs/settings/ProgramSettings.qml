@@ -41,7 +41,8 @@ Item {
         STextSelectable {
             text: root.tr("Inference commit: %1").arg(SETTINGS.gitServerInfo)
             width: parent.width
-            height: SETTINGS.gitServerInfo != "" ? 10 : 0
+            height: visible ? 10 : 0
+            visible: SETTINGS.gitServerInfo != ""
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignHCenter
             font.pointSize: 9.8
