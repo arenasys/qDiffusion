@@ -25,7 +25,7 @@ Notebooks for running a remote instance are available: [Colab](https://colab.res
 	- Rejecting will mean models are local, you will need to download them again next time.
 4. Wait for the requirements to be downloaded and the server to start.
 5. Copy the Endpoint and Password to qDiffusion under `Settings->Remote`, press Connect.
-6. Done. See [Downloads](Downloads) for how to get models onto the instance.
+6. Done. See [Downloads](#downloading) for how to get models onto the instance.
 
 ## Details
 ### Startup
