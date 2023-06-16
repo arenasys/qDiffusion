@@ -820,7 +820,7 @@ class Parameters(QObject):
             append(f"<hypernet:{name}>")
 
         if file in self._values.get("TIs"):
-            if "neg" in re.split(r'/|\\', file, 1)[0].lower():
+            if "neg" in file.rsplit(os.path.sep, 1)[0].lower():
                 append(name, "negative_prompt")
             else:
                 append(name)
