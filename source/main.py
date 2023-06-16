@@ -233,14 +233,14 @@ class Coordinator(QObject):
         except:
             pass
 
-        self.nvidia_torch_version = "2.0.1+cu117"
-        self.nvidia_torchvision_version = "0.15.2+cu117"
+        self.nvidia_torch_version = "2.0.1+cu118"
+        self.nvidia_torchvision_version = "0.15.2+cu118"
 
         self.amd_torch_version = "2.0.1+rocm5.4.2"
         self.amd_torchvision_version = "0.15.2+rocm5.4.2"
         self.amd_torch_directml_version = "0.2.0.dev230426"
 
-        self.need_xformers_version = "0.0.18"
+        self.need_xformers_version = "0.0.20"
         
         self.required_need = check(self.required)
         self.optional_need = check(self.optional)
