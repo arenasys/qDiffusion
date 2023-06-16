@@ -57,6 +57,7 @@ def convert_all_paths(j):
                 convert_all_paths(j[k])
 
 class Backend(QObject):
+    updated = pyqtSignal()
     request = pyqtSignal(object)
     response = pyqtSignal(object)
     stopping = pyqtSignal()
@@ -76,9 +77,12 @@ class Backend(QObject):
                 self.inference = local.LocalInference(self.gui)
             else:
                 self.onResponse({"type": "remote_only"})
-                return
         else:
             self.inference = remote.RemoteInference(self.gui, endpoint, password)
+        self.updated.emit()
+
+        if not self.inference:
+            return
 
         self.request.connect(self.inference.onRequest, type=Qt.QueuedConnection)
         self.inference.response.connect(self.onResponse)
@@ -111,3 +115,10 @@ class Backend(QObject):
         convert_all_paths(response)
         self.debugLogging("RESPONSE", response)
         self.response.emit(response)
+
+    @pyqtProperty(str, notify=updated)
+    def mode(self):
+        if self.inference and type(self.inference) == remote.RemoteInference:
+            return "Remote"
+        else:
+            return "Local"

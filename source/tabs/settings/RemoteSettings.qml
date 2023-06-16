@@ -73,7 +73,7 @@ Item {
         SButton {
             width: parent.width
             height: 30
-            label: endpointInput.value == "" ? root.tr("Reload") : root.tr("Reconnect")
+            label: endpointInput.value == "" ? root.tr("Reload") : (GUI.remoteInfoMode == "Local" ? root.tr("Connect") : root.tr("Reconnect"))
             onPressed: {
                 SETTINGS.restart()
             }

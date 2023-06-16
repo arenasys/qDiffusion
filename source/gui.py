@@ -105,6 +105,7 @@ class GUI(QObject):
 
         self.backend = backend.Backend(self)
         self.backend.response.connect(self.onResponse)
+        self.backend.updated.connect(self.backendUpdated)
         self.backend.setEndpoint(self._config._values.get("endpoint"), self._config._values.get("password"))
 
         self.watchModelDirectory()
@@ -426,7 +427,7 @@ class GUI(QObject):
     
     @pyqtProperty(str, notify=statusUpdated)
     def remoteInfoMode(self):
-        return "Remote" if self._config._values.get("endpoint") else "Local"
+        return self.backend.mode
     
     @pyqtProperty(str, notify=statusUpdated)
     def remoteInfoStatus(self):
@@ -466,6 +467,10 @@ class GUI(QObject):
         self.backend.wait()
         self.backend.setEndpoint(endpoint, password)
         self.reset.emit(-1)
+
+    @pyqtSlot()
+    def backendUpdated(self):
+        self.statusUpdated.emit()
 
     @pyqtSlot()
     def quit(self):
