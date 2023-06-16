@@ -11,6 +11,8 @@ MenuItem {
     hoverEnabled: true
     font.pointSize: 10.5
 
+    height: visible ? menuItemSize : 0
+
     property var shortcut: ""
     property var global: false
     property real menuItemSize: 20

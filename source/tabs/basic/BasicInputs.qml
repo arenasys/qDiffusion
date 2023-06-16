@@ -327,7 +327,6 @@ Item {
                         width: 100
                         SContextMenuItem {
                             visible: !modelData.empty
-                            height: visible ? 20 : 0
                             text: root.tr("Save", "General")
                             onPressed: {
                                 saveDialog.open()
@@ -336,7 +335,6 @@ Item {
 
                         SContextMenuSeparator {
                             visible: !modelData.empty
-                            height: visible ? 13 : 0
                         }
 
                         SContextMenuItem {
@@ -363,7 +361,7 @@ Item {
                             }
                             SContextMenu {
                                 title: root.tr("Control", "Role")
-                                width: 90
+                                width: 100
                                 Repeater {
                                     id: controlRepeater
                                     property var tmp: BASIC.parameters.values.get("CN_modes")
@@ -374,6 +372,13 @@ Item {
                                             item.input.role = 4
                                             item.input.settings.set("mode", modelData)
                                         }
+                                    }
+                                }
+                                SContextMenuItem {
+                                    visible: BASIC.parameters.values.get("CN_modes").length == 0
+                                    text: root.tr("Download")
+                                    onPressed: {
+                                        GUI.openLink("https://huggingface.co/lllyasviel/ControlNet-v1-1/tree/main")
                                     }
                                 }
                             }
@@ -737,7 +742,7 @@ Item {
                         }
                         SContextMenu {
                             title: root.tr("Control", "Role")
-                            width: 90
+                            width: 100
                             Repeater {
                                 id: controlRepeater
                                 property var tmp: BASIC.parameters.values.get("CN_modes")
@@ -748,6 +753,13 @@ Item {
                                         BASIC.addControl(modelData)
                                         addContextMenu.close()
                                     }
+                                }
+                            }
+                            SContextMenuItem {
+                                visible: BASIC.parameters.values.get("CN_modes").length == 0
+                                text: root.tr("Download")
+                                onPressed: {
+                                    GUI.openLink("https://huggingface.co/lllyasviel/ControlNet-v1-1/tree/main")
                                 }
                             }
                         }

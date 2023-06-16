@@ -100,7 +100,7 @@ Item {
                     }
                 }
                 SContextMenuItem {
-                    height: visible ? 25 : 0
+                    height: visible ? 20 : 0
                     visible: GUI.statusMode == 2
                     text: root.tr("Cancel")
                     onPressed: {

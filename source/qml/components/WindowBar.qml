@@ -94,7 +94,6 @@ SMenuBar {
 
         SMenuItem {
             visible: GUI.currentTab == "Basic"
-            height: visible ? 20 : 0
             text: root.tr("Build model")
             onPressed: {
                 BASIC.doBuildModel()
@@ -106,7 +105,6 @@ SMenuBar {
         clipShadow: true
         SMenuItem {
             visible: GUI.currentTab == "Basic"
-            height: visible ? 20 : 0
             text: root.tr("Swap side")
             checkable: true
             checked: GUI.config != null ? GUI.config.get("swap") : false
@@ -118,7 +116,6 @@ SMenuBar {
 
         SMenuItem {
             visible: GUI.currentTab == "Basic"
-            height: visible ? 20 : 0
             text: root.tr("Autocomplete")
             checkable: true
             checked: GUI.config != null ? GUI.config.get("autocomplete") > 0 : false
@@ -138,7 +135,6 @@ SMenuBar {
 
         SMenuItem {
             visible: GUI.currentTab == "Models"
-            height: visible ? 20 : 0
             text: root.tr("Thumbails")
             shortcut: "Shift"
             checkable: true
@@ -152,7 +148,6 @@ SMenuBar {
         }
         SMenuItem {
             visible: GUI.currentTab == "Models"
-            height: visible ? 20 : 0
             text: root.tr("Zoom in")
             shortcut: "Ctrl+="
             onPressed: {
@@ -161,7 +156,6 @@ SMenuBar {
         }
         SMenuItem {
             visible: GUI.currentTab == "Models"
-            height: visible ? 20 : 0
             text: root.tr("Zoom out")
             shortcut: "Ctrl+-"
             onPressed: {
@@ -171,7 +165,6 @@ SMenuBar {
 
         SMenuItem {
             visible: GUI.currentTab == "Gallery"
-            height: visible ? 20 : 0
             text: root.tr("Zoom in")
             shortcut: "Ctrl+="
             onPressed: {
@@ -180,7 +173,6 @@ SMenuBar {
         }
         SMenuItem {
             visible: GUI.currentTab == "Gallery"
-            height: visible ? 20 : 0
             text: root.tr("Zoom out")
             shortcut: "Ctrl+-"
             onPressed: {
