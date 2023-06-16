@@ -475,8 +475,11 @@ class GUI(QObject):
     def remoteDownload(self, type, url):
         if self._remoteStatus != RemoteStatusMode.CONNECTED:
             return
-        
-        self.backend.makeRequest({"type":"download", "data":{"type": type, "url":url}})
+        request = {"type": type, "url":url}
+        token = self.config.get("hf_token", "")
+        if token:
+            request["token"] = token
+        self.backend.makeRequest({"type":"download", "data":request})
 
     @pyqtSlot(str, str)
     def remoteUpload(self, type, file):
