@@ -787,7 +787,7 @@ class Parameters(QObject):
                 self._active += [emb]
 
         for model in [self._values.get(m) for m in ["UNET", "VAE", "CLIP"]]:
-            if model and "." in model and not model in self._active:
+            if model and not model in self._active:
                 self._active += [model]
         
         hr = self._values.get("hr_upscaler")
