@@ -499,7 +499,7 @@ class Parameters(QObject):
                 if not m in modes and m in cn.rsplit(os.path.sep, 1)[-1]:
                     modes += [m.capitalize()]
         self._values.set("CN_modes", modes)
-        self._values.set("CN_preprocessors", ["None"] + modes)
+        self._values.set("CN_preprocessors", ["None", "Invert"] + modes)
         
         self.updated.emit()
 
