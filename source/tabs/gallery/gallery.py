@@ -145,7 +145,7 @@ class Gallery(QObject):
         super().__init__(parent)
         self.gui = parent
         self.priority = 3
-        self.name = "Gallery"
+        self.name = "History"
 
         self._cellSize = 200
 

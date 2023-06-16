@@ -100,7 +100,7 @@ FocusReleaser {
 
     Shortcut {
         sequences: COMMON.keys_basic
-        onActivated: GUI.currentTab = "Basic"
+        onActivated: GUI.currentTab = "Generate"
     }
 
     Shortcut {
@@ -110,7 +110,7 @@ FocusReleaser {
 
     Shortcut {
         sequences: COMMON.keys_gallery
-        onActivated: GUI.currentTab = "Gallery"
+        onActivated: GUI.currentTab = "History"
     }
 
     Shortcut {

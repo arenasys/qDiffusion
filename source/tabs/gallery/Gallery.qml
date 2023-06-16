@@ -21,7 +21,7 @@ Rectangle {
     Connections {
         target: GUI
         function onCurrentTabChanged() {
-            if(GUI.currentTab == "Gallery") {
+            if(GUI.currentTab == "History") {
                 root.asleep = false
             }
         }
@@ -357,7 +357,7 @@ Rectangle {
                 icon: "qrc:/icons/back.svg"
                 inset: 8
                 onPressed: {
-                    GUI.currentTab = "Basic"
+                    GUI.currentTab = "Generate"
                     BASIC.importImage(gallery.currentSource)
                 }
             }
@@ -374,7 +374,7 @@ Rectangle {
                 icon: "qrc:/icons/search.svg"
                 inset: 8
                 onPressed: {
-                    GUI.currentTab = "Basic"
+                    GUI.currentTab = "Generate"
                     BASIC.pasteText(gallery.currentParams)
                 }
             }

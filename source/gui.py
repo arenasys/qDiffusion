@@ -77,7 +77,7 @@ class GUI(QObject):
         self.requestProgress = 0.0
         self.tabs = []
         
-        self._currentTab = "Basic"
+        self._currentTab = "Generate"
         self._workingTabs = []
 
         self._statusMode = StatusMode.STARTING

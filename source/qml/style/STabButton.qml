@@ -13,14 +13,13 @@ TabButton {
 
     signal dragEnter()
 
-
     contentItem: Item {
         
     }
 
     background: Item {
         implicitHeight: 40
-        implicitWidth: 100
+        implicitWidth: 110
         Rectangle {
             height: 25
             opacity: enabled ? 1 : 0.3
@@ -69,7 +68,7 @@ TabButton {
                 anchors.right: parent.right
                 anchors.margins: -10
                 anchors.topMargin: -9
-                anchors.rightMargin: -6
+                anchors.rightMargin: -4
                 source: "qrc:/icons/loading_big.svg"
                 width: height
                 running: control.working

@@ -683,7 +683,7 @@ class Basic(QObject):
         self.gui = parent
         self.pool = QThreadPool.globalInstance()
         self.priority = 0
-        self.name = "Basic"
+        self.name = "Generate"
         self._parameters = parameters.Parameters(parent)
         self._inputs = []
         self._outputs = {}
