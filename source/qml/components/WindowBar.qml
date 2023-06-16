@@ -86,6 +86,10 @@ SMenuBar {
         clipShadow: true
         SMenuItem {
             text: root.tr("Refresh models")
+
+            onPressed: {
+                GUI.refreshModels()
+            }
         }
 
         SMenuItem {
