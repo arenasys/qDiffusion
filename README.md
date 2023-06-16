@@ -67,15 +67,15 @@ VAE's need `.vae.` in their filename to be recognized as external: `PerfectColor
 
 ### Downloading
 Remote instances can download models from URL's or receive models uploaded by the client (`Settings->Remote`). Some sources have special support:
-- `Civit.ai`: Right click the models download button and copy the link.
+- Civit.ai: Right click the models download button and copy the link.
 	- Ex. `https://civitai.com/api/download/models/90854`
-- `HuggingFace`. Private models are supported if you provide an access token in `config.json` (`"hf_token": "TOKEN"`).
+- HuggingFace: Can also provide an access token in `config.json` (`"hf_token": "TOKEN"`).
 	- Ex. `https://huggingface.co/arenasys/demo/blob/main/AnythingV3.safetensors`
-- `Google Drive`. They may block you, good luck.
+- Google Drive: They may block you, good luck.
 	- Ex. `https://drive.google.com/file/d/1_sK-uEEZnS5mZThQbVg-2B-dV7qmAVyJ/view?usp=sharing`
-- `Mega.nz`. URL must include the key.
+- Mega.nz: URL must include the key.
 	- Ex. `https://mega.nz/file/W1QxVZpL#E-B6XmqIWii3-mnzRtWlS2mQSrgm17sX20unA14fAu8`
-- `Other`. All other URLs get downloaded with `curl -OJL URL`, so simple file hosts will work.
+- Other: All other URLs get downloaded with `curl -OJL URL`, so simple file hosts will work.
 
 ### Overview
 - Stable diffusion 1.x and 2.x (including v-prediction)
