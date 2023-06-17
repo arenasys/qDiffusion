@@ -113,7 +113,7 @@ def check(dependancies):
         except pkg_resources.DistributionNotFound:
             needed += [d]
         except pkg_resources.VersionConflict:
-            pass
+            needed += [d]
         except Exception:
             pass
     return needed
