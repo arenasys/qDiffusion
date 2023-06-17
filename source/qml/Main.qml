@@ -13,17 +13,13 @@ FocusReleaser {
     anchors.fill: parent  
     
     Component.onCompleted: {
-        window.title = Qt.binding(function() { return root.tr(GUI.title); })
+        window.title = Qt.binding(function() { return TRANSLATOR.instance.translate(GUI.title, "Title"); })
     }
 
     Rectangle {
         id: root
         anchors.fill: parent
         color: COMMON.bg0
-        
-        function tr(str, file = "Main.qml") {
-            return TRANSLATOR.instance.translate(str, file)
-        }
     }
 
     WindowBar {

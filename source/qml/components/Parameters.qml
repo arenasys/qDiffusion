@@ -311,6 +311,10 @@ Item {
                                 }
                             }
                         }
+
+                        function display(text) {
+                            return root.tr(text, "Options")
+                        }
                     }
 
                     OSlider {
@@ -403,7 +407,7 @@ Item {
 
                         function decoration(value) {
                             if(!modelColumn.models.includes(value)) {
-                                return "External"
+                                return root.tr("External")
                             }
                             return ""
                         }
@@ -598,6 +602,10 @@ Item {
                         bindMap: root.binding.values
                         bindKeyCurrent: "network_mode"
                         bindKeyModel: "network_modes"
+
+                        function display(text) {
+                            return root.tr(text, "Options")
+                        }
                     }
                 }
                 OColumn {
@@ -650,7 +658,7 @@ Item {
                         }
 
                         function display(text) {
-                            return GUI.modelName(text)
+                            return root.tr(GUI.modelName(text), "Options")
                         }
                     }
                     OSlider {
@@ -693,6 +701,10 @@ Item {
                         bindMap: root.binding.values
                         bindKeyCurrent: "mask_fill"
                         bindKeyModel: "mask_fill_modes"
+
+                        function display(text) {
+                            return root.tr(text, "Options")
+                        }
                     }
                 }
                 OColumn {
@@ -790,7 +802,7 @@ Item {
                         }
 
                         function display(text) {
-                            return GUI.modelName(text)
+                            return root.tr(GUI.modelName(text), "Options")
                         }
                     }
                     OSlider {
@@ -993,6 +1005,10 @@ Item {
                         onSelected: {
                             GUI.config.set("previews", value)
                         }
+
+                        function display(text) {
+                            return root.tr(text, "Options")
+                        }
                     }
 
                     OSlider {
@@ -1026,6 +1042,10 @@ Item {
                         onSelected: {
                             GUI.config.set("artifacts", value)
                         }
+
+                        function display(text) {
+                            return root.tr(text, "Options")
+                        }
                     }
 
                     OChoice {
@@ -1040,6 +1060,10 @@ Item {
                         onSelected: {
                             GUI.config.set("vram", value)
                         }
+
+                        function display(text) {
+                            return root.tr(text, "Options")
+                        }
                     }
 
                     OChoice {
@@ -1050,6 +1074,10 @@ Item {
                         bindMap: root.binding.values
                         bindKeyCurrent: "attention"
                         bindKeyModel: "attentions"
+
+                        function display(text) {
+                            return root.tr(text, "Options")
+                        }
                     }
 
                     OChoice {
@@ -1060,6 +1088,10 @@ Item {
                         bindMap: root.binding.values
                         bindKeyCurrent: "autocast"
                         bindKeyModel: "autocast_modes"
+
+                        function display(text) {
+                            return root.tr(text, "Options")
+                        }
                     }
 
                     OChoice {
@@ -1080,7 +1112,7 @@ Item {
                         label: root.tr("Output Folder")
                         width: parent.width
                         height: 30
-                        placeholder: "Default"
+                        placeholder: root.tr("Default", "Options")
 
                         bindMap: root.binding.values
                         bindKey: "output_folder"

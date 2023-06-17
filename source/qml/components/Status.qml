@@ -51,7 +51,7 @@ Item {
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignHCenter
             bottomPadding: endpointText.visible ? 5 : 0
-            text: GUI.statusText
+            text: root.tr(GUI.statusText, "Status")
             font.bold: true
         }
     }

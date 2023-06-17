@@ -40,7 +40,7 @@ Item {
             if(action == null) {
                 break
             } else if(action.checked) {
-                _shown.push(action.text)
+                _shown.push(action.name)
             }
         }
         shown = _shown
@@ -64,7 +64,7 @@ Item {
             property var tmp: shown
             model: tmp
             STabButton {
-                text: root.tr(modelData)
+                text: root.tr(modelData, "Tabs")
                 selected: root.currentTab == modelData
                 working: root.working.includes(modelData)
                 onPressed: {
@@ -110,7 +110,8 @@ Item {
                 property var tmp: GUI.tabNames.slice(0,-1)
                 model: tmp
                 SContextMenuItem {
-                    text: modelData
+                    property var name: modelData
+                    text: root.tr(modelData, "Tabs")
                     checkable: true
                     checked: true
 
