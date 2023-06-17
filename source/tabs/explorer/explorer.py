@@ -65,16 +65,18 @@ class Populater(QObject):
     def setModel(self, name, category, display, type, idx, allow_folder = True):
         q = QSqlQuery(self.conn.db)
 
-        file =  os.path.abspath(os.path.join(self.gui.modelDirectory(), name.rsplit(".",1)[0]))
+        file = os.path.abspath(os.path.join(self.gui.modelDirectory(), name))
+        location = file.rsplit(".",1)[0]
+
         folder = ""
-        parts = re.split(r'/|\\', name)
+        parts = name.split(os.path.sep)
         if len(parts) > 2 and allow_folder:
             folder = parts[1]
 
-        if os.path.exists(file + ".preview.png"):
-            preview = file + ".preview.png"
+        if os.path.exists(location + ".preview.png"):
+            preview = location + ".preview.png"
         else:
-            preview = file + ".png"
+            preview = location + ".png"
         
         w,h = 0,0
         if os.path.exists(preview):
@@ -85,8 +87,8 @@ class Populater(QObject):
                 pass
         
         description = ""
-        if os.path.exists(file + ".civitai.info"):
-            with open(file + ".civitai.info", "r", encoding='utf-8') as f:
+        if os.path.exists(location + ".civitai.info"):
+            with open(location + ".civitai.info", "r", encoding='utf-8') as f:
                 try:
                     data = json.load(f)
                     description = f"""
@@ -98,9 +100,11 @@ class Populater(QObject):
                     """
                 except:
                     pass
-        if os.path.exists(file + ".txt"):
-            with open(file + ".txt", "r", encoding='utf-8') as f:
-                description = f.read().strip()
+
+        for ext in [".txt", ".csv"]:
+            if os.path.exists(location + ext):
+                with open(location + ext, "r", encoding='utf-8') as f:
+                    description = f.read().strip()
         
         q.prepare("INSERT OR REPLACE INTO models(name, category, display, type, file, folder, desc, idx, width, height) VALUES (:name, :category, :display, :type, :file, :folder, :desc, :idx, :width, :height);")
         q.bindValue(":name", name)
@@ -125,7 +129,8 @@ class Populater(QObject):
     def optionsUpdated(self):
         wildcards = self.gui.wildcards._wildcards
         for idx, name in enumerate(wildcards):
-            self.setModel(os.path.join("WILDCARD", name + ".txt"), "wildcard", "", "wildcard", idx)
+            file = os.path.join("WILDCARD", self.gui.wildcards._sources[name])
+            self.setModel(file, "wildcard", "", "wildcard", idx)
         self.finishCategory("wildcard", len(wildcards))
 
         o = self.gui._options
@@ -162,7 +167,7 @@ class Populater(QObject):
         f = self.gui._favourites
         idx = 0
 
-        wildcards = [os.path.join("WILDCARD", name + ".txt") for name in self.gui.wildcards._wildcards]        
+        wildcards = [os.path.join("WILDCARD", self.gui.wildcards._sources[name]) for name in self.gui.wildcards._wildcards]        
         for name in [a for a in wildcards if a in f]:
             self.setModel(name, "favourite", "Wildcard", "wildcard", idx, False)
             idx += 1

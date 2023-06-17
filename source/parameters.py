@@ -788,7 +788,8 @@ class Parameters(QObject):
 
         for w_match in re.findall(r"@?__([^\s]+?)__(?!___)", prompt):
             if w_match in self.gui.wildcards._wildcards:
-                self._active += [os.path.join("WILDCARD", w_match + ".txt")]
+                file = self.gui.wildcards._sources[w_match]
+                self._active += [os.path.join("WILDCARD", file)]
 
         for emb in self._values.get("TIs"):
             if self.gui.modelName(emb) in prompt:
