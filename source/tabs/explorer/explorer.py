@@ -339,7 +339,7 @@ class Explorer(QObject):
     def doVisit(self, file):
         path = os.path.abspath(os.path.join(self.gui.modelDirectory(), os.path.dirname(file)))
         try:
-            QDesktopServices.openUrl(QUrl.fromLocalFile(path))
+            self.gui.openExplorerPath(path)
         except Exception:
             pass
 

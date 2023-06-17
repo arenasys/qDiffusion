@@ -1,6 +1,6 @@
 import os
 import random
-import subprocess
+import ctypes
 import datetime
 import json
 import bson
@@ -562,6 +562,18 @@ class GUI(QObject):
         return None
     
     @pyqtSlot(str)
+    def openExplorerPath(self, path):
+        if os.path.isdir(path) or not IS_WIN or True:
+            QDesktopServices.openUrl(QUrl.fromLocalFile(path))
+        else:
+            path = os.path.normpath(path)
+            ctypes.windll.ole32.CoInitialize(None)
+            pidl = ctypes.windll.shell32.ILCreateFromPathW(path)
+            ctypes.windll.shell32.SHOpenFolderAndSelectItems(pidl, 0, None, 0)
+            ctypes.windll.shell32.ILFree(pidl)
+            ctypes.windll.ole32.CoUninitialize()
+
+    @pyqtSlot(str)
     def openModelFolder(self, mode):
         dir = self.modelDirectory()
         found = None
@@ -575,7 +587,7 @@ class GUI(QObject):
             os.makedirs(found)
         try:
             found = os.path.abspath(found)
-            QDesktopServices.openUrl(QUrl.fromLocalFile(found))
+            self.openExplorerPath(found)
         except Exception:
             pass
     

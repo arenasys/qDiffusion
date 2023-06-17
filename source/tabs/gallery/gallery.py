@@ -165,11 +165,11 @@ class Gallery(QObject):
     
     @pyqtSlot(list)
     def doOpenImage(self, files):
-        QDesktopServices.openUrl(QUrl.fromLocalFile(os.path.abspath(files[0])))
+        self.gui.openExplorerPath(os.path.abspath(files[0]))
 
     @pyqtSlot(list)
     def doOpenFolder(self, files):
-        QDesktopServices.openUrl(QUrl.fromLocalFile(os.path.dirname(os.path.abspath(files[0]))))
+        self.gui.openExplorerPath(os.path.dirname(os.path.abspath(files[0])))
 
     @pyqtSlot(str, list)
     def doCopy(self, folder, files):
