@@ -1,6 +1,5 @@
 import os
 import random
-import ctypes
 import datetime
 import json
 import bson
@@ -23,8 +22,8 @@ import backend
 import config
 import wildcards
 import translation
-from misc import SyntaxHighlighter
-from parameters import VariantMap
+import misc
+import parameters
 
 NAME = "qDiffusion"
 
@@ -407,7 +406,7 @@ class GUI(QObject):
         drag.setMimeData(self.getImageMimeData(img))
         drag.exec()
     
-    @pyqtProperty(VariantMap, notify=configUpdated)
+    @pyqtProperty(parameters.VariantMap, notify=configUpdated)
     def config(self):
         return self._config._values
     
@@ -496,7 +495,7 @@ class GUI(QObject):
 
     @pyqtSlot(QQuickTextDocument)
     def setHighlighting(self, doc):
-        highlighter = SyntaxHighlighter(self)
+        highlighter = misc.SyntaxHighlighter(self)
         highlighter.setDocument(doc.textDocument())
 
     @pyqtSlot(str, bool)
@@ -562,16 +561,16 @@ class GUI(QObject):
         return None
     
     @pyqtSlot(str)
-    def openExplorerPath(self, path):
-        if os.path.isdir(path) or not IS_WIN or True:
-            QDesktopServices.openUrl(QUrl.fromLocalFile(path))
+    def openFolder(self, folder):
+        QDesktopServices.openUrl(QUrl.fromLocalFile(folder))
+
+    @pyqtSlot(list)
+    def openFiles(self, files):
+        folder = os.path.dirname(files[0])
+        if not IS_WIN:
+            self.openFolder(folder)
         else:
-            path = os.path.normpath(path)
-            ctypes.windll.ole32.CoInitialize(None)
-            pidl = ctypes.windll.shell32.ILCreateFromPathW(path)
-            ctypes.windll.shell32.SHOpenFolderAndSelectItems(pidl, 0, None, 0)
-            ctypes.windll.shell32.ILFree(pidl)
-            ctypes.windll.ole32.CoUninitialize()
+            misc.showFilesInExplorer(folder, files)
 
     @pyqtSlot(str)
     def openModelFolder(self, mode):
@@ -587,7 +586,7 @@ class GUI(QObject):
             os.makedirs(found)
         try:
             found = os.path.abspath(found)
-            self.openExplorerPath(found)
+            self.openFolder(found)
         except Exception:
             pass
     

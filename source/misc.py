@@ -1,4 +1,20 @@
 import re
+import os
+import ctypes
+
+try:
+    ctypes.windll.ole32.CoInitialize.restype = ctypes.HRESULT
+    ctypes.windll.ole32.CoInitialize.argtypes = [ctypes.c_void_p]
+    ctypes.windll.ole32.CoUninitialize.restype = None
+    ctypes.windll.ole32.CoUninitialize.argtypes = None
+    ctypes.windll.shell32.ILCreateFromPathW.restype = ctypes.c_void_p
+    ctypes.windll.shell32.ILCreateFromPathW.argtypes = [ctypes.c_char_p]
+    ctypes.windll.shell32.SHOpenFolderAndSelectItems.restype = ctypes.HRESULT
+    ctypes.windll.shell32.SHOpenFolderAndSelectItems.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_void_p, ctypes.c_ulong]
+    ctypes.windll.shell32.ILFree.restype = None
+    ctypes.windll.shell32.ILFree.argtypes = [ctypes.c_void_p]
+except Exception:
+    pass
 
 from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent, QMimeData, QByteArray, QBuffer, QIODevice
 from PyQt5.QtQuick import QQuickItem, QQuickPaintedItem
@@ -278,3 +294,25 @@ def registerTypes():
     qmlRegisterType(FocusReleaser, "gui", 1, 0, "FocusReleaser")
     qmlRegisterType(DropArea, "gui", 1, 0, "AdvancedDropArea")
     qmlRegisterType(MimeData, "gui", 1, 0, "MimeData")
+
+def showFilesInExplorer(folder, files):
+    ctypes.windll.ole32.CoInitialize(None)
+
+    files = [os.path.normpath(f) for f in files]
+    folder = os.path.normpath(folder)
+    count = len(files)
+
+    folder_pidl = ctypes.windll.shell32.ILCreateFromPathW(folder.encode('utf-16le') + b'\0')
+    files_pidl = [
+        ctypes.windll.shell32.ILCreateFromPathW(f.encode('utf-16le') + b'\0') for f in files
+    ]
+
+    files_pidl_arr = (ctypes.c_void_p * count)(*files_pidl)
+
+    ctypes.windll.shell32.SHOpenFolderAndSelectItems(folder_pidl, count, files_pidl_arr, 0)
+
+    for pidl in files_pidl[::-1]:
+        ctypes.windll.shell32.ILFree(pidl)
+    ctypes.windll.shell32.ILFree(folder_pidl)
+
+    ctypes.windll.ole32.CoUninitialize()

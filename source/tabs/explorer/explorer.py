@@ -337,9 +337,9 @@ class Explorer(QObject):
 
     @pyqtSlot(str)
     def doVisit(self, file):
-        path = os.path.abspath(os.path.join(self.gui.modelDirectory(), os.path.dirname(file)))
+        path = os.path.abspath(os.path.join(self.gui.modelDirectory(), file))
         try:
-            self.gui.openExplorerPath(path)
+            self.gui.openFiles([path])
         except Exception:
             pass
 
