@@ -106,14 +106,16 @@ class Builder(QThread):
         buildQMLPy()
 
 def check(dependancies, enforce_version=True):
+    importlib.reload(pkg_resources)
     needed = []
     for d in dependancies:
         try:
             pkg_resources.require(d)
         except pkg_resources.DistributionNotFound:
             needed += [d]
-        except pkg_resources.VersionConflict:
+        except pkg_resources.VersionConflict as e:
             if enforce_version:
+                print("CONFLICT", d, e)
                 needed += [d]
         except Exception:
             pass
@@ -136,6 +138,7 @@ class Installer(QThread):
             pkg = p.split("=",1)[0]
             if pkg in {"torch", "torchvision"}:
                 args = ["pip", "install", "-U", pkg, "--index-url", "https://download.pytorch.org/whl/" + p.rsplit("+",1)[-1]]
+            print("INSTALL", " ".join(args))
             self.proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, shell=IS_WIN)
 
             output = ""
@@ -308,7 +311,8 @@ class Coordinator(QObject):
 
         needed += self.required_need
 
-        needed = [n for n in needed if n[:5] == "wheel"] + [n for n in needed if n[:5] != "wheel"]
+        needed = [n for n in needed if n.startswith("wheel")] + [n for n in needed if not n.startswith("wheel")]
+        needed = [n for n in needed if n.startswith("pip")] + [n for n in needed if not n.startswith("pip")]
         
         return needed
 
