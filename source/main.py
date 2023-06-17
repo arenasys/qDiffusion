@@ -115,7 +115,7 @@ def check(dependancies, enforce_version=True):
             needed += [d]
         except pkg_resources.VersionConflict as e:
             if enforce_version:
-                print("CONFLICT", d, e)
+                #print("CONFLICT", d, e)
                 needed += [d]
         except Exception:
             pass
@@ -139,7 +139,7 @@ class Installer(QThread):
             if pkg in {"torch", "torchvision"}:
                 args = ["pip", "install", "-U", pkg, "--index-url", "https://download.pytorch.org/whl/" + p.rsplit("+",1)[-1]]
             args = ["python", "-m"] + args
-            print("INSTALL", " ".join(args))
+            #print("INSTALL", " ".join(args))
             self.proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, shell=IS_WIN)
 
             output = ""

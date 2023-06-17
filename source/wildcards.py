@@ -17,6 +17,7 @@ class Wildcards(QObject):
         self._wildcards = {}
         for file in glob.glob(os.path.join(self.gui.modelDirectory(), "WILDCARD", "*.txt")):
             self.loadFile(file)
+        self.updated.emit()
     
     def loadFile(self, file):
         with open(file, 'r', encoding='utf-8') as f:
@@ -24,4 +25,3 @@ class Wildcards(QObject):
             if lines:
                 name = file.rsplit(os.path.sep,1)[-1].rsplit('.',1)[0]
                 self._wildcards[name] = lines
-        self.updated.emit()

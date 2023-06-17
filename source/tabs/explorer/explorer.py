@@ -123,8 +123,15 @@ class Populater(QObject):
         self.conn.doQuery(q)
 
     def optionsUpdated(self):
-        o = self.gui._options
         wildcards = self.gui.wildcards._wildcards
+        for idx, name in enumerate(wildcards):
+            self.setModel(os.path.join("WILDCARD", name + ".txt"), "wildcard", "", "wildcard", idx)
+        self.finishCategory("wildcard", len(wildcards))
+
+        o = self.gui._options
+        if not o:
+            return
+        
         checkpoints = [a for a in o["UNET"] if a in o["VAE"] and a in o["CLIP"]]
         for idx, name in enumerate(checkpoints):
             self.setModel(name, "checkpoint", "", "checkpoint", idx)
@@ -151,24 +158,25 @@ class Populater(QObject):
             self.setModel(name, "upscaler", "", "upscaler", idx)
         self.finishCategory("upscaler", len(o["SR"]))
 
-        for idx, name in enumerate(wildcards):
-            self.setModel(os.path.join("WILDCARD", name + ".txt"), "wildcard", "", "wildcard", idx)
-        self.finishCategory("wildcard", len(wildcards))
-
     def favouritesUpdated(self):
-        o = self.gui._options.copy()
         f = self.gui._favourites
+        idx = 0
 
+        wildcards = [os.path.join("WILDCARD", name + ".txt") for name in self.gui.wildcards._wildcards]        
+        for name in [a for a in wildcards if a in f]:
+            self.setModel(name, "favourite", "Wildcard", "wildcard", idx, False)
+            idx += 1
+
+        if not self.gui._options:
+            self.finishCategory("favourite", idx)
+            return
+        
+        o = self.gui._options.copy()
         for k in list(o.keys()):
             if type(o[k]) == list:
                 o[k] = [a for a in o[k] if a in f]
 
-        wildcards = [os.path.join("WILDCARD", name + ".txt") for name in self.gui.wildcards._wildcards]
-        wildcards = [a for a in wildcards if a in f]
         checkpoints = [a for a in o["UNET"] if a in o["VAE"] and a in o["CLIP"]]
-
-        idx = 0
-
         for name in checkpoints:
             self.setModel(name, "favourite", "Checkpoint", "checkpoint", idx, False)
             idx += 1
@@ -191,10 +199,6 @@ class Populater(QObject):
 
         for name in o["SR"]:
             self.setModel(name, "favourite", "Upscaler", "upscaler", idx, False)
-            idx += 1
-
-        for name in wildcards:
-            self.setModel(name, "favourite", "Wildcard", "wildcard", idx, False)
             idx += 1
 
         self.finishCategory("favourite", idx)

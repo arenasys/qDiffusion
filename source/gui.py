@@ -98,6 +98,7 @@ class GUI(QObject):
         self._debugJSONLogging = self._config._values.get("debug") == True
 
         self.wildcards = wildcards.Wildcards(self)
+        self.wildcards.updated.connect(self.wildcardsUpdated)
         self.wildcards.reload()
 
         self._favourites = None
@@ -645,3 +646,7 @@ class GUI(QObject):
 
         request = {"type":"manage", "data": {"operation": "rename", "old_file": old, "new_file": new}}
         self.makeRequest(request)
+
+    @pyqtSlot()
+    def wildcardsUpdated(self):
+        self.optionsUpdated.emit()

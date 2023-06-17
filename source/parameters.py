@@ -423,6 +423,9 @@ class Parameters(QObject):
 
     @pyqtSlot()
     def optionsUpdated(self):
+        if not self.gui._options:
+            return
+
         for k in self.gui._options:
             kk = k + "s"
             if kk in self._values._map:
@@ -516,11 +519,6 @@ class Parameters(QObject):
             if not k in self._client_only:
                 data[k] = v
 
-        if self.gui.config.get("always_hr_resolution", False):
-            factor = data['hr_factor']
-            data['width'] = int(data['width'] * factor)
-            data['height'] = int(data['height'] * factor)
-
         data['batch_size'] = int(batch_size)
 
         data['prompt'] = self.buildPrompts(batch_size)
@@ -540,6 +538,11 @@ class Parameters(QObject):
                 data["mask"] = masks
         else:
             request["type"] = "txt2img"
+
+        if request["type"] != "txt2img" and self.gui.config.get("always_hr_resolution", False):
+            factor = data['hr_factor']
+            data['width'] = int(data['width'] * factor)
+            data['height'] = int(data['height'] * factor)
 
         if not "mask" in data:
             del data["mask_blur"]
