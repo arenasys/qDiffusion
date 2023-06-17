@@ -115,14 +115,14 @@ Rectangle {
             SContextMenuItem {
                 text: root.tr("Open", "General")
                 onTriggered: {
-                    GALLERY.doOpenImage(galleryContextMenu.files)
+                    GALLERY.doOpenFiles(galleryContextMenu.files)
                 }
             }
 
             SContextMenuItem {
                 text: root.tr("Visit", "General")
                 onTriggered: {
-                    GALLERY.doOpenFolder(galleryContextMenu.files)
+                    GALLERY.doVisitFiles(galleryContextMenu.files)
                 }
             }
 

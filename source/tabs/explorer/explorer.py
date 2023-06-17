@@ -339,7 +339,7 @@ class Explorer(QObject):
     def doVisit(self, file):
         path = os.path.abspath(os.path.join(self.gui.modelDirectory(), file))
         try:
-            self.gui.openFiles([path])
+            self.gui.visitFiles([path])
         except Exception:
             pass
 

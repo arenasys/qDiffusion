@@ -239,14 +239,14 @@ Item {
                         SContextMenuItem {
                             text: root.tr("Open", "General")
                             onTriggered: {
-                                GALLERY.doOpenImage([modelObj.file])
+                                GALLERY.doOpenFiles([modelObj.file])
                             }
                         }
 
                         SContextMenuItem {
                             text: root.tr("Visit", "General")
                             onTriggered: {
-                                GALLERY.doOpenFolder([modelObj.file])
+                                GALLERY.doVisitFiles([modelObj.file])
                             }
                         }
 

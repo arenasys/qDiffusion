@@ -561,14 +561,19 @@ class GUI(QObject):
         return None
     
     @pyqtSlot(str)
-    def openFolder(self, folder):
+    def visitFolder(self, folder):
         QDesktopServices.openUrl(QUrl.fromLocalFile(folder))
 
-    @pyqtSlot(list)
+    @pyqtSlot(str)
     def openFiles(self, files):
+        for file in files:
+            QDesktopServices.openUrl(QUrl.fromLocalFile(file))
+
+    @pyqtSlot(list)
+    def visitFiles(self, files):
         folder = os.path.dirname(files[0])
         if not IS_WIN:
-            self.openFolder(folder)
+            self.visitFolder(folder)
         else:
             misc.showFilesInExplorer(folder, files)
 
@@ -586,7 +591,7 @@ class GUI(QObject):
             os.makedirs(found)
         try:
             found = os.path.abspath(found)
-            self.openFolder(found)
+            self.visitFolder(found)
         except Exception:
             pass
     

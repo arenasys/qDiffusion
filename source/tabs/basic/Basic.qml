@@ -159,7 +159,7 @@ Item {
                 visible: fullContextMenu.output
                 text: root.tr("Open", "General")
                 onTriggered: {
-                    GALLERY.doOpenImage([full.file])
+                    GALLERY.doOpenFiles([full.file])
                 }
             }
 
@@ -167,7 +167,7 @@ Item {
                 text: root.tr("Visit", "General")
                 visible: fullContextMenu.output
                 onTriggered: {
-                    GALLERY.doOpenFolder([full.file])
+                    GALLERY.doVisitFiles([full.file])
                 }
             }
 

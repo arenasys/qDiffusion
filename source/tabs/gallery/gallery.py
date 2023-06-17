@@ -164,12 +164,12 @@ class Gallery(QObject):
         self.deleters = []
     
     @pyqtSlot(list)
-    def doOpenImage(self, files):
+    def doOpenFiles(self, files):
         self.gui.openFiles([os.path.abspath(f) for f in files])
 
     @pyqtSlot(list)
-    def doOpenFolder(self, files):
-        self.gui.openFolder(os.path.dirname(os.path.abspath(files[0])))
+    def doVisitFiles(self, files):
+        self.gui.visitFiles([os.path.abspath(f) for f in files])
 
     @pyqtSlot(str, list)
     def doCopy(self, folder, files):
