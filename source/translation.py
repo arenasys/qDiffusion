@@ -31,8 +31,8 @@ class Translator(QObject):
         try:
             if os.path.exists("capture.json"):
                 self._capture = {}
-            with open("capture.json", 'r', encoding="utf-8") as f:
-                self._capture = json.load(f)
+                with open("capture.json", 'r', encoding="utf-8") as f:
+                    self._capture = json.load(f)
         except Exception:
             pass
 
@@ -107,7 +107,7 @@ class Translator(QObject):
     @pyqtSlot(str, str, result=str)
     def translate(self, str, file):
         self.captureTranslation(str, file)
-        
+
         if not self._language in self._languages:
             return str
         

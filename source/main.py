@@ -105,7 +105,7 @@ class Builder(QThread):
         buildQMLRc()
         buildQMLPy()
 
-def check(dependancies):
+def check(dependancies, enforce_version=True):
     needed = []
     for d in dependancies:
         try:
@@ -113,7 +113,8 @@ def check(dependancies):
         except pkg_resources.DistributionNotFound:
             needed += [d]
         except pkg_resources.VersionConflict:
-            needed += [d]
+            if enforce_version:
+                needed += [d]
         except Exception:
             pass
     return needed
@@ -188,10 +189,15 @@ class Coordinator(QObject):
         self.in_venv = "VIRTUAL_ENV" in os.environ
         self.override = False
 
+        self.enforce = True
+
         try:
             with open("config.json", "r", encoding="utf-8") as f:
                 cfg = json.load(f)
-                self.override = "show" in cfg and cfg["show"]
+                if "show_installer" in cfg:
+                    self.override = cfg["show_installer"]
+                if "enforce_versions" in cfg:
+                    self.enforce = cfg["enforce_versions"]
                 mode = self._modes.index(cfg["mode"].lower())
                 self._mode = mode
         except Exception:
@@ -214,22 +220,22 @@ class Coordinator(QObject):
         self.directml_version = ""
 
         try:
-            self.torch_version = str(pkg_resources.get_distribution("torch"))
+            self.torch_version = str(pkg_resources.get_distribution("torch")).split()[-1]
         except:
             pass
 
         try:
-            self.torchvision_version = str(pkg_resources.get_distribution("torchvision"))
+            self.torchvision_version = str(pkg_resources.get_distribution("torchvision")).split()[-1]
         except:
             pass
 
         try:
-            self.xformers_version = str(pkg_resources.get_distribution("xformers"))
+            self.xformers_version = str(pkg_resources.get_distribution("xformers")).split()[-1]
         except:
             pass
 
         try:
-            self.directml_version = str(pkg_resources.get_distribution("torch-directml"))
+            self.directml_version = str(pkg_resources.get_distribution("torch-directml")).split()[-1]
         except:
             pass
 
@@ -242,8 +248,8 @@ class Coordinator(QObject):
 
         self.need_xformers_version = "0.0.20"
         
-        self.required_need = check(self.required)
-        self.optional_need = check(self.optional)
+        self.required_need = check(self.required, self.enforce)
+        self.optional_need = check(self.optional, self.enforce)
     
     @pyqtProperty(list, constant=True)
     def modes(self):
@@ -282,21 +288,21 @@ class Coordinator(QObject):
         mode = self._modes[self._mode]
         needed = []
         if mode == "nvidia":
-            if not "+cu" in self.torch_version:
+            if not "+cu" in self.torch_version or (self.enforce and self.torch_version != self.nvidia_torch_version):
                 needed += ["torch=="+self.nvidia_torch_version]
-            if not "+cu" in self.torchvision_version:
+            if not "+cu" in self.torchvision_version or (self.enforce and self.torchvision_version != self.nvidia_torchvision_version):
                 needed += ["torchvision=="+self.nvidia_torchvision_version]
-            if not self.xformers_version:
+            if not self.xformers_version or (self.enforce and self.xformers_version != self.need_xformers_version):
                 needed += ["xformers=="+self.need_xformers_version]
             needed += self.optional_need
         if mode == "amd":
             if IS_WIN:
-                if not self.directml_version:
+                if not self.directml_version or (self.enforce and self.directml_version != self.amd_torch_directml_version):
                     needed += ["torch-directml==" + self.amd_torch_directml_version]
             else:
-                if not "+rocm" in self.torch_version:
+                if not "+rocm" in self.torch_version or (self.enforce and self.torch_version != self.amd_torch_version):
                     needed += ["torch=="+self.amd_torch_version]
-                if not "+rocm" in self.torchvision_version:
+                if not "+rocm" in self.torchvision_version or (self.enforce and self.torchvision_version != self.amd_torchvision_version):
                     needed += ["torchvision=="+self.amd_torchvision_version]
             needed += self.optional_need
 
