@@ -160,6 +160,54 @@ FocusReleaser {
                 border.color: COMMON.bg4
                 color: "transparent"
 
+                SText {
+                    id: versionLabel
+                    text: root.tr("Enforce versions?")
+                    anchors.bottom: versionCheck.bottom
+                    anchors.right: versionCheck.left
+                    rightPadding: 7
+                    font.pointSize: 9.8
+                    color: COMMON.fg2
+                    opacity: 0.9
+                }
+
+                Rectangle {
+                    id: versionCheck
+                    anchors.bottom: parent.top
+                    anchors.bottomMargin: 5
+                    anchors.right: parent.right
+                    height: versionLabel.height
+                    width: height
+                    border.width: 1
+                    border.color: COMMON.bg4
+                    color: "transparent"
+
+                    Image {
+                        id: versionCheckTick
+                        width: 16
+                        height: 16
+                        visible: COORDINATOR.enforceVersions
+                        anchors.centerIn: parent
+                        source: "qrc:/icons/tick.svg"
+                        sourceSize: Qt.size(parent.width, parent.height)
+                    }
+
+                    ColorOverlay {
+                        id: color
+                        visible: versionCheckTick.visible
+                        anchors.fill: versionCheckTick
+                        source: versionCheckTick
+                        color: COMMON.bg7
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onPressed: {
+                            COORDINATOR.enforceVersions = !COORDINATOR.enforceVersions
+                        }
+                    }
+                }
+
                 STextArea {
                     id: outputArea
                     anchors.fill: parent

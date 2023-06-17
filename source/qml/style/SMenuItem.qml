@@ -46,8 +46,8 @@ MenuItem {
 
             Image {
                 id: img
-                width: 16
-                height: 16
+                width: 20
+                height: 20
                 visible:  menuItem.checked
                 anchors.centerIn: parent
                 source: "qrc:/icons/tick.svg"

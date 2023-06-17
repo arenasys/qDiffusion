@@ -138,6 +138,7 @@ class Installer(QThread):
             pkg = p.split("=",1)[0]
             if pkg in {"torch", "torchvision"}:
                 args = ["pip", "install", "-U", pkg, "--index-url", "https://download.pytorch.org/whl/" + p.rsplit("+",1)[-1]]
+            args = ["python", "-m"] + args
             print("INSTALL", " ".join(args))
             self.proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, shell=IS_WIN)
 
@@ -265,6 +266,16 @@ class Coordinator(QObject):
     @mode.setter
     def mode(self, mode):
         self._mode = mode
+        self.updated.emit()
+
+    @pyqtProperty(bool, notify=updated)
+    def enforceVersions(self):
+        return self.enforce
+    
+    @enforceVersions.setter
+    def enforceVersions(self, enforce):
+        self.enforce = enforce
+        self.find_needed()
         self.updated.emit()
 
     @pyqtProperty(list, notify=updated)
