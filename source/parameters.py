@@ -516,6 +516,11 @@ class Parameters(QObject):
             if not k in self._client_only:
                 data[k] = v
 
+        if self.gui.config.get("always_hr_resolution", False):
+            factor = data['hr_factor']
+            data['width'] = int(data['width'] * factor)
+            data['height'] = int(data['height'] * factor)
+
         data['batch_size'] = int(batch_size)
 
         data['prompt'] = self.buildPrompts(batch_size)
