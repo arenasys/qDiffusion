@@ -357,6 +357,7 @@ class Explorer(QObject):
                 shutil.move(old_path + ".png", new_path + ".png")
 
         if desc:
+            os.makedirs(os.path.dirname(new_path), exist_ok=True)
             with open(new_path + ".txt", "w", encoding='utf-8') as f:
                 f.write(desc)
         elif os.path.exists(new_path + ".txt"):

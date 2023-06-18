@@ -76,7 +76,7 @@ Item {
             id: modelsSql
             query: "SELECT name, category, display, type, desc, file, width, height FROM models WHERE category = '" + root.mode + "' AND folder = '" + root.folder + "' AND name LIKE '%" + root.search +"%' ORDER BY idx ASC;"
             property bool reset: false
-            debug: root.mode == 'favourite'
+            debug: false
             function refresh() {
                 modelsView.positionViewAtBeginning()
             }

@@ -308,7 +308,7 @@ class Parameters(QObject):
             "hr_factor": 1.0, "hr_strength":  0.7, "hr_sampler": "Euler a", "hr_steps": 25, "hr_eta": 1.0, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "subseed":-1, "subseed_strength": 0.0,
             "sampler":"Euler a", "samplers":[], "hr_upscaler":"Latent (nearest)", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
             "model":"", "models":[], "UNET":"", "UNETs":"", "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[], "CN":"", "CNs":[], "CN_modes": [], "CN_preprocessors": [],
-            "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "schedule": "Default", "schedules": ["Default", "Karras"],
+            "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "schedule": "Default", "schedules": ["Default", "Karras", "Exponential"],
             "vram_mode": "Default", "vram_modes": ["Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"], "preview_mode": "Disabled",
             "preview_modes": ["Disabled", "Light", "Medium", "Full"], "preview_interval":1, "true_samplers": [], "true_sampler": "Euler a",
             "network_mode": "Dynamic", "network_modes": ["Dynamic", "Static"], "mask_fill": "Original", "mask_fill_modes": ["Original", "Noise"],
@@ -406,10 +406,10 @@ class Parameters(QObject):
 
         if key == "sampler":
             sampler = self._values.get("sampler")
-            if sampler in {"DPM++ 2M", "DPM++ 2S a", "DPM++ SDE"}:
-                self._values.set("schedules", ["Default", "Karras"])
-            else:
+            if sampler in {"DDIM", "PLMS"}:
                 self._values.set("schedules", ["Default"])
+            else:
+                self._values.set("schedules", ["Default", "Karras", "Exponential"])
             schedule = self._values.get("schedule")
             if not schedule in self._values.get("schedules"):
                 self._values.set("schedule", "Default")
@@ -493,7 +493,7 @@ class Parameters(QObject):
             self._values.set("vram_mode", pref_vram)
 
         self._values.set("true_samplers", self._values.get("samplers"))
-        self._values.set("samplers", [s for s in self._values.get("samplers") if not "Karras" in s])
+        self._values.set("samplers", [s for s in self._values.get("samplers") if not "Karras" in s and not "Exponential" in s])
 
         mode_names = ["canny","depth","pose","lineart","softedge","anime","mlsd"]
         modes = []
@@ -676,6 +676,9 @@ class Parameters(QObject):
                 if p._value.endswith(" Karras"):
                     p._value = p._value.rsplit(" ",1)[0]
                     schedule = "Karras"
+                elif p._value.endswith(" Exponential"):
+                    p._value = p._value.rsplit(" ",1)[0]
+                    schedule = "Exponential"  
                 else:
                     schedule = "Default"
                 
