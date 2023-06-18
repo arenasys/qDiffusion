@@ -475,24 +475,7 @@ class GUI(QObject):
     @pyqtSlot()
     def quit(self):
         QApplication.quit()
-
-    @pyqtSlot(str, str)
-    def remoteDownload(self, type, url):
-        if self._remoteStatus != RemoteStatusMode.CONNECTED:
-            return
-        request = {"type": type, "url":url}
-        token = self.config.get("hf_token", "")
-        if token:
-            request["token"] = token
-        self.backend.makeRequest({"type":"download", "data":request})
-
-    @pyqtSlot(str, str)
-    def remoteUpload(self, type, file):
-        if self._remoteStatus != RemoteStatusMode.CONNECTED:
-            return
         
-        self.backend.makeRequest({"type":"upload", "data":{"type": type, "file":file}})
-
     @pyqtSlot(QQuickTextDocument)
     def setHighlighting(self, doc):
         highlighter = misc.SyntaxHighlighter(self)

@@ -92,9 +92,13 @@ class Settings(QObject):
 
     @pyqtSlot(str, str)
     def download(self, type, url):
-        if not url:
+        if not url or self.gui.remoteInfoStatus != "Connected":
             return
-        self.gui.remoteDownload(type, url)
+        request = {"type": type, "url":url}
+        token = self.gui.config.get("hf_token", "")
+        if token:
+            request["token"] = token
+        self.gui.backend.makeRequest({"type":"download", "data":request})
 
     @pyqtSlot()
     def refresh(self):
@@ -117,10 +121,11 @@ class Settings(QObject):
     @pyqtSlot(str, str)
     def upload(self, type, file):
         file = QUrl.fromLocalFile(file)
-        if not file.isLocalFile():
+        if not file.isLocalFile() or self.gui.remoteInfoStatus != "Connected":
             return
-        self.gui.remoteUpload(type, file.toLocalFile().replace('/', os.path.sep))
-    
+        file = file.toLocalFile().replace('/', os.path.sep)
+        self.gui.backend.makeRequest({"type":"upload", "data":{"type": type, "file": file}})
+
     @pyqtSlot(QUrl, result=str)
     def toLocal(self, url):
         return url.toLocalFile()
