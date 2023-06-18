@@ -25,8 +25,22 @@ Item {
         orientation: Qt.Horizontal
         width: Math.min(contentWidth, parent.width)
         model: BASIC.inputs
-        ScrollBar.horizontal: SScrollBarH {
+
+        ScrollBar.horizontal: SScrollBarH { 
             id: scrollBar
+            stepSize: 1/(4*Math.ceil(BASIC.inputs.length))
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.NoButton
+            onWheel: {
+                if(wheel.angleDelta.y < 0) {
+                    scrollBar.increase()
+                } else {
+                    scrollBar.decrease()
+                }
+            }
         }
 
         Connections {
