@@ -127,16 +127,16 @@ class Populater(QObject):
         self.conn.doQuery(q)
 
     def optionsUpdated(self):
-        wildcards = self.gui.wildcards._wildcards
+        wildcards = self.gui.wildcards._sources
         for idx, name in enumerate(wildcards):
-            file = os.path.join("WILDCARD", self.gui.wildcards._sources[name])
+            file = os.path.join("WILDCARD", wildcards[name])
             self.setModel(file, "wildcard", "", "wildcard", idx)
         self.finishCategory("wildcard", len(wildcards))
 
-        o = self.gui._options
-        if not o:
+        if not self.gui._options:
             return
         
+        o = self.gui._options
         checkpoints = [a for a in o["UNET"] if a in o["VAE"] and a in o["CLIP"]]
         for idx, name in enumerate(checkpoints):
             self.setModel(name, "checkpoint", "", "checkpoint", idx)

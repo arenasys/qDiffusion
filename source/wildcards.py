@@ -15,17 +15,17 @@ class Wildcards(QObject):
 
     @pyqtSlot()
     def reload(self):
-        self._wildcards = {}
-        self._sources = {}
+        wildcards = {}
+        sources = {}
         for ext in ["*.txt", "*.csv"]:
             for file in glob.glob(os.path.join(self.gui.modelDirectory(), "WILDCARD", ext)):
-                self.loadFile(file)
+                with open(file, 'r', encoding='utf-8') as f:
+                    lines = [l.strip() for l in f.readlines() if l.strip()]
+                    if not lines:
+                        continue
+                    name = file.rsplit(os.path.sep,1)[-1].rsplit('.',1)[0]
+                    sources[name] = file.rsplit(os.path.sep,1)[-1]
+                    wildcards[name] = lines
+        self._wildcards = wildcards
+        self._sources = sources
         self.updated.emit()
-    
-    def loadFile(self, file):
-        with open(file, 'r', encoding='utf-8') as f:
-            lines = [l.strip() for l in f.readlines() if l.strip()]
-            if lines:
-                name = file.rsplit(os.path.sep,1)[-1].rsplit('.',1)[0]
-                self._sources[name] = file.rsplit(os.path.sep,1)[-1]
-                self._wildcards[name] = lines

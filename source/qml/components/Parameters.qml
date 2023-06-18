@@ -73,7 +73,7 @@ Item {
 
             progress: -1
             working: false
-            disabled: GUI.statusMode == 0 || GUI.statusMode == 3 || root.binding.values.get("models").length == 0
+            disabled: (GUI.statusMode != 1 && GUI.statusMode != 2) || GUI.modelCount == 0
             info: GUI.statusInfo
             remaining: root.remaining
 

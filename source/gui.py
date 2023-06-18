@@ -111,6 +111,7 @@ class GUI(QObject):
         self.watchModelDirectory()
 
         self._options = {}
+        self._empty = {}
         self._results = {}
 
         parent.aboutToQuit.connect(self.stop)
@@ -205,6 +206,23 @@ class GUI(QObject):
     def errorStatus(self):
         return self._errorStatus
     
+    @pyqtProperty(int, notify=optionsUpdated)
+    def modelCount(self):
+        if not "UNET" in self._options:
+            return 0
+        return len(self._options["UNET"])
+    
+    def setOptions(self, options):
+        if options:
+            self._empty = {k:[] for k in options}
+        self._options = options
+        self.optionsUpdated.emit()
+
+    def clearOptions(self):
+        if self._empty:
+            self._options = self._empty.copy()
+        self.optionsUpdated.emit()
+    
     def makeRequest(self, request):
         id = get_id()
         request["id"] = id
@@ -257,9 +275,8 @@ class GUI(QObject):
             self.refreshModels()
 
         if response["type"] == "options":
-            self._options = response["data"]
+            self.setOptions(response["data"])
             self.wildcards.reload()
-            self.optionsUpdated.emit()
             if self._statusText == "Initializing":
                 self.setReady()
 
@@ -463,6 +480,9 @@ class GUI(QObject):
         self._statusProgress = -1
         self._statusText = "Restarting"
         self.statusUpdated.emit()
+
+        self.clearOptions()
+
         self.backend.stop()
         self.backend.wait()
         self.backend.setEndpoint(endpoint, password)
