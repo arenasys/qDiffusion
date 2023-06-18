@@ -200,7 +200,7 @@ Item {
                     }
 
                     onPositionChanged: {
-                        if(pressed) {
+                        if(pressedButtons & Qt.LeftButton) {
                             var delta = Qt.point(mouse.x-startPosition.x, mouse.y-startPosition.y)
                             if(Math.pow(delta.x*delta.x + delta.y*delta.y, 0.5) > 5 && modelObj.ready) {
                                 modelObj.drag()
