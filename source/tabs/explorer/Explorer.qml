@@ -159,6 +159,7 @@ Item {
                 folder: EXPLORER.currentFolder
                 search: search.text
                 showInfo: EXPLORER.showInfo 
+                query: EXPLORER.currentQuery
 
                 onDeleteModel: {
                     deleteDialog.show(model)

@@ -28,6 +28,8 @@ Item {
         MouseArea {
             id: mouseArea
             anchors.fill: parent
+            anchors.topMargin: 0
+            anchors.bottomMargin: -4
             acceptedButtons: Qt.LeftButton | Qt.RightButton
 
             onPressed: {

@@ -251,19 +251,18 @@ class Explorer(QObject):
     @pyqtProperty(str, notify=tabUpdated)
     def currentTab(self): 
         return self._currentTab
-    
-    @currentTab.setter
-    def currentTab(self, tab):
-        self._currentTab = tab
-        self._currentFolder = ""
-        self.tabUpdated.emit()
 
     @pyqtProperty(str, notify=tabUpdated)
     def currentFolder(self): 
         return self._currentFolder
-    
-    @currentFolder.setter
-    def currentFolder(self, folder):
+
+    @pyqtProperty(str, notify=tabUpdated)
+    def currentQuery(self):
+        return f"category = '{self._currentTab}' AND folder = '{self._currentFolder}'"
+
+    @pyqtSlot(str, str)
+    def setCurrent(self, tab, folder):
+        self._currentTab = tab
         self._currentFolder = folder
         self.tabUpdated.emit()
 

@@ -258,11 +258,11 @@ Item {
                 id: typeText
                 anchors.fill: parent
                 anchors.leftMargin: 21
-                anchors.rightMargin: (sql_desc != "" && sql_width != 0) ? 21 : 3
+                anchors.rightMargin: (sql_desc != "" && sql_width != 0) ? 21 : 6
                 text: root.tr(sql_display, "Category")
                 verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignHCenter
-                color: sql_width != 0 ? COMMON.fg1 : COMMON.fg2
+                color: !modelCard.info ? COMMON.fg1 : COMMON.fg2
                 elide: Text.ElideRight
                 leftPadding: 5
                 rightPadding: 5
@@ -291,12 +291,12 @@ Item {
                 anchors.fill: parent
                 color: COMMON.bg2
                 opacity: 0.8
-                border.width: sql_width == 0 ? 2 : 1
-                border.color: sql_width == 0 ? COMMON.bg0 : COMMON.bg4
+                border.width: modelCard.info ? 2 : 1
+                border.color: modelCard.info ? COMMON.bg0 : COMMON.bg4
             }
 
             Rectangle {
-                visible: sql_width == 0
+                visible: modelCard.info
                 anchors.fill: parent
                 color: "transparent"
                 opacity: 0.8
@@ -327,7 +327,7 @@ Item {
 
             Glow {
                 property var target: labelTextEdit.visible ? labelTextEdit : labelText
-                visible: sql_width != 0
+                visible: !modelCard.info
                 opacity: 0.4
                 anchors.fill: target
                 radius: 5

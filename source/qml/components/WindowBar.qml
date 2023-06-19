@@ -47,7 +47,7 @@ SMenuBar {
                         SETTINGS.setUploadMode(mode)
                     } else {
                         GUI.currentTab = "Models"
-                        EXPLORER.currentTab = mode
+                        EXPLORER.setCurrent(mode, "")
                         GUI.importModel(mode, file)
                     }
                 }

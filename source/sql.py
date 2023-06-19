@@ -169,14 +169,14 @@ class Sql(QAbstractListModel):
             self.fieldNames = {}
         
         if len(self.results) == 0 and len(newResults) != 0:
-            self.beginResetModel()
+            self.beginInsertRows(QModelIndex(), 0, len(newResults)-1)
             self.results = newResults
-            self.endResetModel()
+            self.endInsertRows()
             self.resultsChanged.emit()
             return
 
         if len(self.results) != 0 and len(newResults) == 0:
-            self.beginRemoveRows(QModelIndex(), 0, len(self.results))
+            self.beginRemoveRows(QModelIndex(), 0, len(self.results)-1)
             self.results = []
             self.endRemoveRows()
             self.resultsChanged.emit()

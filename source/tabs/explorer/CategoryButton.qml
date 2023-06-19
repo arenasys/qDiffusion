@@ -23,7 +23,7 @@ SColumnButton {
     signal move(string model, string folder, string subfolder)
     
     onPressed: {
-        EXPLORER.currentTab = mode
+        EXPLORER.setCurrent(mode, "")
     }
 
     AdvancedDropArea {
@@ -40,7 +40,7 @@ SColumnButton {
             id: dragTimer
             interval: 200
             onTriggered: {
-                EXPLORER.currentTab = mode
+                EXPLORER.setCurrent(mode, "")
             }
         }
         onDropped: {

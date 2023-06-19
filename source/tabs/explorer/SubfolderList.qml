@@ -33,8 +33,7 @@ ListView {
             width: parent.width
             active: EXPLORER.currentTab == mode && EXPLORER.currentFolder == modelData
             onPressed: {
-                EXPLORER.currentTab = mode
-                EXPLORER.currentFolder = modelData
+                EXPLORER.setCurrent(mode, modelData)
             }
             AdvancedDropArea {
                 id: basicDrop
@@ -50,8 +49,7 @@ ListView {
                     id: dragTimer
                     interval: 200
                     onTriggered: {
-                        EXPLORER.currentTab = mode
-                        EXPLORER.currentFolder = modelData
+                        EXPLORER.setCurrent(mode, modelData)
                     }
                 }
                 onDropped: {

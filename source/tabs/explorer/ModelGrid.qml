@@ -17,6 +17,7 @@ Item {
     property var descLength: (cellSize*cellSize)/100
     property var showInfo: false
     property var search: ""
+    property var query: ""
 
     function tr(str, file = "ModelGrid.qml") {
         return TRANSLATOR.instance.translate(str, file)
@@ -74,7 +75,7 @@ Item {
         }
         model: Sql {
             id: modelsSql
-            query: "SELECT name, category, display, type, desc, file, width, height FROM models WHERE category = '" + root.mode + "' AND folder = '" + root.folder + "' AND name LIKE '%" + root.search +"%' ORDER BY idx ASC;"
+            query: "SELECT name, category, display, type, desc, file, width, height FROM models WHERE " + root.query + " AND name LIKE '%" + root.search + "%' ORDER BY idx ASC;"
             property bool reset: false
             debug: false
             function refresh() {
