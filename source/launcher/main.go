@@ -7,13 +7,30 @@ import (
 	"os"
 	"os/exec"
 	"syscall"
+	"time"
 
 	"github.com/schollz/progressbar/v3"
 	"github.com/walle/targz"
 	"golang.org/x/sys/windows"
 )
 
+var attached bool = false
+
+func log(err error) {
+	attach()
+	msg := fmt.Sprintf("LAUNCHER %s\n%s\n", time.Now().Local().String(), err.Error())
+	fmt.Println(msg)
+	f, _ := os.OpenFile("crash.log", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	f.WriteString(msg + "\n")
+	f.Close()
+	fmt.Println("TRACEBACK SAVED: crash.log")
+	time.Sleep(5 * time.Second)
+}
+
 func attach() {
+	if attached {
+		return
+	}
 	proc := syscall.MustLoadDLL("kernel32.dll").MustFindProc("AllocConsole")
 	proc.Call()
 	out, _ := windows.GetStdHandle(windows.STD_OUTPUT_HANDLE)
@@ -21,6 +38,7 @@ func attach() {
 	windows.SetStdHandle(windows.STD_OUTPUT_HANDLE, windows.Handle(outF.Fd()))
 	os.Stdout = outF
 	os.Stderr = outF
+	attached = true
 }
 
 func download(path, url string) error {
@@ -73,13 +91,13 @@ func main() {
 			fmt.Println("DOWNLOADING PYTHON...")
 			err := download("python-3.10.11.tar.gz", "https://github.com/indygreg/python-build-standalone/releases/download/20230507/cpython-3.10.11+20230507-x86_64-pc-windows-msvc-shared-install_only.tar.gz")
 			if err != nil {
-				fmt.Println(err)
+				log(err)
 				return
 			}
 			fmt.Println("EXTRACTING PYTHON...")
 			err = targz.Extract("python-3.10.11.tar.gz", ".")
 			if err != nil {
-				fmt.Println(err)
+				log(err)
 				return
 			}
 			os.Remove("python-3.10.11.tar.gz")
@@ -88,5 +106,7 @@ func main() {
 
 	if proc, err := start(python, "source\\launch.py"); err == nil {
 		proc.Wait()
+	} else {
+		log(err)
 	}
 }
