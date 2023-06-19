@@ -2,7 +2,8 @@ import sys
 import subprocess
 import os
 import platform
-import shutil
+import traceback
+import datetime
 import importlib.util
 
 VENV_DIR = "venv"
@@ -48,7 +49,19 @@ def install_qt():
     else:
         subprocess.run([os.path.join(VENV_DIR, "bin/pip"), "install", QT_VER], env=get_env())
 
+def exceptHook(exc_type, exc_value, exc_tb):
+    tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
+    with open("crash.log", "a", encoding='utf-8') as f:
+        f.write(f"LAUNCH {datetime.datetime.now()}\n{tb}\n")
+    print(tb)
+    print("TRACEBACK SAVED: crash.log")
+
+    if not "pythonw" in PYTHON_RUN:
+        input("PRESS ENTER TO CLOSE")
+
 if __name__ == "__main__":
+    sys.excepthook = exceptHook
+
     if sys.version_info[0] < 3 or sys.version_info[1] < 8:
         print(f"Python 3.8 or greater is required. Have Python {sys.version_info[0]}.{sys.version_info[1]}.")
         input()
