@@ -42,7 +42,7 @@ Item {
     signal deselect(int index)
 
     SButton {
-        visible: modelsView.count == 0 && (GUI.remoteStatus == 0 || root.mode == "wildcard") && root.mode != "favourite"
+        visible: modelsView.count == 0 && (GUI.remoteStatus == 0 || root.mode == "wildcard") && root.mode != "favourite" && root.search == ""
         anchors.centerIn: root
         width: 150
         height: 27
@@ -56,8 +56,16 @@ Item {
 
     SText {
         anchors.centerIn: parent
-        visible: modelsView.count == 0 && GUI.remoteStatus != 0 && root.mode != "wildcard"
+        visible: modelsView.count == 0 && GUI.remoteStatus != 0 && root.mode != "wildcard" && root.search == ""
         text: root.tr("Remote has no %1").arg(root.label)
+        color: COMMON.fg2
+        font.pointSize: 9.8
+    }
+
+    SText {
+        anchors.centerIn: parent
+        visible: modelsView.count == 0 && root.search != ""
+        text: root.tr("Nothing found")
         color: COMMON.fg2
         font.pointSize: 9.8
     }
