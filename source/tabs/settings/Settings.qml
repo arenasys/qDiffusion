@@ -20,6 +20,7 @@ Item {
         anchors.fill: column
         color: COMMON.bg0
     }
+    
     Column {
         id: column
         width: 150
@@ -43,6 +44,21 @@ Item {
             }
         }
     }
+
+    STextSelectable {
+        anchors.bottom: column.bottom
+        anchors.left: column.left
+        anchors.right: column.right
+        height: 20
+        verticalAlignment: Text.AlignVCenter
+        horizontalAlignment: Text.AlignHCenter
+        monospace: true
+        font.pointSize: 9.5
+
+        color: COMMON.fg2
+        text: GraphicsInfo.api + " " + GraphicsInfo.majorVersion + " " + GraphicsInfo.minorVersion + " " + GraphicsInfo.profile
+    }
+
     Rectangle {
         id: divider
         anchors.top: column.top
