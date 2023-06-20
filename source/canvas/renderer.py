@@ -33,9 +33,14 @@ class CanvasRendererBuffer():
         self.source = None
         self.cached = None
 
-        self.buffer.bind()
-        gl.glClearColor(0, 0, 0, 0)
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+        self.initial = True
+
+    def initialize(self):
+        if self.initial:
+            self.initial = False
+            self.buffer.bind()
+            gl.glClearColor(0, 0, 0, 0)
+            gl.glClear(gl.GL_COLOR_BUFFER_BIT)
 
     def getImage(self):
         if self.cached == None:
@@ -181,8 +186,6 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
         self.buffer = self.createBuffer(self.size)
         self.mask = self.createBuffer(self.size)
 
-        self.foreground = self.createBuffer(self.size)
-
         self.states = []
 
         return self.display.buffer
@@ -194,7 +197,11 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
     def render(self):
         gl.glClearColor(0, 0, 0, 0)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
-        
+
+        self.display.initialize()
+        self.buffer.initialize()
+        self.mask.initialize()
+
         if not self.layersOrder or not self.display:
             return
 
