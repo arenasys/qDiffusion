@@ -32,7 +32,7 @@ QtObject {
     readonly property var keys_models:      ["Ctrl+2","F2"]
     readonly property var keys_gallery:     ["Ctrl+3","F3"]
     readonly property var keys_settings:    ["Ctrl+0","F12"]
-    readonly property var keys_generate:    ["Ctrl+Return","Ctrl+`"]
+    readonly property var keys_generate:    ["Ctrl+`"]
     readonly property var keys_cancel:      ["Ctrl+Backspace","Ctrl+Escape"]
 
     function accent(hue) {

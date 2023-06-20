@@ -317,21 +317,47 @@ Item {
         property var typed: false
         property var targetStart: null
         property var targetEnd: null
+        property var replace: false
+        property var onlyModels: false
+
+        function update() {
+            BASIC.updateSuggestions(prompts.cursorText, prompts.cursorPosition, onlyModels)
+            promptCursor.targetStart = BASIC.suggestionStart(prompts.cursorText, prompts.cursorPosition)
+            promptCursor.targetEnd = BASIC.suggestionEnd(prompts.cursorText, prompts.cursorPosition)
+        }
 
         Connections {
             target: prompts
 
-            function onInput() {
-                promptCursor.typed = true
+            function onInput(key) {
+                if(key == Qt.Key_Control) {
+                    promptCursor.onlyModels = true
+                    promptCursor.update()
+                }
+                if(key == Qt.Key_Right || key == Qt.Key_Left) {
+                    if (promptCursor.typed) {
+                        promptCursor.update()
+                    }
+                } else if(key != Qt.Key_Down && key != Qt.Key_Right) {
+                    if(!promptCursor.typed)  {
+                        promptCursor.replace = BASIC.suggestionReplace(prompts.cursorText, prompts.cursorPosition)
+                    }
+                    promptCursor.typed = true
+                }
+            }
+
+            function onRelease(key) {
+                if(key == Qt.Key_Control) {
+                    promptCursor.onlyModels = false
+                    promptCursor.update()
+                }
             }
 
             function onCursorTextChanged() {
                 if(prompts.cursorText == null) {
                     promptCursor.typed = false
                 } else if (promptCursor.typed) {
-                    BASIC.updateSuggestions(prompts.cursorText, prompts.cursorPosition)
-                    promptCursor.targetStart = BASIC.suggestionStart(prompts.cursorText, prompts.cursorPosition)
-                    promptCursor.targetEnd = BASIC.suggestionEnd(prompts.cursorText, prompts.cursorPosition)
+                    promptCursor.update()
                 }
             }
         }
@@ -374,7 +400,7 @@ Item {
 
         function complete(text) {
             var curr = prompts.active
-            curr.completeText(text, promptCursor.targetStart, promptCursor.targetEnd)
+            curr.completeText(text, promptCursor.targetStart, promptCursor.replace ? promptCursor.targetEnd : prompts.cursorPosition)
         }
 
         function move(dir) {

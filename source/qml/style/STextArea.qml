@@ -25,7 +25,8 @@ Rectangle {
     }
     
     signal tab()
-    signal input()
+    signal input(int key)
+    signal release(int key)
     signal menu(int dir)
     property var menuActive: false
 
@@ -106,42 +107,50 @@ Rectangle {
 
             Keys.onPressed: {
                 event.accepted = true
-                if(event.modifiers == 0) {
-                    switch(event.key) {
-                    case Qt.Key_Tab:
+                switch(event.key) {
+                case Qt.Key_Tab:
+                    root.tab()
+                    break;
+                case Qt.Key_Return:
+                    if(root.menuActive) {
                         root.tab()
-                        break;
-                    case Qt.Key_Escape:
-                        if(root.menuActive) {
-                            root.menu(0)
-                        } else {
-                            event.accepted = false
-                        }
-                        break;
-                    case Qt.Key_Up:
-                        if(root.menuActive) {
-                            root.menu(1)
-                        } else {
-                            event.accepted = false
-                        }
-                        break;
-                    case Qt.Key_Down:
-                        if(root.menuActive) {
-                            root.menu(-1)
-                        } else {
-                            event.accepted = false
-                        }
-                        break;
-                    default:
+                    } else {
                         event.accepted = false
-                        break;
                     }
-                } else {
+                    break;
+                case Qt.Key_Escape:
+                    if(root.menuActive) {
+                        root.menu(0)
+                    } else {
+                        event.accepted = false
+                    }
+                    break;
+                case Qt.Key_Up:
+                    if(root.menuActive) {
+                        root.menu(1)
+                    } else {
+                        event.accepted = false
+                    }
+                    break;
+                case Qt.Key_Down:
+                    if(root.menuActive) {
+                        root.menu(-1)
+                    } else {
+                        event.accepted = false
+                    }
+                    break;
+                default:
                     event.accepted = false
+                    break;
                 }
-                if(!event.accepted && !(event.key >= Qt.Key_Left && event.key <= Qt.Key_Down)) {
-                    root.input()
+                
+                if(!event.accepted) {
+                    root.input(event.key)
                 }
+            }
+
+            Keys.onReleased: {
+                root.release(event.key)
             }
         }
 

@@ -1494,7 +1494,7 @@ class Basic(QObject):
 
         return after, pos+len(after)
     
-    def getSuggestions(self, text):
+    def getSuggestions(self, text, onlyModels):
         text = text.lower().strip()
         if not text:
             return {}
@@ -1511,13 +1511,20 @@ class Basic(QObject):
                 continue
             staging[p] = i
         
+        if onlyModels:
+            return staging
+        
         for t in self._dictionary:
             tl = t.lower()
+
+            if tl == text:
+                continue
 
             i = -1
             try:
                 i = tl.index(text)
-            except: pass
+            except:
+                pass
 
             if i == 0:
                 i = 1 - (len(text.split()[0])/len(tl.split()[0]))
@@ -1526,11 +1533,11 @@ class Basic(QObject):
             else:
                 continue
             staging[t] = i
-        
+
         return staging
 
-    @pyqtSlot(str, int)
-    def updateSuggestions(self, text, pos):
+    @pyqtSlot(str, int, bool)
+    def updateSuggestions(self, text, pos, onlyModels):
         self._suggestions = []
 
         sensitivity = self.gui.config.get("autocomplete")
@@ -1538,7 +1545,7 @@ class Basic(QObject):
 
         before, _ = self.beforePos(text, pos)
         if before and sensitivity and len(before) >= sensitivity:
-            staging = self.getSuggestions(before.lower())
+            staging = self.getSuggestions(before.lower(), onlyModels)
             if staging:
                 key = lambda k: (staging[k], self._dictionary[k] if k in self._dictionary else 0)
                 self._suggestions = sorted(staging.keys(), key=key)
@@ -1602,6 +1609,11 @@ class Basic(QObject):
     def suggestionEnd(self, text, pos):
         text, end = self.afterPos(text, pos)
         return end
+    
+    @pyqtSlot(str, int, result=bool)
+    def suggestionReplace(self, text, pos):
+        text, _ = self.beforePos(text, pos)
+        return len(text) > 1
     
     def vocabSync(self):
         vocab = self.gui.config.get("vocab", [])

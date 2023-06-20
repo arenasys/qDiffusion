@@ -32,7 +32,8 @@ Item {
 
     signal inspect()
     signal tab()
-    signal input()
+    signal input(int key)
+    signal release(int key)
     signal menu(int dir)
 
     Connections {
@@ -145,7 +146,11 @@ Item {
                 property var cursorY: promptPositive.area.cursorRectangle.y
 
                 onInput: {
-                    root.input()
+                    root.input(key)
+                }
+
+                onRelease: {
+                    root.release(key)
                 }
 
                 onMenu: {
@@ -242,7 +247,11 @@ Item {
                 property var cursorY: promptNegative.area.cursorRectangle.y
 
                 onInput: {
-                    root.input()
+                    root.input(key)
+                }
+
+                onRelease: {
+                    root.release(key)
                 }
 
                 onMenu: {
