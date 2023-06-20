@@ -213,6 +213,8 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
         self.display.initialize()
         self.buffer.initialize()
         self.mask.initialize()
+        for key in self.layers:
+            self.layers[key].initialize()
 
         if not self.layersOrder or not self.display:
             return
