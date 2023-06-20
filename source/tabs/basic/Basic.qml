@@ -326,6 +326,10 @@ Item {
             promptCursor.targetEnd = BASIC.suggestionEnd(prompts.cursorText, prompts.cursorPosition)
         }
 
+        function reset() {
+            promptCursor.typed = false
+        }
+
         Connections {
             target: prompts
 
@@ -355,7 +359,7 @@ Item {
 
             function onCursorTextChanged() {
                 if(prompts.cursorText == null) {
-                    promptCursor.typed = false
+                    promptCursor.reset()
                 } else if (promptCursor.typed) {
                     promptCursor.update()
                 }
@@ -382,7 +386,8 @@ Item {
 
     ListView {
         id: suggestions
-        visible: promptCursor.visible && BASIC.suggestions.length != 0
+        property var entries: BASIC.suggestions.length != 0
+        visible: promptCursor.visible && entries
         property var flip: promptCursor.y + promptCursor.height + 60 > root.height
         anchors.left: promptCursor.left
         anchors.right: promptCursor.right
@@ -397,6 +402,12 @@ Item {
         verticalLayoutDirection: flip ? ListView.BottomToTop : ListView.TopToBottom
         boundsBehavior: Flickable.StopAtBounds
         highlightFollowsCurrentItem: false
+
+        onEntriesChanged: {
+            if (!entries) {
+                promptCursor.reset()
+            }
+        }
 
         function complete(text) {
             var curr = prompts.active

@@ -1455,7 +1455,7 @@ class Basic(QObject):
         return self._suggestions
     
     def suggestionBlocks(self, text, pos):
-        spaces = self.gui.config.get("autocomplete_words", False)
+        spaces = False
 
         blank = lambda m: '#' * len(m.group())
         safe = re.sub(r'__.+?__|<.+?>', blank, text)
@@ -1580,13 +1580,6 @@ class Basic(QObject):
             return text
         if text in self._collectionDetails:
             return self.suggestionDisplay(text)
-        elif self.gui.config.get("autocomplete_single", False):
-            words = text.split()
-            if len(words) == 1:
-                return words[0]
-            if len(words[0]) == start:
-                return words[0] + " " + words[1]
-            return words[0]
         return text
 
     @pyqtSlot(str, result=QColor)
