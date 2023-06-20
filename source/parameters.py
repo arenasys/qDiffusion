@@ -11,9 +11,6 @@ import PIL.PngImagePlugin
 
 from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QVariant, QSize
 from PyQt5.QtQml import qmlRegisterUncreatableType, qmlRegisterType
-from PyQt5.QtGui import QImage
-
-from misc import encode_image
 
 IDX = -1
 
@@ -304,7 +301,7 @@ class Parameters(QObject):
             "CN_modes", "CN_preprocessors", "vram_modes", "true_samplers", "schedule", "network_modes", "model", "output_folder", "mask_fill_modes"
         ]
         self._values = VariantMap(self, {
-            "prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7, "strength": 0.75, "seed": -1, "eta": 1.0,
+            "prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7.0, "strength": 0.75, "seed": -1, "eta": 1.0,
             "hr_factor": 1.0, "hr_strength":  0.7, "hr_sampler": "Euler a", "hr_steps": 25, "hr_eta": 1.0, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "subseed":-1, "subseed_strength": 0.0,
             "sampler":"Euler a", "samplers":[], "hr_upscaler":"Latent (nearest)", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
             "model":"", "models":[], "UNET":"", "UNETs":"", "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[], "CN":"", "CNs":[], "CN_modes": [], "CN_preprocessors": [],
@@ -696,14 +693,11 @@ class Parameters(QObject):
                 else:
                     continue
 
-            val = None
             try:
-                val = cast(self.values.get(p._name), p._value)
+                val = type(self.values.get(p._name))(p._value)
+                self.values.set(p._name, val)
             except Exception as e:
                 pass
-
-            if val:
-                self.values.set(p._name, p._value)
 
         if schedule:
             self.values.set("schedule", schedule)
