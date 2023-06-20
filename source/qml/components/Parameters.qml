@@ -260,6 +260,34 @@ Item {
                                 root.seedDrop(mimeData)
                             }
                         }
+
+                        Rectangle {
+                            visible: randomLabel.visible
+                            anchors.fill: randomLabel
+                            color: COMMON.bg2_5
+                            anchors.margins: 2
+                        }
+
+                        SText {
+                            visible: seedInput.value == "-1" && !seedInput.active
+                            id: randomLabel
+                            text: "Random"
+                            
+                            anchors.top: seedInput.top
+                            anchors.bottom: seedInput.bottom
+                            anchors.right: seedInput.right
+
+                            anchors.margins: 2
+                            anchors.bottomMargin: 0
+
+                            color: COMMON.fg2
+                            font.pointSize: 9.8
+                            monospace: true
+                            rightPadding: 7
+
+                            verticalAlignment: Text.AlignVCenter
+                            horizontalAlignment: Text.AlignRight
+                        }
                     }
                 }
                 OColumn {

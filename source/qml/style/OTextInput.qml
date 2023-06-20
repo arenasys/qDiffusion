@@ -15,6 +15,7 @@ Item {
     property var validator: RegExpValidator { regExp: /.*/ }
     property var disabled: false
     property var overlay: disabled
+    property alias active: valueText.activeFocus
 
     property variant bindMap: null
     property var bindKey: null
