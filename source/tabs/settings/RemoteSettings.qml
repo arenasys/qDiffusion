@@ -226,7 +226,10 @@ Item {
             height: 30
             label: root.tr("Upload")
             onPressed: {
-                SETTINGS.upload(uploadTypeInput.model[uploadTypeInput.currentIndex], uploadFileInput.value)
+                var file = uploadFileInput.value
+                var idx = uploadTypeInput.currentIndex
+                SETTINGS.setUpload(file, idx)
+                SETTINGS.upload(uploadTypeInput.model[idx], file)
             }
             disabled: !root.show
         }

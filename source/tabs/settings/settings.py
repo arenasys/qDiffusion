@@ -52,33 +52,18 @@ class Settings(QObject):
     @pyqtProperty(str, notify=updated)
     def currentUpload(self): 
         return self._currentUpload
-    
-    @currentUpload.setter
-    def currentUpload(self, file):
-        self._currentUpload = QUrl(file).toLocalFile()
-        self.updated.emit()
 
     @pyqtProperty(int, notify=updated)
     def currentUploadMode(self): 
         return self._currentUploadMode
-    
-    @currentUploadMode.setter
-    def currentUploadMode(self, mode):
+
+    @pyqtSlot(str, int)
+    def setUpload(self, file, mode):
+        if file.startswith("file:"):
+            file = QUrl(file).toLocalFile()
+        self._currentUpload = file
         self._currentUploadMode = mode
         self.updated.emit()
-
-    @pyqtSlot(str)
-    def setUploadMode(self, mode):
-        idx = {
-            "checkpoint": 0,
-            "component": 0,
-            "lora": 1,
-            "hypernet": 2,
-            "embedding": 3,
-            "upscale": 4,
-            "controlnet": 6
-        }[mode]
-        self.currentUploadMode = idx
 
     @pyqtProperty(str, notify=updated)
     def log(self):

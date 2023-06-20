@@ -39,12 +39,12 @@ SMenuBar {
                 property var mode: ""
 
                 onAccepted: {
-                    
                     if(GUI.remoteStatus != 0) {
                         GUI.currentTab = "Settings"
                         SETTINGS.currentTab = "Remote"
-                        SETTINGS.currentUpload = file
-                        SETTINGS.setUploadMode(mode)
+                        var modeIndex = ["checkpoint","component","lora","hypernet","embedding","upscale","controlnet"].indexOf(mode)
+                        modeIndex = Math.max(modeIndex - 1, 0)
+                        SETTINGS.setUpload(file, modeIndex)
                     } else {
                         GUI.currentTab = "Models"
                         EXPLORER.setCurrent(mode, "")
