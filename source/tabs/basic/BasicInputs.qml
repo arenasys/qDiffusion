@@ -34,6 +34,7 @@ Item {
         MouseArea {
             anchors.fill: parent
             acceptedButtons: Qt.NoButton
+            z: -1
             onWheel: {
                 if(wheel.angleDelta.y < 0) {
                     scrollBar.increase()
@@ -156,6 +157,134 @@ Item {
                         }
                     }
 
+                    Rectangle {
+                        visible: modelData.folder != ""
+                        anchors.fill: parent
+                        anchors.margins: 1
+                        anchors.leftMargin: 10
+                        anchors.rightMargin: 10
+                        border.color: COMMON.bg3
+                        border.width: 1
+                        color: "transparent"
+                        clip: true
+
+                        Rectangle {
+                            anchors.fill: parent
+                            anchors.leftMargin: 1
+                            anchors.rightMargin: 1
+                            color: COMMON.bg0
+                        }
+
+                        Rectangle {
+                            anchors.fill: fileList
+                            anchors.topMargin: -1
+                            anchors.bottomMargin: -1
+                            border.color: COMMON.bg3
+                            border.width: 1
+                            color: "transparent"
+                        }
+
+                        ListView {
+                            id: fileList
+                            width: parent.width-2
+                            height: Math.min(parent.height, contentHeight)
+                            anchors.centerIn: parent
+                            model: modelData.files
+                            anchors.leftMargin: 1
+                            anchors.rightMargin: 1
+                            displayMarginBeginning: 30
+                            displayMarginEnd: 30
+
+                            interactive: false
+                            boundsBehavior: Flickable.StopAtBounds
+
+                            ScrollBar.vertical: SScrollBarV {
+                                id: fileScrollBar
+                                stepSize: 1/Math.ceil(fileList.contentHeight/60)
+                                policy: fileList.contentHeight > fileList.height ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                acceptedButtons: Qt.NoButton
+                                onWheel: {
+                                    if(wheel.angleDelta.y < 0) {
+                                        fileScrollBar.increase()
+                                    } else {
+                                        fileScrollBar.decrease()
+                                    }
+                                }
+                            }
+
+                            delegate: Rectangle {
+                                color: index % 2 == 0 ? COMMON.bg1 : COMMON.bg0
+                                width: fileList.width
+                                height: 15
+
+                                property var selected: item.input.currentFile == modelData
+
+                                onSelectedChanged: {
+                                    if(selected) {
+                                        fileList.positionViewAtIndex(index, ListView.Contain)
+                                    }
+                                }
+
+                                Rectangle {
+                                    x: 40
+                                    height: 15
+                                    width: 1
+                                    color: COMMON.bg3
+                                }
+
+                                Rectangle {
+                                    anchors.fill: parent
+                                    opacity: parent.selected ? 0.1 : 0.0
+                                }
+
+                                Item {
+                                    height: 15
+                                    width: 40
+                                    SText {
+                                        anchors.fill: parent
+                                        text: index
+                                        color: parent.selected ? COMMON.fg1_5 : COMMON.fg2
+                                        monospace: true
+                                        font.pointSize: 9.5
+                                        verticalAlignment: Text.AlignVCenter
+                                        horizontalAlignment: Text.AlignHCenter
+                                        opacity: 0.75
+                                    }
+                                }
+
+                                Item {
+                                    x: 40
+                                    height: 15
+                                    width: parent.width - 40
+                                    SText {
+                                        anchors.fill: parent
+                                        text: modelData
+                                        color: parent.selected ? COMMON.fg1_5 : COMMON.fg2
+                                        monospace: true
+                                        leftPadding: 5
+                                        rightPadding: 5
+                                        elide: Text.ElideRight
+                                        font.pointSize: 9.5
+                                        verticalAlignment: Text.AlignVCenter
+                                        horizontalAlignment: Text.AlignLeft
+                                    }
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onPressed: {
+                                        item.input.setFile(modelData)
+                                        mouse.accepted = false
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     Item {
                         id: trueFrame
                         property var valid: itemImage.trueWidth != 0
@@ -268,9 +397,9 @@ Item {
                             anchors.right: parent.right
                             width: 21
                             height: 22
-                            visible: refreshButton.visible
+                            visible: refreshButton.visible || settingsArea.visible
                             color: "#e0101010"
-                            border.width: 1
+                            border.width: refreshButton.visible ? 1 : 0
                             border.color: COMMON.bg3
                         }
                     }
@@ -290,6 +419,7 @@ Item {
                     property var startOffset: 0
                     property bool ready: false
                     property var image
+                    z: -1
                     onPressed: {
                         startPosition = Qt.point(mouse.x, mouse.y)
                         startOffset = modelData.offset
@@ -308,7 +438,7 @@ Item {
                     }
 
                     onDoubleClicked: {
-                        if(!modelData.empty) {
+                        if(!modelData.empty || modelData.currentFile != "") {
                             BASIC.open(index, "input")
                         }
                     }
@@ -333,6 +463,10 @@ Item {
 
                             modelData.offset = startOffset - (d/z)
                         }
+                    }
+
+                    onWheel: {
+                        wheel.accepted = false
                     }
 
                     SContextMenu {
@@ -422,7 +556,7 @@ Item {
 
                 SIconButton {
                     id: settingsButton
-                    visible: modelData.role == 4 && !modelData.empty
+                    visible: modelData.role == 4 && modelData.hasSource
                     color: "transparent"
                     icon: "qrc:/icons/settings.svg"
                     x: borderFrame.x + 1
@@ -461,20 +595,37 @@ Item {
                     spacing: 5
 
                     SIconButton {
-                        visible: modelData.empty
+                        visible: !modelData.hasSource
                         id: uploadButton
                         icon: "qrc:/icons/folder.svg"
                         onPressed: {
                             itemFrame.forceActiveFocus()
                             inputFileDialog.open()
                         }
+                        onContextMenu: {
+                            fileContextMenu.open()
+                        }
                         border.color: COMMON.bg4
                         border.width: 1
                         color: COMMON.bg1
+
+                        SContextMenu {
+                            y: 34
+                            id: fileContextMenu
+                            width: 110
+                            clipShadow: true
+                            SContextMenuItem {
+                                text: root.tr("Bulk")
+                                onPressed: {
+                                    itemFrame.forceActiveFocus()
+                                    inputFolderDialog.open()
+                                }
+                            }
+                        }
                     }
 
                     SIconButton {
-                        visible: modelData.empty && (modelData.role == 2 || modelData.role == 3)
+                        visible: !modelData.hasSource && (modelData.role == 2 || modelData.role == 3)
                         id: paintButton
                         icon: "qrc:/icons/paint.svg"
                         onPressed: {
@@ -489,7 +640,7 @@ Item {
 
                 Item {
                     id: settingsArea
-                    visible: parent.settings && !modelData.empty && modelData.role == 4
+                    visible: parent.settings && modelData.hasSource && modelData.role == 4
                     x: borderFrame.x + 20
                     y: borderFrame.y + borderFrame.height - height
                     width: borderFrame.width - 40
@@ -590,6 +741,14 @@ Item {
 
                     onAccepted: {
                         modelData.setImageFile(inputFileDialog.file)
+                    }
+                }
+
+                FolderDialog {
+                    id: inputFolderDialog
+
+                    onAccepted: {
+                        modelData.setFolder(inputFolderDialog.folder)
                     }
                 }
 

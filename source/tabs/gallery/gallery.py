@@ -173,7 +173,7 @@ class Gallery(QObject):
 
     @pyqtSlot(str, list)
     def doCopy(self, folder, files):
-        idx = parameters.get_index(folder)
+        idx = parameters.getIndex(folder)
         for src in files:
             dst = os.path.join(folder, f"{idx:07d}.png")
             shutil.copy(src, dst)
@@ -181,7 +181,7 @@ class Gallery(QObject):
 
     @pyqtSlot(str, list)
     def doMove(self, folder, files):
-        idx = parameters.get_index(folder)
+        idx = parameters.getIndex(folder)
         for src in files:
             dst = os.path.join(folder, f"{idx:07d}.png")
             shutil.move(src, dst)

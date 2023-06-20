@@ -54,7 +54,7 @@ Item {
             return
         }
 
-        root.editing = (target.role == 2 || target.role == 3) && BASIC.openedArea == "input"
+        root.editing = (target.role == 2 || target.role == 3) && BASIC.openedArea == "input" && (target.folder == undefined || target.folder == "")
 
         var reset = false
 
@@ -69,7 +69,7 @@ Item {
             root.file = null
         } else {
             canvas.visible = false
-            root.image = Qt.binding(function () { return root.target.display; })
+            root.image = Qt.binding(function () { return root.target.displayFull; })
             reset = movable.itemWidth != root.target.width || movable.itemHeight != root.target.height
             movable.itemWidth = root.target.width
             movable.itemHeight = root.target.height

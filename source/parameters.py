@@ -45,7 +45,7 @@ LABELS = [
 NETWORKS = {"LoRA":"lora","HN":"hypernet"}
 NETWORKS_INV = {"lora":"LoRA","hypernet":"HN"}
 
-def format_parameters(json):
+def formatParameters(json):
     formatted = ""
     if "prompt" in json:
         formatted = json["prompt"] + "\n"
@@ -66,7 +66,7 @@ def format_parameters(json):
     formatted += ', '.join(params)
     return formatted
 
-def parse_parameters(formatted):
+def parseParameters(formatted):
     params, positive, negative = "", "", ""
 
     blocks = re.split(r"^(?=[\w\s]+:)", "Prompt: "+formatted, flags=re.MULTILINE)
@@ -98,7 +98,7 @@ def parse_parameters(formatted):
     
     return json
 
-def get_parameters(img):
+def getParameters(img):
     params = img.text("parameters")
     if not params and img.text("Description"):
         desc = img.text("Description").replace("(","\\(").replace(")","\\)").replace("{","(").replace("}",")")
@@ -109,7 +109,7 @@ def get_parameters(img):
             params += f", Denoising strength: {data['strength']}"
     return params
 
-def get_index(folder):
+def getIndex(folder):
     def get_idx(filename):
         try:
             return int(filename.split(".")[0].split("-")[0])
@@ -119,7 +119,7 @@ def get_index(folder):
     idx = max([get_idx(f) for f in os.listdir(folder)] + [0]) + 1
     return idx
 
-def get_extent(bound, padding, src, wrk):
+def getExtent(bound, padding, src, wrk):
     if padding == None or padding < 0:
         padding = 10240
 
@@ -263,7 +263,7 @@ class ParametersParser(QObject):
         return self._parameters
     
     def parseFormatted(self):
-        self._json = parse_parameters(self._formatted)
+        self._json = parseParameters(self._formatted)
         if len(self._json) == 2:
             return False
 
@@ -584,6 +584,7 @@ class Parameters(QObject):
         del data["subseed_strength"]
 
         data["device_name"] = self._values.get("device")
+
         if control:
             images = []
             opts = []

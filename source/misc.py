@@ -1,6 +1,7 @@
 import re
 import os
 import ctypes
+import math 
 
 try:
     ctypes.windll.ole32.CoInitialize.restype = ctypes.HRESULT
@@ -282,12 +283,32 @@ class SyntaxHighlighter(QSyntaxHighlighter):
             for s, e in [m.span(1) for m in re.finditer("(?:\s)?([^,:]+):[^,]+(,)?", text.lower())]:
                 self.setFormat(s, e-s, field)
 
-def encode_image(img):
+def encodeImage(img):
     ba = QByteArray()
     bf = QBuffer(ba)
     bf.open(QIODevice.WriteOnly)
     img.save(bf, "PNG")
     return ba.data()
+
+def cropImage(img, size, offset = 0.5):
+    in_z = img.size()
+        
+    ar = size.width()/size.height()
+
+    rh = in_z.height()/size.height()
+    rw = in_z.width()/size.width()
+
+    w, h = in_z.width(), in_z.height()
+
+    if size.width() * rh > in_z.width():
+        h = math.ceil(w / ar)
+    elif size.height() * rw > in_z.height():
+        w = math.ceil(h * ar)
+
+    dx = int((in_z.width()-w)*offset)
+    dy = int((in_z.height()-h)*offset)
+
+    return img.copy(dx, dy, w, h)
 
 def registerTypes():
     qmlRegisterType(ImageDisplay, "gui", 1, 0, "ImageDisplay")
@@ -316,3 +337,8 @@ def showFilesInExplorer(folder, files):
     ctypes.windll.shell32.ILFree(folder_pidl)
 
     ctypes.windll.ole32.CoUninitialize()
+
+NATSORT_KEY = lambda s: [int(t) if t.isdigit() else t.lower() for t in re.split('(\d+)', s)]
+
+def sortFiles(files):
+    return sorted(files, key=lambda f: NATSORT_KEY(f.rsplit(os.path.sep,1)[-1]))
