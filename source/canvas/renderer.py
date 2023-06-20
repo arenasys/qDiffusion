@@ -195,11 +195,19 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
             self.changes = canvas.getChanges()
 
     def render(self):
+        if not self.size or self.size.width() == 1:
+            return
+        
         version = gl.glGetString(gl.GL_VERSION)
         try:
             gl.glClearColor(0, 0, 0, 0)
         except Exception:
-            raise Exception(version.decode('utf-8'))
+            gl.glEnd()
+            try:
+                gl.glClearColor(0, 0, 0, 0)
+            except Exception:
+                raise Exception(version.decode('utf-8'))
+            
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
 
         self.display.initialize()
