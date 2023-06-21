@@ -198,6 +198,7 @@ class CanvasRenderer(QQuickFramebufferObject.Renderer):
         if not self.size or self.size.width() == 1:
             return
         
+        gl.glGetError()
         version = gl.glGetString(gl.GL_VERSION)
         try:
             gl.glClearColor(0, 0, 0, 0)
