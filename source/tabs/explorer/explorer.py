@@ -73,18 +73,17 @@ class Populater(QObject):
         if len(parts) > 2 and allow_folder:
             folder = parts[1]
 
-        if os.path.exists(location + ".preview.png"):
-            preview = location + ".preview.png"
-        else:
-            preview = location + ".png"
-        
         w,h = 0,0
-        if os.path.exists(preview):
-            try:
-                with PIL.Image.open(preview) as img:
-                    w,h = img.size
-            except:
-                pass
+        preview = ""
+        for ext in [".preview.png", ".png", ".jpg", ".jpeg"]:
+            if os.path.exists(location + ext):
+                try:
+                    with PIL.Image.open(location + ext) as img:
+                        preview = location + ext
+                        w,h = img.size
+                        break
+                except:
+                    pass
         
         description = ""
         if os.path.exists(location + ".civitai.info"):
@@ -350,11 +349,9 @@ class Explorer(QObject):
         new_path = os.path.abspath(os.path.join(self.gui.modelDirectory(), new_file.split('.',1)[0]))
 
         if old_file != new_file:
-            if os.path.exists(old_path + ".txt"):
-                shutil.move(old_path + ".txt", new_path + ".txt")
-            if os.path.exists(old_path + ".png"):
-                shutil.move(old_path + ".png", new_path + ".png")
-
+            for ext in [".txt", ".png", ".jpg"]:
+                shutil.move(old_path + ext, new_path + ext)
+        
         if desc:
             os.makedirs(os.path.dirname(new_path), exist_ok=True)
             with open(new_path + ".txt", "w", encoding='utf-8') as f:
