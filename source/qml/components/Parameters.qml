@@ -248,10 +248,9 @@ Item {
                         bindMap: root.binding.values
                         bindKey: "seed"
 
-                        validator: IntValidator { 
-                            bottom: -1
-                            top: 2147483646
-                        }
+                        validator: RegExpValidator {
+                            regExp: /-1|\d{1,10}/
+                        }                        
 
                         AdvancedDropArea {
                             anchors.fill: parent
