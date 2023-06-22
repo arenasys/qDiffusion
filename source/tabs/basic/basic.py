@@ -93,6 +93,7 @@ class Basic(QObject):
         self._mapping = {}
         self._annotations = {}
         self._folders = {}
+        self._accept_all = False
 
         self._openedIndex = -1
         self._openedArea = ""
@@ -273,7 +274,7 @@ class Basic(QObject):
                     i.setArtifacts({"Annotated":img})
 
         ours = id in self._ids
-        if not ours and not self.accept_all:
+        if not ours and not self._accept_all:
             return
         
         if not id in self._mapping:
@@ -350,9 +351,9 @@ class Basic(QObject):
     @pyqtSlot(int, object)
     def response(self, id, response):
         if response["type"] == "hello":
-            self.accept_all = False
+            self._accept_all = False
         if response["type"] == "owner":
-            self.accept_all = True
+            self._accept_all = True
         if response["type"] == "ack":
             id = response["data"]["id"]
             queue = response["data"]["queue"]
