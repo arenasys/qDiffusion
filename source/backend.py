@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import QApplication
 
 import local
 import remote
+import host
 
 HAVE_TORCH = False
 try:
@@ -74,7 +75,16 @@ class Backend(QObject):
         self.inference = None
         if endpoint == "":
             if HAVE_TORCH:
-                self.inference = local.LocalInference(self.gui)
+                if self.gui.config.get("host_enabled"):
+                    ip = self.gui.config.get("host_address")
+                    port = self.gui.config.get("host_port")
+                    tunnel = self.gui.config.get("host_tunnel")
+                    read_only = self.gui.config.get("host_read_only")
+                    monitor = self.gui.config.get("host_monitor")
+                    password = self.gui._hostSetPassword
+                    self.inference = host.HostInference(self.gui, ip, port, password, tunnel, read_only, monitor)
+                else:
+                    self.inference = local.LocalInference(self.gui)
             else:
                 self.onResponse({"type": "remote_only"})
         else:
@@ -120,5 +130,7 @@ class Backend(QObject):
     def mode(self):
         if self.inference and type(self.inference) == remote.RemoteInference:
             return "Remote"
+        elif self.inference and type(self.inference) == host.HostInference:
+            return "Host"
         else:
             return "Local"

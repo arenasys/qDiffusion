@@ -9,7 +9,8 @@ class Config(QObject):
     def __init__(self, parent, file, defaults):
         super().__init__(parent)
         self._file = file
-        self._values = VariantMap(self, defaults)
+        self._defaults = defaults
+        self._values = VariantMap(self, defaults.copy())
         self.loadConfig()
 
         self._values.updated.connect(self.saveConfig)
@@ -28,6 +29,8 @@ class Config(QObject):
     @pyqtSlot()
     def saveConfig(self):
         data = self._values._map
+        data = {k:v for k,v in data.items() if not (k in self._defaults and self._defaults[k] == v)}
+
         try:
             with open(self._file, 'w', encoding="utf-8") as f:
                 json.dump(data, f, indent=4)

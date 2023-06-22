@@ -19,6 +19,7 @@ Item {
     property var overlay: root.disabled
     property var padded: true
     property var bottomPadded: false
+    property var rightPadding: padded
 
     property alias control: control
     property alias delegate: control.delegate
@@ -137,6 +138,7 @@ Item {
         anchors.margins: root.padded ? 2 : 0
         anchors.topMargin: root.padded ? (root.bottomPadded ? 0 : 2) : 0
         anchors.bottomMargin: root.padded ? (root.bottomPadded ? 2 : 0) : 0
+        anchors.rightMargin: root.rightPadding ? 2 : 0
         focusPolicy: Qt.NoFocus
         currentIndex: 0
 

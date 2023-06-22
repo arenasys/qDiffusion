@@ -108,6 +108,7 @@ class Basic(QObject):
         self._replyIndex = None
 
         self.updated.connect(self.link)
+        self.gui.response.connect(self.response)
         self.gui.result.connect(self.result)
         self.gui.reset.connect(self.reset)
         self.gui.networkReply.connect(self.onNetworkReply)
@@ -270,14 +271,20 @@ class Basic(QObject):
             for i in self._inputs:
                 if i._id == id:
                     i.setArtifacts({"Annotated":img})
-        if not id in self._ids:
+
+        ours = id in self._ids
+        if not ours and not self.accept_all:
             return
+        
         if not id in self._mapping:
             self._mapping[id] = (time.time_ns() // 1000000) % (2**31 - 1)
 
         if "result" in results and "metadata" in results:
             for i in range(len(results["result"])):
-                folder = self._folders[id]
+                if ours:
+                    folder = self._folders[id]
+                else:
+                    folder = "Monitor"
                 writer = BasicImageWriter(results["result"][i], results["metadata"][i], self.gui.outputDirectory(), folder)
                 self.pool.start(writer)
 
@@ -315,7 +322,8 @@ class Basic(QObject):
                 out += 1
 
         if name == "result": 
-            self._ids.remove(id)
+            if ours:
+                self._ids.remove(id)
             sticky = self.isSticky()
             results = self.gui._results[id]["result"]
             metadata = self.gui._results[id]["metadata"]
@@ -338,6 +346,18 @@ class Basic(QObject):
 
             self.updated.emit()
             self.results.emit()
+
+    @pyqtSlot(int, object)
+    def response(self, id, response):
+        if response["type"] == "hello":
+            self.accept_all = False
+        if response["type"] == "owner":
+            self.accept_all = True
+        if response["type"] == "ack":
+            id = response["data"]["id"]
+            queue = response["data"]["queue"]
+            if id in self._ids and queue > 0:
+                self.gui.setWaiting()
         
     @pyqtSlot(int)
     def reset(self, id):

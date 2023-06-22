@@ -27,6 +27,16 @@ Item {
         height: parent.height
 
         SColumnButton {
+            property var name: "Program"
+            label: root.tr(name)
+            active: SETTINGS.currentTab == name
+            onPressed: {
+                SETTINGS.getGitInfo()
+                SETTINGS.currentTab = name
+            }
+        }
+
+        SColumnButton {
             property var name: "Remote"
             label: root.tr(name)
             active: SETTINGS.currentTab == name
@@ -34,12 +44,12 @@ Item {
                 SETTINGS.currentTab = name
             }
         }
+
         SColumnButton {
-            property var name: "Program"
+            property var name: "Host"
             label: root.tr(name)
             active: SETTINGS.currentTab == name
             onPressed: {
-                SETTINGS.getGitInfo()
                 SETTINGS.currentTab = name
             }
         }
@@ -78,9 +88,11 @@ Item {
         StackLayout {
             id: settingsStack
             anchors.fill: parent
-            currentIndex: ["Remote", "Program"].indexOf(SETTINGS.currentTab)
-            RemoteSettings { }
+            currentIndex: ["Program", "Remote", "Host"].indexOf(SETTINGS.currentTab)
+            
             ProgramSettings { }
+            RemoteSettings { }
+            HostSettings { }
         }
     }
 }

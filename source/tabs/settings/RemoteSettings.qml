@@ -16,7 +16,7 @@ Item {
         return TRANSLATOR.instance.translate(str, file)
     }
 
-    property var show: GUI.remoteStatus == 2
+    property var show: GUI.isRemote && GUI.remoteStatus == 2
 
     Column {
         anchors.centerIn: parent
@@ -44,7 +44,7 @@ Item {
                 anchors.right: parent.right
                 anchors.topMargin: 2
                 anchors.rightMargin: 2
-                visible: endpointInput.value != "" && GUI.remoteStatus != 0
+                visible: endpointInput.value != "" && GUI.isRemote && GUI.remoteStatus != 0
                 height: 28
                 width: visible ? 28 : 0
                 anchors.margins: 0
@@ -73,7 +73,7 @@ Item {
         SButton {
             width: parent.width
             height: 30
-            label: endpointInput.value == "" ? root.tr("Reload") : (GUI.remoteInfoMode == "Local" ? root.tr("Connect") : root.tr("Reconnect"))
+            label: endpointInput.value == "" ? root.tr("Reload") : (GUI.remoteInfoMode == "Remote" ? root.tr("Reconnect") : root.tr("Connect"))
             onPressed: {
                 SETTINGS.restart()
             }

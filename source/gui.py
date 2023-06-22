@@ -88,7 +88,16 @@ class GUI(QObject):
         self._errorText = ""
         self._errorTrace = ""
 
-        self._config = config.Config(self, "config.json", {"endpoint": "", "password": "", "output_directory":"outputs", "model_directory":"models", "device": "", "swap": False, "advanced": False, "autocomplete": 1, "vocab": [], "enforce_versions": True})
+        self._hostEndpoint = ""
+        self._hostPassword = ""
+        self._hostSetPassword = ""
+
+        self._config = config.Config(self, "config.json", {
+            "endpoint": "", "password": "", "output_directory": "outputs", "model_directory": "models", "device": "",
+            "swap": False, "advanced": False, "autocomplete": 1, "vocab": [], "enforce_versions": True,
+            "host_enabled": False, "host_address": "127.0.0.1", "host_port": 28888, "host_tunnel": False,
+            "host_read_only": True, "host_monitor": False
+        })
         self._config.updated.connect(self.onConfigUpdated)
         self._remoteStatus = RemoteStatusMode.INACTIVE
 
@@ -161,7 +170,10 @@ class GUI(QObject):
     @pyqtProperty('QString', notify=statusUpdated)
     def title(self):
         if self._remoteStatus != RemoteStatusMode.INACTIVE:
-            return NAME + ": Remote"
+            if self._hostEndpoint:
+                return NAME + ": Hosting"
+            else:
+                return NAME + ": Remote"
         return NAME
 
     @pyqtSlot(str, result=bool)
@@ -239,15 +251,30 @@ class GUI(QObject):
         self._statusText = "Ready"
         self._statusProgress = -1.0
         self.statusUpdated.emit()
+
+    def setWaiting(self):
+        self._statusMode = StatusMode.WORKING
+        self._statusInfo = ""
+        self._statusText = "Waiting"
+        self._statusProgress = -1.0
+        self.statusUpdated.emit()
     
     @pyqtSlot(object)
     def onResponse(self, response):
-        id = -1
-        if "id" in response:
-            id = response["id"]
+        id = response.get("id", -1)
+        monitor = response.get("monitor", False)
+        type = response.get("type", "")
+        data = response.get("data", {})
 
-        if response["type"] == "status":
-            self._statusText = response["data"]["message"]
+        if monitor and type in {"error"}:
+            self.setReady()
+            self.reset.emit(id)
+
+        if monitor and not type in {"status", "progress", "aborted", "result", "artifact"}:
+            return
+
+        if type == "status":
+            self._statusText = data["message"]
             self._statusInfo = ""
             if self._statusText == "Initializing" or self._statusText == "Connecting":
                 if self._statusText == "Connecting":
@@ -264,40 +291,40 @@ class GUI(QObject):
                 self._statusMode = StatusMode.WORKING
             self.statusUpdated.emit()
 
-        if response["type"] == "remote_only":
+        if type == "remote_only":
             self._statusText = "Inactive"
             self._statusProgress = -1.0
             self._statusMode = StatusMode.INACTIVE
             self.statusUpdated.emit()
 
-        if response["type"] == "done":
+        if type == "done":
             self.setReady()
             self.refreshModels()
 
-        if response["type"] == "options":
-            self.setOptions(response["data"])
+        if type == "options":
+            self.setOptions(data)
             self.wildcards.reload()
             if self._statusText == "Initializing":
                 self.setReady()
 
-        if response["type"] == "error":
+        if type == "error":
             self._errorStatus = self._statusText
-            self._errorText = response["data"]["message"]
+            self._errorText = data["message"]
             self._errorTrace = ""
-            if "trace" in response["data"]:
-                self._errorTrace = response["data"]["trace"]
+            if "trace" in data:
+                self._errorTrace = data["trace"]
                 with open("crash.log", "a", encoding='utf-8') as f:
                     f.write(f"INFERENCE {datetime.datetime.now()}\n{self._errorTrace}\n")
             self.statusUpdated.emit()
             self.errorUpdated.emit()
             self.reset.emit(id)
             
-        if response["type"] == "remote_error":
+        if type == "remote_error":
             self._errorStatus = self._statusText
-            self._errorText = response["data"]["message"]
+            self._errorText = data["message"]
             self._errorTrace = ""
-            if "trace" in response["data"]:
-                self._errorTrace = response["data"]["trace"]
+            if "trace" in data:
+                self._errorTrace = data["trace"]
                 with open("crash.log", "a", encoding='utf-8') as f:
                     f.write(f"REMOTE {datetime.datetime.now()}\n{self._errorTrace}\n")
             self._remoteStatus = RemoteStatusMode.ERRORED
@@ -307,31 +334,36 @@ class GUI(QObject):
             self.backend.stop()
             self.backend.wait()
             
-        if response["type"] == "aborted":
+        if type == "aborted":
             self.reset.emit(id)
             self.setReady()
 
-        if response["type"] == "progress":
-            self._statusProgress = response["data"]["current"]/response["data"]["total"]
+        if type == "progress":
+            self._statusProgress = data["current"]/data["total"]
             self._statusInfo = ""
             if response['data']['rate']:
                 self._statusInfo = f"{response['data']['rate']:.2f}it/s"
             self.statusUpdated.emit()
-            if "previews" in response["data"]:
-                self.addResult(id, "preview", response["data"]["previews"])
+            if "previews" in data:
+                self.addResult(id, "preview", data["previews"])
 
-        if response["type"] == "result":
-            self.addResult(id, "metadata", response["data"]["metadata"])
-            self.addResult(id, "result", response["data"]["images"])
+        if type == "result":
+            self.addResult(id, "metadata", data["metadata"])
+            self.addResult(id, "result", data["images"])
             self.setReady()
 
-        if response["type"] == "annotate":
-            self.addResult(id, "result", response["data"]["images"])
+        if type == "annotate":
+            self.addResult(id, "result", data["images"])
             self.setReady()
 
-        if response["type"] == "artifact":
-            self.addResult(id, response["data"]["name"], response["data"]["images"])
+        if type == "artifact":
+            self.addResult(id, data["name"], data["images"])
 
+        if type == "host":
+            self._hostEndpoint = data["endpoint"]
+            self._hostPassword = data["password"]
+            self.statusUpdated.emit()
+        
         self.response.emit(id, response)
 
     def addResult(self, id, name, data):
@@ -442,6 +474,10 @@ class GUI(QObject):
     def remoteStatus(self):
         return self._remoteStatus.value
     
+    @pyqtProperty(bool, notify=statusUpdated)
+    def isRemote(self):
+        return self.backend.mode == "Remote"
+    
     @pyqtProperty(str, notify=statusUpdated)
     def remoteInfoMode(self):
         return self.backend.mode
@@ -479,6 +515,8 @@ class GUI(QObject):
         self._statusMode = StatusMode.STARTING
         self._statusProgress = -1
         self._statusText = "Restarting"
+        self._hostEndpoint = ""
+        self._hostPassword = ""
         self.statusUpdated.emit()
 
         self.clearOptions()
@@ -669,3 +707,15 @@ class GUI(QObject):
     @pyqtSlot()
     def wildcardsUpdated(self):
         self.optionsUpdated.emit()
+
+    @pyqtProperty(str, notify=statusUpdated)
+    def hostEndpoint(self):
+        return self._hostEndpoint
+    
+    @pyqtProperty(str, notify=statusUpdated)
+    def hostPassword(self):
+        return self._hostPassword
+    
+    @hostPassword.setter
+    def hostPassword(self, password):
+        self._hostSetPassword = password

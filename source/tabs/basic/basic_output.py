@@ -22,7 +22,7 @@ class BasicOutput(QObject):
     def setResult(self, image, metadata):
         self._image = image
         self._metadata = metadata
-        self._file = metadata["file"]
+        self._file = metadata.get("file", "")
         self._parameters = parameters.formatParameters(self._metadata)
         self._image.setText("parameters", self._parameters)
         self._ready = True

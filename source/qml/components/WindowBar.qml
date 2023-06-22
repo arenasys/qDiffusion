@@ -39,7 +39,7 @@ SMenuBar {
                 property var mode: ""
 
                 onAccepted: {
-                    if(GUI.remoteStatus != 0) {
+                    if(GUI.isRemote) {
                         GUI.currentTab = "Settings"
                         SETTINGS.currentTab = "Remote"
                         var modeIndex = ["checkpoint","component","lora","hypernet","embedding","upscale","controlnet"].indexOf(mode)
