@@ -413,7 +413,8 @@ def launch():
         setproctitle.setproctitle(NAME)
     except:
         pass
-
+    
+    QCoreApplication.setAttribute(Qt.AA_UseDesktopOpenGL, True)
     QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
     QCoreApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
