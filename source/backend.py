@@ -77,7 +77,7 @@ class Backend(QObject):
             if HAVE_TORCH:
                 if self.gui.config.get("host_enabled"):
                     ip = self.gui.config.get("host_address")
-                    port = self.gui.config.get("host_port")
+                    port = int(self.gui.config.get("host_port"))
                     tunnel = self.gui.config.get("host_tunnel")
                     read_only = self.gui.config.get("host_read_only")
                     monitor = self.gui.config.get("host_monitor")

@@ -55,7 +55,7 @@ class HostProcess(multiprocessing.Process):
             endpoint = f"ws://{self.ip}:{self.port}"
             if self.tunnel:
                 from pycloudflared import try_cloudflare
-                tunnel_url = try_cloudflare(port=28888, verbose=False)
+                tunnel_url = try_cloudflare(port=self.port, verbose=False)
                 endpoint = tunnel_url.tunnel.replace("https", "wss")
 
             self.response.put({"type": "host", "data": {"endpoint": endpoint, "password": self.password}})
@@ -70,7 +70,7 @@ class HostProcess(multiprocessing.Process):
                     break
 
             if self.tunnel:
-                try_cloudflare.terminate(28888)
+                try_cloudflare.terminate(self.port)
         except Exception as e:
             log_traceback("LOCAL HOST")
             self.response.put({"type": "remote_error", "data": {"message": str(e)}})
