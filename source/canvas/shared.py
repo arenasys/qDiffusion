@@ -74,11 +74,23 @@ def PILtoQImage(pil):
     img.convertTo(QImage.Format_ARGB32_Premultiplied)
     return img
 
+def AlphatoQImage(pil):
+    pil = PIL.Image.merge("RGBA", [pil]*4)
+    data = pil.tobytes("raw", "RGBA")
+    img = QImage(data, pil.size[0], pil.size[1], QImage.Format_RGBA8888)
+    img.convertTo(QImage.Format_ARGB32_Premultiplied)
+    return img
+
 def QImagetoPIL(img):
-    img = img.convertToFormat(QImage.Format_RGBA8888)
-    size = (img.size().width(), img.size().height())
-    total = size[0]*size[1]*4
-    return PIL.Image.frombytes("RGBA", size, img.bits().asarray(total), "raw", "RGBA")
+    if img.format() == QImage.Format_Grayscale8:
+        size = (img.size().width(), img.size().height())
+        total = size[0]*size[1]
+        return PIL.Image.frombytes("L", size, img.bits().asarray(total), "raw", "L")
+    else:
+        img = img.convertToFormat(QImage.Format_RGBA8888)
+        size = (img.size().width(), img.size().height())
+        total = size[0]*size[1]*4
+        return PIL.Image.frombytes("RGBA", size, img.bits().asarray(total), "raw", "RGBA")
 
 def QImagetoCV2(img):
     img = img.convertToFormat(QImage.Format_RGBA8888)

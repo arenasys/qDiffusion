@@ -5,7 +5,7 @@ from enum import Enum
 
 import parameters
 from misc import MimeData, sortFiles, cropImage
-from canvas.shared import QImagetoPIL
+from canvas.shared import QImagetoPIL, AlphatoQImage
 import math
 import os
 import glob
@@ -96,6 +96,7 @@ class BasicInput(QObject):
     def resizeImage(self, out_z):
         self._originalCrop = cropImage(self._original, out_z, self._offset)
         self._image = self._originalCrop.scaled(out_z, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+        self._image.convertTo(self._originalCrop.format())
 
     @pyqtSlot(QUrl)
     def saveImage(self, file):
@@ -538,6 +539,11 @@ class BasicInput(QObject):
             return
                 
         img = QImagetoPIL(self._image)
+        if self._image.format() == 5:
+            self._image = AlphatoQImage(img.split()[-1])
+        elif self._image.format() == 24:
+            self._image = AlphatoQImage(img)
+        
         bound = img.getbbox()
         if bound == None:
             self._extent = QRect()
