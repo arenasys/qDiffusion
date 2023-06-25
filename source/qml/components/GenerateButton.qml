@@ -34,6 +34,7 @@ Rectangle {
         color: COMMON.bg2
     }
 
+    
     SProgress {
         anchors.fill: parent
         progress: root.progress

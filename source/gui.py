@@ -342,7 +342,7 @@ class GUI(QObject):
             self._statusProgress = data["current"]/data["total"]
             self._statusInfo = ""
             if response['data']['rate']:
-                self._statusInfo = f"{response['data']['rate']:.2f}it/s"
+                self._statusInfo = f"{response['data']['rate']:.2f}{response['data']['unit']}"
             self.statusUpdated.emit()
             if "previews" in data:
                 self.addResult(id, "preview", data["previews"])
@@ -363,6 +363,10 @@ class GUI(QObject):
             self._hostEndpoint = data["endpoint"]
             self._hostPassword = data["password"]
             self.statusUpdated.emit()
+
+        if type == "segmentation":
+            self.addResult(id, "result", data["images"])
+            self.setReady()
         
         self.response.emit(id, response)
 

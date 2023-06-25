@@ -89,6 +89,9 @@ class InferenceProcessThread(threading.Thread):
                 elif request["type"] == "annotate":
                     self.wrapper.set(**request["data"])
                     self.wrapper.annotate()
+                elif request["type"] == "segmentation":
+                    self.wrapper.set(**request["data"])
+                    self.wrapper.segmentation()
                 self.requests.task_done()
             except queue.Empty:
                 pass

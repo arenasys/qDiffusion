@@ -89,7 +89,6 @@ Item {
                 }
 
                 TransparencyShader {
-                    visible: trueFrame.valid != undefined ? trueFrame.valid : false
                     anchors.fill: trueFrame
                 }
 

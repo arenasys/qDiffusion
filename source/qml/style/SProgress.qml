@@ -12,6 +12,10 @@ Item {
     property var color: COMMON.bg4
 
     function wrap(x) {
+        if(root.width <= 0) {
+            return x
+        }
+
         while(x > 1.5*root.width) {
             x -= 2*root.width;
         }

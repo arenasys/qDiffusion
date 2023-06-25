@@ -19,13 +19,17 @@ class BasicOutput(QObject):
         self._dragging = False
         self._ready = False
 
-    def setResult(self, image, metadata):
+    def setResult(self, image, metadata, file):
         self._image = image
-        self._metadata = metadata
-        self._file = metadata.get("file", "")
-        self._parameters = parameters.formatParameters(self._metadata)
-        self._image.setText("parameters", self._parameters)
         self._ready = True
+        self._file = file
+
+        if metadata:
+            self._metadata = metadata
+
+            self._parameters = parameters.formatParameters(self._metadata)
+            self._image.setText("parameters", self._parameters)
+
         self.updated.emit()
 
     def setPreview(self, image):

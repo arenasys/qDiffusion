@@ -10,6 +10,7 @@ import "../../components"
 Item {
     id: root
     property var editing: false
+    property var segmenting: false
     property var file: null
     property var image: null
     visible: false
@@ -55,6 +56,7 @@ Item {
         }
 
         root.editing = (target.role == 2 || target.role == 3) && BASIC.openedArea == "input" && (target.folder == undefined || target.folder == "")
+        root.segmenting = target.role == 5 && BASIC.openedArea == "input" && (target.folder == undefined || target.folder == "")
 
         var reset = false
 
@@ -176,6 +178,118 @@ Item {
             id: bg
             anchors.fill: item
             smooth: implicitWidth*1.25 < width && implicitHeight*1.25 < height ? false : true
+        }
+
+        Item {
+            id: points
+            anchors.fill: item
+            visible: root.segmenting && root.target
+            property var label: [] 
+            property var factor: item.width/bg.sourceWidth
+
+            onFactorChanged: {
+                pointDrag.point = null
+            }
+
+            MouseArea {
+                id: pointDrag
+                property var point: null
+                anchors.fill: parent
+                anchors.margins: 0
+                property var startMouse: null
+                property var startPoint: null
+                hoverEnabled: true
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
+
+                onReleased: {
+                    pointDrag.point = null
+                    target.syncSegmentationPoints()
+                }
+
+                onDoubleClicked: {
+                    var x = Math.floor(mouseX/points.factor)
+                    var y = Math.floor(mouseY/points.factor)
+                    if(mouse.button & Qt.LeftButton) {
+                        var label = 1;
+                        if(points.label.length > 0) {
+                            label = points.label[0]
+                        }
+                        target.addSegmentationPoint(x, y, label)
+                    } else {
+                        target.addSegmentationPoint(x, y, 0)
+                    }
+                }
+
+                onPointChanged: {
+                    if(point != null) {
+                        startMouse = Qt.point(mouseX, mouseY)
+                        startPoint = Qt.point(point.pointX, point.pointY)
+                    }
+                }
+
+                onPositionChanged: {
+                    if(point != null) {
+                        var deltaX = (mouseX - startMouse.x)/points.factor
+                        var deltaY = (mouseY - startMouse.y)/points.factor
+
+                        point.pointX = Math.max(Math.min(Math.round(startPoint.x + deltaX), bg.sourceWidth), 0)
+                        point.pointY = Math.max(Math.min(Math.round(startPoint.y + deltaY), bg.sourceHeight), 0)
+                    }
+                }
+            }
+
+            Repeater {
+                model: root.segmenting && root.target != null ? root.target.segmentationPoints : []
+
+                delegate: Rectangle {
+                    id: point
+                    border.color: ["red", "#00ff00", "#0000ff", "#ffff00", "#00ffff", "#ff00ff","#ff8000", "#00ff80", "#8000ff", "#0080ff"][modelData.z]
+                    border.width: 2
+                    color: "transparent"
+
+                    property var oldX: modelData.x
+                    property var oldY: modelData.y
+
+                    property var pointX: modelData.x
+                    property var pointY: modelData.y
+
+                    function sync() {
+                        if(pointX != oldX || pointY != oldY) {
+                            target.moveSegmentationPoint(oldX, oldY, pointX, pointY)
+                            oldX = pointX
+                            oldY = pointY
+                        }
+                    }
+
+                    onPointXChanged: {
+                        sync()
+                    }
+
+                    onPointYChanged: {
+                        sync()
+                    }
+
+                    x: (pointX+0.5)*parent.factor - 3
+                    y: (pointY+0.5)*parent.factor - 3
+
+                    width: 6
+                    height: 6
+
+                    MouseArea {
+                        anchors.fill: parent
+                        anchors.margins: -3
+                        acceptedButtons: Qt.LeftButton | Qt.RightButton
+                        onPressed: {
+                            if(mouse.buttons & Qt.LeftButton) {
+                                pointDrag.point = point
+                                mouse.accepted = false
+                            } else {
+                                target.deleteSegmentationPoint(oldX, oldY)
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         AdvancedCanvas {
@@ -402,6 +516,11 @@ Item {
                     root.target.copy()
                 }
                 break;
+            case Qt.Key_Z:
+                if(root.target != null && root.segmenting) {
+                    root.target.resetSegmentation()
+                }
+                break;
             default:
                 event.accepted = false
                 break;
@@ -453,6 +572,19 @@ Item {
             default:
                 event.accepted = false
                 break;
+            }
+            if(event.key >= Qt.Key_0 && event.key <= Qt.Key_9) {
+                points.label.unshift(event.key - Qt.Key_0)
+                event.accepted = true
+            }
+        }
+    }
+
+    Keys.onReleased: {
+        if(event.key >= Qt.Key_0 && event.key <= Qt.Key_9) {
+            var index = points.label.indexOf(event.key - Qt.Key_0)
+            if (index > -1) {
+                points.label.splice(index, 1)
             }
         }
     }

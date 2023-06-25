@@ -109,7 +109,7 @@ FocusReleaser {
                             }
 
                             SText {
-                                text: modelData
+                                text: modelData.split(" @ ")[0]
                                 width: parent.width
                                 height: 20
                                 verticalAlignment: Text.AlignVCenter

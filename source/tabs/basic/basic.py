@@ -28,7 +28,7 @@ SUGGESTION_BLOCK_REGEX = lambda spaces: r'(?=\n|,|(?<!lora|rnet):|\||\[|\]|\(|\)
 
 class BasicImageWriter(QRunnable):
     guard = QMutex()
-    def __init__(self, img, metadata, outputs, subfolder=""):
+    def __init__(self, img, metadata, outputs, subfolder):
         super(BasicImageWriter, self).__init__()
         self.setAutoDelete(True)
 
@@ -37,10 +37,8 @@ class BasicImageWriter(QRunnable):
             BasicImageWriter.guard.lock()
 
         m = PIL.PngImagePlugin.PngInfo()
-        m.add_text("parameters", parameters.formatParameters(metadata))
-
-        if not subfolder:
-            subfolder = metadata["mode"]
+        if metadata:
+            m.add_text("parameters", parameters.formatParameters(metadata))
 
         folder = os.path.join(outputs, subfolder)
         os.makedirs(folder, exist_ok=True)
@@ -50,10 +48,8 @@ class BasicImageWriter(QRunnable):
 
         self.img = img
         self.tmp = os.path.join(folder, f"{name}.tmp")
-        self.real = os.path.join(folder, f"{name}.png")
+        self.file = os.path.join(folder, f"{name}.png")
         self.metadata = m
-
-        metadata["file"] = self.real
 
     @pyqtSlot()
     def run(self):
@@ -64,7 +60,7 @@ class BasicImageWriter(QRunnable):
             self.img = PIL.Image.open(io.BytesIO(self.img))
 
         self.img.save(self.tmp, format="PNG", pnginfo=self.metadata)
-        os.replace(self.tmp, self.real)
+        os.replace(self.tmp, self.file)
 
         BasicImageWriter.guard.unlock()
 
@@ -92,7 +88,7 @@ class Basic(QObject):
         self._requests = []
         self._mapping = {}
         self._annotations = {}
-        self._folders = {}
+        self._subfolders = {}
         self._accept_all = False
 
         self._openedIndex = -1
@@ -128,9 +124,9 @@ class Basic(QObject):
 
         inputs = {}
         links = {}
-        images, masks, areas = [], [], []
-
         controls = {}
+
+        segmentation = []
         
         if self._inputs:
             for i in self._inputs:
@@ -161,11 +157,11 @@ class Basic(QObject):
                     if data:
                         inputs[i] = data
                 if i._role == BasicInputRole.CONTROL:
-                    model = i._settings.get("mode").lower()
+                    model = i._control_settings.get("mode").lower()
                     opts = {
-                        "scale": i._settings.get("CN_strength"),
-                        "annotator": i._settings.get("CN_preprocessor").lower(),
-                        "args": i.getCNArgs()
+                        "scale": i._control_settings.get("strength"),
+                        "annotator": i._control_settings.get("preprocessor").lower(),
+                        "args": i.getControlArgs()
                     }
                     if i._image and not i._image.isNull():
                         data += [(model, opts, encodeImage(i._image or i._original))]
@@ -174,7 +170,20 @@ class Basic(QObject):
                             data += [(model, opts, i.getFilePath(f))]
                     if data:
                         controls[i] = data
+                if i._role == BasicInputRole.SEGMENTATION:
+                    opts = i.getSegmentationArgs()
+                    if i._image and not i._image.isNull():
+                        data += [(encodeImage(i._originalCrop or i._original), opts)]
+                    if i._files:
+                        for f in i._files:
+                            data += [(i.getFilePath(f), opts)]
+                    if data:
+                        segmentation += data
 
+        if segmentation:
+            return self.buildSegmentationRequest(segmentation)
+
+        images, masks, areas = [], [], []
         used = []
         for k in inputs:
             if k in used:
@@ -202,7 +211,7 @@ class Basic(QObject):
         batch_count = int(self._parameters._values.get("batch_count"))
 
         total = max([len(controls[k]) for k in controls]) if controls else 0
-        total = max(len(images), batch_count * batch_size, total)
+        total = max(len(images), len(segmentation), batch_count * batch_size, total)
 
         def get_portion(data, start, amount):
             if not data:
@@ -235,6 +244,23 @@ class Basic(QObject):
 
         return self._requests[self._remaining-1]
     
+    def buildSegmentationRequest(self, segmentation):
+        requests = []
+        for img, opts in segmentation:
+            request = {
+                "type": "segmentation",
+                "data": {
+                    "image": [img],
+                    "seg_opts": [opts],
+                    "device": self._parameters._values.get("device")
+                }
+            }
+            requests += [request]
+        
+        self._requests = requests
+        self._remaining = len(self._requests)
+        return self._requests[self._remaining-1]
+        
     def loadRequestImages(self, request):
         data = request["data"]
         for k in ["image", "mask", "cn_image", "area"]:
@@ -254,11 +280,11 @@ class Basic(QObject):
             if user:
                 self._remaining = 0
                 self._requests = None
-                self._folders = {}
+                self._subfolders = {}
             request = self.buildRequest()
             self.loadRequestImages(request)
             id = self.gui.makeRequest(request)
-            self._folders[id] = self._parameters._values.get("output_folder")
+            self._subfolders[id] = self._parameters._values.get("output_folder") or request["type"]
             self._ids += [id]
             self.updated.emit()
 
@@ -280,15 +306,6 @@ class Basic(QObject):
         if not id in self._mapping:
             self._mapping[id] = (time.time_ns() // 1000000) % (2**31 - 1)
 
-        if "result" in results and "metadata" in results:
-            for i in range(len(results["result"])):
-                if ours:
-                    folder = self._folders[id]
-                else:
-                    folder = "Monitor"
-                writer = BasicImageWriter(results["result"][i], results["metadata"][i], self.gui.outputDirectory(), folder)
-                self.pool.start(writer)
-
         out = self._mapping[id]
         if not out in self._outputs:
             sticky = self.isSticky()
@@ -308,12 +325,6 @@ class Basic(QObject):
                 out += 1
                 if sticky and "result" in available:
                     self.stick()
-
-            if "metadata" in available:
-                out = self._mapping[id]
-                for i in range(len(initial)-1, -1, -1):
-                    self._outputs[out].setResult(available["result"][i], available["metadata"][i])
-                    out += 1
             
         if name == "preview":
             previews = self.gui._results[id]["preview"]
@@ -322,18 +333,26 @@ class Basic(QObject):
                 self._outputs[out].setPreview(previews[i])
                 out += 1
 
-        if name == "result": 
+        if name == "result":
             if ours:
                 self._ids.remove(id)
             sticky = self.isSticky()
             results = self.gui._results[id]["result"]
-            metadata = self.gui._results[id]["metadata"]
+            metadata = self.gui._results[id].get("metadata", None)
             artifacts = {k:v for k,v in self.gui._results[id].items() if not k in {"result", "metadata", "preview"}}
             self.gui._results = {}
             out = self._mapping[id]
             for i in range(len(results)-1, -1, -1):
                 if not self._outputs[out]._ready:
-                    self._outputs[out].setResult(results[i], metadata[i])
+                    result = results[i]
+                    metadata = metadata[i] if metadata else None
+
+                    subfolder = self._subfolders[id] if ours else "monitor"
+                    writer = BasicImageWriter(result, metadata, self.gui.outputDirectory(), subfolder)
+                    file = writer.file
+                    self.pool.start(writer)
+
+                    self._outputs[out].setResult(result, metadata, file)
                 self._outputs[out].setArtifacts({k:v[i%len(v)] for k,v in artifacts.items() if v[i%len(v)]})
                 out += 1
             if sticky:
@@ -419,6 +438,11 @@ class Basic(QObject):
         self.updated.emit()
 
     @pyqtSlot()
+    def addSegment(self):
+        self._inputs += [BasicInput(self, QImage(), BasicInputRole.SEGMENTATION)]
+        self.updated.emit()
+
+    @pyqtSlot()
     def addSubprompt(self):
         self._inputs += [BasicInput(self, QImage(), BasicInputRole.SUBPROMPT)]
         self.updated.emit()
@@ -426,7 +450,7 @@ class Basic(QObject):
     @pyqtSlot(str)
     def addControl(self, mode):
         i = BasicInput(self, QImage(), BasicInputRole.CONTROL)
-        i._settings.set("mode", mode)
+        i._control_settings.set("mode", mode)
         self._inputs += [i]
         self.updated.emit()
 
@@ -884,8 +908,8 @@ class Basic(QObject):
             target._areas = target._areas[:layerCount]
 
     def annotate(self, input):
-        annotator = input._settings.get("CN_preprocessor").lower()
-        args = input.getCNArgs()
+        annotator = input._control_settings.get("preprocessor").lower()
+        args = input.getControlArgs()
 
         request = self._parameters.buildAnnotateRequest(annotator, args, encodeImage(input._image))
         id = self.gui.makeRequest(request)

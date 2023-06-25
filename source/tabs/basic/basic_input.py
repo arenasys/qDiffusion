@@ -1,5 +1,5 @@
 from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, QObject, QSize, QUrl, QMimeData, QByteArray, Qt, QRect
-from PyQt5.QtGui import QImage, QDrag
+from PyQt5.QtGui import QImage, QDrag, QVector3D, QColor
 from PyQt5.QtWidgets import QApplication
 from enum import Enum
 
@@ -17,6 +17,7 @@ class BasicInputRole(Enum):
     MASK = 2
     SUBPROMPT = 3
     CONTROL = 4
+    SEGMENTATION = 5
 
 INPUT_ID = 1
 
@@ -49,15 +50,20 @@ class BasicInput(QObject):
         self._extentWarning = False
         
         # ControlNet
-        self._mode = ""
-        self._settings = parameters.VariantMap(self, {
-            "mode": "", "CN_strength":1.0, "CN_preprocessors": [], "CN_preprocessor": "", "CN_bools": ["False", "True"],
-            "CN_bool": "False", "CN_bool_label": "", "CN_slider_a": 0.0, "CN_slider_a_label": "", "CN_slider_b": 0.0, "CN_slider_b_label": ""
+        self._control_mode = ""
+        self._control_settings = parameters.VariantMap(self, {
+            "mode": "", "strength":1.0, "preprocessors": [], "preprocessor": "", "bools": ["False", "True"],
+            "bool": "False", "bool_label": "", "slider_a": 0.0, "slider_a_label": "", "slider_b": 0.0, "slider_b_label": ""
             })
-        self._settings.updated.connect(self.onSettingsUpdated)
+        self._control_settings.updated.connect(self.onControlSettingsUpdated)
 
         # Subprompts
         self._areas = []
+
+        # Segmentation
+        self._segmentation_model = ""
+        self._segmentation_models = ["SAM-ViT-H", "SAM-ViT-L","SAM-ViT-B"]
+        self._segmentation_points = []
 
         # Bulk inputs
         self._folder = ""
@@ -74,7 +80,7 @@ class BasicInput(QObject):
                 bg = self._linked.image
                 self.resizeImage(bg.size())
             else:
-                if self._role == BasicInputRole.IMAGE and self.basic.hasMask(self):
+                if (self._role == BasicInputRole.IMAGE and self.basic.hasMask(self)) or self._role == BasicInputRole.SEGMENTATION:
                     self._image = self._original
                     self._originalCrop = None
                 else:
@@ -125,7 +131,7 @@ class BasicInput(QObject):
     def role(self, role):
         self._role = BasicInputRole(role)
         if self._role != BasicInputRole.CONTROL:
-            self._settings.set("mode", "")
+            self._control_settings.set("mode", "")
         self.updated.emit()
         self.parent().updated.emit()
 
@@ -237,66 +243,134 @@ class BasicInput(QObject):
         return self._extentWarning
     
     @pyqtProperty(parameters.VariantMap, notify=updated)
-    def settings(self):
-        return self._settings
+    def controlSettings(self):
+        return self._control_settings
     
     @pyqtSlot(str)
-    def onSettingsUpdated(self, key):
+    def onControlSettingsUpdated(self, key):
         if key == "mode":
-            value = self._settings.get("mode")
-            self._mode = value
+            value = self._control_settings.get("mode")
+            self._control_mode = value
 
-            self._settings.set("CN_preprocessors", self.basic._parameters._values.get("CN_preprocessors"))
-            self._settings.set("CN_preprocessor", value)
+            self._control_settings.set("preprocessors", self.basic._parameters._values.get("CN_preprocessors"))
+            self._control_settings.set("preprocessor", value)
 
             self.setArtifacts({})
             
             self.updated.emit()
             self.parent().updated.emit()
-        if key == "CN_preprocessor":
+        if key == "preprocessor":
             self.setArtifacts({})
 
-            value = self._settings.get("CN_preprocessor")
+            value = self._control_settings.get("preprocessor")
             settings = {
-                "CN_bool_label": "", "CN_slider_a_label": "", "CN_slider_b_label": ""
+                "bool_label": "", "slider_a_label": "", "slider_b_label": ""
             }
             if value == "Canny":
                 settings = {
-                    "CN_bool_label": "",
-                    "CN_slider_a": 0.4, "CN_slider_a_label": "Lower threshold",
-                    "CN_slider_b": 0.8, "CN_slider_b_label": "Upper threshold"
+                    "bool_label": "",
+                    "slider_a": 0.4, "slider_a_label": "Lower threshold",
+                    "slider_b": 0.8, "slider_b_label": "Upper threshold"
                 }
             if value == "Mlsd":
                 settings = {
-                    "CN_bool_label": "",
-                    "CN_slider_a": 0.1, "CN_slider_a_label": "Score threshold",
-                    "CN_slider_b": 0.1, "CN_slider_b_label": "Distance threshold"
+                    "bool_label": "",
+                    "slider_a": 0.1, "slider_a_label": "Score threshold",
+                    "slider_b": 0.1, "slider_b_label": "Distance threshold"
                 }
             if value == "Pose":
                 settings = {
-                    "CN_bool": "False", "CN_bool_label": "Hands and Face",
-                    "CN_slider_a_label": "", "CN_slider_b_label": ""
+                    "bool": "False", "bool_label": "Hands and Face",
+                    "slider_a_label": "", "slider_b_label": ""
                 }
             for k,v in settings.items():
-                self._settings.set(k,v)
+                self._control_settings.set(k,v)
 
     @pyqtProperty(str, notify=updated)
-    def mode(self):
-        return self._mode
-
+    def controlMode(self):
+        return self._control_mode
+    
     @pyqtSlot()
     def annotate(self):
         self.basic.annotate(self)
 
-    def getCNArgs(self):
+    def getControlArgs(self):
         args = []
-        if self._settings.get("CN_slider_a_label"):
-            args += [self._settings.get("CN_slider_a")]
-        if self._settings.get("CN_slider_b_label"):
-            args += [self._settings.get("CN_slider_b")]
-        if self._settings.get("CN_bool_label"):
-            args += [self._settings.get("CN_bool") == "True"]
+        if self._control_settings.get("slider_a_label"):
+            args += [self._control_settings.get("slider_a")]
+        if self._control_settings.get("slider_b_label"):
+            args += [self._control_settings.get("slider_b")]
+        if self._control_settings.get("bool_label"):
+            args += [self._control_settings.get("bool") == "True"]
         return args
+    
+    @pyqtSlot()
+    def resetAnnotation(self):
+        self.setArtifacts({})
+
+    @pyqtProperty(str, notify=updated)
+    def segmentationModel(self):
+        return self._segmentation_model
+    
+    @segmentationModel.setter
+    def segmentationModel(self, model):
+        self._segmentation_model = model
+        self.updated.emit()
+    
+    @pyqtProperty(list, notify=updated)
+    def segmentationModels(self):
+        return self._segmentation_models
+    
+    @pyqtProperty(list, notify=updated)
+    def segmentationPoints(self):
+        return [QVector3D(p[0], p[1], p[2]) for p in self._segmentation_points]
+    
+    @pyqtSlot()
+    def syncSegmentationPoints(self):
+        self.updated.emit()
+
+    def getSegmentationArgs(self):
+        points = self._segmentation_points
+
+        points = [(p[0], p[1]) for p in self._segmentation_points]
+        labels = [p[2] for p in self._segmentation_points]
+
+        args = {
+            "model": self._segmentation_model,
+            "points": points,
+            "labels": labels
+        }
+
+        return args
+    
+    @pyqtSlot()
+    def resetSegmentation(self):
+        self._segmentation_points = []
+        self.updated.emit()
+    
+    @pyqtSlot(int, int, int, int)
+    def moveSegmentationPoint(self, x, y, newX, newY):
+        for i, p in enumerate(self._segmentation_points):
+            if (p[0], p[1]) == (x,y):
+                break
+        else:
+            return
+        self._segmentation_points[i] = (newX, newY, p[2])
+
+    @pyqtSlot(int, int, int)
+    def addSegmentationPoint(self, x, y, label):
+        self._segmentation_points += [(x,y,label)]
+        self.updated.emit()
+    
+    @pyqtSlot(int, int)
+    def deleteSegmentationPoint(self, x, y):
+        for i, p in enumerate(self._segmentation_points):
+            if (p[0], p[1]) == (x,y):
+                break
+        else:
+            return
+        self._segmentation_points.pop(i)
+        self.updated.emit()
     
     def setArtifacts(self, artifacts):
         self._artifacts = artifacts
@@ -315,7 +389,7 @@ class BasicInput(QObject):
     
     @pyqtProperty(str, notify=updated)
     def displayName(self):
-        return ["", "Image", "Mask", "Subprompts", "Control"][self._role.value]
+        return ["", "Image", "Mask", "Subprompts", "Control", "Segment"][self._role.value]
     
     @pyqtProperty(str, notify=updated)
     def displayIndex(self):
@@ -378,8 +452,10 @@ class BasicInput(QObject):
         self._display = None
         self.updated.emit()
 
-    def resetAnnotation(self):
-        self.setArtifacts({})
+    @pyqtSlot()
+    def resetAuxiliary(self):
+        self.resetAnnotation()
+        self.resetSegmentation()
 
     def getAreas(self):
         out = []
@@ -397,7 +473,7 @@ class BasicInput(QObject):
         self._image = QImage(path.toLocalFile())
         self._original = self._image.copy()
         self.updateImage()
-        self.resetAnnotation()
+        self.resetAuxiliary()
 
     @pyqtSlot()
     def setImageCanvas(self):
@@ -410,7 +486,7 @@ class BasicInput(QObject):
         self._image.fill(0)
         self._original = self._image.copy()
         self.updateImage()
-        self.resetAnnotation()
+        self.resetAuxiliary()
 
     @pyqtSlot(MimeData, int)
     def setImageDrop(self, mimeData, index):
@@ -445,7 +521,7 @@ class BasicInput(QObject):
         if found:
             self._original = self._image.copy()
             self.updateImage()
-            self.resetAnnotation()
+            self.resetAuxiliary()
 
     @pyqtSlot(QImage)
     def setImageData(self, data):
@@ -453,7 +529,7 @@ class BasicInput(QObject):
 
         self._original = self._image.copy()
         self.updateImage()
-        self.resetAnnotation()
+        self.resetAuxiliary()
 
     def updateExtent(self):
         if self._role != BasicInputRole.MASK or not self._image or self._image.isNull():
