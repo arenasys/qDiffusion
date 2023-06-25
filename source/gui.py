@@ -422,7 +422,7 @@ class GUI(QObject):
 
     @pyqtSlot('qint64', 'qint64')
     def onNetworkProgress(self, current, total):
-        self.requestProgress = max(self.requestProgress, current/total)
+        self.requestProgress = max(self.requestProgress, (current/total) if total else 0)
         self.statusUpdated.emit()
 
     def getFilesMimeData(self, files):
