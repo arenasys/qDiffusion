@@ -33,9 +33,9 @@ def get_env():
 
 def restart():
     if IS_WIN:
-        subprocess.Popen([os.path.join(VENV_DIR, "Scripts\\pythonw"), "source\\launch.py"], env=get_env(), creationflags=0x00000008|0x00000200)
+        subprocess.Popen([VENV_DIR+"\\Scripts\\pythonw.exe", "source\\launch.py"], env=get_env(), creationflags=0x00000008|0x00000200)
     else:
-        subprocess.Popen([os.path.join(VENV_DIR, "bin/python"), "source/launch.py"], env=get_env())
+        subprocess.Popen([VENV_DIR+"/bin/python", "source/launch.py"], env=get_env())
     exit()
 
 def install_venv():
@@ -45,9 +45,9 @@ def install_venv():
 def install_qt():
     print("INSTALLNG PyQt...")
     if IS_WIN:
-        subprocess.run([os.path.join(VENV_DIR, "Scripts\\pip"), "install", QT_VER], env=get_env())
+        subprocess.run([VENV_DIR+"\\Scripts\\python.exe", "-m", "pip", "install", QT_VER], env=get_env())
     else:
-        subprocess.run([os.path.join(VENV_DIR, "bin/pip"), "install", QT_VER], env=get_env())
+        subprocess.run([VENV_DIR+"/bin/python", "-m", "pip", "install", QT_VER], env=get_env())
 
 def exceptHook(exc_type, exc_value, exc_tb):
     tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
