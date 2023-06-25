@@ -704,6 +704,7 @@ Item {
                         snapValue: 16
                         bounded: false
                     }
+
                     OSlider {
                         label: root.tr("Mask Blur")
                         width: parent.width
@@ -720,8 +721,24 @@ Item {
                         bounded: false
                     }
 
+                    OSlider {
+                        label: root.tr("Mask Expand")
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKey: "mask_expand"
+
+                        minValue: 0
+                        maxValue: 10
+                        precValue: 0
+                        incValue: 1
+                        snapValue: 1
+                        bounded: false
+                    }
+
                     OChoice {
-                        label: root.tr("Mask fill")
+                        label: root.tr("Mask Fill")
                         width: parent.width
                         height: 30
 
