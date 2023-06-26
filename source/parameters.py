@@ -170,9 +170,10 @@ def getExtent(bound, padding, src, wrk):
 class VariantMap(QObject):
     updating = pyqtSignal(str, 'QVariant', 'QVariant')
     updated = pyqtSignal(str)
-    def __init__(self, parent=None, map = {}):
+    def __init__(self, parent=None, map = {}, strict=False):
         super().__init__(parent)
         self._map = map
+        self._strict = strict
 
     @pyqtSlot(str, result='QVariant')
     def get(self, key, default=QVariant()):
@@ -186,10 +187,11 @@ class VariantMap(QObject):
             return
 
         if key in self._map:
-            try:
-                value = type(self._map[key])(value)
-            except Exception:
-                pass
+            if self._strict:
+                try:
+                    value = type(self._map[key])(value)
+                except Exception:
+                    pass
             self.updating.emit(key, self._map[key], value)
         else:
             self.updating.emit(key, QVariant(), value)
@@ -308,13 +310,13 @@ class Parameters(QObject):
             "prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7.0, "strength": 0.75, "seed": -1, "eta": 1.0,
             "hr_factor": 1.0, "hr_strength":  0.7, "hr_sampler": "Euler a", "hr_steps": 25, "hr_eta": 1.0, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "mask_expand": 0, "subseed":-1, "subseed_strength": 0.0,
             "sampler":"Euler a", "samplers":[], "hr_upscaler":"Latent (nearest)", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
-            "model":"", "models":[], "UNET":"", "UNETs":"", "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[], "CN":"", "CNs":[], "CN_modes": [], "CN_preprocessors": [],
+            "model":"", "models":[], "UNET":"", "UNETs":[], "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[], "CN":"", "CNs":[], "CN_modes": [], "CN_preprocessors": [],
             "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "schedule": "Default", "schedules": ["Default", "Karras", "Exponential"],
             "vram_mode": "Default", "vram_modes": ["Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"], "preview_mode": "Disabled",
             "preview_modes": ["Disabled", "Light", "Medium", "Full"], "preview_interval":1, "true_samplers": [], "true_sampler": "Euler a",
             "network_mode": "Dynamic", "network_modes": ["Dynamic", "Static"], "mask_fill": "Original", "mask_fill_modes": ["Original", "Noise"],
             "tome_ratio": 0.0, "hr_tome_ratio": 0.0, "output_folder": "", "autocast": "Disabled", "autocast_modes": ["Disabled", "Enabled"],
-        })
+        }, strict=True)
         self._values.updating.connect(self.mapsUpdating)
         self._values.updated.connect(self.onUpdated)
         self._availableNetworks = []
