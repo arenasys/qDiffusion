@@ -345,14 +345,14 @@ class Basic(QObject):
             for i in range(len(results)-1, -1, -1):
                 if not self._outputs[out]._ready:
                     result = results[i]
-                    metadata = metadata[i] if metadata else None
+                    meta = metadata[i] if metadata else None
 
                     subfolder = self._subfolders[id] if ours else "monitor"
-                    writer = BasicImageWriter(result, metadata, self.gui.outputDirectory(), subfolder)
+                    writer = BasicImageWriter(result, meta, self.gui.outputDirectory(), subfolder)
                     file = writer.file
                     self.pool.start(writer)
 
-                    self._outputs[out].setResult(result, metadata, file)
+                    self._outputs[out].setResult(result, meta, file)
                 self._outputs[out].setArtifacts({k:v[i%len(v)] for k,v in artifacts.items() if v[i%len(v)]})
                 out += 1
             if sticky:
