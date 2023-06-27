@@ -9,7 +9,6 @@ Item {
     property alias trueColor: colorArea.color
     property alias trueAlpha: colorArea.opacity
     property alias trueHex: colorArea.hex
-    
 
     onTrueColorChanged: {
         setColor(color)
@@ -31,6 +30,27 @@ Item {
     Component.onCompleted: {
         setColor(Qt.rgba(1,1,1,1))
     }
+    
+    Rectangle {
+        anchors.left: colorArea.left
+        anchors.top: colorArea.top
+        anchors.margins: -2.5
+        width: 2*Math.floor(colorArea.width/2) + 5
+        height: width
+        radius: width/2
+        color: COMMON.bg4
+    }
+
+    Rectangle {
+        id: colorAreaBg
+        anchors.left: colorArea.left
+        anchors.top: colorArea.top
+        anchors.margins: -1
+        width: 2*Math.floor(colorArea.width/2) + 2
+        height: width
+        radius: width/2
+        color: "black"
+    }
 
     ColorRadial {
         id: colorArea
@@ -47,11 +67,14 @@ Item {
         anchors.bottom: alphaArea.top
         anchors.right: lightnessArea.left
         anchors.left: parent.left
-        anchors.margins: 5
+        anchors.margins: 6
+        anchors.topMargin: 7
+        anchors.leftMargin: 7
     }
     
     TransparencyShader {
         anchors.fill: selectedColor
+        styled: false
     }
 
     Rectangle {
@@ -63,7 +86,15 @@ Item {
         width: 20
         height: 20
         border.color: "black"
-        border.width: 1.5
+        border.width: 2
+
+        Rectangle {
+            anchors.fill: parent
+            color: "transparent"
+            border.width: 1
+            border.color: COMMON.bg4
+        }
+
     }
 
     Rectangle {
@@ -76,7 +107,15 @@ Item {
         anchors.right: parent.right
         anchors.margins: 5
         border.color: "black"
-        border.width: 1.5
+        border.width: 2
+
+        Rectangle {
+            anchors.fill: parent
+            color: "transparent"
+            border.width: 1
+            border.color: COMMON.bg4
+        }
+
         width: 20
         property var inset: 10.0/height
         gradient: Gradient {
@@ -89,6 +128,7 @@ Item {
 
     TransparencyShader {
         anchors.fill: alphaArea
+        styled: false
     }
 
     Rectangle {
@@ -99,8 +139,16 @@ Item {
         anchors.right: selectedColor.left
         anchors.margins: 5
         border.color: "black"
-        border.width: 1.5
+        border.width: 2
         height: 20
+
+        Rectangle {
+            anchors.fill: parent
+            color: "transparent"
+            border.width: 1
+            border.color: COMMON.bg4
+        }
+
         property var inset: 10.0/width
         gradient: Gradient {
             orientation: Gradient.Horizontal
@@ -119,15 +167,22 @@ Item {
         height: 10
         color: "white"
         border.color: "black"
-        border.width: 1.5
+        border.width: 2
         anchors.centerIn: colorArea
+
+        Rectangle {
+            anchors.fill: parent
+            color: "transparent"
+            border.width: 1
+            border.color: COMMON.bg4
+        }
 
         function setSelection(radius, angle) {
             var center = colorArea.areaCenter
 
             colorSelector.anchors.centerIn = undefined
-            colorSelector.x = center.x - Math.cos(angle)*radius*colorArea.areaRadius
-            colorSelector.y = center.y - Math.sin(angle)*radius*colorArea.areaRadius
+            colorSelector.x = 2 + center.x - Math.cos(angle)*radius*colorArea.areaRadius
+            colorSelector.y = 2 + center.y - Math.sin(angle)*radius*colorArea.areaRadius
 
             colorSelector.selectedAngle = ((angle/(2*Math.PI)) + 1.25) % 1.0
             colorSelector.selectedRadius = radius
@@ -159,7 +214,7 @@ Item {
             }
         }
     }
-
+    
     Rectangle {
         id: lightnessSelector
         property var selectedLightness: 0.5
@@ -167,8 +222,15 @@ Item {
         height: 10
         color: "white"
         border.color: "black"
-        border.width: 1.5
+        border.width: 2
         anchors.centerIn: lightnessArea
+
+        Rectangle {
+            anchors.fill: parent
+            color: "transparent"
+            border.width: 1
+            border.color: COMMON.bg4
+        }
 
         function setSelection(lightness) {
             var margin = lightnessArea.height * lightnessArea.inset
@@ -208,8 +270,15 @@ Item {
         height: 10
         color: "white"
         border.color: "black"
-        border.width: 1.5
+        border.width: 2
         anchors.centerIn: alphaArea
+
+        Rectangle {
+            anchors.fill: parent
+            color: "transparent"
+            border.width: 1
+            border.color: COMMON.bg4
+        }
 
         function setSelection(alpha) {
             var margin = alphaArea.width * alphaArea.inset
@@ -241,5 +310,4 @@ Item {
             }
         }
     }
-
 }

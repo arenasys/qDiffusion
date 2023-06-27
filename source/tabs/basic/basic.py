@@ -860,6 +860,12 @@ class Basic(QObject):
     @pyqtSlot(CanvasWrapper, BasicInput)
     def setupCanvas(self, wrapper, target):
         canvas = wrapper.canvas
+        if target._role == BasicInputRole.IMAGE:
+            if target._paint.isNull():
+                canvas.setupPainting(target._original)
+            else:
+                canvas.setupPainting(target._base, target._paint)
+            return
         if target._role == BasicInputRole.MASK:
             canvas.setupMask(target.image, QSize(target.linkedWidth, target.linkedHeight))
             return
@@ -878,6 +884,11 @@ class Basic(QObject):
         if target == None:
             return
         canvas = wrapper.canvas
+        if target._role == BasicInputRole.IMAGE:
+            image = canvas.getDisplay()
+            base, paint = canvas.getImages()
+            target.setPaintedData(image, base, paint)
+            return
         if target._role == BasicInputRole.MASK:
             target.setImageData(canvas.getImage())
             return

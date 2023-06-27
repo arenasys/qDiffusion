@@ -6,10 +6,13 @@ import gui 1.0
 
 MenuSeparator {
     height: visible ? 13 : 0
-    leftPadding: 1
-    rightPadding: 1
-    contentItem: Rectangle {
-        implicitHeight: 1
-        color: COMMON.bg4
+    contentItem: Item {
+        Rectangle {
+            x: -1
+            width: parent.width+2
+            height: 1
+            color: COMMON.bg4
+            anchors.verticalCenter: parent.verticalCenter
+        }
     }
 }

@@ -45,6 +45,10 @@ class BasicInput(QObject):
         self._id = INPUT_ID
         INPUT_ID += 1
 
+        # Image
+        self._base = QImage()
+        self._paint = QImage()
+
         # Masks
         self._extent = QRect()
         self._extentWarning = False
@@ -457,6 +461,7 @@ class BasicInput(QObject):
     def resetAuxiliary(self):
         self.resetAnnotation()
         self.resetSegmentation()
+        self.resetPaint()
 
     def getAreas(self):
         out = []
@@ -531,6 +536,20 @@ class BasicInput(QObject):
         self._original = self._image.copy()
         self.updateImage()
         self.resetAuxiliary()
+
+    @pyqtSlot(QImage, QImage, QImage)
+    def setPaintedData(self, image, base, paint):
+        self._image = image
+        self._original = image
+        self._base = base
+        self._paint = paint
+
+        self.updateImage()
+
+    @pyqtSlot()
+    def resetPaint(self):
+        self._base = QImage()
+        self._paint = QImage()
 
     def updateExtent(self):
         if self._role != BasicInputRole.MASK or not self._image or self._image.isNull():

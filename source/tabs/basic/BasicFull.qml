@@ -9,15 +9,25 @@ import "../../components"
 
 Item {
     id: root
-    property var editing: false
+    property var masking: false
+    property var painting: false
+    property var editing: masking || painting
     property var segmenting: false
     property var file: null
     property var image: null
     visible: false
 
+    property var color: painting ? colorPicker.color : "#ffffff"
+    property var size: painting ? sizeSlider.value : rings.size
+    property var hardness: painting ? hardnessSlider.value : 100
+    property var spacing: painting ? spacingSlider.value : 10
+
     onImageChanged: {
         if(image) {
             bg.image = image
+            bg.visible = true
+        } else {
+            bg.visible = false
         }
     }
 
@@ -55,12 +65,13 @@ Item {
             return
         }
 
-        root.editing = (target.role == 2 || target.role == 3) && BASIC.openedArea == "input" && (target.folder == undefined || target.folder == "")
+        root.masking = (target.role == 2 || target.role == 3) && BASIC.openedArea == "input" && (target.folder == undefined || target.folder == "")
+        root.painting = target.role == 1 && BASIC.openedArea == "input" && (target.folder == undefined || target.folder == "")
         root.segmenting = target.role == 5 && BASIC.openedArea == "input" && (target.folder == undefined || target.folder == "")
 
         var reset = false
 
-        if(root.editing) {
+        if(root.masking) {
             BASIC.setupCanvas(canvas.wrapper, root.target)
             root.syncSubprompt()
             canvas.visible = true
@@ -68,6 +79,13 @@ Item {
             reset = movable.itemWidth != root.target.linkedWidth || movable.itemHeight != root.target.linkedHeight
             movable.itemWidth = root.target.linkedWidth
             movable.itemHeight = root.target.linkedHeight
+            root.file = null
+        } else if (root.painting) {
+            BASIC.setupCanvas(canvas.wrapper, root.target)
+            canvas.visible = true
+            root.image = null
+            movable.itemWidth = root.target.originalWidth
+            movable.itemHeight = root.target.originalHeight
             root.file = null
         } else {
             canvas.visible = false
@@ -296,13 +314,23 @@ Item {
             id: canvas
             anchors.fill: item
             smooth: sourceSize.width*1.1 < width && sourceSize.height*1.1 < height ? false : true
-            brush.color: "#ffffff"
-            brush.hardness: 99.9
+            
+            brush.color: root.color
+            brush.size: root.size
+            brush.hardness: root.hardness
+            brush.spacing: root.spacing
+
             opacity: root.target && root.target.linked ? 0.8 : 1.0
 
             onChanged: {
                 root.sync()
                 root.change()
+            }
+
+            onColorSampled: function (color) {
+                if(root.painting) {
+                    colorPicker.setColor(color)
+                }
             }
         }
 
@@ -330,12 +358,15 @@ Item {
             visible: root.editing && mousePosition != Qt.point(0,0)
             anchors.fill: item
             property var mousePosition: Qt.point(0,0)
-            property var size: canvas.brush.size*(canvas.width/canvas.sourceSize.width)
+            
+            property var size: 100
+            property var displaySize: root.size*(canvas.width/canvas.sourceSize.width)
+
 
             Rectangle {
                 id: ringBlack
                 radius: width/2
-                width: parent.size
+                width: parent.displaySize
                 height: width
                 x: (parent.mousePosition.x*item.width)-width/2
                 y: (parent.mousePosition.y*item.height)-height/2
@@ -346,7 +377,7 @@ Item {
             Rectangle {
                 id: ringWhite
                 radius: width/2
-                width: parent.size + 1
+                width: parent.displaySize + 1
                 height: width
                 x: (parent.mousePosition.x*item.width)-width/2
                 y: (parent.mousePosition.y*item.height)-height/2
@@ -374,19 +405,26 @@ Item {
                 } else if (mouse.button === Qt.RightButton) {
                     canvas.brush.modeIndex = 1
                 }
+                
                 canvas.mousePressed(getPosition(mouse), mouse.modifiers)
             }
 
             onReleased: {
-                canvas.mouseReleased(getPosition(mouse), mouse.modifiers)
+                if (!(mouse.modifiers & Qt.ControlModifier)) {
+                    canvas.mouseReleased(getPosition(mouse), mouse.modifiers)
+                }
             }
 
             onPositionChanged: {
                 rings.mousePosition = Qt.point((mouseX - item.x)/item.width, (mouseY - item.y)/item.height)
 
-                if(mouse.buttons) {
+                if(mouse.buttons && !(mouse.modifiers & Qt.ControlModifier)) {
                     canvas.mouseDragged(getPosition(mouse), mouse.modifiers)
                 }
+            }
+
+            onExited: {
+                //rings.mousePosition = Qt.point(0,0)
             }
 
             onWheel: {
@@ -395,14 +433,23 @@ Item {
                     return
                 }
                 var o = 5
-                if(canvas.brush.size < 20) {
+                if(root.size < 20) {
                     o = 1
                 }
                 if(wheel.angleDelta.y > 0) {
-                    
-                    canvas.brush.size = Math.min(canvas.brush.size+o, 500)
+                    o = Math.min(canvas.brush.size+o, 500)
+                    if(root.painting) {
+                        sizeSlider.value = o
+                    } else {
+                        rings.size = o
+                    }
                 } else {
-                    canvas.brush.size = Math.max(canvas.brush.size-o, 1)
+                    o = Math.max(canvas.brush.size-o, 1)
+                    if(root.painting) {
+                        sizeSlider.value = o
+                    } else {
+                        rings.size = o
+                    }
                 }
             }
         }
@@ -507,6 +554,252 @@ Item {
         }
     }
 
+    Rectangle {
+        id: paintBg
+        visible: paintColumn.visible
+        anchors.fill: paintColumn
+        anchors.margins: -3
+        anchors.bottomMargin: -5
+        color: COMMON.bg0
+        border.color: COMMON.bg4
+        border.width: 3
+    }
+
+    Column {
+        id: paintColumn
+        width: 150
+        visible: root.painting
+        anchors.verticalCenter: movable.verticalCenter
+        anchors.left: movable.left
+
+        OColumn {
+            id: colorColumn
+            text: "Color Picker"
+            width: parent.width
+
+            property var advanced: false
+
+            ColorPicker {
+                id: colorPicker
+                width: parent.width
+                height: width
+
+                SIconButton {
+                    anchors.bottom: colorPicker.bottom
+                    anchors.right: colorPicker.right
+                    anchors.bottomMargin: 28
+                    anchors.rightMargin: 28
+                    color: "transparent"
+                    width: 18
+                    height: 18
+                    inset: 2
+                    icon: "qrc:/icons/settings.svg"
+                    iconColor: colorColumn.advanced ? COMMON.bg4 : COMMON.bg6
+                    iconHoverColor: colorColumn.advanced ? COMMON.fg3 : COMMON.fg0
+
+                    tooltip: colorColumn.advanced ? "Hide options" : "Show options"
+
+                    onPressed: {
+                        colorColumn.advanced = !colorColumn.advanced
+                    }
+                }
+
+                Component.onCompleted: {
+                    trueColor.r = Qt.binding(function() { return redSlider.value })
+                    trueColor.g = Qt.binding(function() { return greenSlider.value })
+                    trueColor.b = Qt.binding(function() { return blueSlider.value })
+                    trueAlpha =  Qt.binding(function() { return alphaSlider.value })
+
+                    trueColor.hsvHue = Qt.binding(function() { return hueSlider.value })
+                    trueColor.hsvSaturation = Qt.binding(function() { return saturationSlider.value })
+                    trueColor.hsvValue = Qt.binding(function() { return valueSlider.value })
+
+                    trueHex = Qt.binding(function() { return hexInput.value })
+                }
+                
+                onTrueColorChanged: {
+                    redSlider.value = trueColor.r
+                    greenSlider.value = trueColor.g
+                    blueSlider.value = trueColor.b
+
+                    hueSlider.value = trueColor.hsvHue
+                    saturationSlider.value = trueColor.hsvSaturation
+                    valueSlider.value = trueColor.hsvValue
+                }
+
+                onTrueAlphaChanged: {
+                    alphaSlider.value = trueAlpha
+                }
+
+                onTrueHexChanged: {
+                    hexInput.value = trueHex
+                }
+            }
+
+            Rectangle {
+                visible: colorColumn.advanced
+                width: parent.width + 14
+                x: -7
+                height: 2
+                color: COMMON.bg5
+            }
+
+            Column {
+                visible: colorColumn.advanced
+                width: parent.width
+
+                OSlider {
+                    id: redSlider
+                    label: "R"
+                    width: parent.width
+                    height: 20
+
+                    value: colorPicker.color.r
+
+                    minValue: 0
+                    maxValue: 1
+                    precValue: 2
+                    incValue: 0.01
+                }
+
+                OSlider {
+                    id: greenSlider
+                    label: "G"
+                    width: parent.width
+                    height: 20
+
+                    value: colorPicker.color.g
+                    minValue: 0
+                    maxValue: 1
+                    precValue: 2
+                    incValue: 0.01
+                }
+
+                OSlider {
+                    id: blueSlider
+                    label: "B"
+                    width: parent.width
+                    height: 20
+
+                    value: colorPicker.color.b
+                    minValue: 0
+                    maxValue: 1
+                    precValue: 2
+                    incValue: 0.01
+                }
+
+                OSlider {
+                    id: hueSlider
+                    label: "H"
+                    width: parent.width
+                    height: 20
+
+                    value: colorPicker.color.hsvHue
+                    minValue: 0
+                    maxValue: 1
+                    precValue: 2
+                    incValue: 0.01
+                }
+
+                OSlider {
+                    id: saturationSlider
+                    label: "S"
+                    width: parent.width
+                    height: 20
+
+                    value: colorPicker.color.hsvSaturation
+                    minValue: 0
+                    maxValue: 1
+                    precValue: 2
+                    incValue: 0.01
+                }
+
+                OSlider {
+                    id: valueSlider
+                    label: "V"
+                    width: parent.width
+                    height: 20
+
+                    value: colorPicker.color.hsvValue
+                    minValue: 0
+                    maxValue: 1
+                    precValue: 2
+                    incValue: 0.01
+                }
+
+                OSlider {
+                    id: alphaSlider
+                    label: "A"
+                    width: parent.width
+                    height: 20
+
+                    value: colorPicker.color.a
+                    minValue: 0
+                    maxValue: 1
+                    precValue: 2
+                    incValue: 0.01
+                }
+
+                OTextInput {
+                    id: hexInput
+                    width: parent.width
+                    height: 20
+                    label: "Hex"
+
+                    value: colorPicker.trueHex
+                    defaultValue: "#ffffff"
+                    validator: RegExpValidator { regExp: /(#[0-9A-Fa-f]{8})|(#[0-9A-Fa-f]{6})/ }
+                }
+            }
+        }
+
+        OColumn {
+            id: brushColumn
+            width: parent.width
+            hasDivider: false
+            text: "Brush Settings"
+
+            OSlider {
+                id: sizeSlider
+                label: "Size"
+                width: parent.width
+                height: 30
+
+                value: 100
+                minValue: 1
+                maxValue: 500
+                precValue: 0
+                incValue: 1
+            }
+
+            OSlider {
+                id: hardnessSlider
+                label: "Hardness"
+                width: parent.width
+                height: 30
+
+                value: 100
+                minValue: 1
+                maxValue: 100
+                precValue: 0
+                incValue: 1
+            }
+
+            OSlider {
+                id: spacingSlider
+                label: "Spacing"
+                width: parent.width
+                height: 30
+
+                value: 10
+                minValue: 1
+                maxValue: 50
+                precValue: 0
+                incValue: 1
+            }
+        }
+    }
+    
     Keys.onPressed: {
         event.accepted = true
         if(event.modifiers & Qt.ControlModifier) {

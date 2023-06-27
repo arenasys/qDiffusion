@@ -350,7 +350,8 @@ class Explorer(QObject):
 
         if old_file != new_file:
             for ext in [".txt", ".png", ".jpg"]:
-                shutil.move(old_path + ext, new_path + ext)
+                if os.path.exists(old_path + ext):
+                    shutil.move(old_path + ext, new_path + ext)
         
         if desc:
             os.makedirs(os.path.dirname(new_path), exist_ok=True)

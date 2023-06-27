@@ -9,37 +9,12 @@ import PIL.Image
 class CanvasTool(Enum):
     BRUSH = 1
     ERASE = 2
-    RECTANGLE_SELECT = 3
-    ELLIPSE_SELECT = 4
-    PATH_SELECT = 5
-    FUZZY_SELECT = 6
-    MOVE = 7
-
-class CanvasSelectionMode(Enum):
-    NORMAL = 1
-    ADD = 2
-    SUBTRACT = 3
 
 class CanvasOperation(Enum):
     UPDATE_STROKE = 1
     STROKE = 2
-    UNDO = 3
-    SET_SELECTION = 4
-    MOVE = 5
-    SET_MOVE = 6
-    UPDATE_MOVE = 7
-    ANCHOR = 8
-    PASTE = 9
-    COPY = 10
-    CUT = 11
-    LOAD = 12
-    DELETE = 13
-    FUZZY = 14
-    DESELECT = 15
-
-class CanvasLayerRole(Enum):
-    IMAGE = 1
-    MASK = 2
+    LOAD = 3
+    SAMPLE_COLOR = 4
 
 class CanvasChanges():
     def __init__(self):
@@ -47,14 +22,7 @@ class CanvasChanges():
         self.layer = 1
         self.tool = CanvasTool.ERASE
         self.brush = None
-        self.select = None
         self.strokes = []
-
-        self.move = QPointF()
-        self.position = QPointF()
-        self.selection = []
-
-        self.paste = None
 
         self.operations = set()
 
