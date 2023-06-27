@@ -49,7 +49,7 @@ class HostProcess(multiprocessing.Process):
         try:
             model_storage = storage.ModelStorage(self.model_directory, torch.float16, torch.float32)
             self.wrapper = wrapper.GenerationParameters(model_storage, torch.device("cuda"))
-            self.server = server.Server(self.wrapper, self.ip, self.port, self.password, self.read_only, self.monitor)
+            self.server = server.Server(self.wrapper, self.ip, self.port, self.password, True, self.read_only, self.monitor)
             self.server.start()
 
             endpoint = f"ws://{self.ip}:{self.port}"
