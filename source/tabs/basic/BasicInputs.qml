@@ -758,6 +758,7 @@ Item {
                         }
                         OChoice {
                             width: parent.width
+                            visible: height != 0
                             height: modelData.role == 5 ? 22 : 0
                             label: root.tr("Model")
                             model: modelData.segmentationModels
