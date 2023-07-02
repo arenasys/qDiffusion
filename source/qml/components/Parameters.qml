@@ -992,6 +992,24 @@ Item {
                         incValue: 0.01
                         snapValue: 0.05
                     }
+                    
+                    OSlider {
+                        visible: root.advanced
+                        label: root.tr("CFG Rescale")
+                        width: parent.width
+                        height: 30
+
+                        overlay: value == 0.0
+
+                        bindMap: root.binding.values
+                        bindKey: "cfg_rescale"
+
+                        minValue: 0
+                        maxValue: 1
+                        precValue: 2
+                        incValue: 0.01
+                        snapValue: 0.05
+                    }
 
                     OSlider {
                         id: subseedStrInput

@@ -316,7 +316,7 @@ class Parameters(QObject):
             "vram_mode": "Default", "vram_modes": ["Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"], "preview_mode": "Disabled",
             "preview_modes": ["Disabled", "Light", "Medium", "Full"], "preview_interval":1, "true_samplers": [], "true_sampler": "Euler a",
             "network_mode": "Dynamic", "network_modes": ["Dynamic", "Static"], "mask_fill": "Original", "mask_fill_modes": ["Original", "Noise"],
-            "tome_ratio": 0.0, "hr_tome_ratio": 0.0, "output_folder": "", "autocast": "Disabled", "autocast_modes": ["Disabled", "Enabled"],
+            "tome_ratio": 0.0, "hr_tome_ratio": 0.0, "cfg_rescale": 0.0, "output_folder": "", "autocast": "Disabled", "autocast_modes": ["Disabled", "Enabled"],
             "CN_modes": ["Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD", "Instruct"],#, "Shuffle", "Tile", "Inpaint", "Normal", "Scribble", "Segmentation"]
             "CN_preprocessors": ["None", "Invert", "Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD"]
         }, strict=True)
@@ -616,7 +616,7 @@ class Parameters(QObject):
             data["show_preview"] = data["preview_mode"]
         del data["preview_mode"]
 
-        for k in ["hr_tome_ratio", "tome_ratio"]:
+        for k in ["hr_tome_ratio", "tome_ratio", "cfg_rescale"]:
             if k in data and (data[k] == 0.0 or not self.gui.config.get("advanced")):
                 del data[k]
 
