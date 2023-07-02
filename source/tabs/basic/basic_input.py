@@ -257,8 +257,9 @@ class BasicInput(QObject):
             value = self._control_settings.get("mode")
             self._control_mode = value
 
-            self._control_settings.set("preprocessors", self.basic._parameters._values.get("CN_preprocessors"))
-            self._control_settings.set("preprocessor", value)
+            preprocessors = self.basic._parameters._values.get("CN_preprocessors")
+            self._control_settings.set("preprocessors", preprocessors)
+            self._control_settings.set("preprocessor",  value if value in preprocessors else "None")
 
             self.setArtifacts({})
             

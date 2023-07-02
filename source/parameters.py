@@ -36,6 +36,7 @@ LABELS = [
     ("hn_strength", "HN strength"),
     ("hr_resize", "Hires resize"),
     ("hr_factor", "Hires factor"),
+    ("hr_strength", "Hires strength"),
     ("hr_upscaler", "Hires upscaler"),
     ("hr_sampler", "Hires sampler"),
     ("hr_steps", "Hires steps"),
@@ -310,12 +311,14 @@ class Parameters(QObject):
             "prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7.0, "strength": 0.75, "seed": -1, "eta": 1.0,
             "hr_factor": 1.0, "hr_strength":  0.7, "hr_sampler": "Euler a", "hr_steps": 25, "hr_eta": 1.0, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "mask_expand": 0, "subseed":-1, "subseed_strength": 0.0,
             "sampler":"Euler a", "samplers":[], "hr_upscaler":"Latent (nearest)", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
-            "model":"", "models":[], "UNET":"", "UNETs":[], "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[], "CN":"", "CNs":[], "CN_modes": [], "CN_preprocessors": [],
+            "model":"", "models":[], "UNET":"", "UNETs":[], "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[],
             "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "schedule": "Default", "schedules": ["Default", "Karras", "Exponential"],
             "vram_mode": "Default", "vram_modes": ["Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"], "preview_mode": "Disabled",
             "preview_modes": ["Disabled", "Light", "Medium", "Full"], "preview_interval":1, "true_samplers": [], "true_sampler": "Euler a",
             "network_mode": "Dynamic", "network_modes": ["Dynamic", "Static"], "mask_fill": "Original", "mask_fill_modes": ["Original", "Noise"],
             "tome_ratio": 0.0, "hr_tome_ratio": 0.0, "output_folder": "", "autocast": "Disabled", "autocast_modes": ["Disabled", "Enabled"],
+            "CN_modes": ["Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD", "Instruct"],#, "Shuffle", "Tile", "Inpaint", "Normal", "Scribble", "Segmentation"]
+            "CN_preprocessors": ["None", "Invert", "Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD"]
         }, strict=True)
         self._values.updating.connect(self.mapsUpdating)
         self._values.updated.connect(self.onUpdated)
@@ -498,15 +501,6 @@ class Parameters(QObject):
         self._values.set("true_samplers", self._values.get("samplers"))
         self._values.set("samplers", [s for s in self._values.get("samplers") if not "Karras" in s and not "Exponential" in s])
 
-        mode_names = ["canny","depth","pose","lineart","softedge","anime","mlsd"]
-        modes = []
-        for m in mode_names:
-            for cn in self._values.get("CNs"):
-                if not m in modes and m in cn.rsplit(os.path.sep, 1)[-1]:
-                    modes += [m.capitalize()]
-        self._values.set("CN_modes", modes)
-        self._values.set("CN_preprocessors", ["None", "Invert"] + modes)
-        
         self.updated.emit()
 
     def buildPrompts(self, batch_size):
@@ -598,13 +592,11 @@ class Parameters(QObject):
             models = []
 
             for m,o,i in control:
-                for cn in self._values.get("CNs"):
-                    if m in cn.rsplit(os.path.sep, 1)[-1]:
-                        models += [cn]
-                        opts += [o]
-                        images += [i]
-                        break
-
+                models += [m]
+                opts += [o]
+                images += [i]
+                break
+                
             data["cn_image"] = images
             data["cn"] = models
             data["cn_opts"] = opts

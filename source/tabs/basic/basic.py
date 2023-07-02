@@ -157,10 +157,10 @@ class Basic(QObject):
                     if data:
                         inputs[i] = data
                 if i._role == BasicInputRole.CONTROL:
-                    model = i._control_settings.get("mode").lower()
+                    model = i._control_settings.get("mode")
                     opts = {
                         "scale": i._control_settings.get("strength"),
-                        "annotator": i._control_settings.get("preprocessor").lower(),
+                        "annotator": i._control_settings.get("preprocessor"),
                         "args": i.getControlArgs()
                     }
                     if i._image and not i._image.isNull():
@@ -919,7 +919,7 @@ class Basic(QObject):
             target._areas = target._areas[:layerCount]
 
     def annotate(self, input):
-        annotator = input._control_settings.get("preprocessor").lower()
+        annotator = input._control_settings.get("preprocessor")
         args = input.getControlArgs()
 
         request = self._parameters.buildAnnotateRequest(annotator, args, encodeImage(input._image))
