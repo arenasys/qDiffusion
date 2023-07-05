@@ -57,6 +57,18 @@ Item {
 
     property var target: null
     property var changing: ""
+    property var artifact: target != null && target.showingArtifact ? target.displayFull : null
+
+    onArtifactChanged: {
+        if(root.artifact != null) {
+            artifact.image = root.artifact
+            movable.itemWidth = root.target.width
+            movable.itemHeight = root.target.height
+        } else if(root.painting && root.target != null) {
+            movable.itemWidth = root.target.originalWidth
+            movable.itemHeight = root.target.originalHeight
+        }
+    }
 
     onTargetChanged: {
         if(target == null) {
@@ -65,9 +77,15 @@ Item {
             return
         }
 
-        root.masking = (target.role == 2 || target.role == 3) && BASIC.openedArea == "input" && (target.folder == undefined || target.folder == "")
-        root.painting = target.role == 1 && BASIC.openedArea == "input" && (target.folder == undefined || target.folder == "")
-        root.segmenting = target.role == 5 && BASIC.openedArea == "input" && (target.folder == undefined || target.folder == "")
+        if (BASIC.openedArea == "input" && (target.folder == undefined || target.folder == "")) {
+            root.masking = target.isMask
+            root.painting = !target.isMask && target.isCanvas
+            root.segmenting = (target.role == 5)
+        } else {
+            root.masking = false
+            root.painting = false
+            root.segmenting = false
+        }
 
         var reset = false
 
@@ -84,8 +102,8 @@ Item {
             BASIC.setupCanvas(canvas.wrapper, root.target)
             canvas.visible = true
             root.image = null
-            movable.itemWidth = root.target.originalWidth
-            movable.itemHeight = root.target.originalHeight
+            movable.itemWidth = canvas.sourceSize.width
+            movable.itemHeight = canvas.sourceSize.height
             root.file = null
         } else {
             canvas.visible = false
@@ -320,7 +338,7 @@ Item {
             brush.hardness: root.hardness
             brush.spacing: root.spacing
 
-            opacity: root.target && root.target.linked ? 0.8 : 1.0
+            opacity: root.target && root.masking && root.target.linked ? 0.8 : 1.0
 
             onChanged: {
                 root.sync()
@@ -332,6 +350,13 @@ Item {
                     colorPicker.setColor(color)
                 }
             }
+        }
+
+        ImageDisplay {
+            id: artifact
+            visible: root.artifact != null && root.painting
+            anchors.fill: item
+            smooth: implicitWidth*1.25 < width && implicitHeight*1.25 < height ? false : true
         }
 
         Item {
@@ -355,7 +380,7 @@ Item {
 
         Item {
             id: rings
-            visible: root.editing && mousePosition != Qt.point(0,0)
+            visible: root.editing && !root.artifact && mousePosition != Qt.point(0,0)
             anchors.fill: item
             property var mousePosition: Qt.point(0,0)
             
@@ -389,7 +414,7 @@ Item {
 
         MouseArea {
             id: mouseArea
-            visible: root.editing
+            visible: root.editing && !root.artifact
             anchors.fill: parent
             hoverEnabled: true
 
@@ -568,7 +593,7 @@ Item {
     Column {
         id: paintColumn
         width: 150
-        visible: root.painting
+        visible: root.painting && !root.artifact
         anchors.verticalCenter: movable.verticalCenter
         anchors.left: movable.left
 

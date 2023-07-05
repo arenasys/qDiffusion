@@ -37,6 +37,7 @@ class BasicInput(QObject):
         self._linked = None
         self._dragging = False
         self._offset = 0.5
+        self._canvas = False
 
         self._display = None
         self._artifacts = {}
@@ -102,6 +103,13 @@ class BasicInput(QObject):
         self._image = self._originalCrop.scaled(out_z, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
         self._image.convertTo(self._originalCrop.format())
 
+        if self._canvas and not self._paint.isNull():
+            self._paint = cropImage(self._paint, out_z).scaled(out_z, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+            self._paint.convertTo(self._originalCrop.format())
+
+            self._base = cropImage(self._base, out_z).scaled(out_z, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+            self._base.convertTo(self._originalCrop.format())
+
     @pyqtSlot(QUrl)
     def saveImage(self, file):
         file = file.toLocalFile()
@@ -137,7 +145,7 @@ class BasicInput(QObject):
         self._role = BasicInputRole(role)
         if self._role != BasicInputRole.CONTROL:
             self._control_settings.set("mode", "")
-        self.updated.emit()
+        self.updateImage()
         self.parent().updated.emit()
 
     @pyqtProperty(QImage, notify=updated)
@@ -202,6 +210,35 @@ class BasicInput(QObject):
     @pyqtProperty(bool, notify=updated)
     def hasSource(self):
         return (not self._image.isNull()) or (self._folder != "")
+    
+    @pyqtProperty(bool, notify=updated)
+    def canPaint(self):
+        return self._role in {BasicInputRole.IMAGE, BasicInputRole.MASK, BasicInputRole.SUBPROMPT, BasicInputRole.CONTROL}
+    
+    @pyqtProperty(bool, notify=updated)
+    def isMask(self):
+        return self._role in {BasicInputRole.MASK, BasicInputRole.SUBPROMPT} or (self._role == BasicInputRole.CONTROL and self._control_mode == "Inpaint")
+    
+    @pyqtProperty(bool, notify=updated)
+    def isCanvas(self):
+        return self._role in {BasicInputRole.IMAGE, BasicInputRole.CONTROL}
+
+    @pyqtProperty(bool, notify=updated)
+    def hasSettings(self):
+        return self._role in {BasicInputRole.CONTROL, BasicInputRole.SEGMENTATION}
+    
+    @pyqtProperty(bool, notify=updated)
+    def canAnnotate(self):
+        return self._role in {BasicInputRole.CONTROL} and self._control_mode != "Inpaint"
+    
+    @pyqtProperty(bool, notify=updated)
+    def showingArtifact(self):
+        return self._display != None
+    
+    def effectiveRole(self):
+        if self._role == BasicInputRole.CONTROL and self._control_mode == "Inpaint":
+            return BasicInputRole.MASK
+        return self._role
 
     @pyqtProperty(bool, notify=linkedUpdated)
     def linked(self):
@@ -257,9 +294,17 @@ class BasicInput(QObject):
             value = self._control_settings.get("mode")
             self._control_mode = value
 
-            preprocessors = self.basic._parameters._values.get("CN_preprocessors")
+            if value == "Inpaint":
+                preprocessors = ["Inpaint"]
+                preprocessor = "Inpaint"
+            else:
+                preprocessors = self.basic._parameters._values.get("CN_preprocessors")
+                preprocessor = value
+                if not preprocessor in preprocessors:
+                    preprocessor = "None"
+
             self._control_settings.set("preprocessors", preprocessors)
-            self._control_settings.set("preprocessor",  value if value in preprocessors else "None")
+            self._control_settings.set("preprocessor", preprocessor)
 
             self.setArtifacts({})
             
@@ -459,7 +504,10 @@ class BasicInput(QObject):
         self.updated.emit()
 
     @pyqtSlot()
-    def resetAuxiliary(self):
+    def resetAuxiliary(self, canvas = False):
+        self._canvas = canvas
+        if self._canvas and self.controlMode == "Scribble":
+            self._control_settings.set("preprocessor", "None")
         self.resetAnnotation()
         self.resetSegmentation()
         self.resetPaint()
@@ -493,7 +541,7 @@ class BasicInput(QObject):
         self._image.fill(0)
         self._original = self._image.copy()
         self.updateImage()
-        self.resetAuxiliary()
+        self.resetAuxiliary(canvas=True)
 
     @pyqtSlot(MimeData, int)
     def setImageDrop(self, mimeData, index):
@@ -553,7 +601,7 @@ class BasicInput(QObject):
         self._paint = QImage()
 
     def updateExtent(self):
-        if self._role != BasicInputRole.MASK or not self._image or self._image.isNull():
+        if not self.isMask or not self._image or self._image.isNull():
             self._extent = QRect()
             self.updated.emit()
             return

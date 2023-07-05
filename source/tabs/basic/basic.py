@@ -139,7 +139,7 @@ class Basic(QObject):
                             data += [i.getFilePath(f)]
                     if data:
                         inputs[i] = data
-                if i._role == BasicInputRole.MASK:
+                if i._role == BasicInputRole.MASK or (i._role == BasicInputRole.CONTROL and i._control_mode == "Inpaint"):
                     if i._linked:
                         links[i] = i._linked
                         if i._image and not i._image.isNull():
@@ -149,6 +149,7 @@ class Basic(QObject):
                                 data += [i.getFilePath(f)]
                         if data:
                             inputs[i] = data
+                            data = []
                 if i._role == BasicInputRole.SUBPROMPT:
                     if i._linked:
                         links[i] = i._linked
@@ -163,11 +164,14 @@ class Basic(QObject):
                         "annotator": i._control_settings.get("preprocessor"),
                         "args": i.getControlArgs()
                     }
-                    if i._image and not i._image.isNull():
-                        data += [(model, opts, encodeImage(i._image or i._original))]
-                    if i._files:
-                        for f in i._files:
-                            data += [(model, opts, i.getFilePath(f))]
+                    k = i
+                    if model == "Inpaint" and i._linked:
+                        k = i._linked
+                    if k._image and not k._image.isNull():
+                        data += [(model, opts, encodeImage(k._image or k._original))]
+                    if k._files:
+                        for f in k._files:
+                            data += [(model, opts, k.getFilePath(f))]
                     if data:
                         controls[i] = data
                 if i._role == BasicInputRole.SEGMENTATION:
@@ -196,7 +200,7 @@ class Basic(QObject):
                     data = inputs[j][z % len(inputs[j])]
                     if j._role == BasicInputRole.IMAGE:
                         img = data
-                    if j._role == BasicInputRole.MASK:
+                    if j._role == BasicInputRole.MASK or (j._role == BasicInputRole.CONTROL and j._control_mode == "Inpaint"):
                         msk = data
                     if j._role == BasicInputRole.SUBPROMPT:
                         are = data
@@ -462,17 +466,19 @@ class Basic(QObject):
                 curr.setLinked(None)
         for i in range(len(self._inputs)):
             curr = self._inputs[i]
-            if i == 0 or curr._role == BasicInputRole.IMAGE:
+            if i == 0 or curr._role in {BasicInputRole.IMAGE, BasicInputRole.SEGMENTATION}:
+                curr.setLinked(None)
                 continue
             prev = self._inputs[i-1]
             if prev._role == BasicInputRole.IMAGE:
                 curr.setLinked(prev)
                 continue
             if prev._linked:
-                if not any([p._linked == prev._linked and p._role == curr._role and p != curr for p in self._inputs]):
-                    if curr._role != BasicInputRole.IMAGE and prev._role != BasicInputRole.IMAGE:
-                        curr.setLinked(prev._linked)
-                        continue
+                linked_roles = set([p.effectiveRole() for p in self._inputs if p._linked == prev._linked and p != curr])
+                curr_role = curr.effectiveRole()
+                if not curr_role in linked_roles or curr_role == BasicInputRole.CONTROL:
+                    curr.setLinked(prev._linked)
+                    continue
             curr.setLinked(None)
         for i in range(len(self._inputs)):
             self._inputs[i].updateLinked()
@@ -480,7 +486,7 @@ class Basic(QObject):
     def hasMask(self, input):
         for i in range(len(self._inputs)):
             curr = self._inputs[i]
-            if curr._linked == input and curr._role == BasicInputRole.MASK:
+            if curr._linked == input and curr.isMask:
                 return True
         return False
 
@@ -860,7 +866,7 @@ class Basic(QObject):
     @pyqtSlot(CanvasWrapper, BasicInput)
     def setupCanvas(self, wrapper, target):
         canvas = wrapper.canvas
-        if target._role == BasicInputRole.IMAGE:
+        if target._role in {BasicInputRole.IMAGE, BasicInputRole.CONTROL}:
             if target._paint.isNull():
                 canvas.setupPainting(target._original)
             else:
@@ -884,7 +890,7 @@ class Basic(QObject):
         if target == None:
             return
         canvas = wrapper.canvas
-        if target._role == BasicInputRole.IMAGE:
+        if target._role in {BasicInputRole.IMAGE, BasicInputRole.CONTROL}:
             image = canvas.getDisplay()
             base, paint = canvas.getImages()
             target.setPaintedData(image, base, paint)

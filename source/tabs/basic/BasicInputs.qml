@@ -413,9 +413,9 @@ Item {
                             anchors.right: parent.right
                             width: 21
                             height: 22
-                            visible: refreshButton.visible || settingsArea.visible
+                            visible: refreshButton.visible
                             color: "#e0101010"
-                            border.width: refreshButton.visible ? 1 : 0
+                            border.width: 1
                             border.color: COMMON.bg3
                         }
                     }
@@ -567,6 +567,20 @@ Item {
                     }
                 }
 
+
+                Rectangle {
+                    anchors.bottom: refreshButton.bottom
+                    anchors.right: refreshButton.right
+                    anchors.bottomMargin: 1
+                    anchors.rightMargin: 1
+                    height: Math.min(settingsArea.height-2, 21)
+                    width: 21
+                    visible: !refreshButton.visible && settingsArea.visible
+                    color: "#e0101010"
+                    border.width: 0
+                    border.color: COMMON.bg3
+                }
+
                 Rectangle {
                     visible: settingsArea.visible
                     x: borderFrame.x + 1
@@ -594,7 +608,7 @@ Item {
 
                 SIconButton {
                     id: refreshButton
-                    visible: modelData.role == 4 && !modelData.empty
+                    visible: modelData.canAnnotate && !modelData.empty
                     color: "transparent"
                     icon: "qrc:/icons/refresh.svg"
                     x: borderFrame.x + borderFrame.width - 20
@@ -647,7 +661,7 @@ Item {
                     }
 
                     SIconButton {
-                        visible: !modelData.hasSource && (modelData.role == 2 || modelData.role == 3)
+                        visible: !modelData.hasSource && modelData.canPaint
                         id: paintButton
                         icon: "qrc:/icons/paint.svg"
                         onPressed: {
@@ -662,7 +676,7 @@ Item {
 
                 Item {
                     id: settingsArea
-                    visible: parent.settings && modelData.hasSource && (modelData.role == 4 || modelData.role == 5)
+                    visible: parent.settings && modelData.hasSource && modelData.hasSettings
                     x: borderFrame.x + 20
                     y: borderFrame.y + borderFrame.height - height
                     width: borderFrame.width - 40

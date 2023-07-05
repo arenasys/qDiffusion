@@ -110,6 +110,10 @@ class BasicOutput(QObject):
                 self._display = None
         self.updated.emit()
 
+    @pyqtProperty(bool, notify=updated)
+    def showingArtifact(self):
+        return self._display != None
+
     @pyqtProperty(str, notify=updated)
     def file(self):
         return self._file

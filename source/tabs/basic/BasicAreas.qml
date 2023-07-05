@@ -40,6 +40,7 @@ Item {
         snapSize: 20
         height: 4
         color: "transparent"
+        overflow: 2
         Rectangle {
             anchors.fill: parent
             color: COMMON.bg5

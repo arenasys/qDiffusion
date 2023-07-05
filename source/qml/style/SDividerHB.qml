@@ -15,7 +15,10 @@ Rectangle {
     property bool locked: true
     property bool snapping: false
     property var snap: null
+    property var wasSnapped: false
+    property var startOffset: 0
     property var snapSize: 50
+    property var overflow: 0
 
     onOffsetChanged: {
         if(snap - offset == 0.0) {
@@ -26,15 +29,26 @@ Rectangle {
 
     MouseArea {
         anchors.fill: parent
+        anchors.topMargin: -root.overflow
+        anchors.bottomMargin: -root.overflow
+
         hoverEnabled: true
         onPositionChanged: {
             if(pressedButtons) {
                 root.locked = false
                 parent.offset = Math.min(parent.maxOffset, Math.max(parent.minOffset, root.parent.height - (parent.y + mouseY)))
                 if(snap != null) {
-                    root.snapping = (Math.abs(snap - offset) < snapSize)
+                    if(!root.wasSnapped) {
+                        root.snapping = (Math.abs(snap - offset) < snapSize)
+                    } else if (Math.abs(root.startOffset - offset) > snapSize) {
+                        root.wasSnapped = false
+                    }
                 }
             }
+        }
+        onPressed: {
+            root.startOffset = offset
+            root.wasSnapped = (Math.abs(snap - offset) == 0)
         }
         onReleased: {
             if(snap == null) {

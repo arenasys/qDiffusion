@@ -64,7 +64,7 @@ Item {
 
     SText {
         anchors.centerIn: parent
-        visible: modelsView.count == 0 && root.search != ""
+        visible: modelsView.count == 0 && (root.search != "" || root.mode == "favourite")
         text: root.tr("Nothing found")
         color: COMMON.fg2
         font.pointSize: 9.8
