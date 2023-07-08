@@ -40,7 +40,7 @@ def restart():
 
 def install_venv():
     print(f"CREATING VENV... ({VENV_DIR})")
-    subprocess.run((f"{PYTHON_RUN} -m venv " + VENV_DIR).split(' '))
+    subprocess.run([PYTHON_RUN, "-m", "venv", VENV_DIR])
 
 def install_qt():
     print("INSTALLNG PyQt...")
