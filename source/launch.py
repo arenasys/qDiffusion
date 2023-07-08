@@ -6,7 +6,7 @@ import traceback
 import datetime
 import importlib.util
 
-VENV_DIR = "venv"
+VENV_DIR = os.path.join(os.getcwd(), "venv")
 IS_WIN = platform.system() == 'Windows'
 PYTHON_RUN = sys.executable
 
@@ -39,7 +39,7 @@ def restart():
     exit()
 
 def install_venv():
-    print("CREATING VENV...")
+    print(f"CREATING VENV... ({VENV_DIR})")
     subprocess.run((f"{PYTHON_RUN} -m venv " + VENV_DIR).split(' '))
 
 def install_qt():
