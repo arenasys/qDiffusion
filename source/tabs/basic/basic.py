@@ -137,7 +137,7 @@ class Basic(QObject):
                     if i._image and not i._image.isNull():
                         data += [encodeImage(i._originalCrop or i._original)]
                     if i._files:
-                        for f in i._files:
+                        for f in i._files[::-1]:
                             data += [i.getFilePath(f)]
                     if data:
                         inputs[i] = data
@@ -147,7 +147,7 @@ class Basic(QObject):
                         if i._image and not i._image.isNull():
                             data += [encodeImage(i._image)]
                         if i._files:
-                            for f in i._files:
+                            for f in i._files[::-1]:
                                 data += [i.getFilePath(f)]
                         if data:
                             inputs[i] = data
@@ -172,7 +172,7 @@ class Basic(QObject):
                     if k._image and not k._image.isNull():
                         data += [(model, opts, encodeImage(k._image or k._original))]
                     if k._files:
-                        for f in k._files:
+                        for f in k._files[::-1]:
                             data += [(model, opts, k.getFilePath(f))]
                     if data:
                         controls[i] = data
@@ -181,7 +181,7 @@ class Basic(QObject):
                     if i._image and not i._image.isNull():
                         data += [(encodeImage(i._originalCrop or i._original), opts)]
                     if i._files:
-                        for f in i._files:
+                        for f in i._files[::-1]:
                             data += [(i.getFilePath(f), opts)]
                     if data:
                         segmentation += data
