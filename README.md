@@ -16,7 +16,7 @@ Built from the ground up alongside [sd-inference-server](https://github.com/aren
 	- Output is displayed on screen, fatal errors are written to `crash.log`.
 5. Done. NOTE: Update using `File->Update` or `Settings->Program->Update`.
 
-Information is available on the [Wiki](https://github.com/arenasys/qDiffusion/wiki/Guide)
+Information is available on the [Wiki](https://github.com/arenasys/qDiffusion/wiki/Guide).
 
 ### Remote
 Notebooks for running a remote instance are available: [Colab](https://colab.research.google.com/github/arenasys/qDiffusion/blob/master/remote_colab.ipynb), [Kaggle](https://www.kaggle.com/code/arenasys/qdiffusion)
