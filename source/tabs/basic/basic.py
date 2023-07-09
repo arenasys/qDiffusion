@@ -28,7 +28,7 @@ SUGGESTION_BLOCK_REGEX = lambda spaces: r'(?=\n|,|(?<!lora|rnet):|\||\[|\]|\(|\)
 
 class BasicImageWriter(QRunnable):
     guard = QMutex()
-    def __init__(self, img, metadata, outputs, subfolder):
+    def __init__(self, img, metadata, outputs, subfolder, filename):
         super(BasicImageWriter, self).__init__()
         self.setAutoDelete(True)
 
@@ -43,12 +43,13 @@ class BasicImageWriter(QRunnable):
         folder = os.path.join(outputs, subfolder)
         os.makedirs(folder, exist_ok=True)
 
-        idx = parameters.getIndex(folder)
-        name = f"{idx:08d}-" + datetime.datetime.now().strftime("%m%d%H%M")
+        if not filename:
+            idx = parameters.getIndex(folder)
+            filename = f"{idx:08d}-" + datetime.datetime.now().strftime("%m%d%H%M")
 
         self.img = img
-        self.tmp = os.path.join(folder, f"{name}.tmp")
-        self.file = os.path.join(folder, f"{name}.png")
+        self.tmp = os.path.join(folder, f"{filename}.tmp")
+        self.file = os.path.join(folder, f"{filename}.png")
         self.metadata = m
 
     @pyqtSlot()
@@ -89,6 +90,7 @@ class Basic(QObject):
         self._mapping = {}
         self._annotations = {}
         self._subfolders = {}
+        self._filenames = {}
         self._accept_all = False
 
         self._openedIndex = -1
@@ -267,16 +269,25 @@ class Basic(QObject):
         
     def loadRequestImages(self, request):
         data = request["data"]
+        filename = None
         for k in ["image", "mask", "cn_image", "area"]:
             for i in range(len(data.get(k, []))):
                 if not data[k][i]:
                     continue
                 if type(data[k][i]) == str:
+                    if not filename:
+                        filename = data[k][i]
                     data[k][i] = encodeImage(QImage(data[k][i]))
                 elif type(data[k][i]) == list:
                     for j in range(len(data[k][i])):
                         if type(data[k][i][j]) == str:
+                            if not filename:
+                                filename = data[k][i][j]
                             data[k][i][j] = encodeImage(QImage(data[k][i][j]))
+        if filename:
+            filename = filename.rsplit(os.path.sep, 1)[-1].rsplit(".", 1)[0]
+
+        return filename
 
     @pyqtSlot()
     def generate(self, user=True):
@@ -285,10 +296,14 @@ class Basic(QObject):
                 self._remaining = 0
                 self._requests = None
                 self._subfolders = {}
+                self._filenames = {}
             request = self.buildRequest()
-            self.loadRequestImages(request)
+            filename = self.loadRequestImages(request)
+            subfolder = self._parameters._values.get("output_folder")
             id = self.gui.makeRequest(request)
-            self._subfolders[id] = self._parameters._values.get("output_folder") or request["type"]
+            
+            self._subfolders[id] = subfolder or request["type"]
+            self._filenames[id] = filename if subfolder else ""
             self._ids += [id]
             self.updated.emit()
 
@@ -352,7 +367,8 @@ class Basic(QObject):
                     meta = metadata[i] if metadata else None
 
                     subfolder = self._subfolders[id] if ours else "monitor"
-                    writer = BasicImageWriter(result, meta, self.gui.outputDirectory(), subfolder)
+                    filename = self._filenames[id] if ours else None
+                    writer = BasicImageWriter(result, meta, self.gui.outputDirectory(), subfolder, filename)
                     file = writer.file
                     self.pool.start(writer)
 

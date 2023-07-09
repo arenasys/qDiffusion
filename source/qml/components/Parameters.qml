@@ -674,6 +674,14 @@ Item {
 
                         property var sr: root.binding.values.get("SRs")
 
+                        function filterModel(model) {
+                            if(model) {
+                                return model.filter(u => !u.includes("Latent"));
+                            } else {
+                                return []
+                            }
+                        }
+
                         function decoration(value) {
                             if(sr.includes(value)) {
                                 return root.tr("SR")
