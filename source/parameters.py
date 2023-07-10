@@ -526,12 +526,12 @@ class Parameters(QObject):
         if data["steps"] == 0 and images:
             request["type"] = "upscale"
             data["image"] = images
-            if masks:
+            if any(masks):
                 data["mask"] = masks
         elif images:
             request["type"] = "img2img"
             data["image"] = images
-            if masks:
+            if any(masks):
                 data["mask"] = masks
         else:
             request["type"] = "txt2img"
@@ -546,7 +546,7 @@ class Parameters(QObject):
             del data["mask_expand"]
             del data["mask_fill"]
 
-        if areas:
+        if any(areas):
             s = len(self.subprompts)
             for a in range(len(areas)):
                 if areas[a] and len(areas[a]) > s:
