@@ -177,7 +177,7 @@ Item {
                 property var shortText: (sql_desc.length > grid.descLength ? sql_desc.substring(0, grid.descLength) + "..." : sql_desc)
                 property var longText: (sql_desc.length > 10*grid.descLength ? sql_desc.substring(0, 10*grid.descLength) + "..." : sql_desc)
                 property var processedText: modelCard.selected ? longText : shortText
-                text: processedText
+                text: descItem.visible ? processedText : ""
                 scrollBar.opacity: 0.5
                 scrollBar.color: COMMON.fg3
 
