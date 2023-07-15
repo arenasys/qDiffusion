@@ -354,21 +354,21 @@ class Parameters(QObject):
     def active(self):
         return self._active
     
-    @pyqtSlot(int)
-    def addNetwork(self, index):
-        if index >= 0 and index < len(self._availableNetworks):
-            net = self.availableNetworks[index]
-            if net in self._activeNetworks:
-                return
-            
-            name = self.gui.modelName(net)
-            type = self.gui.netType(net)
-            if type:
-                type = {"LoRA":"lora", "HN":"hypernet"}[type]
-            else:
-                return
-            
-            self._values.set("prompt", self._values.get("prompt") + f"<{type}:{name}:1.0>")   
+    @pyqtSlot(str)
+    def addNetwork(self, net):
+        if not net in self._availableNetworks:
+            return
+        if net in self._activeNetworks:
+            return
+        
+        name = self.gui.modelName(net)
+        type = self.gui.netType(net)
+        if type:
+            type = {"LoRA":"lora", "HN":"hypernet"}[type]
+        else:
+            return
+        
+        self._values.set("prompt", self._values.get("prompt") + f"<{type}:{name}:1.0>")   
 
     @pyqtSlot(int)
     def deleteNetwork(self, index):
@@ -774,12 +774,12 @@ class Parameters(QObject):
 
         for lora_match in re.findall(r"<@?lora:([^:>]+)([^>]+)?>", prompt):
             for lora in self._values.get("LoRAs"):
-                if lora_match[0] + "." in lora:
+                if lora_match[0] == lora.rsplit(os.path.sep,1)[-1].rsplit(".",1)[0]:
                     self._active += [lora]
 
         for hn_match in re.findall(r"<@?hypernet:([^:>]+)([^>]+)?>", prompt):
             for hn in self._values.get("HNs"):
-                if hn_match[0] + "." in hn:
+                if hn_match[0] == hn.rsplit(os.path.sep,1)[-1].rsplit(".",1)[0]:
                     self._active += [hn]
 
         for w_match in re.findall(r"@?__([^\s]+?)__(?!___)", prompt):

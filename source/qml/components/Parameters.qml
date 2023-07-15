@@ -572,7 +572,7 @@ Item {
                                     iconColor: COMMON.bg6
 
                                     onPressed: {
-                                        root.binding.addNetwork(netChoice.currentIndex)
+                                        root.binding.addNetwork(netChoice.model[netChoice.currentIndex])
                                     }
                                 }
                             }
