@@ -7,7 +7,7 @@ import sql
 import os
 import PIL.Image
 import misc
-import re
+import glob
 import shutil
 import time
 import json
@@ -36,9 +36,23 @@ class Populater(QObject):
         self.name = name
         self.conn = None
 
+        self.all_images = []
+        self.all_descs = []
+    
+    def populateCache(self):
+        self.all_images = []
+        self.all_descs = []
+        folder = self.gui.modelDirectory()
+        for ext in ["*.png", "*.jpg", "*.jpeg"]:
+            self.all_images += glob.glob(os.path.join(folder, os.path.join("**", ext)), recursive=True)
+        for ext in ["*.txt", "*.csv", "*.civitai.info"]:
+            self.all_descs += glob.glob(os.path.join(folder, os.path.join("**", ext)), recursive=True)
+
     @pyqtSlot()
     def populateOptions(self):
         self.gui.setTabWorking(self.name, True)
+
+        self.populateCache()
 
         self.conn = sql.Connection(self)
         self.conn.connect()
@@ -53,6 +67,8 @@ class Populater(QObject):
     @pyqtSlot()
     def populateFavourites(self):
         self.gui.setTabWorking(self.name, True)
+
+        self.populateCache()
         
         self.conn = sql.Connection(self)
         self.conn.connect()
@@ -65,45 +81,67 @@ class Populater(QObject):
     def setModel(self, name, category, display, type, idx, allow_folder = True):
         q = QSqlQuery(self.conn.db)
 
-        file = os.path.abspath(os.path.join(self.gui.modelDirectory(), name))
-        location = file.rsplit(".",1)[0]
-
         folder = ""
         parts = name.split(os.path.sep)
         if len(parts) > 2 and allow_folder:
             folder = parts[1]
 
+        folder_name, file_name = name.rsplit(os.path.sep, 1)
+        file_name_no_ext = file_name.rsplit(".",1)[0]
+
         w,h = 0,0
         preview = ""
-        for ext in [".preview.png", ".png", ".jpg", ".jpeg"]:
-            if os.path.exists(location + ext):
+
+        image_exts = [".preview.png", ".png", ".jpg", ".jpeg"]
+        possible_images = [file_name + e for e in image_exts] +[file_name_no_ext + e for e in image_exts] 
+        for p in possible_images:
+            files = [os.path.join(folder_name, p)]
+            files += [i for i in self.all_images if i.endswith(p)]
+            for file in files:
+                if not os.path.exists(file):
+                    continue
                 try:
-                    with PIL.Image.open(location + ext) as img:
-                        preview = location + ext
+                    with PIL.Image.open(file) as img:
+                        preview = file
                         w,h = img.size
                         break
                 except:
                     pass
+            else:
+                continue
+            break
         
         description = ""
-        if os.path.exists(location + ".civitai.info"):
-            with open(location + ".civitai.info", "r", encoding='utf-8') as f:
-                try:
-                    data = json.load(f)
-                    description = f"""
-                        <p><b>Name</b>: {data['model']['name']}<br>
-                        <b>Type</b>: {data['model']['type']}<br>
-                        <b>Activation</b>: {', '.join(data['trainedWords'])}<br>
-                        <b>Base model</b>: {data['baseModel']}<br>
-                        <b>Description</b>: </p>{data['description']}
-                    """
-                except:
-                    pass
+        desc_exts = [".txt", ".csv", ".civitai.info"]
+        possible_descs = [file_name + e for e in  desc_exts] + [file_name_no_ext + e for e in desc_exts]
 
-        for ext in [".txt", ".csv"]:
-            if os.path.exists(location + ext):
-                with open(location + ext, "r", encoding='utf-8') as f:
-                    description = f.read().strip()
+        for p in possible_descs:
+            files = [os.path.join(folder_name, p)]
+            files += [i for i in self.all_descs if i.endswith(p)]
+            for file in files:
+                if not os.path.exists(file):
+                    continue
+                if file.endswith(".civitai.info"):
+                    with open(file, "r", encoding='utf-8') as f:
+                        try:
+                            data = json.load(f)
+                            description = f"""
+                                <p><b>Name</b>: {data['model']['name']}<br>
+                                <b>Type</b>: {data['model']['type']}<br>
+                                <b>Activation</b>: {', '.join(data['trainedWords'])}<br>
+                                <b>Base model</b>: {data['baseModel']}<br>
+                                <b>Description</b>: </p>{data['description']}
+                            """
+                            break
+                        except:
+                            pass
+                else:
+                    with open(file, "r", encoding='utf-8') as f:
+                        description = f.read().strip()
+                        break
+            else:
+                continue
+            break
         
         q.prepare("INSERT OR REPLACE INTO models(name, category, display, type, file, folder, desc, idx, width, height) VALUES (:name, :category, :display, :type, :file, :folder, :desc, :idx, :width, :height);")
         q.bindValue(":name", name)
