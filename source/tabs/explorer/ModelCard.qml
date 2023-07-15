@@ -142,11 +142,10 @@ Item {
             visible: sql_width != 0 && !modelCard.info
             anchors.fill: parent
             anchors.margins: 1
-            property var trueSource: visible ? ("image://async/" + sql_file) : ""
+            property var trueSource: visible ? ((GUI.isCached(sql_file) ? "image://sync/" : "image://async/") + sql_file) : ""
             source: trueSource
             fillMode: Image.PreserveAspectCrop
             cache: false
-            asynchronous: true
         }
 
         Image {
@@ -158,7 +157,6 @@ Item {
             source: trueSource
             fillMode: Image.PreserveAspectCrop
             cache: false
-            asynchronous: true
         }
 
         Item {
