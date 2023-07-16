@@ -158,6 +158,7 @@ class Merger(QObject):
         super().__init__(parent)
         self.name = "Merge"
         self.gui = parent
+        self.hidden = True
         self._ids = []
         self._mapping = {}
         self._valid = False

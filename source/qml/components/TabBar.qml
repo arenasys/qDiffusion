@@ -32,7 +32,7 @@ Item {
         }
     }
 
-    function getShown() {
+    function getShown(first) {
         var _shown = []
         var i = 0
         while (true) {
@@ -45,7 +45,7 @@ Item {
         }
         shown = _shown
         
-        if(shown.indexOf(currentTab) == -1) {
+        if(!first && shown.indexOf(currentTab) == -1) {
             currentTab = "Settings"
         }
     }
@@ -113,10 +113,13 @@ Item {
                     property var name: modelData
                     text: root.tr(modelData, "Tabs")
                     checkable: true
-                    checked: true
+                    checked: GUI.tabInitialStatus(modelData)
+                    property var first: true
 
                     onCheckedChanged: {
-                        root.getShown()
+                        GUI.setTabInitialStatus(modelData, checked)
+                        root.getShown(first)
+                        first = false
                     }
                 }
             }

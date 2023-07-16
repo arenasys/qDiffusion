@@ -29,7 +29,7 @@ class Config(QObject):
     @pyqtSlot()
     def saveConfig(self):
         data = self._values._map
-        data = {k:v for k,v in data.items() if not (k in self._defaults and self._defaults[k] == v)}
+        data = {k:v for k,v in data.items() if not (k in self._defaults and str(self._defaults[k]) == str(v))}
 
         try:
             with open(self._file, 'w', encoding="utf-8") as f:

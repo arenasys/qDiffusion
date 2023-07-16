@@ -900,6 +900,7 @@ Item {
 
                                     onPressed: {
                                         root.operation.setBlockWeightValues(valueArea.text)
+                                        root.operation.parameters.set("preset", "None")
                                         valueArea.sync()
                                     }
                                 }
@@ -907,7 +908,7 @@ Item {
                                 SButton {
                                     anchors.right: parent.right
                                     anchors.bottom: parent.bottom
-                                    label: "Sync"
+                                    label: "Revert"
                                     disabled: valueArea.syncing
                                     width: (parent.width / 2) - 1
                                     height: 25
@@ -1028,9 +1029,9 @@ Item {
 
     Item {
         anchors.left: divider.right
-        anchors.right: parent.right
         anchors.top: parent.top
         anchors.bottom: parent.bottom
+        width: Math.max(parent.width-(divider.x+5), 330)
         clip: true
 
         SShadow {
@@ -1059,6 +1060,27 @@ Item {
             Item {
                 anchors.fill: parent
                 clip: true
+
+                Item {
+                    anchors.fill: parent
+
+                    Image {
+                        id: placeholder
+                        visible: movable.itemWidth == 0
+                        source: "qrc:/icons/placeholder_black.svg"
+                        height: 50
+                        width: height
+                        sourceSize: Qt.size(width*1.25, height*1.25)
+                        anchors.centerIn: parent
+                    }
+
+                    ColorOverlay {
+                        visible: placeholder.visible
+                        anchors.fill: placeholder
+                        source: placeholder
+                        color: COMMON.bg4
+                    }
+                }
 
                 MovableItem {
                     id: movable

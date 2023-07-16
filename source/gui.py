@@ -96,7 +96,7 @@ class GUI(QObject):
             "endpoint": "", "password": "", "output_directory": "outputs", "model_directory": "models", "device": "",
             "swap": False, "advanced": False, "autocomplete": 1, "vocab": [], "enforce_versions": True,
             "host_enabled": False, "host_address": "127.0.0.1", "host_port": 28888, "host_tunnel": False,
-            "host_read_only": True, "host_monitor": False
+            "host_read_only": True, "host_monitor": False, "tabs": []
         })
         self._config.updated.connect(self.onConfigUpdated)
         self._remoteStatus = RemoteStatusMode.INACTIVE
@@ -166,6 +166,36 @@ class GUI(QObject):
         if not working and tab in self._workingTabs:
             self._workingTabs.remove(tab)
             self.tabUpdated.emit()
+
+    @pyqtSlot(str, result=bool)
+    def tabInitialStatus(self, tab):
+        tabs = self._config._values.get("tabs")
+        if tabs:
+            if not self._currentTab in tabs:
+                self._currentTab = [t.name for t in self.tabs if t.name in tabs][0]
+                self.tabUpdated.emit()
+            return tab in tabs
+        
+        status = True
+
+        for t in self.tabs:
+            tab_status = not getattr(t, "hidden", False)
+            self.setTabInitialStatus(t.name, tab_status)
+            if t.name == tab:
+                status = tab_status
+        
+        return status
+    
+    @pyqtSlot(str, bool)
+    def setTabInitialStatus(self, tab, status):
+        tabs = list(self._config._values.get("tabs"))
+        
+        if not status and tab in tabs:
+            tabs.remove(tab)
+        elif status and not tab in tabs:
+            tabs += [tab] 
+
+        self._config._values.set("tabs", tuple(tabs))
 
     @pyqtProperty('QString', notify=statusUpdated)
     def title(self):
