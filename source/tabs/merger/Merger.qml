@@ -9,9 +9,11 @@ import gui 1.0
 import "../../style"
 import "../../components"
 
-Item {
+Rectangle {
     id: root
     clip: true
+
+    color: COMMON.bg0_5
 
     property var operation: MERGER.operations[MERGER.selectedOperation]
 
@@ -1061,25 +1063,25 @@ Item {
                 anchors.fill: parent
                 clip: true
 
-                Item {
+                SShadow {
                     anchors.fill: parent
+                }
 
-                    Image {
-                        id: placeholder
-                        visible: movable.itemWidth == 0
-                        source: "qrc:/icons/placeholder_black.svg"
-                        height: 50
-                        width: height
-                        sourceSize: Qt.size(width*1.25, height*1.25)
-                        anchors.centerIn: parent
-                    }
+                Image {
+                    id: placeholder
+                    visible: movable.itemWidth == 0
+                    source: "qrc:/icons/placeholder_black.svg"
+                    height: 50
+                    width: height
+                    sourceSize: Qt.size(width*1.25, height*1.25)
+                    anchors.centerIn: parent
+                }
 
-                    ColorOverlay {
-                        visible: placeholder.visible
-                        anchors.fill: placeholder
-                        source: placeholder
-                        color: COMMON.bg4
-                    }
+                ColorOverlay {
+                    visible: placeholder.visible
+                    anchors.fill: placeholder
+                    source: placeholder
+                    color: COMMON.bg4
                 }
 
                 MovableItem {
