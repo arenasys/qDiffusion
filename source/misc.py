@@ -83,6 +83,10 @@ class ImageDisplay(QQuickPaintedItem):
 
         self.update()
 
+    @pyqtSlot(result=QImage)
+    def clear(self):
+        return QImage()
+
     @pyqtProperty(bool, notify=imageUpdated)
     def centered(self):
         return self._centered

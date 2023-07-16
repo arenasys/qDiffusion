@@ -351,6 +351,7 @@ class GUI(QObject):
             self.addResult(id, "metadata", data["metadata"])
             self.addResult(id, "result", data["images"])
             self.setReady()
+            self._results = {}
 
         if type == "annotate":
             self.addResult(id, "result", data["images"])

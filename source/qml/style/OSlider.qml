@@ -48,6 +48,13 @@ Item {
         }
     }
 
+    onBindMapChanged: {
+        var v = root.bindMap.get(root.bindKey)
+        if(v != root.value) {
+            root.value = v
+        }
+    }
+
     Component.onCompleted: {
         if(root.bindMap != null && root.bindKey != null) {
             root.value = root.bindMap.get(root.bindKey)
@@ -108,6 +115,7 @@ Item {
                     pos = Math.min(width, pos)
                 }
                 root.update(pos/width)
+                root.selected()
             }
 
             onPressed: {
@@ -117,7 +125,6 @@ Item {
             onPositionChanged: {
                 if(pressed) {
                     mouseArea.update()
-                    root.selected()
                 }
             }
 

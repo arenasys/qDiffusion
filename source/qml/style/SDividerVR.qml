@@ -9,11 +9,15 @@ Rectangle {
     required property int minOffset
     required property int maxOffset
     required property int offset
-    x: parent.width - offset
+    x: snapping ? (parent.width - Math.floor(snap)) : (parent.width - offset)
     width: 5
     color: COMMON.bg4
+
     property bool locked: true
+    property bool snapping: false
     property var snap: null
+    property var wasSnapped: false
+    property var snapSize: 50
 
     onOffsetChanged: {
         if(snap - offset == 0.0) {
@@ -36,6 +40,7 @@ Rectangle {
         onPressed: {
             startPosition = Qt.point(mouse.x, mouse.y)
             root.setLimited(false)
+            root.wasSnapped = (Math.abs(snap - offset) == 0)
         }
         onPositionChanged: {
             if(pressedButtons) {
@@ -47,6 +52,14 @@ Rectangle {
                     root.setLimited(true)
                 } else {
                     root.setLimited(false)
+                }
+
+                if(snap != null) {
+                    if(!root.wasSnapped) {
+                        root.snapping = (Math.abs(snap - offset) < snapSize)
+                    } else if (Math.abs(root.startOffset - offset) > snapSize) {
+                        root.wasSnapped = false
+                    }
                 }
             }
         }

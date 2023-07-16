@@ -9,9 +9,23 @@ Rectangle {
     required property int minOffset
     required property int maxOffset
     required property int offset
-    x: offset
+    x: snapping ? Math.floor(snap) : offset
     width: 5
     color: COMMON.bg4
+
+    property bool locked: true
+    property bool snapping: false
+    property var snap: null
+    property var wasSnapped: false
+    property var snapSize: 50
+
+    onOffsetChanged: {
+        if(snap - offset == 0.0) {
+            root.offset = Qt.binding(function() {return snap})
+            root.locked = true
+        }
+    }
+
     property var limited: false
     function setLimited(current) {
         if(current != limited) {
@@ -26,12 +40,11 @@ Rectangle {
         onPressed: {
             startPosition = Qt.point(mouse.x, mouse.y)
             root.setLimited(false)
-        }
-        onReleased: {
-            root.setLimited(false)
+            root.wasSnapped = (Math.abs(snap - offset) == 0)
         }
         onPositionChanged: {
             if(pressedButtons) {
+                root.locked = false
                 parent.offset = Math.min(parent.maxOffset, Math.max(parent.minOffset, parent.x + mouseX))
 
                 var delta = Qt.point(mouse.x-startPosition.x, mouse.y-startPosition.y)
@@ -40,11 +53,30 @@ Rectangle {
                 } else {
                     root.setLimited(false)
                 }
+
+                if(snap != null) {
+                    if(!root.wasSnapped) {
+                        root.snapping = (Math.abs(snap - offset) < snapSize)
+                    } else if (Math.abs(root.startOffset - offset) > snapSize) {
+                        root.wasSnapped = false
+                    }
+                }
+            }
+        }
+        onReleased: {
+            root.setLimited(false)
+            if(snap == null) {
+                return
+            }
+            if(Math.abs(snap - offset) < 50) {
+                root.offset = Qt.binding(function() {return snap})
+                root.locked = true
             }
         }
     }
 
     onMaxOffsetChanged: {
-        offset = Math.min(maxOffset, Math.max(minOffset, offset))
+        if(!root.locked && parent && parent.width > 0 && x > 0)
+            offset = Math.min(maxOffset, Math.max(minOffset, offset))
     }
 }

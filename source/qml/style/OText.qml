@@ -12,6 +12,10 @@ SText {
     property variant bindMap: null
     property var bindKey: null
 
+    property alias text: control.text
+
+    property var readonly: true
+
     function display(text) {
         return text
     }
@@ -36,8 +40,10 @@ SText {
     }
 
     onTextChanged: {
-        if(control.bindMap != null && control.bindKey != null) {
-            control.bindMap.set(control.bindKey, control.text)
+        if (!readonly) {
+            if(control.bindMap != null && control.bindKey != null) {
+                control.bindMap.set(control.bindKey, control.text)
+            }
         }
     }
 }

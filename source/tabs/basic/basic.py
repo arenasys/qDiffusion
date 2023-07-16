@@ -76,7 +76,6 @@ class Basic(QObject):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.gui = parent
-        self.pool = QThreadPool.globalInstance()
         self.priority = 0
         self.name = "Generate"
         self._parameters = parameters.Parameters(parent)
@@ -301,7 +300,7 @@ class Basic(QObject):
             filename = self.loadRequestImages(request)
             subfolder = self._parameters._values.get("output_folder")
             id = self.gui.makeRequest(request)
-            
+
             self._subfolders[id] = subfolder or request["type"]
             self._filenames[id] = filename if subfolder else ""
             self._ids += [id]
@@ -359,18 +358,17 @@ class Basic(QObject):
             results = self.gui._results[id]["result"]
             metadata = self.gui._results[id].get("metadata", None)
             artifacts = {k:v for k,v in self.gui._results[id].items() if not k in {"result", "metadata", "preview"}}
-            self.gui._results = {}
             out = self._mapping[id]
             for i in range(len(results)-1, -1, -1):
                 if not self._outputs[out]._ready:
                     result = results[i]
                     meta = metadata[i] if metadata else None
 
-                    subfolder = self._subfolders[id] if ours else "monitor"
-                    filename = self._filenames[id] if ours else None
+                    subfolder = self._subfolders.get(id, "monitor")
+                    filename = self._filenames.get(id, None)
                     writer = BasicImageWriter(result, meta, self.gui.outputDirectory(), subfolder, filename)
                     file = writer.file
-                    self.pool.start(writer)
+                    QThreadPool.globalInstance().start(writer)
 
                     self._outputs[out].setResult(result, meta, file)
                 self._outputs[out].setArtifacts({k:v[i%len(v)] for k,v in artifacts.items() if v[i%len(v)]})

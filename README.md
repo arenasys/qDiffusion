@@ -30,7 +30,7 @@ Notebooks for running a remote instance are available: [Colab](https://colab.res
 6. Done. See [Downloads](https://github.com/arenasys/qDiffusion/wiki/Guide#downloading) for how to get models onto the instance.
 
 ### Overview
-- Stable diffusion 1.x and 2.x (including v-prediction)
+- Stable diffusion 1.x, 2.x (including v-prediction), XL (only Base)
 - Txt2Img, Img2Img, Inpainting, HR Fix and Upscaling modes
 - Prompt and network weighting and scheduling
 - Hypernetworks
@@ -43,4 +43,5 @@ Notebooks for running a remote instance are available: [Colab](https://colab.res
 - Minimal VRAM mode
 - Device selection
 - ControlNet
-- ~~Merging~~ (working on it!)
+- Merging
+- ~~LoRA Training~~ (working on it!)

@@ -13,6 +13,7 @@ Item {
     property var value: control.currentIndex == -1 ? overloadValue : (control.model.length == 0 ? "" : control.model[control.currentIndex])
     property alias currentIndex: control.currentIndex
 
+    property var emptyValue: ""
     property var overloadValue: ""
 
     property var disabled: false
@@ -25,9 +26,13 @@ Item {
     property alias delegate: control.delegate
 
     property variant bindMap: null
+    property variant bindMapModel: bindMap
+    property variant bindMapCurrent: bindMap
     property var bindKeyCurrent: null
     property var bindKeyModel: null
     property var bindKeyLabel: null
+
+    property var binding: root.bindMapCurrent != null && root.bindKeyCurrent != null && root.bindMapModel != null && root.bindKeyModel != null
 
     property alias popupHeight: control.popupHeight
 
@@ -49,6 +54,10 @@ Item {
         return text
     }
 
+    function expandModel(model) {
+        return model
+    }
+
     function filterModel(model) {
         return model
     }
@@ -59,16 +68,16 @@ Item {
         if(i == -1 && all_m.includes(c)) {
             root.overloadValue = c
         } else {
-            root.overloadValue = ""
+            root.overloadValue = root.emptyValue
         }
 
         root.currentIndex = i
     }
 
     function update() {
-        var all_m = root.bindMap.get(root.bindKeyModel);
+        var all_m = expandModel(root.bindMapModel.get(root.bindKeyModel));
         var m = filterModel(all_m);
-        var c = root.bindMap.get(root.bindKeyCurrent);
+        var c = root.bindMapCurrent.get(root.bindKeyCurrent);
 
         if(m != root.model) {
             var diff = (m == null || root.model == null || root.model.length != m.length)
@@ -87,18 +96,45 @@ Item {
         }
     }
 
+    onBindMapChanged: {
+        bindMapModel = bindMap
+        bindMapCurrent = bindMap
+        root.update()
+    }
+
+    onBindMapCurrentChanged: {
+        if(bindMap == null && binding) {
+            root.update()
+        }
+    }
+
+    onBindMapModelChanged: {
+        if(bindMap == null && binding) {
+            root.update()
+        }
+    }
+
     Connections {
-        target: bindMap
+        target: bindMapModel
         function onUpdated() {
             root.update()
         }
     }
 
+    Connections {
+        target: bindMapCurrent
+        function onUpdated() {
+            if(bindMapCurrent != bindMapModel) {
+                root.update()
+            }
+        }
+    }
+
     Component.onCompleted: {
-        if(root.bindMap != null && root.bindKeyCurrent != null && root.bindKeyModel != null) {
-            var all_m = root.bindMap.get(root.bindKeyModel);
+        if(root.binding) {
+            var all_m = expandModel(root.bindMapModel.get(root.bindKeyModel));
             var m = filterModel(all_m)
-            var c = root.bindMap.get(root.bindKeyCurrent);
+            var c = root.bindMapCurrent.get(root.bindKeyCurrent);
             root.model = m;
 
             root.setCurrent(c, m, all_m);
@@ -110,10 +146,10 @@ Item {
     }
 
     onSelected: {
-        if(root.bindMap != null && root.bindKeyCurrent != null && root.bindKeyModel != null && root.value != "") {
-            var all_m = root.bindMap.get(root.bindKeyModel);
+        if(root.binding && root.value != "") {
+            var all_m = expandModel(root.bindMapModel.get(root.bindKeyModel));
             if(all_m.includes(root.value)) {
-                root.bindMap.set(root.bindKeyCurrent, root.value);
+                root.bindMapCurrent.set(root.bindKeyCurrent, root.value);
             }
         }
     }
@@ -205,6 +241,11 @@ Item {
 
                 Connections {
                     target: control.popup
+                    function onVisibleChanged() { canvas.requestPaint(); }
+                }
+
+                Connections {
+                    target: root
                     function onVisibleChanged() { canvas.requestPaint(); }
                 }
 
