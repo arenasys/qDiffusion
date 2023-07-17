@@ -222,6 +222,7 @@ class SyntaxHighlighter(QSyntaxHighlighter):
         wild_bg = QColor("#c7ffd2")
         wild = QColor("#93ffa9")
         field = QColor("#9e9e9e")
+        keyword = QColor("#ffb393")
 
         embeddings = set()
         if "TI" in self.gui._options:
@@ -279,6 +280,9 @@ class SyntaxHighlighter(QSyntaxHighlighter):
                 self.setFormat(ms, me-ms, err)
                 if text[s] == "@":
                     self.setFormat(s,1,err)
+
+        for s, e in [m.span(0) for m in re.finditer("((?<=\s|,)|^)(AND|BREAK|START|END)(?=\s|,|$)", text)]:
+            self.setFormat(s, e-s, keyword)
         
         if text.startswith("Negative prompt: "):
             self.setFormat(0, 16, field)
