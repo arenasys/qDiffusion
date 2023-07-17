@@ -56,7 +56,7 @@ Item {
 
     SText {
         anchors.centerIn: parent
-        visible: modelsView.count == 0 && GUI.isRemote && root.mode != "wildcard" && root.search == ""
+        visible: modelsView.count == 0 && GUI.isRemote && root.mode != "wildcard" && root.mode != "favourite" && root.search == ""
         text: root.tr("Remote has no %1").arg(root.label)
         color: COMMON.fg2
         font.pointSize: 9.8

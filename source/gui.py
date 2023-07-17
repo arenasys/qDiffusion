@@ -78,6 +78,7 @@ class GUI(QObject):
         
         self._currentTab = "Generate"
         self._workingTabs = []
+        self._visibleTabs = []
 
         self._statusMode = StatusMode.STARTING
         self._statusText = "Inactive"
@@ -137,6 +138,16 @@ class GUI(QObject):
     def registerTabs(self, tabs):
         self.tabs = tabs
 
+        shown = self._config._values.get("tabs")
+        if not shown:
+            for t in self.tabs:
+                if not getattr(t, "hidden", False):
+                    shown += [t.name]
+            shown = [t.name for t in self.tabs if t.name in shown and t.name != "Settings"]
+            self._config._values.set("tabs", shown)
+        self._visibleTabs = shown
+        self.tabUpdated.emit()
+
     @pyqtProperty(list, constant=True)
     def tabSources(self):
         return [tab.source for tab in self.tabs]
@@ -144,6 +155,30 @@ class GUI(QObject):
     @pyqtProperty(list, constant=True)
     def tabNames(self): 
         return [tab.name for tab in self.tabs]
+    
+    @pyqtProperty(list, notify=tabUpdated)
+    def visibleTabs(self):
+        return self._visibleTabs
+    
+    @pyqtSlot(str, bool)
+    def setTabVisible(self, tab, visible):
+        shown = self._visibleTabs.copy()
+
+        if tab in shown and visible:
+            return
+        if not tab in shown and not visible:
+            return
+        
+        if not visible and tab in shown:
+            shown.remove(tab)
+        if visible and not tab in shown:
+            shown += [tab]
+        
+        shown = [t.name for t in self.tabs if t.name in shown and t.name != "Settings"]
+        self._config._values.set("tabs", shown)
+
+        self._visibleTabs = shown
+        self.tabUpdated.emit()
     
     @pyqtProperty(str, notify=tabUpdated)
     def currentTab(self): 
@@ -166,36 +201,6 @@ class GUI(QObject):
         if not working and tab in self._workingTabs:
             self._workingTabs.remove(tab)
             self.tabUpdated.emit()
-
-    @pyqtSlot(str, result=bool)
-    def tabInitialStatus(self, tab):
-        tabs = self._config._values.get("tabs")
-        if tabs:
-            if not self._currentTab in tabs:
-                self._currentTab = [t.name for t in self.tabs if t.name in tabs][0]
-                self.tabUpdated.emit()
-            return tab in tabs
-        
-        status = True
-
-        for t in self.tabs:
-            tab_status = not getattr(t, "hidden", False)
-            self.setTabInitialStatus(t.name, tab_status)
-            if t.name == tab:
-                status = tab_status
-        
-        return status
-    
-    @pyqtSlot(str, bool)
-    def setTabInitialStatus(self, tab, status):
-        tabs = list(self._config._values.get("tabs"))
-        
-        if not status and tab in tabs:
-            tabs.remove(tab)
-        elif status and not tab in tabs:
-            tabs += [tab] 
-
-        self._config._values.set("tabs", tuple(tabs))
 
     @pyqtProperty('QString', notify=statusUpdated)
     def title(self):

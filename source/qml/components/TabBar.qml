@@ -9,45 +9,10 @@ import "../style"
 Item {
     id: root
 
-    property var currentTab: GUI.tabNames[0]
-    property var working: GUI.workingTabs
-    property var shown: GUI.tabNames.slice(0,-1)
+    property var currentTab: GUI.currentTab
 
     function tr(str, file = "TabBar.qml") {
         return TRANSLATOR.instance.translate(str, file)
-    }
-
-    Connections {
-        target: GUI
-        function onCurrentTabChanged() {
-            if(GUI.currentTab != root.currentTab) {
-                root.currentTab = GUI.currentTab
-            }
-        }
-    }
-
-    onCurrentTabChanged: {
-        if(GUI.currentTab != root.currentTab) {
-            GUI.currentTab = root.currentTab
-        }
-    }
-
-    function getShown(first) {
-        var _shown = []
-        var i = 0
-        while (true) {
-            var action = dropdownContextMenu.itemAt(i++)
-            if(action == null) {
-                break
-            } else if(action.checked) {
-                _shown.push(action.name)
-            }
-        }
-        shown = _shown
-        
-        if(!first && shown.indexOf(currentTab) == -1) {
-            currentTab = "Settings"
-        }
     }
     
     height: 30
@@ -61,17 +26,16 @@ Item {
         contentHeight: 30
 
         Repeater {
-            property var tmp: shown
-            model: tmp
+            model: GUI.visibleTabs
             STabButton {
                 text: root.tr(modelData, "Tabs")
-                selected: root.currentTab == modelData
-                working: root.working.includes(modelData)
+                selected: GUI.currentTab == modelData
+                working: GUI.workingTabs.includes(modelData)
                 onPressed: {
-                    root.currentTab = modelData
+                    GUI.currentTab = modelData
                 }
                 onDragEnter: {
-                    root.currentTab = modelData
+                    GUI.currentTab = modelData
                 }
             }
         }
@@ -87,9 +51,9 @@ Item {
 
         STabButton {
             text: root.tr(rightBar.settingsName)
-            selected: root.currentTab == rightBar.settingsName
+            selected: GUI.currentTab == rightBar.settingsName
             onPressed: {
-                root.currentTab = rightBar.settingsName
+                GUI.currentTab = rightBar.settingsName
             }
         }
 
@@ -113,13 +77,10 @@ Item {
                     property var name: modelData
                     text: root.tr(modelData, "Tabs")
                     checkable: true
-                    checked: GUI.tabInitialStatus(modelData)
-                    property var first: true
+                    checked: GUI.visibleTabs.includes(modelData)
 
                     onCheckedChanged: {
-                        GUI.setTabInitialStatus(modelData, checked)
-                        root.getShown(first)
-                        first = false
+                        GUI.setTabVisible(modelData, checked)
                     }
                 }
             }
