@@ -73,34 +73,6 @@ Item {
         anchors.top: parent.top
         anchors.bottom: parent.bottom
     }
-
-    SDividerVR {
-        id: rightDivider
-        visible: !root.swap
-        minOffset: 5
-        maxOffset: 300
-        offset: 210
-
-        onLimitedChanged: {
-            if(limited) {
-                BASIC.dividerDrag()
-            }
-        }
-    }
-
-    SDividerVL {
-        id: leftDivider
-        visible: root.swap
-        minOffset: 0
-        maxOffset: 300
-        offset: 210
-
-        onLimitedChanged: {
-            if(limited) {
-                BASIC.dividerDrag()
-            }
-        }
-    }
     
     Item {
         id: rightArea
@@ -236,29 +208,11 @@ Item {
         }
     }
 
-    SDividerHB {
-        id: statusDivider
-        anchors.left: settingsArea.left
-        anchors.right: settingsArea.right
-        minOffset: 50
-        maxOffset: 70
-        offset: 50
-    }
-
     Status {
         anchors.top: statusDivider.bottom
         anchors.bottom: settingsArea.bottom
         anchors.left: settingsArea.left
         anchors.right: settingsArea.right
-    }
-
-    SDividerHB {
-        id: promptDivider
-        anchors.left: mainArea.left
-        anchors.right: mainArea.right
-        minOffset: 5
-        maxOffset: 300
-        offset: 150
     }
 
     Prompts {
@@ -602,6 +556,52 @@ Item {
             color: COMMON.bg6
             height: parent.height
         }
+    }
+
+    SDividerVR {
+        id: rightDivider
+        visible: !root.swap
+        minOffset: 5
+        maxOffset: 300
+        offset: 210
+
+        onLimitedChanged: {
+            if(limited) {
+                BASIC.dividerDrag()
+            }
+        }
+    }
+
+    SDividerVL {
+        id: leftDivider
+        visible: root.swap
+        minOffset: 0
+        maxOffset: 300
+        offset: 210
+
+        onLimitedChanged: {
+            if(limited) {
+                BASIC.dividerDrag()
+            }
+        }
+    }
+
+    SDividerHB {
+        id: statusDivider
+        anchors.left: settingsArea.left
+        anchors.right: settingsArea.right
+        minOffset: 50
+        maxOffset: 70
+        offset: 50
+    }
+
+    SDividerHB {
+        id: promptDivider
+        anchors.left: mainArea.left
+        anchors.right: mainArea.right
+        minOffset: 5
+        maxOffset: 300
+        offset: 150
     }
 
     Shortcut {

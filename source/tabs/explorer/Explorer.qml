@@ -153,7 +153,11 @@ Item {
 
             ModelGrid {
                 id: grid
-                anchors.fill: parent
+                anchors.top: parent.top
+                anchors.left: parent.left
+                height: Math.max(200, parent.height)
+                width: Math.max(200, parent.width)
+
                 mode: EXPLORER.currentTab
                 label: root.tr(EXPLORER.getLabel(mode), "Category")
                 folder: EXPLORER.currentFolder

@@ -209,6 +209,7 @@ Item {
             horizontalAlignment: Text.AlignRight
             text: root.value.toFixed(root.precValue)
             validator: DoubleValidator {
+                locale: "C"
                 bottom: root.minValue
                 top: bounded ? root.maxValue : 2147483647.0
             }

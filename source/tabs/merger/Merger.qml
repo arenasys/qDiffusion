@@ -55,7 +55,7 @@ Rectangle {
         width: Math.max(divider.x, 330)
 
         SShadow {
-            opacity: 0.7
+            color: COMMON.bg0
             anchors.fill: parent
         }
 

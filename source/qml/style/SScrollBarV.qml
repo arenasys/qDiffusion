@@ -14,16 +14,19 @@ ScrollBar {
     property var barWidth: 6
     property var barHeight: 200
 
-    contentItem: Rectangle {
-        implicitWidth: parent.barWidth
+    contentItem: Item {
+        implicitWidth: 12
         implicitHeight: parent.barHeight
-        color: control.pressed ? control.pressedColor : control.color
-        // Hide the ScrollBar when it's not needed.
-        opacity: control.policy === ScrollBar.AlwaysOn || (control.active && control.size < 1.0) ? 0.75 : 0
 
-        // Animate the changes in opacity (default duration is 250 ms).
-        Behavior on opacity {
-            NumberAnimation {}
+        Rectangle {
+            height: parent.height
+            width: 6
+            anchors.right: parent.right
+            color: control.pressed ? control.pressedColor : control.color
+            opacity: control.policy === ScrollBar.AlwaysOn || (control.active && control.size < 1.0) ? 0.75 : 0
+            Behavior on opacity {
+                NumberAnimation {}
+            }
         }
     }
 }

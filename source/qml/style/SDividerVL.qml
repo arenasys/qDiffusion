@@ -17,7 +17,9 @@ Rectangle {
     property bool snapping: false
     property var snap: null
     property var wasSnapped: false
+    property var initialOffset: 0
     property var snapSize: 50
+    property var overflow: 3
 
     onOffsetChanged: {
         if(snap - offset == 0.0) {
@@ -35,20 +37,29 @@ Rectangle {
 
     MouseArea {
         anchors.fill: parent
+        anchors.leftMargin: -root.overflow
+        anchors.rightMargin: -root.overflow
+
         hoverEnabled: true
         property var startPosition: Qt.point(0,0)
+        property var startOffset: 0
         onPressed: {
-            startPosition = Qt.point(mouse.x, mouse.y)
+            startPosition = mapToGlobal(mouse.x, mouse.y)
+            startOffset = root.offset
+            root.initialOffset = root.offset
             root.setLimited(false)
             root.wasSnapped = (Math.abs(snap - offset) == 0)
         }
         onPositionChanged: {
             if(pressedButtons) {
                 root.locked = false
-                parent.offset = Math.min(parent.maxOffset, Math.max(parent.minOffset, parent.x + mouseX))
 
-                var delta = Qt.point(mouse.x-startPosition.x, mouse.y-startPosition.y)
-                if(parent.offset == parent.maxOffset && Math.pow(delta.x*delta.x + delta.y*delta.y, 0.5) > 400) {
+                var absMouse = mapToGlobal(mouse.x, mouse.y)
+                var delta = Qt.point(startPosition.x-absMouse.x, startPosition.y-absMouse.y)
+                var mouseOffset = startOffset - delta.x
+                parent.offset = Math.min(parent.maxOffset, Math.max(parent.minOffset, mouseOffset))
+
+                if(parent.offset == parent.maxOffset && Math.abs(parent.maxOffset - mouseOffset) > 400) {
                     root.setLimited(true)
                 } else {
                     root.setLimited(false)
@@ -57,7 +68,7 @@ Rectangle {
                 if(snap != null) {
                     if(!root.wasSnapped) {
                         root.snapping = (Math.abs(snap - offset) < snapSize)
-                    } else if (Math.abs(root.startOffset - offset) > snapSize) {
+                    } else if (Math.abs(root.initialOffset - offset) > snapSize) {
                         root.wasSnapped = false
                     }
                 }

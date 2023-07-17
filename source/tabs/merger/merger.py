@@ -264,10 +264,11 @@ class Merger(QObject):
                 alpha = op["alpha"]
                 if type(alpha) == list:
                     operation._parameters.set("mode", "Advanced")
-                    operation.setBlockWeightValues(",".join(alpha))
+                    operation.setBlockWeightValues(",".join([str(a) for a in alpha]))
                 else:
                     operation._parameters.set("alpha", alpha)
-            except:
+            except Exception as e:
+                print(e)
                 pass
             operation._parameters.updated.connect(self.check)
             self._operations += [operation]

@@ -307,7 +307,7 @@ class Parameters(QObject):
             "attentions", "device", "devices", "batch_count", "prompt", "negative_prompt", "vram_usages", "artifact_modes", "preview_modes", "schedules",
             "CN_modes", "CN_preprocessors", "vram_modes", "true_samplers", "schedule", "network_modes", "model", "output_folder", "mask_fill_modes", "autocast_modes"
         ]
-        self._values = VariantMap(self, {
+        self._default_values = {
             "prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7.0, "strength": 0.75, "seed": -1, "eta": 1.0,
             "hr_factor": 1.0, "hr_strength":  0.7, "hr_sampler": "Euler a", "hr_steps": 25, "hr_eta": 1.0, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "mask_expand": 0, "subseed":-1, "subseed_strength": 0.0,
             "sampler":"Euler a", "samplers":[], "hr_upscaler":"Latent (nearest)", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
@@ -319,7 +319,8 @@ class Parameters(QObject):
             "tome_ratio": 0.0, "hr_tome_ratio": 0.0, "cfg_rescale": 0.0, "output_folder": "", "autocast": "Disabled", "autocast_modes": ["Disabled", "Enabled"],
             "CN_modes": ["Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD", "Instruct", "Shuffle", "Inpaint", "Scribble", "Normal"],#, "Tile", "Segmentation"]
             "CN_preprocessors": ["None", "Invert", "Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD", "Shuffle", "Scribble", "Normal"]
-        }, strict=True)
+        }
+        self._values = VariantMap(self, self._default_values.copy(), strict=True)
         self._values.updating.connect(self.mapsUpdating)
         self._values.updated.connect(self.onUpdated)
         self._availableNetworks = []
@@ -439,11 +440,13 @@ class Parameters(QObject):
                 if k in {"UNET", "CLIP", "VAE", "SR", "LoRA", "HN", "TI"}:
                     opts = sorted(opts, key=lambda m: self.gui.modelName(m.lower()))
                 self._values.set(kk, opts)
-                if not self._values.get(k) or not self._values.get(k) in self.gui._options[k]:
-                    if self.gui._options[k]:
-                        self._values.set(k, self.gui._options[k][0])
+                if not self._values.get(k) or not self._values.get(k) in self.gui._options[k] and self.gui._options[k]:                   
+                    if k in {"UNET", "CLIP", "VAE"} and self._values.get("model"):
+                        self._values.set("model", "")
+                    if k in self._default_values and self._default_values[k] in self.gui._options[k]:
+                        self._values.set(k, self._default_values[k])
                     else:
-                        self._values.set(k, "")
+                        self._values.set(k, self.gui._options[k][0])
         models = []
         for k in self.gui._options["UNET"]:
             if k in self.gui._options["CLIP"] and k in self.gui._options["VAE"]:
