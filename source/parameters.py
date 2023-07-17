@@ -440,7 +440,7 @@ class Parameters(QObject):
                 if k in {"UNET", "CLIP", "VAE", "SR", "LoRA", "HN", "TI"}:
                     opts = sorted(opts, key=lambda m: self.gui.modelName(m.lower()))
                 self._values.set(kk, opts)
-                if not self._values.get(k) or not self._values.get(k) in self.gui._options[k] and self.gui._options[k]:                   
+                if (not self._values.get(k) or not self._values.get(k) in self.gui._options[k]) and self.gui._options[k]:                   
                     if k in {"UNET", "CLIP", "VAE"} and self._values.get("model"):
                         self._values.set("model", "")
                     if k in self._default_values and self._default_values[k] in self.gui._options[k]:
