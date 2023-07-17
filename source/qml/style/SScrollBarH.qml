@@ -10,9 +10,10 @@ ScrollBar {
     active: true
     orientation: Qt.Horizontal
 
-    contentItem: Item {
+    contentItem: Rectangle {
         implicitWidth: 200
         implicitHeight: 12
+        color: "transparent"
 
         Rectangle {
             width: parent.width

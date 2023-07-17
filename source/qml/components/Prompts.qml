@@ -179,15 +179,6 @@ Item {
             }
         }
 
-        SDividerVR {
-            id: promptDivider
-            color: "transparent"
-            offset: parent.width/2
-            minOffset: 5
-            maxOffset: parent.width
-            snap: parent.width/2
-        }
-
         Rectangle {
             clip: true
             id: areaNegative
@@ -278,6 +269,15 @@ Item {
                     root.tab()
                 }
             }
+        }
+
+        SDividerVR {
+            id: promptDivider
+            color: "transparent"
+            offset: parent.width/2
+            minOffset: 5
+            maxOffset: parent.width
+            snap: parent.width/2
         }
     }
 }

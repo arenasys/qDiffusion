@@ -37,6 +37,7 @@ Item {
 
         ScrollBar.vertical: SScrollBarV {
             id: scrollBar
+            policy: column.contentHeight > column.height ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
         }
 
         Column {

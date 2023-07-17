@@ -1019,16 +1019,6 @@ Rectangle {
         }
     }
 
-    SDividerVL {
-        id: divider
-        anchors.top: parent.top
-        anchors.bottom: parent.bottom
-        offset: parent.width / 2
-        snap: parent.width / 2
-        minOffset: 0
-        maxOffset: parent.width - 5
-    }
-
     Item {
         anchors.left: divider.right
         anchors.top: parent.top
@@ -1209,24 +1199,6 @@ Rectangle {
             }
         }
 
-        SDividerHB {
-            id: resultDivider
-            minOffset: snap
-            maxOffset: parent.height-snap
-            offset: snap
-            snap: 150
-            snapSize: 20
-            height: 4
-            color: "transparent"
-            overflow: 2
-            Rectangle {
-                anchors.fill: parent
-                color: COMMON.bg5
-                anchors.topMargin: 1
-                anchors.bottomMargin: 1
-            }
-        }
-
         Item {
             anchors.top: resultDivider.bottom
             anchors.left: parent.left
@@ -1248,6 +1220,7 @@ Rectangle {
                 }
                 ScrollBar.horizontal: SScrollBarH { 
                     stepSize: 1/(4*Math.ceil(outputsSql.length))
+                    policy: listView.contentHeight > listView.height ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
                 }
 
                 delegate: Item {
@@ -1473,6 +1446,34 @@ Rectangle {
 
             }
         }
+
+        SDividerHB {
+            id: resultDivider
+            minOffset: snap
+            maxOffset: parent.height-snap
+            offset: snap
+            snap: 150
+            snapSize: 20
+            height: 4
+            color: "transparent"
+            Rectangle {
+                anchors.fill: parent
+                color: COMMON.bg5
+                anchors.topMargin: 1
+                anchors.bottomMargin: 1
+            }
+        }
+    }
+
+    SDividerVL {
+        id: divider
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        offset: parent.width / 2
+        snap: parent.width / 2
+        minOffset: 0
+        maxOffset: parent.width - 5
+        overflow: 8
     }
 
     Keys.onPressed: {

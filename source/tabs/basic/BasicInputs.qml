@@ -14,6 +14,8 @@ Item {
         return TRANSLATOR.instance.translate(str, file)
     }
 
+    property alias scrollBar: scrollBar
+
     ListView {
         anchors.left: parent.left
         anchors.top: parent.top
@@ -29,6 +31,7 @@ Item {
         ScrollBar.horizontal: SScrollBarH { 
             id: scrollBar
             stepSize: 1/(4*Math.ceil(BASIC.inputs.length))
+            policy: inputListView.contentWidth > inputListView.width ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
         }
 
         MouseArea {

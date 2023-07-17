@@ -14,9 +14,10 @@ ScrollBar {
     property var barWidth: 6
     property var barHeight: 200
 
-    contentItem: Item {
+    contentItem: Rectangle {
         implicitWidth: 12
         implicitHeight: parent.barHeight
+        color: "transparent"
 
         Rectangle {
             height: parent.height

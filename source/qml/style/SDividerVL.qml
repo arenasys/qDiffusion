@@ -17,7 +17,6 @@ Rectangle {
     property bool snapping: false
     property var snap: null
     property var wasSnapped: false
-    property var initialOffset: 0
     property var snapSize: 50
     property var overflow: 3
 
@@ -36,6 +35,7 @@ Rectangle {
     }
 
     MouseArea {
+        id: mouseArea
         anchors.fill: parent
         anchors.leftMargin: -root.overflow
         anchors.rightMargin: -root.overflow
@@ -46,9 +46,11 @@ Rectangle {
         onPressed: {
             startPosition = mapToGlobal(mouse.x, mouse.y)
             startOffset = root.offset
-            root.initialOffset = root.offset
             root.setLimited(false)
             root.wasSnapped = (Math.abs(snap - offset) == 0)
+            if(root.wasSnapped) {
+                root.snapping = false
+            }
         }
         onPositionChanged: {
             if(pressedButtons) {
@@ -68,7 +70,8 @@ Rectangle {
                 if(snap != null) {
                     if(!root.wasSnapped) {
                         root.snapping = (Math.abs(snap - offset) < snapSize)
-                    } else if (Math.abs(root.initialOffset - offset) > snapSize) {
+                    }
+                    if (Math.abs(startOffset - offset) > snapSize) {
                         root.wasSnapped = false
                     }
                 }

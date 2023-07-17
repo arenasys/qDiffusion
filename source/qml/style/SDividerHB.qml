@@ -17,9 +17,10 @@ Rectangle {
     property bool snapping: false
     property var snap: null
     property var wasSnapped: false
-    property var initialOffset: 0
     property var snapSize: 50
-    property var overflow: 4
+    property var overflow: 6
+    property var topOverflow: overflow
+    property var bottomOverflow: overflow
 
     onOffsetChanged: {
         if(snap - offset == 0.0) {
@@ -36,19 +37,21 @@ Rectangle {
     }
 
     MouseArea {
+        id: mouseArea
         anchors.fill: parent
-        anchors.topMargin: -root.overflow
-        anchors.bottomMargin: -root.overflow
-
-        hoverEnabled: true
+        anchors.topMargin: -root.topOverflow
+        anchors.bottomMargin: -root.bottomOverflow
+        
         property var startPosition: Qt.point(0,0)
         property var startOffset: 0
         onPressed: {
             startPosition = mapToGlobal(mouse.x, mouse.y)
             startOffset = root.offset
-            root.initialOffset = root.offset
             root.setLimited(false)
             root.wasSnapped = (Math.abs(snap - offset) == 0)
+            if(root.wasSnapped) {
+                root.snapping = false
+            }
         }
         onPositionChanged: {
             if(pressedButtons) {
@@ -68,7 +71,8 @@ Rectangle {
                 if(snap != null) {
                     if(!root.wasSnapped) {
                         root.snapping = (Math.abs(snap - offset) < snapSize)
-                    } else if (Math.abs(root.initialOffset - offset) > snapSize) {
+                    }
+                    if (Math.abs(startOffset - offset) > snapSize) {
                         root.wasSnapped = false
                     }
                 }

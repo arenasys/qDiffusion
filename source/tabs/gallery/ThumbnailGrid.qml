@@ -177,6 +177,7 @@ GridView {
     ScrollBar.vertical: SScrollBarV {
         id: scrollBar
         stepSize: 1/Math.ceil(thumbView.count / Math.round(thumbView.width/thumbView.cellWidth))
+        policy: thumbView.contentHeight > thumbView.height ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
     }
 
     MouseArea {

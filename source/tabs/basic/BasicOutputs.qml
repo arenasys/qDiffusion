@@ -32,6 +32,7 @@ Item {
         ScrollBar.horizontal: SScrollBarH { 
             id: scrollBar
             stepSize: 1/(4*Math.ceil(outputsSql.length))
+            policy: listView.contentWidth > listView.width ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
         }
 
         MouseArea {

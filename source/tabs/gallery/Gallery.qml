@@ -333,13 +333,6 @@ Rectangle {
         }
     }
 
-    SDividerVR {
-        id: galleryDivider
-        minOffset: 5
-        maxOffset: parent.width
-        offset: 600
-    }
-
     Item {
         anchors.right: galleryDivider.left
         anchors.top: parent.top
@@ -488,6 +481,13 @@ Rectangle {
             maxOffset: parent.height
             offset: 175
         }
+    }
+
+    SDividerVR {
+        id: galleryDivider
+        minOffset: 5
+        maxOffset: parent.width
+        offset: 600
     }
 
     Keys.onPressed: {

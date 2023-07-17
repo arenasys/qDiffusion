@@ -39,8 +39,9 @@ Item {
         snap: Math.floor(parent.height/2)+2
         snapSize: 20
         height: 4
+        topOverflow: inputArea.scrollBar.policy == ScrollBar.AlwaysOn ? 0 : 6
+        bottomOverflow: 6
         color: "transparent"
-        overflow: 2
         Rectangle {
             anchors.fill: parent
             color: COMMON.bg5
