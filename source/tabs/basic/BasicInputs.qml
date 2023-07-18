@@ -683,7 +683,7 @@ Item {
                     x: borderFrame.x + 20
                     y: borderFrame.y + borderFrame.height - height
                     width: borderFrame.width - 40
-                    height: settingsColumn.implicitHeight + 2 + Math.min(0, width - 170)*2
+                    height: settingsColumn.implicitHeight + 2
                     clip: true
                     
                     Rectangle {

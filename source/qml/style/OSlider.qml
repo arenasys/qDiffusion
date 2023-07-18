@@ -133,33 +133,16 @@ Item {
             }
         }
 
-
-        SText {
-            id: labelText
-            text: root.label_display(root.label)
+        Item {
             anchors.left: parent.left
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            leftPadding: 5
-            rightPadding: 5
-            width: root.labelWidth
-            verticalAlignment: Text.AlignVCenter
-            font.pointSize: root.mini ? 7.85 : COMMON.pointLabel
-            color: COMMON.fg1_5
-            monospace: false
-        }
-
-        Rectangle {
-            id: indicator
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            color: COMMON.bg4
-            width: Math.min((mouseArea.width) * (root.value - root.minValue)/(root.maxValue-root.minValue), parent.width)
+            anchors.right: spinnerControls.left
             clip: true
 
             SText {
-                text: root.label
+                id: labelText
+                text: root.label_display(root.label)
                 anchors.left: parent.left
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
@@ -168,8 +151,32 @@ Item {
                 width: root.labelWidth
                 verticalAlignment: Text.AlignVCenter
                 font.pointSize: root.mini ? 7.85 : COMMON.pointLabel
-                color: COMMON.fg1
+                color: COMMON.fg1_5
                 monospace: false
+            }
+
+            Rectangle {
+                id: indicator
+                anchors.left: parent.left
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                color: COMMON.bg4
+                width: Math.min((mouseArea.width) * (root.value - root.minValue)/(root.maxValue-root.minValue), control.width)
+                clip: true
+
+                SText {
+                    text: root.label
+                    anchors.left: parent.left
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    leftPadding: 5
+                    rightPadding: 5
+                    width: root.labelWidth
+                    verticalAlignment: Text.AlignVCenter
+                    font.pointSize: root.mini ? 7.85 : COMMON.pointLabel
+                    color: COMMON.fg1
+                    monospace: false
+                }
             }
         }
 
@@ -181,67 +188,75 @@ Item {
             text: tooltip
         }
 
-        Rectangle {
-            visible: valueInput.activeFocus
-            width: valueInput.implicitWidth
-            anchors.right: valueInput.right
-            anchors.top: valueInput.top
-            anchors.bottom: valueInput.bottom
-            anchors.margins: root.mini ? 0 : 1
-            border.color: COMMON.bg4
-            color: COMMON.bg1
-        }
-
-        STextInput {
+        Item {
             anchors.right: spinnerControls.left
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             anchors.margins: 2
-            width: contentWidth + 10
+            width: (spinnerControls.x - labelText.contentWidth - 10)
+            clip: true
 
-            id: valueInput
-            color: COMMON.fg0
-            font.pointSize: root.mini ? 7.7 : COMMON.pointValue
-            activeFocusOnPress: false
-            leftPadding: 5
-            rightPadding: 5
-            verticalAlignment: Text.AlignVCenter
-            horizontalAlignment: Text.AlignRight
-            text: root.value.toFixed(root.precValue)
-            validator: DoubleValidator {
-                locale: "C"
-                bottom: root.minValue
-                top: bounded ? root.maxValue : 2147483647.0
-            }
-            onEditingFinished: {
-                root.value = parseFloat(text)
-            }
-            onActiveFocusChanged: {
-                if(!activeFocus) {
-                    valueInput.text =  Qt.binding(function() { return root.value.toFixed(root.precValue) })
-                }
-            }
-            
-            Keys.onPressed: {
-                switch(event.key) {
-                    case Qt.Key_Escape:
-                        if(root.defaultValue != null) {
-                            root.value = root.defaultValue
-                            text = root.defaultValue.toFixed(root.precValue)
-                        }
-                    default:
-                        event.accepted = false
-                        break;
-                }
+            Rectangle {
+                visible: valueInput.activeFocus
+                width: valueInput.contentWidth + 10
+                anchors.right: valueInput.right
+                anchors.top: valueInput.top
+                anchors.bottom: valueInput.bottom
+                anchors.margins: root.mini ? 0 : 1
+                border.color: COMMON.bg4
+                color: COMMON.bg1
             }
 
-            MouseArea {
-                anchors.fill: parent
-                visible: !valueInput.activeFocus
-                propagateComposedEvents: true
-                onDoubleClicked: {
-                    valueInput.forceActiveFocus()
-                    valueInput.selectAll()
+            STextInput {
+                id: valueInput
+                height: parent.height
+                width: contentWidth + 10
+                anchors.right: parent.right
+
+
+                color: COMMON.fg0
+                font.pointSize: root.mini ? 7.7 : COMMON.pointValue
+                activeFocusOnPress: false
+                leftPadding: 5
+                rightPadding: 5
+                verticalAlignment: Text.AlignVCenter
+                horizontalAlignment: Text.AlignRight
+                text: root.value.toFixed(root.precValue)
+                validator: DoubleValidator {
+                    locale: "C"
+                    bottom: root.minValue
+                    top: bounded ? root.maxValue : 2147483647.0
+                }
+                onEditingFinished: {
+                    root.value = parseFloat(text)
+                }
+                onActiveFocusChanged: {
+                    if(!activeFocus) {
+                        valueInput.text =  Qt.binding(function() { return root.value.toFixed(root.precValue) })
+                    }
+                }
+                
+                Keys.onPressed: {
+                    switch(event.key) {
+                        case Qt.Key_Escape:
+                            if(root.defaultValue != null) {
+                                root.value = root.defaultValue
+                                text = root.defaultValue.toFixed(root.precValue)
+                            }
+                        default:
+                            event.accepted = false
+                            break;
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    visible: !valueInput.activeFocus
+                    propagateComposedEvents: true
+                    onDoubleClicked: {
+                        valueInput.forceActiveFocus()
+                        valueInput.selectAll()
+                    }
                 }
             }
         }

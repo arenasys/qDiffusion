@@ -268,6 +268,7 @@ Item {
         }
 
         contentItem: Item {
+            clip: true
             SText {
                 id: labelText
                 anchors.left: parent.left
@@ -283,6 +284,7 @@ Item {
             }
             
             SText {
+                id: valueText
                 anchors.right: parent.right
                 anchors.left: labelText.right
                 anchors.top: parent.top
