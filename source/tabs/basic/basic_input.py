@@ -177,7 +177,7 @@ class BasicInput(QObject):
         if not self._originalFile.isNull():
             return self._originalFile.height()
         if not self._original.isNull():
-            return self._original.width()
+            return self._original.height()
         return self._image.height()
     
     @pyqtProperty(float, notify=updated)
@@ -565,7 +565,11 @@ class BasicInput(QObject):
             else:
                 for url in mimeData.urls():
                     if url.isLocalFile():
-                        self._image = QImage(url.toLocalFile())
+                        path = url.toLocalFile()
+                        if os.path.isdir(path):
+                            self.setFolder(url)
+                        else:
+                            self._image = QImage(path)
                         found = True
                         break
                     elif url.scheme() == "http" or url.scheme() == "https":

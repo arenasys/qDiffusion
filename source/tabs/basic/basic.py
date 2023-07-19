@@ -538,8 +538,13 @@ class Basic(QObject):
             done = False
             for url in mimeData.urls():
                 if url.isLocalFile():
-                    source = QImage(url.toLocalFile())
-                    self._inputs.insert(index, BasicInput(self, source, BasicInputRole.IMAGE))
+                    path = url.toLocalFile()
+                    if os.path.isdir(path):
+                        input = BasicInput(self, QImage(), BasicInputRole.IMAGE)
+                        input.setFolder(url)
+                        self._inputs.insert(index, input)
+                    else:
+                        self._inputs.insert(index, BasicInput(self, QImage(path), BasicInputRole.IMAGE))
                     done = True
                 elif url.scheme() == "http" or url.scheme() == "https":
                     if url.fileName().rsplit(".")[-1] in {"png", "jpg", "jpeg", "webp", "gif"}:
