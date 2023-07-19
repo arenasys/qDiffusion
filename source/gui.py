@@ -143,8 +143,10 @@ class GUI(QObject):
             for t in self.tabs:
                 if not getattr(t, "hidden", False):
                     shown += [t.name]
-            shown = [t.name for t in self.tabs if t.name in shown and t.name != "Settings"]
-            self._config._values.set("tabs", shown)
+        
+        shown = [t.name for t in self.tabs if t.name in shown and t.name != "Settings"]
+        self._config._values.set("tabs", shown)
+        
         self._visibleTabs = shown
         self.tabUpdated.emit()
 
