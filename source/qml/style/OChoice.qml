@@ -102,8 +102,14 @@ Item {
         root.update()
     }
 
-    onBindMapCurrentChanged: {
-        if(bindMap == null && binding) {
+    onBindKeyCurrentChanged: {
+        if(binding) {
+            root.update()
+        }
+    }
+
+    onBindKeyModelChanged: {
+        if(binding) {
             root.update()
         }
     }

@@ -21,7 +21,8 @@ class MergeOperation(QObject):
 
         self._parameters = VariantMap(self, {
             "operation": "Weighted Sum",
-            "operations": ["Weighted Sum", "Add Difference"],
+            "operations_checkpoint": ["Weighted Sum", "Add Difference"],# "Insert LoRA"],
+            "operations_lora": ["Weighted Sum", "Add Difference"],# "Extract LoRA"],
             "mode": "Simple",
             "modes": ["Simple", "Advanced"],
             "preset": "None",
@@ -30,6 +31,7 @@ class MergeOperation(QObject):
             "model_b": "",
             "model_c": "",
             "alpha": 0.5,
+            "clip_alpha": 0.5,
             "vae_source": "Model A",
             "clip_source": "Model A",
             "sources": ["Model A", "Model B", "Model C"],
@@ -43,19 +45,87 @@ class MergeOperation(QObject):
 
         self.setBlockWeightPreset("Linear")
 
+        self._parameters.updated.connect(self.parametersUpdated)
+
     @pyqtProperty(VariantMap, notify=updated)
     def parameters(self):
         return self._parameters
     
+    def operationModelTypes(self, type, op):
+        return {
+            "Weighted Sum": [type, type, None],
+            "Add Difference": [type, type, type],
+            "Insert LoRA": ["Checkpoint", "LoRA", None],
+            "Extract LoRA": ["Checkpoint", "Checkpoint", None]
+        }[op]
+
+    @pyqtSlot(str)
+    def parametersUpdated(self, key):
+        if key == "operation":
+            self.enforceModelTypes()
+
+    def enforceModelTypes(self):
+        type = self._merger._parameters.get("type")
+        operation = self._parameters.get("operation")
+        model_types = self.operationModelTypes(type, operation)
+
+        allowed_unets = self._merger.gui._options.get("UNET", [])
+        allowed_loras = self._merger.gui._options.get("LoRA", [])
+
+        if type == "Checkpoint":
+            allowed_unets = self.availableResults + allowed_unets
+        else:
+            allowed_loras = self.availableResults + allowed_loras
+
+        for k, t in zip(["model_a", "model_b", "model_c"], model_types):
+            if not t:
+                self._parameters.set(k, "")
+
+            allowed = allowed_unets if t == "Checkpoint" else allowed_loras
+            model = self._parameters.get(k)
+            if model and not model in allowed:
+                self._parameters.set(k, "")
+
+        self.updated.emit()
+    
+    @pyqtSlot(int, result=str)
+    def modelMap(self, index):
+        operation = self._parameters.get("operation")
+        type = self._merger._parameters.get("type")
+        type = self.operationModelTypes(type, operation)[index]
+
+        if type == "LoRA":
+            type = "LoRAs"
+        else:
+            type = "models"
+
+        return type
+
+    @pyqtProperty(str, notify=updated)
+    def modelAMap(self):
+        return self.modelMap(0)
+    
+    @pyqtProperty(str, notify=updated)
+    def modelBMap(self):
+        return self.modelMap(1)
+    
+    @pyqtProperty(str, notify=updated)
+    def modelCMap(self):
+        return self.modelMap(2)
+
     @pyqtProperty(VariantMap, notify=updated)
     def blockWeights(self):
         return self._block_weights
     
     @pyqtProperty(list, notify=updated)
     def availableResults(self):
+        type = self._merger._parameters.get("type")
+        if type == "Checkpoint":
+            type = "Model"
+
         index = self._merger._operations.index(self)
         if index > 0:
-            return [os.path.join(f"_result_{i}", f"Model {i}") for i in range(index)]
+            return [os.path.join(f"_result_{i}", f"{type} {i}") for i in range(index)]
         return []
 
     @pyqtSlot(str)
@@ -132,7 +202,7 @@ class MergeOperation(QObject):
         for label in parsed_values:
             self._block_weights.set(label, parsed_values[label])
 
-    def getRecipe(self):
+    def getRecipe(self, model_type):
         important = ["operation", "mode", "model_a", "model_b", "model_c", "alpha", "vae_source", "clip_source"]
         recipe = {k:self._parameters.get(k) for k in important}
 
@@ -150,6 +220,10 @@ class MergeOperation(QObject):
         if recipe["operation"] == "Weighted Sum":
             del recipe["model_c"]
 
+        if model_type != "Checkpoint":
+            del recipe["vae_source"]
+            del recipe["clip_source"]
+
         return recipe
 
 class Merger(QObject):
@@ -162,6 +236,11 @@ class Merger(QObject):
         self._ids = []
         self._mapping = {}
         self._valid = False
+
+        self._parameters = VariantMap(self, {
+            "type": "Checkpoint",
+            "types": ["Checkpoint"],#, "LoRA"],
+        })
 
         qmlRegisterSingletonType(Merger, "gui", 1, 0, "MERGER", lambda qml, js: self)
         qmlRegisterUncreatableType(MergeOperation, "gui", 1, 0, "MergeOperation", "Not a QML type")
@@ -181,15 +260,31 @@ class Merger(QObject):
         self.conn.doQuery("CREATE TABLE merge_outputs(id INTEGER);")
         self.conn.enableNotifications("merge_outputs")
 
+        self._parameters.updated.connect(self.parametersUpdated)
+
+    @pyqtProperty(VariantMap, notify=updated)
+    def parameters(self):
+        return self._parameters
+
+    @pyqtSlot(str)
+    def parametersUpdated(self, key):
+        type = self._parameters.get("type")
+        for op in self._operations:
+            allowed_operations = op._parameters.get("operations_checkpoint" if type == "Checkpoint" else "operations_lora")
+            if not op._parameters.get("operation") in allowed_operations:
+                op._parameters.set("operation", allowed_operations[0])  
+            op.enforceModelTypes()
+
     @pyqtSlot()
     def buildRecipe(self):
         recipe = []
+        model_type = self._parameters.get("type")
         for o in self._operations:
-            recipe += [o.getRecipe()]
+            recipe += [o.getRecipe(model_type)]
         return recipe
     
     @pyqtSlot(result=str)
-    def recipeName(self):
+    def recipeName(self, full=False):
         names = []
         for op in self.buildRecipe():
             a = self.gui.modelName(op['model_a'])
@@ -199,7 +294,10 @@ class Merger(QObject):
                 if type(alpha) == float:
                     names += [f"{alpha:.2f}({a})+{1-alpha:.2f}({b})"]
                 else:
-                    names += [f"%({a})+%({b})"]
+                    weights = ""
+                    if full:
+                        weights = f"[{','.join([str(a) for a in alpha])}]"
+                    names += [f"%({a})+%({b}){weights}"]
             elif op['operation'] == "Add Difference":
                 c = self.gui.modelName(op['model_c'])
                 if type(alpha) == float:
@@ -226,6 +324,11 @@ class Merger(QObject):
                 if k in recipe[i]:
                     recipe[i][k] = self.gui.modelName(recipe[i][k])
 
+        recipe = {
+            "type": self._parameters.get("type"),
+            "operations": recipe
+        }
+
         try:
             with open(file, 'w', encoding="utf-8") as f:
                 json.dump(recipe, f, indent=4)
@@ -241,11 +344,20 @@ class Merger(QObject):
                 recipe = json.load(f)
         except:
             return
-        if type(recipe) != list:
-            return
+
+        if type(recipe) == list:
+            model_type = "Checkpoint"
+            operations = recipe
+        else:
+            model_type = recipe["type"]
+            operations = recipe["operations"]
+
+        self._parameters.set("type", model_type)
+        
+        models = self.gui._options.get("UNET" if model_type == "Checkpoint" else "LoRA", [])
 
         self._operations = []
-        for op in recipe:
+        for op in operations:
             operation = MergeOperation(self)
             try:
                 operation._parameters.set("operation", op["operation"])
@@ -256,7 +368,7 @@ class Merger(QObject):
                             index = int(model.split("_")[-1])
                             model = os.path.join(f"_result_{index}", f"Model {index}")
                         else:
-                            model = self.closestModel(model)
+                            model = self.closestModel(model, models)
                         operation._parameters.set(k, model)
                 sources = operation._parameters.get("sources")
                 for k in ["vae_source", "clip_source"]:
@@ -307,6 +419,9 @@ class Merger(QObject):
             self.addOperation()
         else:
             self.check()
+
+        for op in self._operations:
+            op.enforceModelTypes()
     
     @pyqtSlot()
     def generate(self):
@@ -321,26 +436,38 @@ class Merger(QObject):
         basic = [t for t in self.gui.tabs if t.name == "Generate"][0]
         request = basic._parameters.buildRequest(1, [], [], [], [])
 
-        recipe = self.buildRecipe()
+        model_type = self._parameters.get("type")
+        operations = self.buildRecipe()
+        name = self.recipeName()
 
-        for k in ["unet", "clip", "vae", "model"]:
-            if k in request["data"]:
-                del request["data"][k]
-        request["data"]["merge_recipe"] = recipe
+        if model_type == "Checkpoint":
+            for k in ["unet", "clip", "vae", "model"]:
+                if k in request["data"]:
+                    del request["data"][k]
+        
+        if model_type == "Checkpoint":
+            request["data"]["merge_checkpoint_recipe"] = operations
+        elif model_type == "LoRA":
+            request["data"]["merge_lora_recipe"] = operations
+        request["data"]["merge_name"] = name
 
         self._ids += [self.gui.makeRequest(request)]
     
     @pyqtSlot(str)
     def buildModel(self, filename):
-        recipe = self.buildRecipe()
-
         basic = [t for t in self.gui.tabs if t.name == "Generate"][0]
         device = basic._parameters._values.get("device")
 
-        request = {"type":"manage", "data":{"operation": "build", "merge_recipe":recipe, "file":filename+".safetensors", "device_name": device}}
+        model_type = self._parameters.get("type")
+        operations = self.buildRecipe()
+        name = self.recipeName()
 
-        if basic._parameters._values.get("network_mode") == "Static":
-            request["data"]["prompt"] = basic._parameters.buildPrompts(1)
+        if model_type == "Checkpoint":
+            request = {"type":"manage", "data":{"operation": "build", "merge_checkpoint_recipe":operations, "merge_name": name, "file":filename+".safetensors", "device_name": device}}
+            if basic._parameters._values.get("network_mode") == "Static":
+                request["data"]["prompt"] = basic._parameters.buildPrompts(1)
+        elif model_type == "LoRA":
+            request = {"type":"manage", "data":{"operation": "build_lora", "merge_lora_recipe":operations, "merge_name": name, "file":filename+".safetensors", "device_name": device}}
 
         self.gui.makeRequest(request)
 
@@ -496,8 +623,7 @@ class Merger(QObject):
         self.updated.emit()
      
     @pyqtSlot(str, result=str)
-    def closestModel(self, name):
-        models = self.gui._options.get("UNET", [])
+    def closestModel(self, name, models):
         if not models:
             return ''
         

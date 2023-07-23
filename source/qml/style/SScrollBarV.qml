@@ -15,13 +15,13 @@ ScrollBar {
     property var barHeight: 200
 
     contentItem: Rectangle {
-        implicitWidth: 12
+        implicitWidth: control.barWidth * 2
         implicitHeight: parent.barHeight
         color: "transparent"
 
         Rectangle {
             height: parent.height
-            width: 6
+            width: control.barWidth
             anchors.right: parent.right
             color: control.pressed ? control.pressedColor : control.color
             opacity: control.policy === ScrollBar.AlwaysOn || (control.active && control.size < 1.0) ? 0.75 : 0

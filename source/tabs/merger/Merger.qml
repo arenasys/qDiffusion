@@ -395,8 +395,9 @@ Rectangle {
             Rectangle {
                 anchors.top: operationsColumn.bottom
                 anchors.topMargin: -2
-                height: 30
-                anchors.horizontalCenter: operationsColumn.horizontalCenter
+                height: 32
+                anchors.left: operationsColumn.left
+                anchors.leftMargin: 20
                 width: 200
                 color: "transparent"
                 border.color: COMMON.bg4
@@ -439,6 +440,7 @@ Rectangle {
 
                         onAccepted: {
                             MERGER.loadRecipe(file)
+                            root.operation = root.operation
                         }
                     }
 
@@ -454,11 +456,40 @@ Rectangle {
                 }
             }
 
+            Rectangle {
+                anchors.top: operationsColumn.bottom
+                anchors.topMargin: -2
+                height: 32
+                anchors.right: operationsColumn.right
+                anchors.rightMargin: 20
+                width: Math.min(200, operationsColumn.width - 260)
+                color: "transparent"
+                border.color: COMMON.bg4
+                border.width: 2
+
+                Row {
+                    anchors.fill: parent
+                    anchors.margins: 3
+                    OChoice {
+                        id: typeChoice
+                        label: "Type"
+                        width: parent.width
+                        height: parent.height - 2
+                        
+                        property var key: value == "Checkpoint" ? "models" : "LoRAs"
+
+                        bindMap: MERGER.parameters
+                        bindKeyCurrent: "type"
+                        bindKeyModel: "types"
+                    }
+                }
+            }
+
             Column {
                 id: optionsColumn
                 clip: true
                 anchors.top: operationsColumn.bottom
-                anchors.topMargin: 10 + 30
+                anchors.topMargin: 10 + 32
                 anchors.right: parent.right
                 anchors.rightMargin: Math.max(10, (parent.width - width)/2)
                 width: 250
@@ -492,7 +523,7 @@ Rectangle {
                         bindMap: root.operation.parameters
 
                         bindKeyCurrent: "operation"
-                        bindKeyModel: "operations"
+                        bindKeyModel: typeChoice.value == "Checkpoint" ? "operations_checkpoint" : "operations_lora"
                     }
 
                     OChoice {
@@ -542,6 +573,13 @@ Rectangle {
                             if(operationChoice.value == "Add Difference") {
                                 return "A + α(B - C)"
                             }
+                            if(operationChoice.value == "Insert LoRA") {
+                                return "A + αB"
+                            }
+                            if(operationChoice.value == "Extract LoRA") {
+                                return "α(A - B)"
+                            }
+                            return ""
                         }
                         
                         anchors.fill: parent
@@ -562,17 +600,20 @@ Rectangle {
                     OChoice {
                         height: 30
                         width: parent.width
-                        label: "Model A"
+                        label: (bindKeyModel == "models" ? "Model" : "LoRA") + " A"
                         
                         bindMapCurrent: root.operation.parameters
                         bindKeyCurrent: "model_a"
                         bindMapModel: BASIC.parameters.values
-                        bindKeyModel: "models"
+                        bindKeyModel: root.operation.modelAMap
                         
                         emptyValue: "None"
 
                         function expandModel(model) {
-                            return root.operation.availableResults.concat(model)
+                            if(bindKeyModel == typeChoice.key) {
+                                return root.operation.availableResults.concat(model)
+                            }
+                            return model
                         }
 
                         function decoration(text) {
@@ -590,17 +631,27 @@ Rectangle {
                     OChoice {
                         height: 30
                         width: parent.width
-                        label: "Model B"
+                        label: (bindKeyModel == "models" ? "Model" : "LoRA") + " B"
 
                         bindMapCurrent: root.operation.parameters
                         bindKeyCurrent: "model_b"
                         bindMapModel: BASIC.parameters.values
-                        bindKeyModel: "models"
+                        bindKeyModel: root.operation.modelBMap
 
                         emptyValue: "None"
 
                         function expandModel(model) {
-                            return root.operation.availableResults.concat(model)
+                            if(bindKeyModel == typeChoice.key) {
+                                return root.operation.availableResults.concat(model)
+                            }
+                            return model
+                        }
+
+                        function decoration(text) {
+                            if(text.startsWith("_result_")) {
+                                return "Result"
+                            }
+                            return ""
                         }
 
                         function display(text) {
@@ -612,17 +663,27 @@ Rectangle {
                         visible: height != 0
                         height: operationChoice.value == "Add Difference" ? 30 : 0
                         width: parent.width
-                        label: "Model C"
+                        label: (bindKeyModel == "models" ? "Model" : "LoRA") + " C"
 
                         bindMapCurrent: root.operation.parameters
                         bindKeyCurrent: "model_c"
                         bindMapModel: BASIC.parameters.values
-                        bindKeyModel: "models"
+                        bindKeyModel: root.operation.modelCMap
 
                         emptyValue: "None"
 
                         function expandModel(model) {
-                            return root.operation.availableResults.concat(model)
+                            if(bindKeyModel == typeChoice.key) {
+                                return root.operation.availableResults.concat(model)
+                            }
+                            return model
+                        }
+
+                        function decoration(text) {
+                            if(text.startsWith("_result_")) {
+                                return "Result"
+                            }
+                            return ""
                         }
 
                         function display(text) {
@@ -662,6 +723,8 @@ Rectangle {
                     x: 10
                     width: parent.width - 20
 
+                    property var mode: operationChoice.value == "Insert LoRA" ? "LoRA" : typeChoice.value
+
                     OSlider {
                         visible: height != 0
                         height: modeChoice.value == "Advanced" ? 0 : 30
@@ -678,8 +741,25 @@ Rectangle {
                         snapValue: 0.05
                     }
 
+                    OSlider {
+                        visible: height != 0
+                        height: parent.mode == "LoRA" ? 30 : 0
+                        width: parent.width
+                        label: "CLIP Alpha (α)"
+                        
+                        bindMap: root.operation.parameters
+                        bindKey: "clip_alpha"
+
+                        minValue: 0
+                        maxValue: 1
+                        precValue: 2
+                        incValue: 0.01
+                        snapValue: 0.05
+                    }
+
                     OChoice {
-                        height: 30
+                        visible: height != 0
+                        height: parent.mode == "Checkpoint" ? 30 : 0
                         width: parent.width
                         label: "CLIP Source"
 
@@ -689,7 +769,8 @@ Rectangle {
                     }
 
                     OChoice {
-                        height: 30
+                        visible: height != 0
+                        height: parent.mode == "Checkpoint" ? 30 : 0
                         width: parent.width
                         label: "VAE Source"
 
@@ -1140,6 +1221,7 @@ Rectangle {
                 width: 200
                 anchors.margins: 4
                 height: 40
+                text: "Preview"
 
                 Timer {
                     id: genButtonTimer
