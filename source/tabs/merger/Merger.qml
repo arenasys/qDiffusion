@@ -1266,7 +1266,7 @@ Rectangle {
                         text: root.tr("Generate Forever")
                         checkable: true
                         onCheckedChanged: {
-                            //root.forever = checked
+                            MERGER.forever = checked
                         }
                     }
                     SContextMenuItem {
@@ -1282,6 +1282,7 @@ Rectangle {
         }
 
         Item {
+            id: results
             anchors.top: resultDivider.bottom
             anchors.left: parent.left
             anchors.right: parent.right
@@ -1292,17 +1293,35 @@ Rectangle {
                 id: listView
                 interactive: false
                 boundsBehavior: Flickable.StopAtBounds
+                displayMarginBeginning: 1
+                displayMarginEnd: 1
                 clip: true
                 orientation: Qt.Horizontal
                 width: Math.min(contentWidth, parent.width)
                 height: parent.height
+
                 model: Sql {
                     id: outputsSql
                     query: "SELECT id FROM merge_outputs ORDER BY id DESC;"
                 }
+
                 ScrollBar.horizontal: SScrollBarH { 
+                    id: scrollBarResults
                     stepSize: 1/(4*Math.ceil(outputsSql.length))
-                    policy: listView.contentHeight > listView.height ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+                    policy: listView.contentWidth > listView.width ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.NoButton
+                    z: -1
+                    onWheel: {
+                        if(wheel.angleDelta.y < 0) {
+                            scrollBarResults.increase()
+                        } else {
+                            scrollBarResults.decrease()
+                        }
+                    }
                 }
 
                 delegate: Item {
@@ -1312,9 +1331,18 @@ Rectangle {
                     property var modelObj: MERGER.outputs(sql_id)
                     property var selected: MERGER.openedIndex == sql_id
 
-                    onActiveFocusChanged: {
-                        if(activeFocus) {
-                            itemFrame.forceActiveFocus()
+                    onSelectedChanged: {
+                        if(selected) {
+                            listView.positionViewAtIndex(index, ListView.Contain)
+                        }
+                    }
+
+                    Connections {
+                        target: MERGER
+                        function onInput() {
+                            if(selected) {
+                                itemFrame.forceActiveFocus()
+                            }
                         }
                     }
 

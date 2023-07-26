@@ -228,6 +228,7 @@ class MergeOperation(QObject):
 
 class Merger(QObject):
     updated = pyqtSignal()
+    input = pyqtSignal()
     def __init__(self, parent=None):
         super().__init__(parent)
         self.name = "Merge"
@@ -236,6 +237,7 @@ class Merger(QObject):
         self._ids = []
         self._mapping = {}
         self._valid = False
+        self._forever = False
 
         self._parameters = VariantMap(self, {
             "type": "Checkpoint",
@@ -274,6 +276,15 @@ class Merger(QObject):
             if not op._parameters.get("operation") in allowed_operations:
                 op._parameters.set("operation", allowed_operations[0])  
             op.enforceModelTypes()
+    
+    @pyqtProperty(bool, notify=updated)
+    def forever(self):
+        return self._forever
+
+    @forever.setter
+    def forever(self, forever):
+        self._forever = forever
+        self.updated.emit()
 
     @pyqtSlot()
     def buildRecipe(self):
@@ -427,9 +438,9 @@ class Merger(QObject):
     def generate(self):
         for id in list(self._outputs.keys()):
             if not self._outputs[id]._ready:
-                self.deleteOutput(id)
                 if self._openedIndex == id:
-                    self.stick()
+                    self.right()
+                self.deleteOutput(id)
         self._ids = []
         self._mapping = {}
 
@@ -489,6 +500,8 @@ class Merger(QObject):
 
         out = self._mapping[id]
         if not out in self._outputs:
+            sticky = self.isSticky()
+            empty = len(self._outputs) == 0
             if "result" in results:
                 initial = results["result"]
             elif "preview" in results:
@@ -501,8 +514,14 @@ class Merger(QObject):
                 q.prepare("INSERT INTO merge_outputs(id) VALUES (:id);")
                 q.bindValue(":id", out)
                 self.conn.doQuery(q)
+
+                if not self._openedIndex in self._outputs:
+                    self._openedIndex = out
+                    self.updated.emit()
+                if sticky:
+                    self.stick()
+
                 out += 1
-                self.stick()
 
         if name == "preview":
             previews = results["preview"]
@@ -512,6 +531,7 @@ class Merger(QObject):
                 out += 1
 
         if name == "result":
+            sticky = self.isSticky()
             image = results["result"][0]
             metadata = results.get("metadata", [None])[0]
             out = self._mapping[id]
@@ -520,16 +540,21 @@ class Merger(QObject):
                 file = writer.file
                 QThreadPool.globalInstance().start(writer)
                 self._outputs[out].setResult(image, metadata, file)
-            self.stick()
+            if sticky:
+                self.stick()
+        
+            if self._forever:
+                self.generate()
+            
             self.updated.emit()
 
     @pyqtSlot(int)
     def reset(self, id):
         if id in self._mapping:
             out = self._mapping[id]
-            self.deleteOutput(self._mapping[id])
             if self._openedIndex == out:
-                self.stick()
+                self.right()
+            self.deleteOutput(self._mapping[id])
         self._ids = []
 
     @pyqtSlot(int, result=int)
@@ -546,7 +571,15 @@ class Merger(QObject):
         if idx >= 0 and idx < len(outputs):
             return outputs[idx]
         return -1
-        
+    
+    def isSticky(self):
+        idx = self.outputIDToIndex(self._openedIndex)
+        if idx == 0:
+            return True
+        if idx == 1 and not self._outputs[self.outputIndexToID(0)].ready:
+            return True
+        return False
+
     @pyqtSlot()
     def stick(self):
         index = self.outputIndexToID(0)
@@ -564,6 +597,7 @@ class Merger(QObject):
         if id in self._outputs:
             self._openedIndex = id
             self.updated.emit()
+            self.input.emit()
 
     @pyqtSlot()
     def left(self):
@@ -575,6 +609,7 @@ class Merger(QObject):
         if id in self._outputs:
             self._openedIndex = id
             self.updated.emit()
+            self.input.emit()
 
     @pyqtSlot(int, result=BasicOutput)
     def outputs(self, id):
