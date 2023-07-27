@@ -21,8 +21,8 @@ class MergeOperation(QObject):
 
         self._parameters = VariantMap(self, {
             "operation": "Weighted Sum",
-            "operations_checkpoint": ["Weighted Sum", "Add Difference"],# "Insert LoRA"],
-            "operations_lora": ["Weighted Sum", "Add Difference"],# "Extract LoRA"],
+            "operations_checkpoint": ["Weighted Sum", "Add Difference"],#, "Insert LoRA"],
+            "operations_lora": ["Weighted Sum", "Add Difference"],#, "Extract LoRA"],
             "mode": "Simple",
             "modes": ["Simple", "Advanced"],
             "preset": "None",
@@ -32,6 +32,8 @@ class MergeOperation(QObject):
             "model_c": "",
             "alpha": 0.5,
             "clip_alpha": 0.5,
+            "rank": 32,
+            "conv_rank": 16,
             "vae_source": "Model A",
             "clip_source": "Model A",
             "sources": ["Model A", "Model B", "Model C"],
@@ -101,6 +103,10 @@ class MergeOperation(QObject):
 
         return type
 
+    @pyqtSlot(result=int)
+    def getIndex(self):
+        return self._merger._operations.index(self)
+
     @pyqtProperty(str, notify=updated)
     def modelAMap(self):
         return self.modelMap(0)
@@ -123,9 +129,12 @@ class MergeOperation(QObject):
         if type == "Checkpoint":
             type = "Model"
 
-        index = self._merger._operations.index(self)
-        if index > 0:
-            return [os.path.join(f"_result_{i}", f"{type} {i}") for i in range(index)]
+        try:
+            index = self._merger._operations.index(self)
+            if index > 0:
+                return [os.path.join(f"_result_{i}", f"{type} {i}") for i in range(index)]
+        except:
+            pass
         return []
 
     @pyqtSlot(str)
@@ -203,31 +212,34 @@ class MergeOperation(QObject):
             self._block_weights.set(label, parsed_values[label])
 
     def getRecipe(self, model_type):
-        important = ["operation", "mode", "model_a", "model_b", "model_c", "alpha", "vae_source", "clip_source"]
+        important = ["operation", "mode", "model_a", "model_b", "model_c", "alpha"]
         recipe = {k:self._parameters.get(k) for k in important}
 
         for k in ["model_a", "model_b", "model_c"]:
             if recipe[k].startswith("_result_"):
                 recipe[k] = recipe[k].split(os.path.sep)[0]
-
-        for k in ["vae_source", "clip_source"]:
-            recipe[k] = ["Model A", "Model B", "Model C"].index(recipe[k])
-        
-        if recipe["mode"] == "Advanced":
-            recipe["alpha"] = [self._block_weights.get(label) for label in self.getBlockWeightLabels()]
-        del recipe["mode"]
-
+            
         if recipe["operation"] == "Weighted Sum":
             del recipe["model_c"]
 
-        if model_type != "Checkpoint":
-            del recipe["vae_source"]
-            del recipe["clip_source"]
+        if recipe["mode"] == "Advanced":
+            recipe["alpha"] = [self._block_weights.get(label) for label in self.getBlockWeightLabels()]
+
+        if model_type == "Checkpoint":
+            for k in ["vae_source", "clip_source"]:
+                recipe[k] = ["Model A", "Model B", "Model C"].index(self._parameters.get(k))
+        else:
+            for k in ["rank", "conv_rank"]:
+                recipe[k] = int(self._parameters.get(k))
+            recipe["clip_alpha"] = self._parameters.get("clip_alpha")
+            
+        del recipe["mode"]
 
         return recipe
 
 class Merger(QObject):
     updated = pyqtSignal()
+    selected = pyqtSignal()
     input = pyqtSignal()
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -241,7 +253,7 @@ class Merger(QObject):
 
         self._parameters = VariantMap(self, {
             "type": "Checkpoint",
-            "types": ["Checkpoint"],#, "LoRA"],
+            "types": ["Checkpoint", "LoRA"],
         })
 
         qmlRegisterSingletonType(Merger, "gui", 1, 0, "MERGER", lambda qml, js: self)
@@ -249,7 +261,7 @@ class Merger(QObject):
 
         self._operations = []
         self.addOperation()
-        self._selectedOperation = 0
+        self._selectedOperationIndex = 0
 
         self._outputs = {}
         self._openedIndex = -1
@@ -383,7 +395,10 @@ class Merger(QObject):
                         operation._parameters.set(k, model)
                 sources = operation._parameters.get("sources")
                 for k in ["vae_source", "clip_source"]:
-                    operation._parameters.set(k, sources[op[k]])
+                    source = sources[0]
+                    if k in op:
+                        source = sources[op[k]]
+                    operation._parameters.set(k, source)
                 alpha = op["alpha"]
                 if type(alpha) == list:
                     operation._parameters.set("mode", "Advanced")
@@ -396,6 +411,8 @@ class Merger(QObject):
             operation._parameters.updated.connect(self.check)
             self._operations += [operation]
         self.check()
+        self._selectedOperationIndex = 0
+        self.selected.emit()
 
     @pyqtProperty(bool, notify=updated)
     def valid(self):
@@ -405,14 +422,19 @@ class Merger(QObject):
     def operations(self):
         return self._operations
     
-    @pyqtProperty(int, notify=updated)
-    def selectedOperation(self):
-        return self._selectedOperation
+    @pyqtProperty(int, notify=selected)
+    def selectedOperationIndex(self):
+        return self._selectedOperationIndex
     
-    @selectedOperation.setter
-    def selectedOperation(self, index):
-        self._selectedOperation = index
-        self.updated.emit()
+    @selectedOperationIndex.setter
+    def selectedOperationIndex(self, index):
+        if index != self._selectedOperationIndex:
+            self._selectedOperationIndex = index
+            self.selected.emit()
+
+    @pyqtProperty(MergeOperation, notify=selected)
+    def selectedOperation(self):
+        return self._operations[self._selectedOperationIndex]
 
     @pyqtSlot()
     def addOperation(self):
@@ -423,8 +445,8 @@ class Merger(QObject):
 
     @pyqtSlot()
     def deleteOperation(self):
-        self._operations.remove(self._operations[self._selectedOperation])
-        self._selectedOperation = max(0, self._selectedOperation - 1)
+        self._operations.remove(self.selectedOperation)
+        self._selectedOperationIndex = max(0, self._selectedOperationIndex - 1)
 
         if len(self._operations) == 0:
             self.addOperation()
@@ -433,6 +455,8 @@ class Merger(QObject):
 
         for op in self._operations:
             op.enforceModelTypes()
+
+        self.selected.emit()
     
     @pyqtSlot()
     def generate(self):

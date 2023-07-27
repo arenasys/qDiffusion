@@ -15,7 +15,7 @@ Rectangle {
 
     color: COMMON.bg0_5
 
-    property var operation: MERGER.operations[MERGER.selectedOperation]
+    property var operation: MERGER.selectedOperation
 
     function tr(str, file = "Merger.qml") {
         return TRANSLATOR.instance.translate(str, file)
@@ -172,7 +172,7 @@ Rectangle {
 
                         property var modelNumber: operationText.text == "Add Difference" ? 3 : 2
                         property var modelSize:  Math.max(100, (width - 125) / modelNumber)
-                        property var selected: MERGER.selectedOperation == index
+                        property var selected: MERGER.selectedOperationIndex == index
 
                         Rectangle {
                             visible: selected
@@ -201,7 +201,7 @@ Rectangle {
                             anchors.fill: parent
                             acceptedButtons: Qt.LeftButton | Qt.RightButton
                             onPressed: {
-                                MERGER.selectedOperation = index
+                                MERGER.selectedOperationIndex = index
                                 if (mouse.button & Qt.RightButton) {
                                     opContextMenu.popup()
                                 }
@@ -440,7 +440,6 @@ Rectangle {
 
                         onAccepted: {
                             MERGER.loadRecipe(file)
-                            root.operation = root.operation
                         }
                     }
 
@@ -743,7 +742,7 @@ Rectangle {
 
                     OSlider {
                         visible: height != 0
-                        height: parent.mode == "LoRA" ? 30 : 0
+                        height: (parent.mode == "LoRA") ? 30 : 0
                         width: parent.width
                         label: "CLIP Alpha (α)"
                         
@@ -755,6 +754,38 @@ Rectangle {
                         precValue: 2
                         incValue: 0.01
                         snapValue: 0.05
+                    }
+
+                    OSlider {
+                        visible: height != 0
+                        height: (parent.mode == "LoRA") ? 30 : 0
+                        width: parent.width
+                        label: "LoRA Rank"
+                        
+                        bindMap: root.operation.parameters
+                        bindKey: "rank"
+
+                        minValue: 8
+                        maxValue: 256
+                        precValue: 0
+                        incValue: 8
+                        snapValue: 8
+                    }
+
+                    OSlider {
+                        visible: height != 0
+                        height: (parent.mode == "LoRA") ? 30 : 0
+                        width: parent.width
+                        label: "LoCon Rank"
+                        
+                        bindMap: root.operation.parameters
+                        bindKey: "conv_rank"
+
+                        minValue: 8
+                        maxValue: 256
+                        precValue: 0
+                        incValue: 8
+                        snapValue: 8
                     }
 
                     OChoice {

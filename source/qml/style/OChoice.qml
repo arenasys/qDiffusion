@@ -120,6 +120,12 @@ Item {
         }
     }
 
+    onBindMapCurrentChanged: {
+        if(bindMap == null && binding) {
+            root.update()
+        }
+    }
+
     Connections {
         target: bindMapModel
         function onUpdated() {
