@@ -391,7 +391,7 @@ class Merger(QObject):
                             index = int(model.split("_")[-1])
                             model = os.path.join(f"_result_{index}", f"Model {index}")
                         else:
-                            model = self.closestModel(model, models)
+                            model = self.gui.closestModel(model, models)
                         operation._parameters.set(k, model)
                 sources = operation._parameters.get("sources")
                 for k in ["vae_source", "clip_source"]:

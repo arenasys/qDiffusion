@@ -14,6 +14,7 @@ Dialog {
     dim: true
     property alias parser: parser
     property var raw: false
+    property var reset: true
 
     function tr(str, file = "ImportDialog.qml") {
         return TRANSLATOR.instance.translate(str, file)
@@ -123,10 +124,15 @@ Dialog {
 
             delegate: Item {
                 width: parent.width
-                height: modelData.label == "Prompt" || modelData.label == "Negative prompt" ? 40 : 20
-                property var checked: true
+                height: (modelData.label == "Prompt" || modelData.label == "Negative prompt") ? 40 : 20
+                property var checked: modelData.checked
+
+                property var reset: modelData.name == "reset"
+
                 onCheckedChanged: {
-                    modelData.checked = checked
+                    if(modelData.checked != checked) {
+                        modelData.checked = checked
+                    }
                 }
 
                 Rectangle {
@@ -135,14 +141,14 @@ Dialog {
                     anchors.top: parent.top
                     height: 21
                     width: 21
-                    border.color: COMMON.bg4
-                    color: COMMON.bg2
+                    border.color: reset ? COMMON.bg5 : COMMON.bg4
+                    color: reset ? COMMON.bg3 : COMMON.bg2
 
                     Rectangle {
                         anchors.fill: parent
                         anchors.margins: 3
-                        border.color: COMMON.bg3
-                        color: COMMON.bg1
+                        border.color: reset ? COMMON.bg4 : COMMON.bg3
+                        color: reset ? COMMON.bg2 : COMMON.bg1
                     }
 
                     Image {
@@ -166,9 +172,10 @@ Dialog {
 
                 Rectangle {
                     anchors.fill: label
-                    border.color: COMMON.bg4
-                    color: COMMON.bg3
+                    border.color: reset ? COMMON.bg5 : COMMON.bg4
+                    color: reset ? COMMON.bg4 : COMMON.bg3
                 }
+
                 SText {
                     id: label
                     anchors.top: parent.top
@@ -185,6 +192,7 @@ Dialog {
                 }
 
                 Rectangle {
+                    visible: !reset
                     anchors.top: value.top
                     anchors.left: value.left
                     anchors.bottom: value.bottom

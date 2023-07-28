@@ -3,6 +3,7 @@ import random
 import datetime
 import json
 import bson
+import difflib
 import platform
 IS_WIN = platform.system() == 'Windows'
 
@@ -629,6 +630,23 @@ class GUI(QObject):
     @pyqtSlot(str, result=str)
     def modelName(self, name):
         return name.rsplit(".",1)[0].rsplit(os.path.sep,1)[-1]
+    
+    def closestModel(self, name, models):
+        if not models:
+            return ''
+        
+        name = name.lower()
+        best = models[0]
+        score = 0
+
+        for m in models:
+            m_name = self.modelName(m).lower()
+            m_score = difflib.SequenceMatcher(a=m_name, b=name).ratio()
+            if m_score > score:
+                best = m
+                score = m_score
+        
+        return best
     
     @pyqtSlot(str, result=str)
     def modelFileName(self, name):

@@ -19,6 +19,7 @@ LABELS = [
     ("negative_prompt", "Negative prompt"),
     ("steps", "Steps"),
     ("sampler", "Sampler"),
+    ("eta", "Eta"),
     ("scale", "CFG scale"),
     ("seed", "Seed"),
     ("size", "Size"),
@@ -30,10 +31,6 @@ LABELS = [
     ("subseed_strength", "Variation seed strength"),
     ("strength", "Denoising strength"),
     ("clip_skip", "Clip skip"),
-    ("lora", "LoRA"),
-    ("lora_strength", "LoRA strength"),
-    ("hn", "HN"),
-    ("hn_strength", "HN strength"),
     ("hr_resize", "Hires resize"),
     ("hr_factor", "Hires factor"),
     ("hr_strength", "Hires strength"),
@@ -43,6 +40,13 @@ LABELS = [
     ("hr_eta", "Hires sampler eta"),
     ("img2img_upscaler", "Upscaler"),
 ]
+
+SETTABLE = [
+    "prompt", "negative_prompt", "steps", "sampler", "schedule", "scale", "seed", "width", "height",
+    "model", "UNET", "VAE", "CLIP", "model", "subseed", "subseed_strength", "strength", "eta", "clip_skip", "img2img_upscaler",
+    "hr_factor", "hr_strength", "hr_upscaler", "hr_sampler", "hr_steps", "hr_eta"
+]
+
 NETWORKS = {"LoRA":"lora","HN":"hypernet"}
 NETWORKS_INV = {"lora":"LoRA","hypernet":"HN"}
 
@@ -210,6 +214,10 @@ class ParametersItem(QObject):
         self._checked = True
 
     @pyqtProperty(str, notify=updated)
+    def name(self):
+        return self._name
+
+    @pyqtProperty(str, notify=updated)
     def label(self):
         return self._label
             
@@ -285,6 +293,11 @@ class ParametersParser(QObject):
             else:
                 continue
             self._parameters += [ParametersItem(self, n, l, v)]
+
+        reset = ParametersItem(self, "reset", "Reset others?", "")
+        reset._checked = False
+
+        self._parameters += [reset]
 
         self.updated.emit()
 
@@ -539,7 +552,7 @@ class Parameters(QObject):
         else:
             request["type"] = "txt2img"
 
-        if request["type"] != "txt2img" and self.gui.config.get("always_hr_resolution", False):
+        if request["type"] != "txt2img" and self.gui.config.get("always_hr_resolution", True):
             factor = data['hr_factor']
             data['width'] = int(data['width'] * factor)
             data['height'] = int(data['height'] * factor)
@@ -649,86 +662,118 @@ class Parameters(QObject):
 
     @pyqtSlot(list)
     def sync(self, params):
-        hr_resize = None
-        schedule = None
+        processed = {}
 
-        found = {'hr_resize':False, 'hr_factor': False, 'hr_sampler': False, 'hr_steps': False, 'hr_eta': False,
-              'sampler': False, 'steps': False, 'eta': False, 'model':False, 'VAE':False, "UNET":False, "CLIP":False}
-        
         for p in params:
-            if not p._checked:
-                continue
-            
+            entries = {p._name: (p._value, p._checked)}
+
             if p._name == "size":
                 w,h = p._value.split("x")
-                w,h = int(w), int(h)
-                self.values.set("width", w)
-                self.values.set("height", h)
-                continue
 
+                entries = {
+                    "width": (int(w), p._checked),
+                    "height": (int(h), p._checked),
+                }
+            
             if p._name == "hr_resize":
-                w,h = p._value.split("x")
-                hr_resize = int(w), int(h)
-                continue
-                
+                hr_w, hr_h = p._value.split("x")
+                hr_w, hr_h = int(hr_w), int(hr_h)
+
+                if "width" in processed and processed["width"][1]:
+                    w,h = self.processed["width"][0], self.processed["height"][0]
+                else:
+                    w,h = self.values.get("width"), self.values.get("height")
+
+                f = (((hr_w/w) + (hr_h/h))/2)
+                f = int(f / 0.005) * 0.005
+
+                entries = {
+                    "hr_factor": (f, p._checked)
+                }
+            
             if p._name == "sampler":
                 if p._value.endswith(" Karras"):
-                    p._value = p._value.rsplit(" ",1)[0]
+                    sampler = p._value.rsplit(" ",1)[0]
                     schedule = "Karras"
                 elif p._value.endswith(" Exponential"):
-                    p._value = p._value.rsplit(" ",1)[0]
+                    sampler = p._value.rsplit(" ",1)[0]
                     schedule = "Exponential"  
                 else:
+                    sampler = p._value
                     schedule = "Default"
                 
-            if p._name in found:
-                found[p._name] = True
+                entries = {
+                    "sampler": (sampler, p._checked),
+                    "schedule": (schedule, p._checked)
+                }
+            
+            if p._name == "model":
+                entries = {
+                    "UNET": (p._value, p._checked),
+                    "CLIP": (p._value, p._checked),
+                    "VAE": (p._value, p._checked),
+                }
+            
+            for n in entries:
+                processed[n] = entries[n]
+        
+        reset = processed["reset"][1]
+        del processed["reset"]
+        
+        for k in ["UNET", "CLIP", "VAE"]:
+            if not k in processed:
+                continue
 
-            if not p._name in self._values._map:
-                continue 
+            value, checked = processed[k]
+            available = self._values._map[k+"s"]
+            closest_match = self.gui.closestModel(value, available)
+            processed[k] = (closest_match, checked)
 
-            if p._name+"s" in self._values._map and not p._value in self._values._map[p._name+"s"]:
-                for m in self._values._map[p._name+"s"]:
-                    if p._value + "." in m:
-                        p._value = m
-                        break
-                else:
-                    continue
+        if not "model" in processed:
+            value, checked = processed["UNET"]
+            processed["model"] = (value, checked)
+
+        for k in ["img2img_upscaler", "hr_upscaler"]:
+            if not k in processed:
+                continue
+
+            value, checked = processed[k]
+            available = self._values._map[k+"s"]
+            if value in available:
+                continue
+            closest_match = self.gui.closestModel(value, available) or available[0]
+            processed[k] = (closest_match, checked)
+
+        if "hr_factor" in processed:
+            checked = processed["hr_factor"][1] 
+            for k in ["steps", "sampler", "eta"]:
+                value = processed[k][0] if k in processed else self.values.get(k)
+                processed["hr_"+k] = (value, checked)
+        
+        for name in SETTABLE:
+            value = None
+
+            if name in processed and processed[name][1]:
+                value = processed[name][0]
+            
+            if value == None and reset:
+                if name == "hr_steps":
+                    value = self.values.get("steps")
+                elif name == "hr_sampler":
+                    value = self.values.get("sampler")
+                elif name in self._default_values:
+                    value = self._default_values.get(name)
+
+            if value == None:
+                continue
 
             try:
-                val = type(self.values.get(p._name))(p._value)
-                self.values.set(p._name, val)
+                value = type(self.values.get(name))(value)
+                self.values.set(name, value)
             except Exception as e:
                 pass
 
-        if schedule:
-            self.values.set("schedule", schedule)
-
-        if hr_resize:
-            w,h = hr_resize
-            w,h = w/self.values.get("width"), h/self.values.get("height")
-            f = ((w+h)/2)
-            f = int(f / 0.005) * 0.005
-            self.values.set("hr_factor", f)
-
-        if found["hr_factor"] or found["hr_resize"]:
-            if not found["hr_steps"] and found["steps"]:
-                self.values.set("hr_steps", self.values.get("steps"))
-            if not found["hr_sampler"] and found["sampler"]:
-                self.values.set("hr_sampler", self.values.get("sampler"))
-            if not found["hr_eta"] and found["eta"]:
-                self.values.set("hr_eta", self.values.get("eta"))
-
-        if found["UNET"] and found["VAE"] and found["CLIP"]:
-            self.values.set("model", self.values.get("UNET"))
-        elif found["model"]:
-            model = self.values.get("model")
-            self.values.set("UNET", model)
-            self.values.set("VAE", model)
-            self.values.set("CLIP", model)
-        
         self.updated.emit()
-        pass
 
     def parsePrompt(self, prompt, batch_size):
         wildcards = self.gui.wildcards._wildcards
