@@ -21,7 +21,7 @@ class MergeOperation(QObject):
 
         self._parameters = VariantMap(self, {
             "operation": "Weighted Sum",
-            "operations_checkpoint": ["Weighted Sum", "Add Difference"],#, "Insert LoRA"],
+            "operations_checkpoint": ["Weighted Sum", "Add Difference", "Insert LoRA"],
             "operations_lora": ["Weighted Sum", "Add Difference"],#, "Extract LoRA"],
             "mode": "Simple",
             "modes": ["Simple", "Advanced"],
@@ -35,7 +35,6 @@ class MergeOperation(QObject):
             "rank": 32,
             "conv_rank": 16,
             "vae_source": "Model A",
-            "clip_source": "Model A",
             "sources": ["Model A", "Model B", "Model C"],
             "label": "4 Block",
             "labels": ["4 Block", "12 Block"]
@@ -212,22 +211,21 @@ class MergeOperation(QObject):
             self._block_weights.set(label, parsed_values[label])
 
     def getRecipe(self, model_type):
-        important = ["operation", "mode", "model_a", "model_b", "model_c", "alpha"]
+        important = ["operation", "mode", "model_a", "model_b", "model_c", "alpha", "clip_alpha"]
         recipe = {k:self._parameters.get(k) for k in important}
 
         for k in ["model_a", "model_b", "model_c"]:
             if recipe[k].startswith("_result_"):
                 recipe[k] = recipe[k].split(os.path.sep)[0]
             
-        if recipe["operation"] == "Weighted Sum":
+        if self.operationModelTypes(model_type, recipe["operation"])[-1] == None:
             del recipe["model_c"]
 
         if recipe["mode"] == "Advanced":
             recipe["alpha"] = [self._block_weights.get(label) for label in self.getBlockWeightLabels()]
 
         if model_type == "Checkpoint":
-            for k in ["vae_source", "clip_source"]:
-                recipe[k] = ["Model A", "Model B", "Model C"].index(self._parameters.get(k))
+            recipe["vae_source"] = ["Model A", "Model B", "Model C"].index(self._parameters.get("vae_source"))
         else:
             for k in ["rank", "conv_rank"]:
                 recipe[k] = int(self._parameters.get(k))
@@ -327,6 +325,12 @@ class Merger(QObject):
                     names += [f"({a})+{alpha:.2f}({b}-{c})"]
                 else:
                     names += [f"({a})+%({b}-{c})"]
+            elif op['operation'] == "Insert LoRA":
+                clip_alpha = op['clip_alpha']
+                if type(alpha) == float:
+                    names += [f"({a})+({alpha:.2f},{clip_alpha:.2f})({b})"]
+                else:
+                    names += [f"({a})+(%,{clip_alpha:.2f})({b})"]
         for i in range(len(names)):
             match = f"_result_{i}"
             for k in range(len(names)):
@@ -377,28 +381,38 @@ class Merger(QObject):
 
         self._parameters.set("type", model_type)
         
-        models = self.gui._options.get("UNET" if model_type == "Checkpoint" else "LoRA", [])
+        models = {
+            "Checkpoint": self.gui._options.get("UNET", []),
+            "LoRA": self.gui._options.get("LoRA", [])
+        }
 
         self._operations = []
         for op in operations:
             operation = MergeOperation(self)
             try:
                 operation._parameters.set("operation", op["operation"])
-                for k in ["model_a", "model_b", "model_c"]:
+                model_types = operation.operationModelTypes(model_type, op["operation"])
+                for k, t in zip(["model_a", "model_b", "model_c"], model_types):
                     if k in op:
                         model = op[k]
                         if model.startswith("_result_"):
                             index = int(model.split("_")[-1])
                             model = os.path.join(f"_result_{index}", f"Model {index}")
                         else:
-                            model = self.gui.closestModel(model, models)
+                            model = self.gui.closestModel(model, models[t])
                         operation._parameters.set(k, model)
                 sources = operation._parameters.get("sources")
-                for k in ["vae_source", "clip_source"]:
-                    source = sources[0]
-                    if k in op:
-                        source = sources[op[k]]
-                    operation._parameters.set(k, source)
+
+                vae_source = sources[0]
+                if "vae_source" in op:
+                    vae_source = sources[op["vae_source"]]
+                operation._parameters.set("vae_source", vae_source)
+
+                clip_alpha = op.get("clip_alpha", 1.0)
+                if "clip_source" in op:
+                    clip_alpha = float(op["clip_source"])
+                operation._parameters.set("clip_alpha", clip_alpha)
+
                 alpha = op["alpha"]
                 if type(alpha) == list:
                     operation._parameters.set("mode", "Advanced")
@@ -485,6 +499,7 @@ class Merger(QObject):
         elif model_type == "LoRA":
             request["data"]["merge_lora_recipe"] = operations
         request["data"]["merge_name"] = name
+        request["data"]["network_mode"] = "Dynamic"
 
         self._ids += [self.gui.makeRequest(request)]
     

@@ -723,6 +723,7 @@ Rectangle {
                     width: parent.width - 20
 
                     property var mode: operationChoice.value == "Insert LoRA" ? "LoRA" : typeChoice.value
+                    property var hide_rank: operationChoice.value == "Insert LoRA"
 
                     OSlider {
                         visible: height != 0
@@ -742,7 +743,7 @@ Rectangle {
 
                     OSlider {
                         visible: height != 0
-                        height: (parent.mode == "LoRA") ? 30 : 0
+                        height: 30
                         width: parent.width
                         label: "CLIP Alpha (α)"
                         
@@ -758,7 +759,7 @@ Rectangle {
 
                     OSlider {
                         visible: height != 0
-                        height: (parent.mode == "LoRA") ? 30 : 0
+                        height: (parent.mode == "LoRA" && !parent.hide_rank) ? 30 : 0
                         width: parent.width
                         label: "LoRA Rank"
                         
@@ -774,7 +775,7 @@ Rectangle {
 
                     OSlider {
                         visible: height != 0
-                        height: (parent.mode == "LoRA") ? 30 : 0
+                        height: (parent.mode == "LoRA" && !parent.hide_rank) ? 30 : 0
                         width: parent.width
                         label: "LoCon Rank"
                         
@@ -786,17 +787,6 @@ Rectangle {
                         precValue: 0
                         incValue: 8
                         snapValue: 8
-                    }
-
-                    OChoice {
-                        visible: height != 0
-                        height: parent.mode == "Checkpoint" ? 30 : 0
-                        width: parent.width
-                        label: "CLIP Source"
-
-                        bindMap: root.operation.parameters
-                        bindKeyCurrent: "clip_source"
-                        bindKeyModel: "sources"
                     }
 
                     OChoice {

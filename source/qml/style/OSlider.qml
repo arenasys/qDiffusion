@@ -275,8 +275,17 @@ Item {
                 width: 10
                 color: COMMON.bg4
 
+
                 Canvas {
                     anchors.fill: parent
+
+                    onVisibleChanged: {
+                        requestPaint()
+                    }
+
+                    onHeightChanged: {
+                        requestPaint()
+                    }
 
                     onPaint: {
                         var context = getContext("2d");
@@ -312,6 +321,14 @@ Item {
 
                 Canvas {
                     anchors.fill: parent
+
+                    onVisibleChanged: {
+                        requestPaint()
+                    }
+
+                    onHeightChanged: {
+                        requestPaint()
+                    }
 
                     onPaint: {
                         var context = getContext("2d");
