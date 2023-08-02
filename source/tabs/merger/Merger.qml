@@ -888,6 +888,14 @@ Rectangle {
                                     }
                                 }
                             }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                acceptedButtons: Qt.RightButton
+                                onPressed: {
+                                    advContextMenu.popup()
+                                }
+                            }
                         }
 
                         Item {
@@ -1077,6 +1085,14 @@ Rectangle {
                                 onSelected: {
                                     blockWeightPresets.clear()
                                 }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    acceptedButtons: Qt.RightButton
+                                    onPressed: {
+                                        advContextMenu.popup()
+                                    }
+                                }
                             }
                         }
 
@@ -1106,6 +1122,24 @@ Rectangle {
                                         blockWeightPresets.clear()
                                     }
                                 }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                acceptedButtons: Qt.RightButton
+                                onPressed: {
+                                    advContextMenu.popup()
+                                }
+                            }
+                        }
+                    }
+
+                    SContextMenu {
+                        id: advContextMenu
+                        SContextMenuItem {
+                            text: root.tr("Invert")
+                            onPressed: {
+                                root.operation.invertBlockWeightValues()
                             }
                         }
                     }

@@ -187,7 +187,13 @@ class MergeOperation(QObject):
         for label in self.getBlockWeightLabels():
             value = self._block_weights.get(label)
             outputs += [f"{value:.4f}".rstrip('0').rstrip('.')]
-        return ", ".join(outputs)
+        return ",".join(outputs)
+    
+    @pyqtSlot()
+    def invertBlockWeightValues(self):
+        for label in self.getBlockWeightLabels():
+            value = self._block_weights.get(label)
+            self._block_weights.set(label, 1.0 - value)
     
     @pyqtSlot(str)
     def setBlockWeightValues(self, values):
