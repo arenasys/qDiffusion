@@ -183,6 +183,20 @@ SMenuBar {
     SMenu {
         title: root.tr("Help")
         clipShadow: true
+
+        SMenuItem {
+            text: root.tr("Open Guide")
+            onPressed: {
+                GUI.openLink("https://github.com/arenasys/qDiffusion/wiki/Guide")
+            }
+        }
+        SMenuItem {
+            text: root.tr("Report Issue")
+            onPressed: {
+                GUI.openLink("https://github.com/arenasys/qDiffusion/issues/new?assignees=&labels=&projects=&template=bug_report.md&title=")
+            }
+        }
+        SMenuSeparator {}
         SMenuItem {
             text: root.tr("About")
             onPressed: {
