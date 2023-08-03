@@ -741,7 +741,9 @@ class Parameters(QObject):
             available = self._values._map[k+"s"]
             if value in available:
                 continue
-            closest_match = self.gui.closestModel(value, available) or available[0]
+            closest_match = self.gui.closestModel(value, available)
+            if not closest_match and available:
+                closest_match = available[0]
             processed[k] = (closest_match, checked)
 
         if "hr_factor" in processed:
