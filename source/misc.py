@@ -239,7 +239,7 @@ class SyntaxHighlighter(QSyntaxHighlighter):
         wilds = set(self.gui.wildcards._wildcards.keys())
 
         for em in embeddings:
-            for s, e  in [m.span() for m in re.finditer(em, text)]:
+            for s, e  in [m.span() for m in re.finditer(em.lower(), text.lower())]:
                 self.setFormat(s, e-s, emb)
         
         for s, e, ms, me in [(*m.span(0), *m.span(1)) for m in re.finditer("<@?lora:([^:>]+)([^>]+)?>", text.lower())]:
