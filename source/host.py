@@ -41,16 +41,23 @@ class HostProcess(multiprocessing.Process):
         self.response = response
 
     def run(self):
+        print("START")
         sys.path.insert(0, os.path.join("source", "sd-inference-server"))
-
+        print("PATH")
         import torch
+        print("TORCH")
         import storage, wrapper, server
+        print("AUX")
 
         try:
             model_storage = storage.ModelStorage(self.model_directory, torch.float16, torch.float32)
+            print("STORAGE")
             self.wrapper = wrapper.GenerationParameters(model_storage, torch.device("cuda"))
+            print("WRAPPER")
             self.server = server.Server(self.wrapper, self.ip, self.port, self.password, True, self.read_only, self.monitor)
+            print("DEFINE")
             self.server.start()
+            print("BIND")
 
             endpoint = f"ws://{self.ip}:{self.port}"
             if self.tunnel:
@@ -59,6 +66,7 @@ class HostProcess(multiprocessing.Process):
                 endpoint = tunnel_url.tunnel.replace("https", "wss")
 
             self.response.put({"type": "host", "data": {"endpoint": endpoint, "password": self.password}})
+            print("RESPOND")
 
             self.loaded.set()
 
