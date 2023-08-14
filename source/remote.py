@@ -121,7 +121,7 @@ class RemoteInference(QThread):
         self.onResponse({"type": "status", "data": {"message": "Connecting"}})
         while not self.client and not self.stopping:
             try:
-                self.client = websockets.sync.client.connect(self.endpoint, open_timeout=2, close_timeout=0.1, max_size=None)
+                self.client = websockets.sync.client.connect(self.endpoint, open_timeout=2, max_size=None)
             except TimeoutError:
                 pass
             except ConnectionRefusedError:
