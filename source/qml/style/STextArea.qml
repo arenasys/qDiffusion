@@ -105,43 +105,89 @@ Rectangle {
                 }
             }
 
+            function weightText(inc) {
+                var start = textArea.selectionStart
+                var end = textArea.selectionEnd
+                var text = textArea.text
+
+                if (start == end || textArea.readOnly) {
+                    return
+                }
+
+                if (text[start-1] != '(' && text[end] != ':') {
+                    textArea.text = text.slice(0, start) + "(" + text.slice(start, end) + ":" + (1 + inc) + ")" + text.slice(end)
+                    textArea.select(start+1, end+1)
+                } else {
+                    var trail = text.slice(end+1)
+                    var idx = trail.indexOf(')')
+                    
+                    var weight = parseFloat(trail.slice(0,idx))
+                    if (weight + inc < 0 && inc < 0) {
+                        return
+                    }
+
+                    weight = (weight + inc).toFixed(1)
+                    if (weight == "1.0" || weight == "NaN") {
+                        textArea.text = text.slice(0, start-1) + text.slice(start, end) + trail.slice(idx+1)
+                        textArea.select(start-1, end-1)
+                    } else {
+                        textArea.text = text.slice(0, start) + text.slice(start, end) + ":" + weight + ")" + trail.slice(idx+1)
+                        textArea.select(start, end)
+                    }
+                }
+            }
+
             Keys.onPressed: {
                 event.accepted = true
-                switch(event.key) {
-                case Qt.Key_Tab:
-                    root.tab()
-                    break;
-                case Qt.Key_Return:
-                    if(root.menuActive) {
+                if(event.modifiers & Qt.ControlModifier && event.modifiers & Qt.ShiftModifier ) {
+                    switch(event.key) {
+                    case Qt.Key_Up:
+                        weightText(0.1)
+                        break
+                    case Qt.Key_Down:
+                        weightText(-0.1)
+                        break
+                    default:
+                        event.accepted = false
+                        break;
+                    }
+                } else {
+                    switch(event.key) {
+                    case Qt.Key_Tab:
                         root.tab()
-                    } else {
+                        break;
+                    case Qt.Key_Return:
+                        if(root.menuActive) {
+                            root.tab()
+                        } else {
+                            event.accepted = false
+                        }
+                        break;
+                    case Qt.Key_Escape:
+                        if(root.menuActive) {
+                            root.menu(0)
+                        } else {
+                            event.accepted = false
+                        }
+                        break;
+                    case Qt.Key_Up:
+                        if(root.menuActive) {
+                            root.menu(1)
+                        } else {
+                            event.accepted = false
+                        }
+                        break;
+                    case Qt.Key_Down:
+                        if(root.menuActive) {
+                            root.menu(-1)
+                        } else {
+                            event.accepted = false
+                        }
+                        break;
+                    default:
                         event.accepted = false
+                        break;
                     }
-                    break;
-                case Qt.Key_Escape:
-                    if(root.menuActive) {
-                        root.menu(0)
-                    } else {
-                        event.accepted = false
-                    }
-                    break;
-                case Qt.Key_Up:
-                    if(root.menuActive) {
-                        root.menu(1)
-                    } else {
-                        event.accepted = false
-                    }
-                    break;
-                case Qt.Key_Down:
-                    if(root.menuActive) {
-                        root.menu(-1)
-                    } else {
-                        event.accepted = false
-                    }
-                    break;
-                default:
-                    event.accepted = false
-                    break;
                 }
                 
                 if(!event.accepted) {
