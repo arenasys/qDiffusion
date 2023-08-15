@@ -109,7 +109,7 @@ Rectangle {
                 if (textArea.readOnly) {
                     return
                 }
-                
+
                 var start = textArea.selectionStart
                 var end = textArea.selectionEnd
                 var text = textArea.text
@@ -186,13 +186,23 @@ Rectangle {
             anchors.fill: textArea
             acceptedButtons: Qt.RightButton
             onPressed: {
-                contextMenu.popup()
+                if(mouse.buttons & Qt.RightButton) {
+                    contextMenu.popup()
+                }
             }
             onWheel: {
-                if(wheel.angleDelta.y < 0) {
-                    scrollBar.increase()
+                if(wheel.modifiers & Qt.ControlModifier && wheel.modifiers & Qt.ShiftModifier) {
+                    if(wheel.angleDelta.y < 0) {
+                        textArea.weightText(-0.1)
+                    } else {
+                        textArea.weightText(0.1)
+                    }
                 } else {
-                    scrollBar.decrease()
+                    if(wheel.angleDelta.y < 0) {
+                        scrollBar.increase()
+                    } else {
+                        scrollBar.decrease()
+                    }
                 }
             }
         }

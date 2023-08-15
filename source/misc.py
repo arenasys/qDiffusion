@@ -357,6 +357,9 @@ def formatFloat(f):
 def weightText(text, inc, start, end):
     nothing = {"text": text, "start": start, "end": end}
 
+    if not text:
+        return nothing
+
     pre = {'<':-1, '(':-1, '[':-1}
     post = {'>':-1, ')':-1, ']':-1}
     inv = {'<':'>', '(':')', '[':']'}
@@ -441,7 +444,8 @@ def weightText(text, inc, start, end):
     else:
         weight = formatFloat(1 + inc)
         text = text[:start] + "(" + text[start:end] + ":" + weight + ")" + text[end:]
-        start += 1
-        end = start
+        end += 1
+        start = end
+        
 
     return {"text": text, "start": start, "end": end}
