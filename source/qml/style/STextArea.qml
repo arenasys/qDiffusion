@@ -106,35 +106,17 @@ Rectangle {
             }
 
             function weightText(inc) {
+                if (textArea.readOnly) {
+                    return
+                }
+                
                 var start = textArea.selectionStart
                 var end = textArea.selectionEnd
                 var text = textArea.text
 
-                if (start == end || textArea.readOnly) {
-                    return
-                }
-
-                if (text[start-1] != '(' && text[end] != ':') {
-                    textArea.text = text.slice(0, start) + "(" + text.slice(start, end) + ":" + (1 + inc) + ")" + text.slice(end)
-                    textArea.select(start+1, end+1)
-                } else {
-                    var trail = text.slice(end+1)
-                    var idx = trail.indexOf(')')
-                    
-                    var weight = parseFloat(trail.slice(0,idx))
-                    if (weight + inc < 0 && inc < 0) {
-                        return
-                    }
-
-                    weight = (weight + inc).toFixed(1)
-                    if (weight == "1.0" || weight == "NaN") {
-                        textArea.text = text.slice(0, start-1) + text.slice(start, end) + trail.slice(idx+1)
-                        textArea.select(start-1, end-1)
-                    } else {
-                        textArea.text = text.slice(0, start) + text.slice(start, end) + ":" + weight + ")" + trail.slice(idx+1)
-                        textArea.select(start, end)
-                    }
-                }
+                var result = GUI.weightText(text, inc, start, end)
+                textArea.text = result.text
+                textArea.select(result.start, result.end)
             }
 
             Keys.onPressed: {

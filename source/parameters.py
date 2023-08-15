@@ -557,17 +557,19 @@ class Parameters(QObject):
             data['width'] = int(data['width'] * factor)
             data['height'] = int(data['height'] * factor)
 
-        if not "mask" in data:
-            del data["mask_blur"]
-            del data["mask_expand"]
-            del data["mask_fill"]
-
         if any(areas):
             s = len(self.subprompts)
             for a in range(len(areas)):
                 if areas[a] and len(areas[a]) > s:
                     areas[a] = areas[a][:s]
             data["area"] = areas
+
+        
+        if not "mask" in data and not "area" in data:
+            del data["mask_blur"]
+            del data["mask_expand"]
+        if not "mask" in data:
+            del data["mask_fill"]
 
         if data["hr_factor"] == 1.0:
             del data["hr_factor"]

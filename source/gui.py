@@ -779,3 +779,7 @@ class GUI(QObject):
     @hostPassword.setter
     def hostPassword(self, password):
         self._hostSetPassword = password
+
+    @pyqtSlot(str, float, int, int, result='QVariant')
+    def weightText(self, text, inc, start, end):
+        return misc.weightText(text, inc, start, end)

@@ -350,3 +350,98 @@ NATSORT_KEY = lambda s: [int(t) if t.isdigit() else t.lower() for t in re.split(
 
 def sortFiles(files):
     return sorted(files, key=lambda f: NATSORT_KEY(f.rsplit(os.path.sep,1)[-1]))
+
+def formatFloat(f):
+    return f"{f:.4f}".rstrip('0').rstrip('.')
+
+def weightText(text, inc, start, end):
+    nothing = {"text": text, "start": start, "end": end}
+
+    pre = {'<':-1, '(':-1, '[':-1}
+    post = {'>':-1, ')':-1, ']':-1}
+    inv = {'<':'>', '(':')', '[':']'}
+    
+    if text[start-1] in pre and (text[end] == inv[text[start-1]] or text[end] == ':'):
+        end = start       
+
+    if start == end:
+        cnt = {k:0 for k in post}
+        for i in range(start-1, -1, -1):
+            c = text[i]
+            if c in cnt:
+                cnt[c] += 1
+            if text[i] in pre:
+                if cnt[inv[c]]:
+                    cnt[inv[c]] -= 1
+                elif pre[c] == -1:
+                    pre[c] = i
+        inv = {v:k for k,v in inv.items()}
+        cnt = {k:0 for k in pre}
+        for i in range(end, len(text)):
+            c = text[i]
+            if c in cnt:
+                cnt[c] += 1
+            if text[i] in post:
+                if cnt[inv[c]]:
+                    cnt[inv[c]] -= 1
+                elif post[c] == -1:
+                    post[c] = i
+        inv = {v:k for k,v in inv.items()}
+        potential = []
+        
+        for i,j in inv.items():
+            if pre[i] != -1 and post[j] != -1:
+                potential += [(pre[i], post[j])]
+        if not potential:
+            return nothing
+
+        a,z = max(potential, key = lambda t: t[1] - t[0])
+        z += 1
+        snip = text[a:z]
+        weight = None
+        if snip[0] == '<':
+            parts = snip[1:-1].split(":",2)
+            if len(parts) < 2:
+                return nothing
+            content = parts[0] + ":" + parts[1]
+            if len(parts) == 3:
+                try:
+                    weight = float(parts[2])
+                except:
+                    return nothing
+        else:
+            parts = snip[1:-1].rsplit(":", 1)
+            content = parts[0]
+            if len(parts) == 2:
+                try:
+                    weight = float(parts[1])
+                except:
+                    return nothing
+        
+        if weight == None:
+            weight = {'(':1.1, '[':0.9, '<':1.0}[snip[0]]
+
+        if snip[0] != '<' and weight + inc < 0 and inc < 0:
+            return nothing
+    
+        weight = formatFloat(weight + inc)
+
+        bracket = snip[0]
+        if bracket == '[':
+            bracket = '('
+
+        if snip[0] != '<' and weight == "1":
+            text = text[:a] + content + text[z:]
+            start = a
+            end = start + len(content)
+        else:
+            text = text[:a] + bracket + content + ":" + weight + inv[bracket] + text[z:]
+            start = min(start, a + len(content) + 1)
+            end = start
+    else:
+        weight = formatFloat(1 + inc)
+        text = text[:start] + "(" + text[start:end] + ":" + weight + ")" + text[end:]
+        start += 1
+        end = start
+
+    return {"text": text, "start": start, "end": end}
