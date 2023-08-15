@@ -62,6 +62,10 @@ Item {
         return model
     }
 
+    function searchModel(model) {       
+        return GUI.searchOptions(model, searchBox.text)
+    }
+
     function setCurrent(c, m, all_m) {
         var i = root.model.indexOf(c);
 
@@ -76,7 +80,7 @@ Item {
 
     function update() {
         var all_m = expandModel(root.bindMapModel.get(root.bindKeyModel));
-        var m = filterModel(all_m);
+        var m = searchModel(filterModel(all_m));
         var c = root.bindMapCurrent.get(root.bindKeyCurrent);
 
         if(m != root.model) {
@@ -145,7 +149,7 @@ Item {
     Component.onCompleted: {
         if(root.binding) {
             var all_m = expandModel(root.bindMapModel.get(root.bindKeyModel));
-            var m = filterModel(all_m)
+            var m = searchModel(filterModel(all_m));
             var c = root.bindMapCurrent.get(root.bindKeyCurrent);
             root.model = m;
 
@@ -180,6 +184,16 @@ Item {
         text: root.tooltip != undefined ? root.tooltip : ""
     }
 
+    TextInput {
+        id: searchBox
+        anchors.fill: parent
+        anchors.margins: 1
+        clip: true
+        onTextChanged: {
+            root.update()
+        }
+    }
+
     ComboBox {
         id: control
         anchors.fill: parent
@@ -199,7 +213,7 @@ Item {
         delegate: Rectangle {
             width: control.popup.width
             height: 22
-            color: delegateMouse.containsMouse ?  COMMON.bg4 : COMMON.bg3
+            color: delegateMouse.containsMouse ? COMMON.bg4 : (index == currentIndex || (index == 0 && control.currentIndex == -1) ? COMMON.bg3_5 : COMMON.bg3)
             SText {
                 id: decoText
                 anchors.right: parent.right
@@ -218,7 +232,7 @@ Item {
                 anchors.right: decoText.left
 
                 height: 22
-                text: root.display(modelData)
+                text: GUI.underlineOption(root.display(modelData), searchBox.text)
                 color: COMMON.fg0
                 font.pointSize:  8.5
                 leftPadding: 5
@@ -325,9 +339,11 @@ Item {
             width: Math.max(100, control.width)
             implicitHeight: Math.min(control.popupHeight, contentItem.implicitHeight+2)
             padding: 2
+            closePolicy: Popup.NoAutoClose
 
             onOpenedChanged: {
                 if(opened) {
+                    searchBox.text = ""
                     root.enter()
                 } else {
                     root.exit()
@@ -406,6 +422,7 @@ Item {
     
     Keys.onPressed: {
         event.accepted = true
+        
         switch(event.key) {
         case Qt.Key_Up:
             if(control.currentIndex > 0) {
@@ -414,14 +431,24 @@ Item {
             break;
         case Qt.Key_Down:
             if(control.currentIndex < control.count-1) {
-                control.currentIndex += 1
+                if(control.currentIndex == -1) {
+                    control.currentIndex = 1
+                } else {
+                    control.currentIndex += 1
+                }
             }
             break;
         case Qt.Key_Return:
+            if(searchBox.text && control.model.length > 0 && control.currentIndex == -1) {
+                control.currentIndex = 0
+            }
             control.popup.close()
+            break;
         default:
             event.accepted = false
             break;
         }
     }
+
+    Keys.forwardTo: [searchBox]
 }
