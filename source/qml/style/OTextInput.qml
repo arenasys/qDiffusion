@@ -116,7 +116,12 @@ Item {
                 readOnly: control.disabled
                 
                 onEditingFinished: {
-                    control.value = text
+                    if(text == "") {
+                        control.value = defaultValue
+                        text = defaultValue
+                    } else {
+                        control.value = text
+                    }
                 }
 
                 onActiveFocusChanged: {

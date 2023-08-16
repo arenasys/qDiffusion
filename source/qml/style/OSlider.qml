@@ -22,6 +22,10 @@ Item {
     property var disabled: false
     property var overlay: root.disabled
 
+    property var validator: RegExpValidator {
+        regExp: /|[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)/
+    }
+
     property alias control: control
 
     property variant bindMap: null
@@ -222,13 +226,19 @@ Item {
                 verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignRight
                 text: root.value.toFixed(root.precValue)
-                validator: DoubleValidator {
-                    locale: "C"
-                    bottom: root.minValue
-                    top: bounded ? root.maxValue : 2147483647.0
-                }
+                validator: root.validator
                 onEditingFinished: {
-                    root.value = parseFloat(text)
+                    if(text == "") {
+                        root.value = parseFloat(root.defaultValue)
+                        text = root.defaultValue
+                    } else {
+                        var value = parseFloat(text)
+                        var bottom = root.minValue
+                        var top = root.bounded ? root.maxValue : 2147483647.0
+                        if(value <= top && value >= bottom) {
+                            root.value = value
+                        }
+                    }
                 }
                 onActiveFocusChanged: {
                     if(!activeFocus) {

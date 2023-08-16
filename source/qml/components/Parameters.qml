@@ -249,8 +249,8 @@ Item {
                         bindKey: "seed"
 
                         validator: RegExpValidator {
-                            regExp: /-1|\d{1,10}/
-                        }                        
+                            regExp: /-1||\d{1,10}/
+                        }
 
                         AdvancedDropArea {
                             anchors.fill: parent
@@ -697,6 +697,7 @@ Item {
                         }
                     }
                     OSlider {
+                        id: paddingInput
                         label: root.tr("Padding")
                         width: parent.width
                         height: 30
@@ -711,6 +712,35 @@ Item {
                         incValue: 8
                         snapValue: 16
                         bounded: false
+
+                        Rectangle {
+                            visible: fullLabel.visible
+                            anchors.fill: fullLabel
+                            color: COMMON.bg0
+                            anchors.margins: 2
+                        }
+
+                        SText {
+                            visible: paddingInput.value == "-1" && !paddingInput.active
+                            id: fullLabel
+                            text: "Full"
+                            
+                            anchors.top: paddingInput.top
+                            anchors.bottom: paddingInput.bottom
+                            anchors.right: paddingInput.right
+                            
+                            anchors.margins: 2
+                            anchors.rightMargin: 10
+                            anchors.bottomMargin: 0
+
+                            color: COMMON.fg2
+                            font.pointSize: 9.8
+                            monospace: true
+                            rightPadding: 7
+
+                            verticalAlignment: Text.AlignVCenter
+                            horizontalAlignment: Text.AlignRight
+                        }
                     }
 
                     OSlider {
