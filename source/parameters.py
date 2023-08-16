@@ -733,7 +733,7 @@ class Parameters(QObject):
             closest_match = self.gui.closestModel(value, available)
             processed[k] = (closest_match, checked)
 
-        if not "model" in processed:
+        if not "model" in processed and "UNET" in processed:
             value, checked = processed["UNET"]
             processed["model"] = (value, checked)
 
