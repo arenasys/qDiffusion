@@ -134,6 +134,9 @@ Item {
 
                         valueText.text = Qt.binding(function() { return control.value; })
                     } else {
+                        if(valueText.text == control.defaultValue && control.defaultValue == "-1") {
+                            valueText.text = ""
+                        }
                         valueText.selectAll()
                     }
                 }
@@ -142,8 +145,13 @@ Item {
                     switch(event.key) {
                         case Qt.Key_Escape:
                             if(control.defaultValue != null) {
-                                control.value = control.defaultValue
-                                text = defaultValue
+                                if(control.defaultValue == "-1") {
+                                    control.value = ""
+                                    text = ""
+                                } else {
+                                    control.value = control.defaultValue
+                                    text = defaultValue
+                                }
                             }
                             break;
                         default:

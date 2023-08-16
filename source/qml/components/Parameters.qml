@@ -701,7 +701,7 @@ Item {
                         label: root.tr("Padding")
                         width: parent.width
                         height: 30
-                        overlay: value == -1
+                        overlay: value == -1 && !paddingInput.active
 
                         bindMap: root.binding.values
                         bindKey: "padding"

@@ -21,6 +21,7 @@ Item {
     property var bounded: true
     property var disabled: false
     property var overlay: root.disabled
+    property alias active: valueInput.activeFocus
 
     property var validator: RegExpValidator {
         regExp: /|[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)/
@@ -250,8 +251,13 @@ Item {
                     switch(event.key) {
                         case Qt.Key_Escape:
                             if(root.defaultValue != null) {
-                                root.value = root.defaultValue
-                                text = root.defaultValue.toFixed(root.precValue)
+                                if(root.defaultValue == "-1") {
+                                    root.value = ""
+                                    text = ""
+                                } else {
+                                    root.value = root.defaultValue
+                                    text = root.defaultValue.toFixed(root.precValue) 
+                                }
                             }
                         default:
                             event.accepted = false
@@ -263,7 +269,10 @@ Item {
                     anchors.fill: parent
                     visible: !valueInput.activeFocus
                     propagateComposedEvents: true
-                    onDoubleClicked: {
+                    onPressed: {
+                        if(valueInput.text == "-1" && valueInput.text == root.defaultValue) {
+                            valueInput.text = ""
+                        }
                         valueInput.forceActiveFocus()
                         valueInput.selectAll()
                     }
