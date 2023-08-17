@@ -17,10 +17,11 @@ try:
 except Exception:
     pass
 
-from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent, QMimeData, QByteArray, QBuffer, QIODevice
+from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent, QMimeData, QByteArray, QBuffer, QIODevice, QUrl
 from PyQt5.QtQuick import QQuickItem, QQuickPaintedItem
-from PyQt5.QtGui import QColor, QPen, QImage, QSyntaxHighlighter, QTextCharFormat
-from PyQt5.QtQml import qmlRegisterType
+from PyQt5.QtGui import QColor, QPen, QImage, QSyntaxHighlighter
+from PyQt5.QtNetwork import QNetworkRequest, QNetworkReply, QNetworkAccessManager
+from PyQt5.QtQml import qmlRegisterType, qmlRegisterUncreatableType
 
 class FocusReleaser(QQuickItem):
     releaseFocus = pyqtSignal()
@@ -318,12 +319,6 @@ def cropImage(img, size, offset = 0.5):
 
     return img.copy(dx, dy, w, h)
 
-def registerTypes():
-    qmlRegisterType(ImageDisplay, "gui", 1, 0, "ImageDisplay")
-    qmlRegisterType(FocusReleaser, "gui", 1, 0, "FocusReleaser")
-    qmlRegisterType(DropArea, "gui", 1, 0, "AdvancedDropArea")
-    qmlRegisterType(MimeData, "gui", 1, 0, "MimeData")
-
 def showFilesInExplorer(folder, files):
     ctypes.windll.ole32.CoInitialize(None)
 
@@ -449,3 +444,211 @@ def weightText(text, inc, start, end):
         
 
     return {"text": text, "start": start, "end": end}
+
+class DownloadInstance(QObject):
+    updated = pyqtSignal()
+    finished = pyqtSignal(int)
+    aborted = pyqtSignal()
+    def __init__(self, id, label, reply, parent=None):
+        super().__init__(parent)
+        self._id = id
+        self._label = label
+        self._progress = 0
+        self._error = ""
+        self._eta = ""
+
+        self._reply = reply
+        if self._reply:
+            self._reply.downloadProgress.connect(self.onProgress)
+            self._reply.finished.connect(self.onFinished)
+            self.aborted.connect(self._reply.abort)
+
+    @pyqtProperty(str, notify=updated)
+    def label(self):
+        return self._label
+    
+    @pyqtSlot(str)
+    def setLabel(self, label):
+        self._label = label
+        self.updated.emit()
+    
+    @pyqtProperty(float, notify=updated)
+    def progress(self):
+        return self._progress
+    
+    @pyqtSlot(float)
+    def setProgress(self, progress):
+        self._progress = progress
+        self.updated.emit()
+
+    @pyqtProperty(str, notify=updated)
+    def eta(self):
+        return self._eta
+    
+    @pyqtSlot(str)
+    def setEta(self, eta):
+        self._eta = eta
+        self.updated.emit()
+    
+    @pyqtProperty(str, notify=updated)
+    def error(self):
+        return self._error
+    
+    @pyqtSlot(str)
+    def setError(self, error):
+        self._error = error
+        self.updated.emit()
+
+    @pyqtSlot('qint64', 'qint64')
+    def onProgress(self, current, total):
+        progress = (current/total) if total else 0
+        if abs(progress - self._progress) > 0.01:
+            self.setProgress(progress)
+            
+    @pyqtSlot()
+    def onFinished(self):
+        if self._reply.error() != QNetworkReply.NetworkError.NoError:
+            self._error = self._reply.errorString()
+
+        self.updated.emit()
+        self.finished.emit(self._id)
+
+    @pyqtSlot()
+    def doFinish(self):
+        self.updated.emit()
+        self.finished.emit(self._id)
+
+    @pyqtSlot()
+    def doCancel(self):
+        self.aborted.emit()
+
+class DownloadManager(QObject):
+    updated = pyqtSignal()
+    started = pyqtSignal(DownloadInstance)
+    finished = pyqtSignal(DownloadInstance)
+    
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.gui = parent
+        self._network = QNetworkAccessManager(self)
+        self._id = 0
+        self._downloads = {}
+        self._finished = {}
+        self._mapping = {}
+
+        self.gui.response.connect(self.onBackendResponse)
+        self.gui.reset.connect(self.onBackendReset)
+
+    @pyqtProperty(list, notify=updated)
+    def downloads(self):
+        return [self._downloads[i] for i in sorted(list(self._downloads.keys()), reverse=True)]
+    
+    @pyqtProperty(list, notify=updated)
+    def allDownloads(self):
+        keys = sorted(list(self._downloads.keys()) + list(self._finished.keys()), reverse=True)
+        out = []
+        for k in keys:
+            if k in self._downloads:
+                out += [self._downloads[k]]
+            else:
+                out += [self._finished[k]]
+        return out
+
+    @pyqtSlot(str, QUrl, result=int)
+    def download(self, label, url):
+        reply = self._network.get(QNetworkRequest(url))
+        self._id += 1
+        id = self._id
+
+        instance = DownloadInstance(id, label, reply)
+        self._downloads[id] = instance
+        instance.finished.connect(self.onFinished)
+        
+        self.updated.emit()
+        self.started.emit(instance)
+
+        return id
+    
+    @pyqtSlot(str, int, result=int)
+    def create(self, label, net_id):
+        self._id += 1
+        id = self._id
+
+        instance = DownloadInstance(id, label, None)
+        self._downloads[id] = instance
+        self._mapping[net_id] = id
+        instance.finished.connect(self.onFinished)
+
+        self.updated.emit()
+        self.started.emit(instance)
+
+        return id
+
+    @pyqtSlot(int)
+    def onFinished(self, id):
+        if not id in self._downloads:
+            return
+        
+        instance = self._downloads[id]
+        del self._downloads[id]
+
+        self.finished.emit(instance)
+        
+        instance._reply = None
+        instance.setProgress(1)
+        instance.setEta("")
+        self._finished[id] = instance
+
+        self.updated.emit()
+
+    @pyqtSlot(int, object)
+    def onBackendResponse(self, id, response):
+        if not response["type"] == "download":
+            return
+        data = response["data"]
+        
+        if not id in self._mapping:
+            return
+        net_id = self._mapping[id]
+        if not net_id in self._downloads:
+            return
+        instance = self._downloads[net_id]
+
+        if data["status"] == "started":
+            instance.setLabel(data["label"])
+        if data["status"] == "success":
+            if "label" in data:
+                instance.setLabel(data["label"])
+            instance.doFinish()
+        if data["status"] == "error":
+            instance.setError(data["message"])
+            self.gui.setError("Downloading", data["message"], data["trace"])
+            instance.doFinish()
+        if data["status"] == "progress":
+            instance.setProgress(data["progress"])
+            
+            if data["eta"]:
+                minutes = int(data["eta"] // 60)
+                seconds = int(data["eta"]) % 60
+                instance.setEta(f"{minutes:02d}:{seconds:02d}")
+            else:
+                instance.setEta("")
+
+    @pyqtSlot(int)
+    def onBackendReset(self, id):
+        if not id == -1:
+            return
+        for id in list(self._mapping.keys()):
+            net_id = self._mapping[id]
+            del self._mapping[id]
+            if net_id in self._downloads:
+                del self._downloads[net_id]
+        self.updated.emit()
+
+def registerTypes():
+    qmlRegisterType(ImageDisplay, "gui", 1, 0, "ImageDisplay")
+    qmlRegisterType(FocusReleaser, "gui", 1, 0, "FocusReleaser")
+    qmlRegisterType(DropArea, "gui", 1, 0, "AdvancedDropArea")
+    qmlRegisterType(MimeData, "gui", 1, 0, "MimeData")
+    qmlRegisterUncreatableType(DownloadInstance, "gui", 1, 0, "DownloadInstance", "Not a QML type")
+    qmlRegisterUncreatableType(DownloadManager, "gui", 1, 0, "DownloadManager", "Not a QML type")

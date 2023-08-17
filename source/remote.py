@@ -7,6 +7,7 @@ import os
 import traceback
 import datetime
 import sys
+import math
 
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QThread
 from PyQt5.QtWidgets import QApplication
@@ -17,7 +18,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.fernet import Fernet, InvalidToken
 
 DEFAULT_PASSWORD = "qDiffusion"
-FRAGMENT_SIZE = 1048576
+FRAGMENT_SIZE = 524288
 
 def log_traceback(label):
     exc_type, exc_value, exc_tb = sys.exc_info()
@@ -54,24 +55,29 @@ def decrypt(scheme, data):
 
 class RemoteInferenceUpload(QThread):
     done = pyqtSignal(str)
-    def __init__(self, queue, type, file):
+    def __init__(self, queue, type, id, file):
         super().__init__()
         self.queue = queue
         self.type = type
         self.file = file
+        self.id = id
         self.name = file.rsplit(os.path.sep, 1)[-1]
         self.stopping = False
 
     def run(self):
         try:
             with open(self.file, 'rb') as f:
+                f.seek(0, os.SEEK_END)
+                z = f.tell()
+                f.seek(0)
                 i = 0
+                total = math.ceil(z/FRAGMENT_SIZE)
                 while not self.stopping:
                     QApplication.processEvents()
-                    chunk = f.read(FRAGMENT_SIZE-1024)
+                    chunk = f.read(FRAGMENT_SIZE)
                     if not chunk:
                         break
-                    request = {"type":"chunk", "data": {"type":self.type, "name": self.name, "chunk":chunk, "index":i}}
+                    request = {"type":"chunk", "data": {"type":self.type, "name": self.name, "chunk":chunk, "index":i, "total": total}, "id":self.id}
                     while not self.queue.empty():
                         QThread.msleep(10)
                         QApplication.processEvents()
@@ -140,15 +146,22 @@ class RemoteInference(QThread):
         self.connect()
         while self.client and not self.stopping:
             try:
-                QApplication.processEvents()
-
+                while True:
+                    try:
+                        data = self.client.recv(0)
+                        response = decrypt(self.scheme, data)
+                        self.onResponse(response)
+                        QApplication.processEvents()
+                    except TimeoutError:
+                        break
+                
                 try:
                     request = self.requests.get(False)
 
                     if request["type"] == "upload":
                         file = request["data"]["file"]
                         if not file in self.uploads:
-                            self.uploads[file] = RemoteInferenceUpload(self.requests, request["data"]["type"], file)
+                            self.uploads[file] = RemoteInferenceUpload(self.requests, request["data"]["type"], request["id"], file)
                             self.uploads[file].done.connect(self.onUploadDone)
                             self.kill.connect(self.uploads[file].stop)
                             self.uploads[file].start()
@@ -159,14 +172,10 @@ class RemoteInference(QThread):
                     data = [data[i:min(i+FRAGMENT_SIZE,len(data))] for i in range(0, len(data), FRAGMENT_SIZE)]
 
                     self.client.send(data)
+                    QApplication.processEvents()
                 except queue.Empty:
-                    try:
-                        data = self.client.recv(5/1000)
-                    except TimeoutError:
-                        QThread.msleep(5)
-                        continue
-                    response = decrypt(self.scheme, data)
-                    self.onResponse(response)
+                    QThread.msleep(5)
+
             except websockets.exceptions.ConnectionClosedOK:
                 self.onResponse({"type": "remote_error", "data": {"message": "Connection closed"}})
                 break

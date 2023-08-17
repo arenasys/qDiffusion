@@ -177,7 +177,7 @@ Item {
         anchors.left: settingsArea.left
         anchors.right: settingsArea.right
         anchors.top: settingsArea.top
-        anchors.bottom: statusDivider.top
+        anchors.bottom: status.top
 
         Parameters {
             id: params
@@ -209,7 +209,7 @@ Item {
     }
 
     Status {
-        anchors.top: statusDivider.bottom
+        id: status
         anchors.bottom: settingsArea.bottom
         anchors.left: settingsArea.left
         anchors.right: settingsArea.right
@@ -587,15 +587,6 @@ Item {
     }
 
     SDividerHB {
-        id: statusDivider
-        anchors.left: settingsArea.left
-        anchors.right: settingsArea.right
-        minOffset: 50
-        maxOffset: 70
-        offset: 50
-    }
-
-    SDividerHB {
         id: promptDivider
         anchors.left: mainArea.left
         anchors.right: mainArea.right
@@ -658,6 +649,14 @@ Item {
                 importDialog.parser.formatted = text
             }
         }
+    }
+
+    GridDialog  {
+        id: gridDialog
+        title: root.tr("Grid")
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        modal: true
+        dim: true
     }
 
     Keys.forwardTo: [areas, full]

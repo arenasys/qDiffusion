@@ -239,17 +239,141 @@ Item {
             height: 30
         }
 
-        STextArea {
-            id: logTextArea
+        Item {
             width: parent.width
             height: 100
-            text: SETTINGS.log
-            readOnly: true
-            area.color: COMMON.fg1
-            
+            clip: true
 
-            onTextChanged: {
-                area.cursorPosition = text.length-1
+            Rectangle {
+                width: parent.width / 3
+                height: parent.height
+                color: COMMON.bg0
+                border.color: COMMON.bg4
+            }
+
+            ListView {
+                id: progressList
+                anchors.fill: parent
+                anchors.margins: 1
+                boundsBehavior: Flickable.StopAtBounds
+                model: GUI.network.allDownloads
+
+                delegate: Item {
+                    width: parent.width
+                    height: 22
+
+                    Rectangle {
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        height: 1
+                        color: COMMON.bg4
+                    }
+
+                    Item {
+                        id: label
+                        width: parent.width / 3
+                        height: parent.height
+
+                        SToolTip {
+                            visible: labelMouseArea.containsMouse
+                            delay: 100
+                            text: modelData.label
+                        }
+
+                        SText {
+                            anchors.fill: parent
+                            verticalAlignment: Text.AlignVCenter
+                            horizontalAlignment: Text.AlignLeft
+                            leftPadding: 5
+                            rightPadding: 5
+                            bottomPadding: 2
+                            font.pointSize: 9.5
+                            color: COMMON.fg1_5
+                            text: modelData.label
+                            elide: Text.ElideRight
+                        }
+
+                        MouseArea {
+                            id: labelMouseArea
+                            hoverEnabled: true
+                            anchors.fill: parent
+                        }
+                    }
+
+                    Item {
+                        id: bar
+                        anchors.left: label.right
+                        anchors.right: parent.right
+                        height: parent.height
+
+                        property var accent: modelData.error != "" ? 0.0 : (modelData.progress == 1.0 ? 0.6 : 0.2)
+
+                        Rectangle {
+                            anchors.fill: parent
+                            anchors.margins: 1
+                            anchors.bottomMargin: 2
+
+                            color: "transparent"
+                            border.width: 2
+                            border.color: COMMON.accent(bar.accent)
+
+                            Rectangle {
+                                color: COMMON.accent(bar.accent)
+                                opacity: modelData.progress == 0.0 ? 0.2 : 0.1
+                                y: 2
+                                height: parent.height - 4
+                                width: parent.width
+                            }
+
+                            SProgress {
+                                y: 2
+                                height: parent.height - 4
+                                width: parent.width
+                                working: visible
+                                progress: modelData.progress == 0.0 ? -1 : modelData.progress
+                                color: COMMON.accent(bar.accent)
+                                count: Math.ceil(width/75)
+                                duration: width * 10
+                                clip: true
+                                barWidth: 40
+                                opacity: modelData.progress == 0.0 ? 0.5 : 0.7
+                            }
+
+                            SText {
+                                anchors.fill: parent
+                                verticalAlignment: Text.AlignVCenter
+                                horizontalAlignment: Text.AlignHCenter
+                                font.pointSize: 8.85
+                                font.bold: true
+                                color: COMMON.fg1_5
+                                text: {
+                                    if(modelData.error != "") {
+                                        return "Failed"
+                                    }
+                                    if(modelData.progress == 0) {
+                                        return "Downloading..."
+                                    }
+                                    if(modelData.progress == 1.0) {
+                                        return "Done"
+                                    }
+                                    return (modelData.progress * 100).toFixed(0) + "%"
+                                }
+                            }
+
+                            SText {
+                                anchors.fill: parent
+                                verticalAlignment: Text.AlignVCenter
+                                horizontalAlignment: Text.AlignRight
+                                rightPadding: 5
+                                font.pointSize: 8.85
+                                font.bold: true
+                                color: COMMON.fg1_5
+                                text: modelData.eta
+                            }
+                        }
+                    }
+                }
             }
 
             Rectangle {
@@ -260,7 +384,7 @@ Item {
 
             Rectangle {
                 anchors.fill: parent
-                visible: !root.show
+                visible: !root.show && progressList.model.length == 0
                 color: "#80101010"
             }
         }

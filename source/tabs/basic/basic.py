@@ -19,6 +19,8 @@ import os
 from tabs.basic.basic_input import BasicInput, BasicInputRole, MIME_BASIC_INPUT
 from tabs.basic.basic_output import BasicOutput
 
+import misc
+
 import PIL.Image
 import PIL.PngImagePlugin
 
@@ -104,12 +106,13 @@ class Basic(QObject):
         self._vocab = {}
 
         self._replyIndex = None
+        self._replyId = None
 
         self.updated.connect(self.link)
         self.gui.response.connect(self.response)
         self.gui.result.connect(self.result)
         self.gui.reset.connect(self.reset)
-        self.gui.networkReply.connect(self.onNetworkReply)
+        self.gui.network.finished.connect(self.onNetworkReply)
         self.gui.optionsUpdated.connect(self.optionsUpdated)
 
         qmlRegisterSingletonType(Basic, "gui", 1, 0, "BASIC", lambda qml, js: self)
@@ -796,13 +799,16 @@ class Basic(QObject):
         
 
     def download(self, url, index):
-        self.gui.makeNetworkRequest(QNetworkRequest(url))
         self._replyIndex = index
+        self._replyId = self.gui.network.download(url.fileName(), url)
 
-    @pyqtSlot(QNetworkReply)
+    @pyqtSlot(misc.DownloadInstance)
     def onNetworkReply(self, reply):
+        if reply._id != self._replyId or reply._error != "":
+            return
+
         image = QImage()
-        image.loadFromData(reply.readAll())
+        image.loadFromData(reply._reply.readAll())
         if not image.isNull():
             if self._replyIndex == None:
                 self.pastedImage.emit(image)

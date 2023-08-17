@@ -13,7 +13,7 @@ from PyQt5.QtQuick import QQuickItem, QQuickPaintedItem
 from PyQt5.QtGui import QImage, QColor, QDrag, QDesktopServices
 from PyQt5.QtQml import qmlRegisterType
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtNetwork import QNetworkRequest, QNetworkReply, QNetworkAccessManager
+
 from PyQt5.QtQuick import QQuickTextDocument
 from enum import Enum
 
@@ -63,10 +63,10 @@ class GUI(QObject):
     tabUpdated = pyqtSignal()
     favUpdated = pyqtSignal()
     configUpdated = pyqtSignal()
+    downloadsUpdated = pyqtSignal()
     result = pyqtSignal(int, str)
     response = pyqtSignal(int, object)
     aboutToQuit = pyqtSignal()
-    networkReply = pyqtSignal(QNetworkReply)
     reset = pyqtSignal(int)
 
     def __init__(self, parent):
@@ -74,8 +74,7 @@ class GUI(QObject):
         self.db = sql.Database(self)
         self.watcher = filesystem.Watcher()
         self.thumbnails = thumbnails.ThumbnailStorage((256,256),(640, 640),75, self)
-        self.network = QNetworkAccessManager(self)
-        self.requestProgress = 0.0
+        
         self.tabs = []
         
         self._currentTab = "Generate"
@@ -94,6 +93,9 @@ class GUI(QObject):
         self._hostEndpoint = ""
         self._hostPassword = ""
         self._hostSetPassword = ""
+
+        self._network = misc.DownloadManager(self)
+        self._networkMapping = {}
 
         self._config = config.Config(self, "config.json", {
             "endpoint": "", "password": "", "output_directory": "outputs", "model_directory": "models", "device": "",
@@ -129,7 +131,6 @@ class GUI(QObject):
         parent.aboutToQuit.connect(self.stop)
 
         self.watcher.finished.connect(self.onFolderChanged)
-        self.network.finished.connect(self.onNetworkReply)
 
     @pyqtSlot()
     def stop(self):
@@ -221,16 +222,12 @@ class GUI(QObject):
     
     @pyqtProperty('QString', notify=statusUpdated)
     def statusText(self):
-        if self.requestProgress > 0:
-            return "Downloading"
         if self._remoteStatus == RemoteStatusMode.ERRORED:
             return "Errored"
         return self._statusText
     
     @pyqtProperty(int, notify=statusUpdated)
     def statusMode(self):
-        if self.requestProgress > 0:
-            return StatusMode.WORKING.value
         if self._remoteStatus == RemoteStatusMode.ERRORED:
             return StatusMode.ERRORED.value
         return self._statusMode.value
@@ -241,8 +238,6 @@ class GUI(QObject):
     
     @pyqtProperty(float, notify=statusUpdated)
     def statusProgress(self):
-        if self.requestProgress > 0:
-            return self.requestProgress
         return self._statusProgress
     
     @pyqtProperty('QString', notify=errorUpdated)
@@ -298,6 +293,13 @@ class GUI(QObject):
         self._statusProgress = -1.0
         self.statusUpdated.emit()
     
+    def setError(self, status, text, trace):
+        self._errorStatus = status
+        self._errorText = text
+        self._errorTrace = trace
+        self.statusUpdated.emit()
+        self.errorUpdated.emit()
+
     @pyqtSlot(object)
     def onResponse(self, response):
         id = response.get("id", -1)
@@ -347,15 +349,12 @@ class GUI(QObject):
                 self.setReady()
 
         if type == "error":
-            self._errorStatus = self._statusText
-            self._errorText = data["message"]
-            self._errorTrace = ""
+            trace = ""
             if "trace" in data:
-                self._errorTrace = data["trace"]
+                trace = data["trace"]
                 with open("crash.log", "a", encoding='utf-8') as f:
                     f.write(f"INFERENCE {datetime.datetime.now()}\n{self._errorTrace}\n")
-            self.statusUpdated.emit()
-            self.errorUpdated.emit()
+            self.setError(self._statusText, data["message"], trace)
             self.reset.emit(id)
             
         if type == "remote_error":
@@ -446,24 +445,6 @@ class GUI(QObject):
     @pyqtSlot()
     def copyError(self):
         self.copyText(self._errorTrace)
-
-    @pyqtSlot(QNetworkRequest)
-    def makeNetworkRequest(self, request):
-        reply = self.network.get(request)
-        reply.downloadProgress.connect(self.onNetworkProgress)
-        self.requestProgress = 0.001
-        self.statusUpdated.emit()
-
-    @pyqtSlot(QNetworkReply)
-    def onNetworkReply(self, reply):
-        self.networkReply.emit(reply)
-        self.requestProgress = 0.0
-        self.statusUpdated.emit()
-
-    @pyqtSlot('qint64', 'qint64')
-    def onNetworkProgress(self, current, total):
-        self.requestProgress = max(self.requestProgress, (current/total) if total else 0)
-        self.statusUpdated.emit()
 
     def getFilesMimeData(self, files):
         urls = [QUrl.fromLocalFile(os.path.abspath(file)) for file in files]
@@ -795,3 +776,7 @@ class GUI(QObject):
     @pyqtSlot(str, float, int, int, result='QVariant')
     def weightText(self, text, inc, start, end):
         return misc.weightText(text, inc, start, end)
+    
+    @pyqtProperty(misc.DownloadManager, notify=downloadsUpdated)
+    def network(self):
+        return self._network

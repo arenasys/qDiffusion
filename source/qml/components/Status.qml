@@ -5,54 +5,109 @@ import gui 1.0
 
 import "../style"
 
-Item {
+Rectangle {
     id: root
-    anchors.margins: 2
+    
+    color: COMMON.bg0
+
     clip: true
     property var swap: false
+    
+    height: 48 + progressList.contentHeight
 
     function tr(str, file = "Status.qml") {
         return TRANSLATOR.instance.translate(str, file)
     }
 
     Rectangle {
+        id: divider
         anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 4
+        color: COMMON.bg4
+    }
+
+    Item {
+        anchors.margins: 2
+        anchors.top: divider.bottom
         anchors.bottom: parent.bottom
         anchors.left: root.swap ? undefined : parent.left
         anchors.right: root.swap ? parent.right : undefined
-        width: Math.max(100, parent.width)
+        width: Math.max(100, parent.width-4)
 
-        color: "transparent"
-        border.width: 2
-        border.color: [COMMON.accent(0.2), COMMON.accent(0.4), COMMON.accent(0.6), "#a0000000", "#a0000000"][GUI.statusMode]
-
-        SText {
-            id: endpointText
-            visible: parent.height > 60
+        ListView {
+            id: progressList
+            anchors.top: parent.top
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.top: parent.top
-            height: 25
-            topPadding: 8
-            leftPadding: 8
-            verticalAlignment: Text.AlignVCenter
-            horizontalAlignment: Text.AlignHCenter
-            elide: Text.ElideRight
-            text: GUI.remoteEndpoint ? GUI.remoteEndpoint : root.tr("Local", "Status")
-            font.bold: true
-            color: COMMON.fg2
+            height: contentHeight
+            boundsBehavior: Flickable.StopAtBounds
+            model: GUI.network.downloads
+
+            delegate: Item {
+                width: parent.width
+                height: 11
+                Rectangle {
+                    width: parent.width
+                    height: 9                
+
+                    color: "transparent"
+                    border.width: 2
+                    border.color: COMMON.accent(0.2)
+
+                    SToolTip {
+                        visible: mouseArea.containsMouse
+                        delay: 100
+                        text: modelData.label
+                    }
+
+                    SProgress {
+                        y: 2
+                        height: parent.height - 4
+                        x: 2
+                        width: parent.width - 4
+                        working: visible
+                        progress: modelData.progress == 0.0 ? -1 : modelData.progress
+                        color: COMMON.accent(0.2)
+                        count: 3
+                        duration: 1500
+                        clip: true
+                        barWidth: (width / 4)
+                        opacity: modelData.progress == 0.0 ? 1.0 : 0.7
+                    }
+                    
+                    MouseArea {
+                        id: mouseArea
+                        hoverEnabled: true
+                        anchors.fill: parent
+                        onPressed: {
+                            GUI.currentTab = "Settings"
+                            SETTINGS.currentTab = "Remote"
+                        }
+                    }
+
+                }
+            }
         }
 
-        SText {
+        Rectangle {
+            anchors.bottom: parent.bottom
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.top:  endpointText.visible ? endpointText.bottom : parent.top
-            anchors.bottom: parent.bottom
-            verticalAlignment: Text.AlignVCenter
-            horizontalAlignment: Text.AlignHCenter
-            bottomPadding: endpointText.visible ? 5 : 0
-            text: root.tr(GUI.statusText, "Status")
-            font.bold: true
+            height: 40
+
+            color: "transparent"
+            border.width: 2
+            border.color: [COMMON.accent(0.2), COMMON.accent(0.4), COMMON.accent(0.6), "#a0000000", "#a0000000"][GUI.statusMode]
+
+            SText {
+                anchors.fill: parent
+                verticalAlignment: Text.AlignVCenter
+                horizontalAlignment: Text.AlignHCenter
+                text: root.tr(GUI.statusText, "Status")
+                font.bold: true
+            }
         }
     }
 }

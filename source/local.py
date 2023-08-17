@@ -57,11 +57,12 @@ class InferenceProcessThread(threading.Thread):
             sys.__stderr__ = sys.stderr
 
         import torch
-        import attention, storage, wrapper
+        import attention, storage, wrapper, server
 
         model_storage = storage.ModelStorage(model_directory, torch.float16, torch.float32)
         self.wrapper = wrapper.GenerationParameters(model_storage, torch.device("cuda"))
         self.wrapper.callback = self.onResponse
+        self.do_download = server.do_download
     
     def run(self):
         self.requests.put({"type":"options"})
@@ -92,6 +93,8 @@ class InferenceProcessThread(threading.Thread):
                 elif request["type"] == "segmentation":
                     self.wrapper.set(**request["data"])
                     self.wrapper.segmentation()
+                elif request["type"] == "download":
+                    self.do_download(request["data"], self.wrapper.storage.path, self.current, self.onResponse)
                 self.requests.task_done()
             except queue.Empty:
                 pass
@@ -115,9 +118,11 @@ class InferenceProcessThread(threading.Thread):
 
                 self.responses.put({"type":"error", "id": self.current,  "data":{"message":str(e) + additional, "trace": trace}})
 
-    def onResponse(self, response):
-        if self.current:
-            response["id"] = self.current
+    def onResponse(self, response, id=None):
+        if not id:
+            id = self.current
+        if id:
+            response["id"] = id
         self.responses.put(response)
         return not self.current in self.cancelled
     
@@ -194,7 +199,10 @@ class LocalInference(QThread):
     def stop(self):
         self.requests.put({"type": "stop", "data":{}})
         self.stopping = True
-        self.inference.join()
+        self.inference.join(0.1)
+        if self.inference.is_alive():
+            print("TERMINATED")
+            self.inference.terminate()
         print("STOPPED")
 
     @pyqtSlot(object)

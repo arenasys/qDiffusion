@@ -197,6 +197,29 @@ SMenuBar {
             }
         }
         SMenuSeparator {}
+        SMenu {
+            title: root.tr("Get Model")
+            width: 100
+            SMenuItem {
+                text: root.tr("SD-v1")
+                onPressed: {
+                    SETTINGS.download("SD", "https://huggingface.co/datasets/arenasys/qDiffusion/blob/main/SD-v1.safetensors")
+                }
+            }
+            SMenuItem {
+                text: root.tr("SD-v2")
+                onPressed: {
+                    SETTINGS.download("SD", "https://huggingface.co/datasets/arenasys/qDiffusion/blob/main/SD-v2.safetensors")
+                }
+            }
+            SMenuItem {
+                text: root.tr("SDXL")
+                onPressed: {
+                    SETTINGS.download("SD", "https://huggingface.co/datasets/arenasys/qDiffusion/blob/main/SDXL.safetensors")
+                }
+            }
+        }
+        SMenuSeparator {}
         SMenuItem {
             text: root.tr("About")
             onPressed: {
