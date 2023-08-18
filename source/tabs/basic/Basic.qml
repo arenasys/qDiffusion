@@ -651,7 +651,7 @@ Item {
         }
     }
 
-    GridDialog  {
+    GridDialog {
         id: gridDialog
         title: root.tr("Grid")
         standardButtons: Dialog.Ok | Dialog.Cancel

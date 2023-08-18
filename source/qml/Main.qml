@@ -63,10 +63,13 @@ FocusReleaser {
         }
 
         function addTab() {
+            var errorTab = Qt.createComponent("qrc:/Error.qml")
             for(var i = 0; i < GUI.tabSources.length; i++) {
                 var component = Qt.createComponent(GUI.tabSources[i])
                 if(component.status != Component.Ready) {
-                    console.log("ERROR", component.errorString())
+                    var errorString = component.errorString()
+                    console.log("ERROR", errorString)
+                    errorTab.createObject(stackLayout, {error: errorString})
                 } else {
                     component.createObject(stackLayout)
                 }
