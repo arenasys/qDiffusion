@@ -42,6 +42,12 @@ class BasicOutput(QObject):
         self._display = None
         self.updated.emit()
 
+    def addArtifact(self, name, image):
+        self._artifacts[name] = image
+        self._artifactNames = list(self._artifacts.keys())
+        self._display = None
+        self.updated.emit()
+
     @pyqtSlot(QUrl)
     def saveImage(self, file):
         file = file.toLocalFile()

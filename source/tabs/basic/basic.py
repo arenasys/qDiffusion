@@ -1,6 +1,6 @@
 from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, QObject, QSize, QUrl, QMimeData, QByteArray, QThreadPool, Qt, QRect, QRunnable, QMutex
 from PyQt5.QtQml import qmlRegisterSingletonType
-from PyQt5.QtGui import QImage, QDrag, QColor
+from PyQt5.QtGui import QImage, QDrag, QColor, QPainter
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtSql import QSqlQuery
 from PyQt5.QtNetwork import QNetworkRequest, QNetworkReply
@@ -20,6 +20,7 @@ from tabs.basic.basic_input import BasicInput, BasicInputRole, MIME_BASIC_INPUT
 from tabs.basic.basic_output import BasicOutput
 
 import misc
+import manager
 
 import PIL.Image
 import PIL.PngImagePlugin
@@ -70,7 +71,6 @@ class BasicImageWriter(QRunnable):
 class Basic(QObject):
     updated = pyqtSignal()
     suggestionsUpdated = pyqtSignal()
-    results = pyqtSignal()
     pastedText = pyqtSignal(str)
     pastedImage = pyqtSignal(QImage)
     openedUpdated = pyqtSignal()
@@ -81,315 +81,93 @@ class Basic(QObject):
         self.priority = 0
         self.name = "Generate"
         self._parameters = parameters.Parameters(parent)
+        self._manager = manager.RequestManager(self.gui)
+
         self._inputs = []
         self._outputs = {}
         self._links = {}
-        self._ids = []
-        self._forever = False
-        self._remaining = 0
-        self._requests = []
-        self._mapping = {}
-        self._annotations = {}
-        self._subfolders = {}
-        self._filenames = {}
-        self._accept_all = False
 
-        self._openedIndex = -1
-        self._openedArea = ""
+        self._forever = False
+
+        self._opened_index = -1
+        self._opened_area = ""
 
         self._collection = []
-        self._collectionDetails = {}
+        self._collection_details = {}
         self._dictionary = {}
-        self._dictionaryDetails = {}
+        self._dictionary_details = {}
 
         self._suggestions = []
         self._vocab = {}
 
-        self._replyIndex = None
-        self._replyId = None
+        self._reply_index = None
+        self._reply_id = None
 
         self.updated.connect(self.link)
-        self.gui.response.connect(self.response)
-        self.gui.result.connect(self.result)
-        self.gui.reset.connect(self.reset)
+        self.gui.response.connect(self.handleResponse)
+        self.gui.result.connect(self.handleResult)
+        self.gui.reset.connect(self.handleReset)
         self.gui.network.finished.connect(self.onNetworkReply)
         self.gui.optionsUpdated.connect(self.optionsUpdated)
-
-        qmlRegisterSingletonType(Basic, "gui", 1, 0, "BASIC", lambda qml, js: self)
 
         self.conn = sql.Connection(self)
         self.conn.connect()
         self.conn.doQuery("CREATE TABLE outputs(id INTEGER);")
         self.conn.enableNotifications("outputs")
 
-    def buildRequest(self):
-        if self._remaining != 0 and self._requests:
-            return self._requests[self._remaining-1]
+        self._manager.result.connect(self.onResult)
+        self._manager.artifact.connect(self.onArtifact)
 
-        inputs = {}
-        links = {}
-        controls = {}
-
-        segmentation = []
-        
-        if self._inputs:
-            for i in self._inputs:
-                data = []
-                if i._role == BasicInputRole.IMAGE:
-                    if i._image and not i._image.isNull():
-                        data += [encodeImage(i._originalCrop or i._original)]
-                    if i._files:
-                        for f in i._files[::-1]:
-                            data += [i.getFilePath(f)]
-                    if data:
-                        inputs[i] = data
-                if i._role == BasicInputRole.MASK or (i._role == BasicInputRole.CONTROL and i._control_mode == "Inpaint"):
-                    if i._linked:
-                        links[i] = i._linked
-                        if i._image and not i._image.isNull():
-                            data += [encodeImage(i._image)]
-                        if i._files:
-                            for f in i._files[::-1]:
-                                data += [i.getFilePath(f)]
-                        if data:
-                            inputs[i] = data
-                            data = []
-                if i._role == BasicInputRole.SUBPROMPT:
-                    if i._linked:
-                        links[i] = i._linked
-                    if i._image and not i._image.isNull():
-                        data += [[encodeImage(a) for a in i.getAreas()]]
-                    if data:
-                        inputs[i] = data
-                if i._role == BasicInputRole.CONTROL:
-                    model = i._control_settings.get("mode")
-                    opts = {
-                        "scale": i._control_settings.get("strength"),
-                        "annotator": i._control_settings.get("preprocessor"),
-                        "args": i.getControlArgs()
-                    }
-                    k = i
-                    if model == "Inpaint" and i._linked:
-                        k = i._linked
-                    if k._image and not k._image.isNull():
-                        data += [(model, opts, encodeImage(k._image or k._original))]
-                    if k._files:
-                        for f in k._files[::-1]:
-                            data += [(model, opts, k.getFilePath(f))]
-                    if data:
-                        controls[i] = data
-                if i._role == BasicInputRole.SEGMENTATION:
-                    opts = i.getSegmentationArgs()
-                    if i._image and not i._image.isNull():
-                        data += [(encodeImage(i._originalCrop or i._original), opts)]
-                    if i._files:
-                        for f in i._files[::-1]:
-                            data += [(i.getFilePath(f), opts)]
-                    if data:
-                        segmentation += data
-
-        if segmentation:
-            return self.buildSegmentationRequest(segmentation)
-
-        images, masks, areas = [], [], []
-        used = []
-        for k in inputs:
-            if k in used:
-                continue
-            linked = [k] + [i for i in links if links[i] == k]
-            size = max([len(inputs[i]) for i in linked])
-            for z in range(size):
-                img, msk, are = None, None, []
-                for j in linked:
-                    data = inputs[j][z % len(inputs[j])]
-                    if j._role == BasicInputRole.IMAGE:
-                        img = data
-                    if j._role == BasicInputRole.MASK or (j._role == BasicInputRole.CONTROL and j._control_mode == "Inpaint"):
-                        msk = data
-                    if j._role == BasicInputRole.SUBPROMPT:
-                        are = data
-                if msk and not img:
-                    continue
-                images += [img]
-                masks += [msk]
-                areas += [are]
-            used += linked
-
-        batch_size = int(self._parameters._values.get("batch_size"))
-        batch_count = int(self._parameters._values.get("batch_count"))
-
-        total = max([len(controls[k]) for k in controls]) if controls else 0
-        total = max(len(images), len(segmentation), batch_count * batch_size, total)
-
-        def get_portion(data, start, amount):
-            if not data:
-                return []
-            out = []
-            for i in range(amount):
-                out += [data[(start+i)%len(data)]]
-            return out
-
-        self._requests = []
-        i = 0
-        ci = 0
-        while total > 0:
-            size = min(total, batch_size)
-            batch_images = get_portion(images, i, size)
-            batch_masks = get_portion(masks, i, size)
-            batch_areas = get_portion(areas, i, size)
-            batch_control = [controls[k][ci%len(controls[k])] for k in controls]
-
-            if any([b == None for b in batch_images]):
-                batch_images, batch_masks = [], []
-
-            i += batch_size
-            total -= batch_size
-            ci += 1
-            
-            self._requests += [self._parameters.buildRequest(size, batch_images, batch_masks, batch_areas, batch_control)]
-        
-        self._remaining = len(self._requests)
-
-        return self._requests[self._remaining-1]
-    
-    def buildSegmentationRequest(self, segmentation):
-        requests = []
-        for img, opts in segmentation:
-            request = {
-                "type": "segmentation",
-                "data": {
-                    "image": [img],
-                    "seg_opts": [opts],
-                    "device": self._parameters._values.get("device")
-                }
-            }
-            requests += [request]
-        
-        self._requests = requests
-        self._remaining = len(self._requests)
-        return self._requests[self._remaining-1]
-        
-    def loadRequestImages(self, request):
-        data = request["data"]
-        filename = None
-        for k in ["image", "mask", "cn_image", "area"]:
-            for i in range(len(data.get(k, []))):
-                if not data[k][i]:
-                    continue
-                if type(data[k][i]) == str:
-                    if not filename:
-                        filename = data[k][i]
-                    data[k][i] = encodeImage(QImage(data[k][i]))
-                elif type(data[k][i]) == list:
-                    for j in range(len(data[k][i])):
-                        if type(data[k][i][j]) == str:
-                            if not filename:
-                                filename = data[k][i][j]
-                            data[k][i][j] = encodeImage(QImage(data[k][i][j]))
-        if filename:
-            filename = filename.rsplit(os.path.sep, 1)[-1].rsplit(".", 1)[0]
-
-        return filename
+        qmlRegisterSingletonType(Basic, "gui", 1, 0, "BASIC", lambda qml, js: self)
 
     @pyqtSlot()
     def generate(self, user=True):
-        if not self._ids:
-            if user:
-                self._remaining = 0
-                self._requests = None
-                self._subfolders = {}
-                self._filenames = {}
-            request = self.buildRequest()
-            filename = self.loadRequestImages(request)
-            subfolder = self._parameters._values.get("output_folder")
-            id = self.gui.makeRequest(request)
-
-            self._subfolders[id] = subfolder or request["type"]
-            self._filenames[id] = filename if subfolder else ""
-            self._ids += [id]
-            self.updated.emit()
-
-    @pyqtSlot(int, str)
-    def result(self, id, name):
-        results = self.gui._results[id]
-
-        if id in self._annotations:
-            img = results["result"][0]
-            id = self._annotations[id]
-            for i in self._inputs:
-                if i._id == id:
-                    i.setArtifacts({"Annotated":img})
-
-        ours = id in self._ids
-        if not ours and not self._accept_all:
-            return
+        if user or not self._manager.requests:
+            self._manager.buildRequests(self._parameters, self._inputs)
+        self._manager.makeRequest()
+        self.updated.emit()
         
-        if not id in self._mapping:
-            self._mapping[id] = (time.time_ns() // 1000000) % (2**31 - 1)
+    @pyqtSlot(int, str)
+    def handleResult(self, id, name):
+        self._manager.handleResult(id, name)
 
-        out = self._mapping[id]
-        if not out in self._outputs:
-            sticky = self.isSticky()
-            available = self.gui._results[id]
-            if "result" in available:
-                initial = available["result"]
-            elif "preview" in available:
-                initial = available["preview"]
-            else:
-                return
-            for i in range(len(initial)-1, -1, -1):
-                self._outputs[out] = BasicOutput(self, initial[i])
-                q = QSqlQuery(self.conn.db)
-                q.prepare("INSERT INTO outputs(id) VALUES (:id);")
-                q.bindValue(":id", out)
-                self.conn.doQuery(q)
-                out += 1
-                if sticky and "result" in available:
-                    self.stick()
-            
-        if name == "preview":
-            previews = self.gui._results[id]["preview"]
-            out = self._mapping[id]
-            for i in range(len(previews)-1, -1, -1):
-                self._outputs[out].setPreview(previews[i])
-                out += 1
+    def createOutput(self, id, image):
+        self._outputs[id] = BasicOutput(self, image)
+        q = QSqlQuery(self.conn.db)
+        q.prepare("INSERT INTO outputs(id) VALUES (:id);")
+        q.bindValue(":id", id)
+        self.conn.doQuery(q)
 
-        if name == "result":
-            if ours:
-                self._ids.remove(id)
-            sticky = self.isSticky()
-            results = self.gui._results[id]["result"]
-            metadata = self.gui._results[id].get("metadata", None)
-            artifacts = {k:v for k,v in self.gui._results[id].items() if not k in {"result", "metadata", "preview"}}
-            out = self._mapping[id]
-            for i in range(len(results)-1, -1, -1):
-                if not self._outputs[out]._ready:
-                    result = results[i]
-                    meta = metadata[i] if metadata else None
+    @pyqtSlot(int, QImage, object, str)
+    def onResult(self, id, image, metadata, filename):
+        sticky = self.isSticky()
 
-                    subfolder = self._subfolders.get(id, "monitor")
-                    filename = self._filenames.get(id, None)
-                    writer = BasicImageWriter(result, meta, self.gui.outputDirectory(), subfolder, filename)
-                    file = writer.file
-                    QThreadPool.globalInstance().start(writer)
+        if not id in self._outputs:
+            self.createOutput(id, image)
 
-                    self._outputs[out].setResult(result, meta, file)
-                self._outputs[out].setArtifacts({k:v[i%len(v)] for k,v in artifacts.items() if v[i%len(v)]})
-                out += 1
-            if sticky:
-                self.stick()
+        self._outputs[id].setResult(image, metadata, filename)
 
-            self._remaining = max(0, self._remaining-1)
-            if self._remaining > 0 or self._forever:
-                self.generate(user=False)
-            else:
-                self._requests = []
+        if sticky:
+            self.stick()
 
+        if self._forever or self._manager.requests:
+            self.generate(user=False)
+        else:
+            self._manager.count = 0
             self.updated.emit()
-            self.results.emit()
+
+    @pyqtSlot(int, QImage, str)
+    def onArtifact(self, id, image, name):
+        if not id in self._outputs:
+            self.createOutput(id, image)
+        
+        if name == "preview":
+            self._outputs[id].setPreview(image)
+        else:
+            self._outputs[id].addArtifact(name, image)
 
     @pyqtSlot(int, object)
-    def response(self, id, response):
+    def handleResponse(self, id, response):
         if response["type"] == "hello":
             self._accept_all = False
         if response["type"] == "owner":
@@ -397,28 +175,21 @@ class Basic(QObject):
         if response["type"] == "ack":
             id = response["data"]["id"]
             queue = response["data"]["queue"]
-            if id in self._ids and queue > 0:
+            if id in self._manager.ids and queue > 0:
                 self.gui.setWaiting()
         
     @pyqtSlot(int)
-    def reset(self, id):
-        if id in self._mapping:
-            out = self._mapping[id]
-            while out in self._outputs:
-                self.deleteOutput(out)
-                if self._openedIndex == out:
+    def handleReset(self, id):
+        for out in list(self._outputs.keys()):
+            if not self._outputs[out]._ready:
+                if self._opened_index == out:
                     self.right()
-                out += 1
-
-        self._ids = []
+                self.deleteOutput(out)
 
     @pyqtSlot()
     def cancel(self):
-        if self._ids:
-            self._remaining = 0
-            self._requests = None
-            self.gui.cancelRequest(self._ids.pop())
-            self.updated.emit()
+        self._manager.cancelRequest()
+        self.updated.emit()
 
     @pyqtProperty(bool, notify=updated)
     def forever(self):
@@ -431,9 +202,9 @@ class Basic(QObject):
 
     @pyqtProperty(int, notify=updated)
     def remaining(self):
-        if self._requests and len(self._requests) <= 1:
-            return 0
-        return int(self._remaining)
+        if self._manager.count > 1:
+            return len(self._manager.requests) + 1
+        return 0
 
     @pyqtProperty(parameters.Parameters, notify=updated)
     def parameters(self):
@@ -600,7 +371,7 @@ class Basic(QObject):
         self._inputs.pop(index)
         self.updated.emit()
 
-        if self._openedIndex == index and self._openedArea == "input":
+        if self._opened_index == index and self._opened_area == "input":
             if index > len(self._inputs):
                 index -= 1
             self.open(index, "input")
@@ -615,7 +386,6 @@ class Basic(QObject):
         q.prepare("DELETE FROM outputs WHERE id = :id;")
         q.bindValue(":id", id)
         self.conn.doQuery(q)
-    
    
     @pyqtSlot(int)
     def deleteOutputAfter(self, id):
@@ -631,11 +401,11 @@ class Basic(QObject):
 
     @pyqtProperty(int, notify=openedUpdated)
     def openedIndex(self):
-        return self._openedIndex
+        return self._opened_index
 
     @pyqtProperty(str, notify=openedUpdated)
     def openedArea(self):
-        return self._openedArea
+        return self._opened_area
     
     @pyqtSlot(int, str)
     def open(self, index, area):
@@ -645,90 +415,90 @@ class Basic(QObject):
         if area == "output" and index in self._outputs:
             change = True
         if change:
-            self._openedIndex = index
-            self._openedArea = area
+            self._opened_index = index
+            self._opened_area = area
             self.openedUpdated.emit()
     
     @pyqtSlot()
     def close(self):
-        self._openedIndex = -1
-        self._openedArea = ""
+        self._opened_index = -1
+        self._opened_area = ""
         self.openedUpdated.emit()
 
     @pyqtSlot()
     def delete(self):
-        if self._openedIndex == -1:
+        if self._opened_index == -1:
             return
         
-        if self._openedArea == "output":
-            idx = self.outputIDToIndex(self._openedIndex)
-            self.deleteOutput(self._openedIndex)
+        if self._opened_area == "output":
+            idx = self.outputIDToIndex(self._opened_index)
+            self.deleteOutput(self._opened_index)
             if len(self._outputs) == 0:
                 self.close()
                 return
             id = self.outputIndexToID(idx-1)
             if id in self._outputs:
-                self._openedIndex = id
+                self._opened_index = id
                 self.openedUpdated.emit()
                 return
             id = self.outputIndexToID(idx)
             if id in self._outputs:
-                self._openedIndex = id
+                self._opened_index = id
                 self.openedUpdated.emit()
                 return
 
         
-        if self._openedArea == "input":
-            self.deleteInput(self._openedIndex)
+        if self._opened_area == "input":
+            self.deleteInput(self._opened_index)
             if len(self._inputs) == 0:
                 self.close()
                 return
-            idx = self._openedIndex-1
+            idx = self._opened_index-1
             if idx >= 0:
-                self._openedIndex = idx
+                self._opened_index = idx
                 self.openedUpdated.emit()
     @pyqtSlot()
     def right(self):
-        if self._openedIndex == -1:
+        if self._opened_index == -1:
             return
         
-        if self._openedArea == "output":
-            idx = self.outputIDToIndex(self._openedIndex) + 1
+        if self._opened_area == "output":
+            idx = self.outputIDToIndex(self._opened_index) + 1
             id = self.outputIndexToID(idx)
             if id in self._outputs:
-                self._openedIndex = id
+                self._opened_index = id
                 self.openedUpdated.emit()
         
-        if self._openedArea == "input":
-            idx = self._openedIndex + 1
+        if self._opened_area == "input":
+            idx = self._opened_index + 1
             if idx < len(self._inputs):
-                self._openedIndex = idx
+                self._opened_index = idx
                 self.openedUpdated.emit()
 
     @pyqtSlot()
     def left(self):
-        if self._openedIndex == -1:
+        if self._opened_index == -1:
             return
         
-        if self._openedArea == "output":
-            idx = self.outputIDToIndex(self._openedIndex) - 1
+        if self._opened_area == "output":
+            idx = self.outputIDToIndex(self._opened_index) - 1
             id = self.outputIndexToID(idx)
             if id in self._outputs:
-                self._openedIndex = id
+                self._opened_index = id
                 self.openedUpdated.emit()
         
-        if self._openedArea == "input":
-            idx = self._openedIndex - 1
+        if self._opened_area == "input":
+            idx = self._opened_index - 1
             if idx >= 0:
-                self._openedIndex = idx
+                self._opened_index = idx
                 self.openedUpdated.emit()
 
     @pyqtSlot()
     def stick(self):
-        if self._openedArea == "output":
+        if self._opened_area == "output":
             id = self.outputIndexToID(0)
             if id in self._outputs:
-                self._openedIndex = id
+                self._opened_index = id
                 self.openedUpdated.emit()
 
     @pyqtSlot(int, result=int)
@@ -747,11 +517,11 @@ class Basic(QObject):
         return -1
 
     def isSticky(self):
-        if self._openedIndex == -1 or self._openedArea != "output":
+        if self._opened_index == -1 or self._opened_area != "output":
             return False
-        if not self._openedIndex in self._outputs:
+        if not self._opened_index in self._outputs:
             return True
-        idx = self.outputIDToIndex(self._openedIndex)
+        idx = self.outputIDToIndex(self._opened_index)
         if idx == 0:
             return True
         if idx == 1 and not self._outputs[self.outputIndexToID(0)].ready:
@@ -799,31 +569,31 @@ class Basic(QObject):
         
 
     def download(self, url, index):
-        self._replyIndex = index
-        self._replyId = self.gui.network.download(url.fileName(), url)
+        self._reply_index = index
+        self._reply_id = self.gui.network.download(url.fileName(), url)
 
     @pyqtSlot(misc.DownloadInstance)
     def onNetworkReply(self, reply):
-        if reply._id != self._replyId or reply._error != "":
+        if reply._id != self._reply_id or reply._error != "":
             return
 
         image = QImage()
         image.loadFromData(reply._reply.readAll())
         if not image.isNull():
-            if self._replyIndex == None:
+            if self._reply_index == None:
                 self.pastedImage.emit(image)
                 params = parameters.getParameters(image)
                 if params:
                     self.pastedText.emit(params)
             else:
-                if self._replyIndex == -1:
-                    self._replyIndex = len(self._inputs)
-                if len(self._inputs) <= self._replyIndex:
-                    self._inputs.insert(self._replyIndex, BasicInput(self, image, BasicInputRole.IMAGE))
+                if self._reply_index == -1:
+                    self._reply_index = len(self._inputs)
+                if len(self._inputs) <= self._reply_index:
+                    self._inputs.insert(self._reply_index, BasicInput(self, image, BasicInputRole.IMAGE))
                 else:
-                    self._inputs[self._replyIndex].setImageData(image)
+                    self._inputs[self._reply_index].setImageData(image)
         self.updated.emit()
-        self._replyIndex = None
+        self._reply_index = None
 
     @pyqtSlot(int, str)
     def copyItem(self, index, area):
@@ -1081,16 +851,16 @@ class Basic(QObject):
 
     @pyqtSlot(str, result=str)
     def suggestionDetail(self, text):
-        if text in self._collectionDetails:
-            return self._collectionDetails[text]
-        if text in self._dictionaryDetails:
-            return self._dictionaryDetails[text]
+        if text in self._collection_details:
+            return self._collection_details[text]
+        if text in self._dictionary_details:
+            return self._dictionary_details[text]
         return ""
     
     @pyqtSlot(str, result=str)
     def suggestionDisplay(self, text):
-        if text in self._collectionDetails:
-            detail = self._collectionDetails[text]
+        if text in self._collection_details:
+            detail = self._collection_details[text]
             if detail == "LoRA":
                 return f"<lora:{text}>"
             if detail == "HN":
@@ -1103,19 +873,19 @@ class Basic(QObject):
     def suggestionCompletion(self, text, start):
         if not text:
             return text
-        if text in self._collectionDetails:
+        if text in self._collection_details:
             return self.suggestionDisplay(text)
         return text
 
     @pyqtSlot(str, result=QColor)
     def suggestionColor(self, text):
-        if text in self._collectionDetails:
+        if text in self._collection_details:
             return {
                 "TI": QColor("#ffd893"),
                 "LoRA": QColor("#f9c7ff"),
                 "HN": QColor("#c7fff6"),
                 "Wild": QColor("#c7ffd2")
-            }.get(self._collectionDetails[text], QColor("#cccccc"))
+            }.get(self._collection_details[text], QColor("#cccccc"))
         return QColor("#cccccc")
 
     @pyqtSlot(str, int, result=int)
@@ -1151,7 +921,7 @@ class Basic(QObject):
                     self.vocabRemove(k)
 
         self._dictionary = {}
-        self._dictionaryDetails = {}
+        self._dictionary_details = {}
         for k in self._vocab:
             total = len(self._vocab[k])
             for i, line in enumerate(self._vocab[k]):
@@ -1159,7 +929,7 @@ class Basic(QObject):
                 tag, order = line, int(((i+1)/total)*1000000)
                 if "," in line:
                     tag, deco = line.split(",",1)[0].strip(), line.rsplit(",",1)[-1].strip()
-                    self._dictionaryDetails[tag] = deco
+                    self._dictionary_details[tag] = deco
                 self._dictionary[tag] = order
 
     @pyqtSlot(str)
@@ -1182,4 +952,4 @@ class Basic(QObject):
         if "HN" in self.gui._options:
             self._collection += [(self.gui.modelName(n), "HN") for n in self.gui._options["HN"]]
         self._collection += [(n, "Wild") for n in self.gui.wildcards._wildcards.keys()]
-        self._collectionDetails = {k:v for k,v in self._collection}
+        self._collection_details = {k:v for k,v in self._collection}

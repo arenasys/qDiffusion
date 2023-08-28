@@ -1,7 +1,7 @@
 import re
 import os
 import ctypes
-import math 
+import math
 
 try:
     ctypes.windll.ole32.CoInitialize.restype = ctypes.HRESULT
@@ -19,7 +19,7 @@ except Exception:
 
 from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent, QMimeData, QByteArray, QBuffer, QIODevice, QUrl
 from PyQt5.QtQuick import QQuickItem, QQuickPaintedItem
-from PyQt5.QtGui import QColor, QPen, QImage, QSyntaxHighlighter
+from PyQt5.QtGui import QColor, QImage, QSyntaxHighlighter, QColor
 from PyQt5.QtNetwork import QNetworkRequest, QNetworkReply, QNetworkAccessManager
 from PyQt5.QtQml import qmlRegisterType, qmlRegisterUncreatableType
 

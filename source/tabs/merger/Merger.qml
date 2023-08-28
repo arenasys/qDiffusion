@@ -1278,6 +1278,8 @@ Rectangle {
                 height: 40
                 text: "Preview"
 
+                remaining: MERGER.remaining
+
                 Timer {
                     id: genButtonTimer
                     interval: 100
