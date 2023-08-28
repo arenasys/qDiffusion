@@ -70,6 +70,8 @@ class RequestManager(QObject):
         self.subfolders = {}
         self.filenames = {}
 
+        self.monitoring = False
+
         self.grid = None
         self.grid_images = {}
         self.grid_id = None
@@ -274,7 +276,8 @@ class RequestManager(QObject):
     
     def handleResult(self, id, name):
         if not id in self.ids:
-            return
+            if not (self.monitoring and name == "result"):
+                return
 
         if not id in self.mapping:
             self.mapping[id] = (time.time_ns() // 1000000) % (2**31 - 1)
@@ -285,8 +288,6 @@ class RequestManager(QObject):
             self.gridResult(id, self.mapping[self.grid_id], name)
         else:
             self.normalResult(id, self.mapping[id], name)
-
-        return name == "result"
 
     def normalResult(self, id, out, name):
         if name == "preview":

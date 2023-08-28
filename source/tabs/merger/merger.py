@@ -272,6 +272,7 @@ class Merger(QObject):
 
         self._opened_index = -1
 
+        self.gui.response.connect(self.handleResponse)
         self.gui.result.connect(self.handleResult)
         self.gui.reset.connect(self.handleReset)
 
@@ -541,6 +542,14 @@ class Merger(QObject):
     @pyqtSlot(int, str)
     def handleResult(self, id, name):
         self._manager.handleResult(id, name)
+
+    @pyqtSlot(int, object)
+    def handleResponse(self, id, response):
+        if response["type"] == "ack":
+            id = response["data"]["id"]
+            queue = response["data"]["queue"]
+            if id in self._manager.ids and queue > 0:
+                self.gui.setWaiting()
 
     def createOutput(self, id, image):
         self._outputs[id] = BasicOutput(self, image)

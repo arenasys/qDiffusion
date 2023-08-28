@@ -311,7 +311,7 @@ class GUI(QObject):
             self.setReady()
             self.reset.emit(id)
 
-        if monitor and not type in {"status", "progress", "aborted", "result", "artifact"}:
+        if monitor and not type in {"result", "artifact"}:
             return
 
         if type == "status":

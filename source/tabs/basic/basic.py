@@ -169,9 +169,9 @@ class Basic(QObject):
     @pyqtSlot(int, object)
     def handleResponse(self, id, response):
         if response["type"] == "hello":
-            self._accept_all = False
+            self._manager.monitoring = False
         if response["type"] == "owner":
-            self._accept_all = True
+            self._manager.monitoring = True
         if response["type"] == "ack":
             id = response["data"]["id"]
             queue = response["data"]["queue"]
