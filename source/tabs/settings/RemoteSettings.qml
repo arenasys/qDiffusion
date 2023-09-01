@@ -16,6 +16,10 @@ Item {
         return TRANSLATOR.instance.translate(str, file)
     }
 
+    function map(type) {
+        return {"Checkpoint":"SD", "LoRA":"LoRA", "Embedding":"TI", "Upscaler":"SR"}[type]
+    }
+
     property var show: GUI.isRemote && GUI.remoteStatus == 2
 
     Column {
@@ -101,10 +105,10 @@ Item {
                 anchors.left: parent.left
                 anchors.top: parent.top
                 id: modelTypeInput
-                width: 120
+                width: 140
                 height: 30
                 label: root.tr("Type")
-                model: ["SD", "LoRA", "HN", "TI", "SR", "CN"]
+                model: ["Checkpoint", "LoRA", "Embedding", "Upscaler"]//["SD", "LoRA", "TI", "SR"]
                 disabled: !root.show
             }
             OTextInput {
@@ -124,7 +128,8 @@ Item {
             height: 30
             label: root.tr("Download")
             onPressed: {
-                SETTINGS.download(modelTypeInput.model[modelTypeInput.currentIndex], modelUrlInput.value)
+                var type = modelTypeInput.model[modelTypeInput.currentIndex]
+                SETTINGS.download(root.map(type), modelUrlInput.value)
             }
             disabled: !root.show
         }
@@ -142,10 +147,10 @@ Item {
                 anchors.left: parent.left
                 anchors.top: parent.top
                 id: uploadTypeInput
-                width: 120
+                width: 140
                 height: 30
                 label: root.tr("Type")
-                model: ["SD", "LoRA", "HN", "TI", "SR", "CN"]
+                model: ["Checkpoint", "LoRA", "Embedding", "Upscaler"]
                 disabled: !root.show
             }
             OTextInput {
@@ -228,8 +233,9 @@ Item {
             onPressed: {
                 var file = uploadFileInput.value
                 var idx = uploadTypeInput.currentIndex
+                var type = uploadTypeInput.model[idx]
                 SETTINGS.setUpload(file, idx)
-                SETTINGS.upload(uploadTypeInput.model[idx], file)
+                SETTINGS.upload(root.map(type), file)
             }
             disabled: !root.show
         }
@@ -349,13 +355,13 @@ Item {
                                 color: COMMON.fg1_5
                                 text: {
                                     if(modelData.error != "") {
-                                        return "Failed"
+                                        return root.tr("Failed")
                                     }
                                     if(modelData.progress == 0) {
-                                        return "Downloading..."
+                                        return root.tr(modelData.type + "ing...")
                                     }
                                     if(modelData.progress == 1.0) {
-                                        return "Done"
+                                        return root.tr("Done")
                                     }
                                     return (modelData.progress * 100).toFixed(0) + "%"
                                 }

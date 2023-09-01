@@ -449,13 +449,14 @@ class DownloadInstance(QObject):
     updated = pyqtSignal()
     finished = pyqtSignal(int)
     aborted = pyqtSignal()
-    def __init__(self, id, label, reply, parent=None):
+    def __init__(self, id, label, reply, is_download=True, parent=None):
         super().__init__(parent)
         self._id = id
         self._label = label
         self._progress = 0
         self._error = ""
         self._eta = ""
+        self._type = "Download" if is_download else "Upload"
 
         self._reply = reply
         if self._reply:
@@ -472,6 +473,10 @@ class DownloadInstance(QObject):
         self._label = label
         self.updated.emit()
     
+    @pyqtProperty(str, notify=updated)
+    def type(self):
+        return self._type
+
     @pyqtProperty(float, notify=updated)
     def progress(self):
         return self._progress
@@ -569,12 +574,12 @@ class DownloadManager(QObject):
 
         return id
     
-    @pyqtSlot(str, int, result=int)
-    def create(self, label, net_id):
+    @pyqtSlot(str, int, bool, result=int)
+    def create(self, label, net_id, is_download):
         self._id += 1
         id = self._id
 
-        instance = DownloadInstance(id, label, None)
+        instance = DownloadInstance(id, label, None, is_download)
         self._downloads[id] = instance
         self._mapping[net_id] = id
         instance.finished.connect(self.onFinished)

@@ -32,7 +32,7 @@ NAME = "qDiffusion"
 MODEL_FOLDERS = {
     "checkpoint": ["SD", "Stable-diffusion"],
     "component": ["SD", "Stable-diffusion", "VAE"],
-    "upscale": ["SR", "ESRGAN", "RealESRGAN"], 
+    "upscaler": ["SR", "ESRGAN", "RealESRGAN"], 
     "embedding": ["TI", "embeddings", os.path.join("..", "embeddings")], 
     "lora": ["LoRA"], 
     "hypernet": ["HN", "hypernetworks"],

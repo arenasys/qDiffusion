@@ -21,7 +21,7 @@ SMenuBar {
             title: root.tr("Import")
             clipShadow: true
             Repeater {
-                property var tmp: ["Checkpoint", "Component", "LoRA", "Hypernet", "Embedding", "Upscaler"]
+                property var tmp: ["Checkpoint", "Component", "LoRA", "Embedding", "Upscaler"]
                 model: tmp
                 SMenuItem {
                     text: root.tr(modelData)
@@ -42,7 +42,7 @@ SMenuBar {
                     if(GUI.isRemote) {
                         GUI.currentTab = "Settings"
                         SETTINGS.currentTab = "Remote"
-                        var modeIndex = ["checkpoint","component","lora","hypernet","embedding","upscale","controlnet"].indexOf(mode)
+                        var modeIndex = ["checkpoint","component","lora","embedding","upscaler","controlnet"].indexOf(mode)
                         modeIndex = Math.max(modeIndex - 1, 0)
                         SETTINGS.setUpload(file, modeIndex)
                     } else {

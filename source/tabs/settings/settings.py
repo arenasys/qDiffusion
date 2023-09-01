@@ -84,7 +84,7 @@ class Settings(QObject):
         if token:
             request["token"] = token
         id = self.gui.makeRequest({"type":"download", "data":request})
-        self.gui.network.create(url, id)
+        self.gui.network.create(url, id, True)
 
     @pyqtSlot()
     def refresh(self):
@@ -111,7 +111,7 @@ class Settings(QObject):
             return
         file = file.toLocalFile().replace('/', os.path.sep)
         id = self.gui.makeRequest({"type":"upload", "data":{"type": type, "file": file}})
-        self.gui.network.create(file.split(os.path.sep)[-1], id)
+        self.gui.network.create(file.split(os.path.sep)[-1], id, False)
 
     @pyqtSlot(QUrl, result=str)
     def toLocal(self, url):
