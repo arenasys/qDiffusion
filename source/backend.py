@@ -74,7 +74,7 @@ class Backend(QObject):
         self.debugLogging("NEW SESSION", {"endpoint": endpoint})
         self.inference = None
         if endpoint == "":
-            if HAVE_TORCH:
+            if HAVE_TORCH and self.gui.config.get("mode") != "remote":
                 if self.gui.config.get("host_enabled"):
                     ip = self.gui.config.get("host_address")
                     port = int(self.gui.config.get("host_port"))
