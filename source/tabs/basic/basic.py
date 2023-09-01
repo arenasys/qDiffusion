@@ -158,6 +158,12 @@ class Basic(QObject):
 
     @pyqtSlot(int, QImage, str)
     def onArtifact(self, id, image, name):
+        if name == "Annotated":
+            match = [i for i in self._inputs if i._id == id]
+            if match:
+                match[0].setArtifacts({"Annotated":image})
+            return
+
         if not id in self._outputs:
             self.createOutput(id, image)
         
@@ -724,8 +730,7 @@ class Basic(QObject):
         args = input.getControlArgs()
 
         request = self._parameters.buildAnnotateRequest(annotator, args, encodeImage(input._image))
-        id = self.gui.makeRequest(request)
-        self._annotations[id] = input._id
+        self._manager.makeAnnotationRequest(request, input._id)
 
     @pyqtSlot()
     def dividerDrag(self):

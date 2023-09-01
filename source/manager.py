@@ -67,12 +67,15 @@ class RequestManager(QObject):
         self.ids = []
         self.mapping = {}
 
+        self.annotations = {}
+
         self.subfolders = {}
         self.filenames = {}
 
         self.monitoring = False
 
         self.grid = None
+        self.grid_image = None
         self.grid_images = {}
         self.grid_id = None
 
@@ -80,16 +83,24 @@ class RequestManager(QObject):
         self.requests = requests
         self.count = len(requests)
 
-    def makeRequest(self):
-        request = self.requests.pop()
+    def makeRequest(self, request=None):
+        if not request:
+            request = self.requests.pop()
         filename = self.finalizeRequest(request)
 
-        subfolder = self.parameters._values.get("output_folder")
+        subfolder = ""
+        if self.parameters:
+            subfolder = self.parameters._values.get("output_folder")
         id = self.gui.makeRequest(request)
 
         self.subfolders[id] = subfolder or request["type"]
         self.filenames[id] = filename if subfolder else ""
         self.ids += [id]
+        return id
+    
+    def makeAnnotationRequest(self, request, input_id):
+        id = self.makeRequest(request)
+        self.annotations[id] = input_id
 
     def cancelRequest(self):
         if self.ids:
@@ -117,10 +128,8 @@ class RequestManager(QObject):
             filename = filename.rsplit(os.path.sep, 1)[-1].rsplit(".", 1)[0]
 
         return filename
-        
-    def buildRequests(self, parameters, inputs):
-        self.parameters = parameters
-
+    
+    def parseInputs(self, inputs):
         found = {}
         links = {}
         controls = {}
@@ -183,21 +192,36 @@ class RequestManager(QObject):
                     if data:
                         segmentation += data
 
-        if segmentation:
-            requests = []
-            for img, opts in segmentation:
-                request = {
-                    "type": "segmentation",
-                    "data": {
-                        "image": [img],
-                        "seg_opts": [opts],
-                        "device": self.parameters._values.get("device")
-                    }
-                }
-                requests += [request]
-            self.setRequests(requests)
-            return
+        return found, links, controls, segmentation
 
+    def buildRequests(self, parameters, inputs):
+        self.parameters = parameters
+
+        found, links, controls, segmentation = self.parseInputs(inputs)
+
+        if segmentation:
+            self.buildSegmentationRequests(segmentation)
+        else:
+            self.buildStandardRequests(found, links, controls)
+            if False:
+                base = self.requests[0]
+                self.buildGridRequests(base)
+
+    def buildSegmentationRequests(self, segmentation):
+        requests = []
+        for img, opts in segmentation:
+            request = {
+                "type": "segmentation",
+                "data": {
+                    "image": [img],
+                    "seg_opts": [opts],
+                    "device": self.parameters._values.get("device")
+                }
+            }
+            requests += [request]
+        self.setRequests(requests)
+
+    def buildStandardRequests(self, found, links, controls):
         images, masks, areas = [], [], []
         used = []
         for k in found:
@@ -233,7 +257,7 @@ class RequestManager(QObject):
         batch_count = int(self.parameters._values.get("batch_count"))
 
         total = max([len(controls[k]) for k in controls]) if controls else 0
-        total = max(len(images), len(segmentation), batch_count * batch_size, total)
+        total = max(len(images), batch_count * batch_size, total)
 
         def get_portion(data, start, amount):
             if not data:
@@ -274,6 +298,9 @@ class RequestManager(QObject):
         
         self.setRequests(requests)
     
+    def buildGridRequests(self, base):
+        self.setRequests([base] * 4)
+
     def handleResult(self, id, name):
         if not id in self.ids:
             if not (self.monitoring and name == "result"):
@@ -281,7 +308,7 @@ class RequestManager(QObject):
 
         if not id in self.mapping:
             self.mapping[id] = (time.time_ns() // 1000000) % (2**31 - 1)
-    
+
         if self.grid != None:
             if self.grid_id == None:
                 self.grid_id = id
@@ -304,6 +331,12 @@ class RequestManager(QObject):
             metadata = self.gui._results[id].get("metadata", None)
             artifacts = {k:v for k,v in self.gui._results[id].items() if not k in {"result", "metadata", "preview"}}
             out = self.mapping[id]
+
+            if id in self.annotations:
+                self.artifact.emit(self.annotations[id], results[0], "Annotated")
+                del self.annotations[id]
+                return
+
             for i in range(len(results)-1, -1, -1):
                 result = results[i]
                 meta = metadata[i] if metadata else None

@@ -655,6 +655,7 @@ Item {
         id: gridDialog
         title: root.tr("Grid")
         standardButtons: Dialog.Ok | Dialog.Cancel
+        width: Math.max(400, parent.width/3)
         modal: true
         dim: true
     }

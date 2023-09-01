@@ -12,14 +12,12 @@ Dialog {
     anchors.centerIn: parent
     width: 400
     dim: true
+    height: 265
+    padding: 5
 
     function tr(str, file = "GridDialog.qml") {
         return TRANSLATOR.instance.translate(str, file)
     }
-
-    height: width
-
-    padding: 5
 
     onOpened: {
         enterItem.forceActiveFocus()
@@ -59,6 +57,7 @@ Dialog {
             border.width: 1
             border.color: COMMON.bg4
         }
+
         Rectangle {
             anchors.fill: parent
             anchors.margins: -2
@@ -98,6 +97,97 @@ Dialog {
         color: COMMON.bg00
         border.width: 1
         border.color: COMMON.bg5
+
+
+        Column {
+            anchors.centerIn: parent
+            height: parent.height-30
+            width: parent.width-30
+            
+            Row {
+                height: 60
+                width: parent.width
+
+                OChoice {
+                    width: 100
+                    height: 30
+                    rightPadding: false
+                    label: root.tr("X")
+                    model: [root.tr("Seed")]
+                }
+
+                Item {
+                    width: parent.width - 100
+                    height: 60
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.margins: 2
+                        anchors.leftMargin: 4
+                        color: COMMON.bg2_5
+                        border.color: COMMON.bg4
+                        STextArea {
+                            anchors.fill: parent
+                        }
+                    }
+                }
+            }
+
+            Row {
+                height: 60
+                width: parent.width
+
+                OChoice {
+                    width: 100
+                    height: 30
+                    rightPadding: false
+                    label: root.tr("Y")
+                    model: [root.tr("Seed")]
+                }
+
+                Item {
+                    width: parent.width - 100
+                    height: 60
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.margins: 2
+                        anchors.leftMargin: 4
+                        color: COMMON.bg2_5
+                        border.color: COMMON.bg4
+                        STextArea {
+                            anchors.fill: parent
+                        }
+                    }
+                }
+            }
+
+            Row {
+                height: 60
+                width: parent.width
+
+                OChoice {
+                    width: 100
+                    height: 30
+                    rightPadding: false
+                    label: root.tr("Z")
+                    model: [root.tr("Seed")]
+                }
+
+                Item {
+                    width: parent.width - 100
+                    height: 60
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.margins: 2
+                        anchors.leftMargin: 4
+                        color: COMMON.bg2_5
+                        border.color: COMMON.bg4
+                        STextArea {
+                            anchors.fill: parent
+                        }
+                    }
+                }
+            }
+        }
     }
 
     spacing: 0
