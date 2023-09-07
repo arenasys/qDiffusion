@@ -12,8 +12,19 @@ Dialog {
     anchors.centerIn: parent
     width: 400
     dim: true
-    height: 265
+    height: 222
     padding: 5
+    closePolicy: Popup.NoAutoClose
+
+    property var source
+    
+    property alias x_type: x_row.type
+    property alias x_value: x_row.value
+    property alias x_match: x_row.match
+
+    property alias y_type: y_row.type
+    property alias y_value: y_row.value
+    property alias y_match: y_row.match
 
     function tr(str, file = "GridDialog.qml") {
         return TRANSLATOR.instance.translate(str, file)
@@ -93,103 +104,6 @@ Dialog {
         }
     }
 
-    contentItem: Rectangle {
-        color: COMMON.bg00
-        border.width: 1
-        border.color: COMMON.bg5
-
-
-        Column {
-            anchors.centerIn: parent
-            height: parent.height-30
-            width: parent.width-30
-            
-            Row {
-                height: 60
-                width: parent.width
-
-                OChoice {
-                    width: 100
-                    height: 30
-                    rightPadding: false
-                    label: root.tr("X")
-                    model: [root.tr("Seed")]
-                }
-
-                Item {
-                    width: parent.width - 100
-                    height: 60
-                    Rectangle {
-                        anchors.fill: parent
-                        anchors.margins: 2
-                        anchors.leftMargin: 4
-                        color: COMMON.bg2_5
-                        border.color: COMMON.bg4
-                        STextArea {
-                            anchors.fill: parent
-                        }
-                    }
-                }
-            }
-
-            Row {
-                height: 60
-                width: parent.width
-
-                OChoice {
-                    width: 100
-                    height: 30
-                    rightPadding: false
-                    label: root.tr("Y")
-                    model: [root.tr("Seed")]
-                }
-
-                Item {
-                    width: parent.width - 100
-                    height: 60
-                    Rectangle {
-                        anchors.fill: parent
-                        anchors.margins: 2
-                        anchors.leftMargin: 4
-                        color: COMMON.bg2_5
-                        border.color: COMMON.bg4
-                        STextArea {
-                            anchors.fill: parent
-                        }
-                    }
-                }
-            }
-
-            Row {
-                height: 60
-                width: parent.width
-
-                OChoice {
-                    width: 100
-                    height: 30
-                    rightPadding: false
-                    label: root.tr("Z")
-                    model: [root.tr("Seed")]
-                }
-
-                Item {
-                    width: parent.width - 100
-                    height: 60
-                    Rectangle {
-                        anchors.fill: parent
-                        anchors.margins: 2
-                        anchors.leftMargin: 4
-                        color: COMMON.bg2_5
-                        border.color: COMMON.bg4
-                        STextArea {
-                            anchors.fill: parent
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     spacing: 0
     verticalPadding: 0
 
@@ -229,6 +143,72 @@ Dialog {
 
             onAccepted: dialog.accept()
             onRejected: dialog.reject()
+        }
+    }
+
+    contentItem: Rectangle {
+        id: content
+        color: COMMON.bg00
+        border.width: 1
+        border.color: COMMON.bg5
+
+        Column {
+            anchors.centerIn: parent
+            height: parent.height-30
+            width: parent.width-30
+            
+            GridRow {
+                id: x_row
+                height: 64
+                width: parent.width
+                label: "X"
+                source: dialog.source
+                menuActive: x_suggestions.active
+            }
+
+            GridRow {
+                id: y_row
+                height: 64
+                width: parent.width
+                label: "Y"
+                source: dialog.source
+                menuActive: y_suggestions.active
+            }
+        }
+
+        Suggestions {
+            id: x_suggestions
+            target: x_row.target
+            suggestions: BASIC.gridXSuggestions
+            x: x_row.target.mapToItem(content, 0, 0).x + area.cursorRectangle.x;
+            y: x_row.target.mapToItem(content, 0, 0).y + area.cursorRectangle.y;
+            height: area.cursorRectangle.height
+            visible: x_row.type != "None" && area.activeFocus
+            property var type: x_row.type
+            property alias highlighter: x_row.highlighter
+            onTypeChanged: {
+                BASIC.gridConfigureRow(type, suggestions, highlighter)
+                area.text = area.text + " " //update highlighting
+                area.text = area.text.slice(0, -1)
+            }
+        }
+
+        Suggestions {
+            id: y_suggestions
+            target: y_row.target
+            suggestions: BASIC.gridXSuggestions
+            flip: true
+            x: y_row.target.mapToItem(content, 0, 0).x + area.cursorRectangle.x;
+            y: y_row.target.mapToItem(content, 0, 0).y + area.cursorRectangle.y;
+            height: area.cursorRectangle.height
+            visible: y_row.type != "None" && area.activeFocus
+            property var type: y_row.type
+            property alias highlighter: y_row.highlighter
+            onTypeChanged: {
+                BASIC.gridConfigureRow(type, suggestions, highlighter)
+                area.text = area.text + " " //update highlighting
+                area.text = area.text.slice(0, -1)
+            }
         }
     }
 }

@@ -99,6 +99,14 @@ SMenuBar {
                 BASIC.doBuildModel()
             }
         }
+
+        SMenuItem {
+            visible: GUI.currentTab == "Generate"
+            text: root.tr("XY Grid")
+            onPressed: {
+                BASIC.openGrid()
+            }
+        }
     }
     SMenu {
         title: root.tr("View")

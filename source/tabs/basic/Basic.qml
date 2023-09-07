@@ -275,9 +275,9 @@ Item {
         property var onlyModels: false
 
         function update() {
-            BASIC.updateSuggestions(prompts.cursorText, prompts.cursorPosition, onlyModels)
-            promptCursor.targetStart = BASIC.suggestionStart(prompts.cursorText, prompts.cursorPosition)
-            promptCursor.targetEnd = BASIC.suggestionEnd(prompts.cursorText, prompts.cursorPosition)
+            BASIC.suggestions.updateSuggestions(prompts.cursorText, prompts.cursorPosition, onlyModels)
+            promptCursor.targetStart = BASIC.suggestions.start(prompts.cursorText, prompts.cursorPosition)
+            promptCursor.targetEnd = BASIC.suggestions.end(prompts.cursorText, prompts.cursorPosition)
         }
 
         function reset() {
@@ -298,7 +298,7 @@ Item {
                     }
                 } else if(key != Qt.Key_Down && key != Qt.Key_Right) {
                     if(!promptCursor.typed)  {
-                        promptCursor.replace = BASIC.suggestionReplace(prompts.cursorText, prompts.cursorPosition)
+                        promptCursor.replace = BASIC.suggestions.replace(prompts.cursorText, prompts.cursorPosition)
                     }
                     promptCursor.typed = true
                 }
@@ -340,7 +340,7 @@ Item {
 
     ListView {
         id: suggestions
-        property var entries: BASIC.suggestions.length != 0
+        property var entries: BASIC.suggestions.results.length != 0
         visible: promptCursor.visible && entries
         property var flip: promptCursor.y + promptCursor.height + 60 > root.height
         anchors.left: promptCursor.left
@@ -349,9 +349,9 @@ Item {
         anchors.top: flip ? undefined : promptCursor.bottom
         anchors.topMargin: 3
         anchors.bottomMargin: 3
-        height: Math.min(BASIC.suggestions.length, 3)*20
+        height: Math.min(BASIC.suggestions.results.length, 3)*20
         clip: true
-        model: BASIC.suggestions
+        model: BASIC.suggestions.results
 
         verticalLayoutDirection: flip ? ListView.BottomToTop : ListView.TopToBottom
         boundsBehavior: Flickable.StopAtBounds
@@ -382,7 +382,7 @@ Item {
             id: suggestionsScrollBar
             padding: 0
             barWidth: 2
-            stepSize: 1/(BASIC.suggestions.length)
+            stepSize: 1/(BASIC.suggestions.results.length)
             policy: suggestions.contentHeight > suggestions.height ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
         }
 
@@ -390,7 +390,7 @@ Item {
             width: suggestions.width
             height: 20
             property var selected: suggestions.currentIndex == index
-            property var text: BASIC.suggestionCompletion(modelData, prompts.cursorPosition-promptCursor.targetStart)
+            property var text: BASIC.suggestions.completion(modelData, prompts.cursorPosition-promptCursor.targetStart)
             color: selected ? COMMON.bg4 : (delegateMouse.containsMouse ? COMMON.bg3_5 : COMMON.bg3)
 
             SText {
@@ -398,7 +398,7 @@ Item {
                 anchors.right: parent.right
                 width: contentWidth
                 height: 20
-                text: BASIC.suggestionDetail(modelData)
+                text: BASIC.suggestions.detail(modelData)
                 color: width < contentWidth ? "transparent" : COMMON.fg2
                 font.pointSize: 8.5
                 rightPadding: 8
@@ -411,8 +411,8 @@ Item {
                 anchors.right: decoText.left
 
                 height: 20
-                text: BASIC.suggestionDisplay(modelData)
-                color: BASIC.suggestionColor(modelData)
+                text: BASIC.suggestions.display(modelData)
+                color: BASIC.suggestions.color(modelData)
                 font.pointSize: 8.5
                 leftPadding: 5
                 rightPadding: 10
@@ -655,9 +655,22 @@ Item {
         id: gridDialog
         title: root.tr("Grid")
         standardButtons: Dialog.Ok | Dialog.Cancel
-        width: Math.max(400, parent.width/3)
+        width: Math.max(500, parent.width/3)
         modal: true
         dim: true
+
+        source: BASIC
+
+        onAccepted: {
+            BASIC.generateGrid(x_type, x_value, x_match, y_type, y_value, y_match)
+        }
+
+        Connections {
+            target: BASIC
+            function onOpeningGrid() {
+                gridDialog.open()
+            }
+        }
     }
 
     Keys.forwardTo: [areas, full]

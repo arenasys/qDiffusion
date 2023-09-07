@@ -34,6 +34,8 @@ Item {
 
     property var binding: root.bindMapCurrent != null && root.bindKeyCurrent != null && root.bindMapModel != null && root.bindKeyModel != null
 
+    property var original
+
     property alias popupHeight: control.popupHeight
 
     signal doUpdate()
@@ -74,29 +76,35 @@ Item {
         } else {
             root.overloadValue = root.emptyValue
         }
-
         root.currentIndex = i
     }
 
     function update() {
-        var all_m = expandModel(root.bindMapModel.get(root.bindKeyModel));
-        var m = searchModel(filterModel(all_m));
-        var c = root.bindMapCurrent.get(root.bindKeyCurrent);
+        if(root.binding) {
+            var all_m = expandModel(root.bindMapModel.get(root.bindKeyModel));
+            var m = searchModel(filterModel(all_m));
+            var c = root.bindMapCurrent.get(root.bindKeyCurrent);
 
-        if(m != root.model) {
-            var diff = (m == null || root.model == null || root.model.length != m.length)
-            root.model = m;
+            if(m != root.model) {
+                var diff = (m == null || root.model == null || root.model.length != m.length)
+                root.model = m;
 
-            root.setCurrent(c, m, all_m);
+                root.setCurrent(c, m, all_m);
 
-            if(diff) {
-                root.optionsChanged()
+                if(diff) {
+                    root.optionsChanged()
+                }
+            } else {
+                root.setCurrent(c, m, all_m);
+            }
+            if(root.bindKeyLabel != null) {
+                root.label = root.bindMap.get(root.bindKeyLabel);
             }
         } else {
-            root.setCurrent(c, m, all_m);
-        }
-        if(root.bindKeyLabel != null) {
-            root.label = root.bindMap.get(root.bindKeyLabel);
+            var c = root.value
+            var m = searchModel(filterModel(root.original));
+            root.model = m
+            root.setCurrent(c, m, root.original);
         }
     }
 
@@ -147,6 +155,9 @@ Item {
     }
 
     Component.onCompleted: {
+        if (root.model) {
+            root.original = root.model.slice();
+        }
         if(root.binding) {
             var all_m = expandModel(root.bindMapModel.get(root.bindKeyModel));
             var m = searchModel(filterModel(all_m));

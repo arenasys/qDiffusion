@@ -559,10 +559,11 @@ class GUI(QObject):
     def quit(self):
         QApplication.quit()
         
-    @pyqtSlot(QQuickTextDocument)
+    @pyqtSlot(QQuickTextDocument, result=misc.SyntaxManager)
     def setHighlighting(self, doc):
-        highlighter = misc.SyntaxHighlighter(self)
-        highlighter.setDocument(doc.textDocument())
+        manager = misc.SyntaxManager(self)
+        manager.highlighter.setDocument(doc.textDocument())
+        return manager
 
     @pyqtSlot(str, bool)
     def debugLogging(self, mode, enabled):

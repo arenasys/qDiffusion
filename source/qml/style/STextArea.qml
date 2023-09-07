@@ -12,6 +12,7 @@ Rectangle {
     property alias readOnly: textArea.readOnly
     property alias area: textArea
     property alias scrollBar: controlScrollBar
+    property var overlay: false
 
     onActiveFocusChanged: {
         if(root.activeFocus) {
@@ -210,5 +211,11 @@ Rectangle {
         Keys.onPressed: {
             event.accepted = true
         }
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        visible: root.overlay
+        color: "#90101010"
     }
 }

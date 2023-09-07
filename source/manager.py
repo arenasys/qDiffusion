@@ -4,9 +4,10 @@ import datetime
 import io
 import PIL.Image
 import random
+import copy
 
-from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QSize, QThreadPool, QRect, QMutex, QRunnable
-from PyQt5.QtGui import QImage, QPainter
+from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QSize, QThreadPool, QRect, QMutex, QRunnable, QRectF
+from PyQt5.QtGui import QImage, QPainter, QColor, QFont, QFontMetrics, QTextOption
 
 import parameters
 from misc import encodeImage
@@ -74,10 +75,16 @@ class RequestManager(QObject):
 
         self.monitoring = False
 
-        self.grid = None
+        self.setGrid(None)
+
+    def setGrid(self, grid, labels = []):
+        self.grid = grid
+        self.grid_size = None
+        self.grid_ids = []
         self.grid_image = None
         self.grid_images = {}
         self.grid_id = None
+        self.grid_labels = labels
 
     def setRequests(self, requests):
         self.requests = requests
@@ -198,15 +205,15 @@ class RequestManager(QObject):
         self.parameters = parameters
 
         found, links, controls, segmentation = self.parseInputs(inputs)
+        
+        self.setGrid(None)
 
         if segmentation:
             self.buildSegmentationRequests(segmentation)
         else:
-            self.buildStandardRequests(found, links, controls)
-            if False:
-                base = self.requests[0]
-                self.buildGridRequests(base)
-
+            batches = self.buildBatches(found, links, controls)
+            self.buildStandardRequests(batches)
+            
     def buildSegmentationRequests(self, segmentation):
         requests = []
         for img, opts in segmentation:
@@ -221,7 +228,7 @@ class RequestManager(QObject):
             requests += [request]
         self.setRequests(requests)
 
-    def buildStandardRequests(self, found, links, controls):
+    def buildBatches(self, found, links, controls, single=False):
         images, masks, areas = [], [], []
         used = []
         for k in found:
@@ -246,18 +253,16 @@ class RequestManager(QObject):
                 areas += [are]
             used += linked
 
-        seed = int(self.parameters._values.get("seed"))
-        subseed = int(self.parameters._values.get("subseed"))
-        if seed == -1:
-            seed = random.randrange(2147483646)
-        if subseed == -1:
-            subseed = random.randrange(2147483646)
-
         batch_size = int(self.parameters._values.get("batch_size"))
         batch_count = int(self.parameters._values.get("batch_count"))
 
         total = max([len(controls[k]) for k in controls]) if controls else 0
         total = max(len(images), batch_count * batch_size, total)
+
+        if single:
+            batch_size = 1
+            batch_count = 1
+            total = 1
 
         def get_portion(data, start, amount):
             if not data:
@@ -267,9 +272,10 @@ class RequestManager(QObject):
                 out += [data[(start+i)%len(data)]]
             return out
 
-        requests = []
         i = 0
         ci = 0
+
+        batches = []
         while total > 0:
             size = min(total, batch_size)
             batch_images = get_portion(images, i, size)
@@ -284,7 +290,23 @@ class RequestManager(QObject):
             total -= batch_size
             ci += 1
             
-            request = self.parameters.buildRequest(size, batch_images, batch_masks, batch_areas, batch_control)
+            batches += [(size, batch_images, batch_masks, batch_areas, batch_control)]
+        
+        return batches
+
+    def buildStandardRequests(self, batches):
+        requests = []
+
+        seed = int(self.parameters._values.get("seed"))
+        subseed = int(self.parameters._values.get("subseed"))
+        if seed == -1:
+            seed = random.randrange(2147483646)
+        if subseed == -1:
+            subseed = random.randrange(2147483646)
+
+
+        for size, images, masks, areas, control in batches:
+            request = self.parameters.buildRequest(size, images, masks, areas, control)
 
             if "seed" in request["data"]:
                 request["data"]["seed"] = seed
@@ -293,13 +315,56 @@ class RequestManager(QObject):
             if "subseed" in request["data"]:
                 request["data"]["subseed"] = subseed
                 subseed += size
-
             requests += [request]
         
         self.setRequests(requests)
-    
-    def buildGridRequests(self, base):
-        self.setRequests([base] * 4)
+
+    def buildGridRequests(self, parameters, inputs, grid):
+        self.parameters = parameters
+
+        found, links, controls, _ = self.parseInputs(inputs)
+        base = self.buildBatches(found, links, controls, single=True)[0]
+
+        (lx, x), (ly, y) = grid
+        grid = [x, y]
+        labels = [lx, ly]
+        self.setGrid(grid, labels)
+
+        requests = []
+        
+        seed = int(parameters._values.get("seed"))
+        subseed = int(parameters._values.get("subseed"))
+        if seed == -1:
+            seed = random.randrange(2147483646)
+        if subseed == -1:
+            subseed = random.randrange(2147483646)
+
+        for iy in y:
+            for ix in x:
+                elementParams = parameters.copy()
+                elementParams._values.set("seed", seed)
+                elementParams._values.set("subseed", subseed)
+
+                for k, v in list(ix.items()) + list(iy.items()):
+                    if k == "replace":
+                        match, string = v
+                        for t in {"prompt", "negative_prompt"}:
+                            prompt = elementParams._values.get(t)
+                            if match:
+                                prompt = prompt.replace(match, string)
+                            elif t == "prompt":
+                                prompt = string
+                            elementParams._values.set(t, prompt)
+                    else:
+                        elementParams._values.set(k, v)
+
+                requests += [elementParams.buildRequest(*base)]
+
+        data = requests[0]["data"]
+        w, h, factor = data["width"], data["height"], data.get("hr_factor",1)
+        self.grid_size = (w*factor, h*factor)
+
+        self.setRequests(requests[::-1])
 
     def handleResult(self, id, name):
         if not id in self.ids:
@@ -365,35 +430,97 @@ class RequestManager(QObject):
             return
         
         for i in range(len(images)-1, -1, -1):
-            if not id + i in self.grid:
-                self.grid += [id + i]
+            if not id + i in self.grid_ids:
+                self.grid_ids += [id + i]
             self.grid_images[id + i] = images[i]
 
-        wc, hc = 2, 2
-        w, h = 512, 512
-        grid = QImage(QSize(int(w*wc),int(h*hc)), QImage.Format_ARGB32_Premultiplied)
-        grid.fill(0)
+        x, y = self.grid
+        lx, ly = self.grid_labels
+        cx, cy = len(x) or 1, len(y) or 1
 
-        painter = QPainter(grid)
-        for x in range(2):
-            for y in range(2):
-                idx = y*2 + x
-                if idx >= len(self.grid):
-                    continue
-                image = self.grid_images[self.grid[idx]]
-                painter.drawImage(QRect(int(x*w), int(y*h), w, h), image)
+        w, h = self.grid_size
+
+        pw, ph = 200, 60
+        if cx == 1 and cy == 1:
+            pw, ph = 0, 60
+            if ly[0]:
+                lx[0] = ly[0]
+        elif cx == 1:
+            pw, ph = 200, 0
+        elif cy == 1:
+            pw, ph = 0, 60
+
+        font = QFont("Cantarell", 30)
+        small_font = QFont("Cantarell", 20)
+        tiny_font = QFont("Cantarell", 15)
+
+        def drawText(painter, text, bound):
+            if not text:
+                return
+            opt = QTextOption()
+            opt.setAlignment(Qt.AlignCenter)
+            opt.setWrapMode(QTextOption.WordWrap)
+            
+            painter.setFont(font)
+            text_bound = painter.boundingRect(bound, text, opt)
+            if not bound.contains(text_bound):
+                painter.setFont(small_font)
+                text_bound = painter.boundingRect(bound, text, opt)
+                if not bound.contains(text_bound):
+                    painter.setFont(tiny_font)
+                    opt.setWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
+            else:
+                painter.setFont(font)
+            painter.drawText(bound, text, opt)
+
+
+        def drawLabel(painter, positions, labels):
+            px, py = positions
+            lx, ly = labels
+            b = 1
+            drawText(painter, lx, QRectF(px, 0, w, ph).adjusted(b,b,-b,-b))
+            drawText(painter, ly, QRectF(0, py, pw, h).adjusted(b,b,-b,-b))
+
+        positions = []
+        labels = []
+        for iy in range(cy):
+            for ix in range(cx):
+                positions += [(int(pw + ix*w), int(ph + iy*h))]
+                labels += [(lx[ix], ly[iy] if ly else "")]
+
+        if not self.grid_image:
+            self.grid_image = QImage(QSize(int(pw + w*cx), int(ph + h*cy)), QImage.Format_ARGB32_Premultiplied)
+            self.grid_image.fill(QColor.fromRgbF(1.0, 1.0, 1.0))
+
+            painter = QPainter(self.grid_image)
+            painter.setRenderHint(QPainter.TextAntialiasing, True)
+            for i in range(len(positions)):
+                drawLabel(painter, positions[i], labels[i])
+
+            painter.end()
+
+        painter = QPainter(self.grid_image)
+
+        id = self.grid_ids[-1]
+        image = self.grid_images[id]
+        px, py = positions[len(self.grid_ids)-1]
+        painter.drawImage(QRect(px,py, w, h), image)
+
         painter.end()
-        
-        if name == "preview":
-            self.artifact.emit(out, grid, "preview")
-        elif name == "result":
+
+        if name == "result":
             if id in self.ids:
                 self.ids.remove(id)
 
-            subfolder = self.subfolders.get(self.grid_id, "monitor")
-            filename = self.filenames.get(self.grid_id, None)
-            writer = OutputWriter(grid, None, self.gui.outputDirectory(), subfolder, filename)
-            file = writer.file
-            QThreadPool.globalInstance().start(writer)
+            if len(self.grid_ids) == cx*cy:
+                subfolder = self.subfolders.get(self.grid_id, "monitor")
+                filename = self.filenames.get(self.grid_id, None)
+                writer = OutputWriter(self.grid_image, None, self.gui.outputDirectory(), subfolder, filename)
+                file = writer.file
+                QThreadPool.globalInstance().start(writer)
 
-            self.result.emit(out, grid, None, file)
+                self.result.emit(out, self.grid_image, None, file)
+            else:
+                self.makeRequest()
+        else:
+            self.artifact.emit(out, self.grid_image, "preview")

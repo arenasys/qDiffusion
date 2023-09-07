@@ -207,11 +207,72 @@ class DropArea(QQuickItem):
             self.updated.emit()
             self.dropped.emit(MimeData(drop.mimeData()))
 
-class SyntaxHighlighter(QSyntaxHighlighter):
+class SyntaxManager(QObject):
     def __init__(self, gui):
         super().__init__(gui)
+        self.mode = "Prompt"
+        self.keywords = []
+        self.highlighter = SyntaxHighlighter(self, gui)
+
+    @pyqtSlot(str)
+    def setMode(self, mode):
+        self.mode = mode
+
+    @pyqtSlot(list)
+    def setKeywords(self, keywords):
+        self.keywords = [k.lower() for k in keywords]
+        
+class SyntaxHighlighter(QSyntaxHighlighter):
+    def __init__(self, manager, gui):
+        super().__init__(gui)
         self.gui = gui
+        self.manager = manager
+
     def highlightBlock(self, text):
+        if self.manager.mode == "Prompt":
+            return self.highlightPrompt(text)
+        if self.manager.mode == "Keyword":
+            return self.highlightKeywords(text)
+        if self.manager.mode == "Integer":
+            return self.highlightIntegers(text)
+        if self.manager.mode == "Float":
+            return self.highlightFloats(text)
+        
+    def highlightKeywords(self, text):
+        good = QColor("#d0ff93")
+        ok = QColor("#ffe993")
+        err = QColor("#ff9393")
+        for s, e in [m.span(0) for m in re.finditer("[^,]+?(?=,|$)", text)]:
+            m = text[s:e].strip().lower()
+            for k in self.manager.keywords:
+                if k.startswith(m):
+                    if k != m:
+                        self.setFormat(s, e-s, ok)
+                    else:
+                        self.setFormat(s, e-s, good)
+                    break
+            else:
+                self.setFormat(s, e-s, err)
+
+    def highlightIntegers(self, text):
+        err = QColor("#ff9393")
+        for s, e in [m.span(0) for m in re.finditer("[^,]+?(?=,|$)", text)]:
+            m = text[s:e].strip().lower()
+            try:
+                m = int(m)
+            except:
+                self.setFormat(s, e-s, err)
+    
+    def highlightFloats(self, text):
+        err = QColor("#ff9393")
+        for s, e in [m.span(0) for m in re.finditer("[^,]+?(?=,|$)", text)]:
+            m = text[s:e].strip().lower()
+            try:
+                m = float(m)
+            except:
+                self.setFormat(s, e-s, err)
+        
+    def highlightPrompt(self, text):
         text = text + " "
         emb = QColor("#ffd893")
         lora_bg = QColor("#f9c7ff")
@@ -650,6 +711,280 @@ class DownloadManager(QObject):
                 del self._downloads[net_id]
         self.updated.emit()
 
+SUGGESTION_BLOCK_REGEX = lambda spaces: r'(?=\n|,|(?<!lora|rnet):|\||\[|\]|\(|\)'+ ('|\s)' if spaces else r')')
+SUGGESTION_SOURCES = ["Model", "UNET", "VAE", "CLIP", "LoRA", "HN", "TI", "Wild", "Vocab", "Keyword"]
+
+class SuggestionManager(QObject):
+    updated = pyqtSignal()
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.gui = parent
+
+        self._sources = {k:False for k in SUGGESTION_SOURCES}
+
+        self._models = []
+        self._model_details = {}
+
+        self._vocab = {}
+        self._dictionary = {}
+        self._dictionary_details = {}
+
+        self._keywords = []
+        
+        self._results = []
+
+        self.gui.optionsUpdated.connect(self.updateCollection)
+
+    @pyqtProperty(list, notify=updated)
+    def results(self):
+        return self._results
+    
+    @pyqtSlot()
+    def setPromptSources(self):
+        self._sources = {k: False for k in SUGGESTION_SOURCES}
+        for k in {"LoRA", "HN", "TI", "Wild", "Vocab"}:
+            self._sources[k] = True
+        self.update()
+    
+    @pyqtSlot(str)
+    def setSource(self, source):
+        if source == "Prompt":
+            self.setPromptSources()
+        else:
+            self._sources = {k: False for k in SUGGESTION_SOURCES}
+            self._sources[source] = True
+            self.update()
+
+    @pyqtSlot(list)
+    def setKeywords(self, keywords):
+        self._keywords = keywords
+
+    @pyqtSlot()
+    def update(self):
+        self.updateCollection()
+        self.updated.emit()
+    
+    def suggestionBlocks(self, text, pos):
+        spaces = False
+
+        blank = lambda m: '#' * len(m.group())
+        safe = re.sub(r'__.+?__|<.+?>', blank, text)
+        safe_blocks = re.split(SUGGESTION_BLOCK_REGEX(spaces), safe)
+
+        blocks = []
+        i = 0
+        for b in safe_blocks:
+            blocks += [text[i:i+len(b)]]
+            i += len(b)
+
+        i = 0
+        before, after = "", ""
+        for block in blocks:
+            if pos <= i + len(block):
+                before, after = block[:pos-i], block[pos-i:]
+                break
+            i += len(block)
+        if before and before[0] in "\n,:|[]()":
+            before = before[1:]
+        return before, after
+
+    def beforePos(self, text, pos):
+        before, _ = self.suggestionBlocks(text, pos)
+
+        while before and before[0] in "\n\t, ":
+            before = before[1:]
+
+        return before, pos-len(before)
+    
+    def afterPos(self, text, pos):
+        _, after = self.suggestionBlocks(text, pos)
+
+        if after:
+            after = after.split("<",1)[0]
+
+        return after, pos+len(after)
+    
+    def getSuggestions(self, text, onlyModels):
+        text = text.lower().strip()
+        if not text:
+            return {}
+        staging = {}
+
+        for p,_ in self._models:
+            pl = p.lower()
+            dl = self.display(p).lower()
+            if pl == text or dl == text:
+                return {}
+            if text in pl or text in dl:
+                i = 1 - (len(text)/len(pl))
+            else:
+                continue
+            staging[p] = i
+        
+        if onlyModels:
+            return staging
+        
+        for t in self._dictionary:
+            tl = t.lower()
+
+            if tl == text:
+                continue
+
+            i = -1
+            try:
+                i = tl.index(text)
+            except:
+                pass
+
+            if i == 0:
+                i = 1 - (len(text.split()[0])/len(tl.split()[0]))
+            elif i > 0:
+                i = 1 - (len(text)/len(tl))
+            else:
+                continue
+            staging[t] = i
+
+        return staging
+
+    @pyqtSlot(str, int, bool)
+    def updateSuggestions(self, text, pos, onlyModels):
+        self._results = []
+
+        sensitivity = self.gui.config.get("autocomplete")
+        self.updateVocab()
+
+        before, _ = self.beforePos(text, pos)
+        if before and sensitivity and len(before) >= sensitivity:
+            staging = self.getSuggestions(before.lower(), onlyModels)
+            if staging:
+                key = lambda k: (staging[k], self._dictionary[k] if k in self._dictionary else 0)
+                self._results = sorted(staging.keys(), key=key)
+                if len(self._results) > 10:
+                    self._results = self._results[:10]
+
+        self.updated.emit()
+
+    @pyqtSlot(str, result=str)
+    def detail(self, text):
+        if text in self._model_details:
+            return self._model_details[text]
+        if text in self._dictionary_details:
+            return self._dictionary_details[text]
+        return ""
+    
+    @pyqtSlot(str, result=str)
+    def display(self, text):
+        if text in self._model_details:
+            detail = self._model_details[text]
+            if detail == "LoRA":
+                return f"<lora:{text}>"
+            if detail == "HN":
+                return f"<hypernet:{text}>"
+            if detail == "Wild":
+                return f"__{text}__"
+        return text
+    
+    @pyqtSlot(str, int, result=str)
+    def completion(self, text, start):
+        if not text:
+            return text
+        if text in self._model_details:
+            return self.display(text)
+        return text
+
+    @pyqtSlot(str, result=QColor)
+    def color(self, text):
+        if text in self._model_details:
+            return {
+                "TI": QColor("#ffd893"),
+                "LoRA": QColor("#f9c7ff"),
+                "HN": QColor("#c7fff6"),
+                "Wild": QColor("#c7ffd2")
+            }.get(self._model_details[text], QColor("#cccccc"))
+        return QColor("#cccccc")
+
+    @pyqtSlot(str, int, result=int)
+    def start(self, text, pos):
+        text, start = self.beforePos(text, pos)
+        return start
+    
+    @pyqtSlot(str, int, result=int)
+    def end(self, text, pos):
+        text, end = self.afterPos(text, pos)
+        return end
+    
+    @pyqtSlot(str, int, result=bool)
+    def replace(self, text, pos):
+        text, _ = self.beforePos(text, pos)
+        return len(text) > 1
+    
+    @pyqtSlot()
+    def updateCollection(self):
+        self._models = []
+        for t in {"UNET", "VAE", "CLIP", "LoRA", "TI", "HN"}:
+            if self._sources[t] and t in self.gui._options:
+                self._models += [(self.gui.modelName(n), t) for n in self.gui._options[t]]
+
+        if self._sources["Wild"]:
+            self._models += [(n, "Wild") for n in self.gui.wildcards._wildcards.keys()]
+        
+        if self._sources["Model"] and "UNET" in self.gui._options:
+            models = []
+            for n in self.gui._options["UNET"]:
+                if n in self.gui._options["VAE"] and n in self.gui._options["CLIP"]:
+                    models += [n]
+            self._models += [(self.gui.modelName(n), "Model") for n in models]
+        
+        self._model_details = {k:v for k,v in self._models}
+    
+    @pyqtSlot()
+    def updateVocab(self):
+        self._dictionary = {}
+        self._dictionary_details = {}
+
+        if self._sources["Vocab"]:
+            vocab = self.gui.config.get("vocab", [])
+            if all([v in self._vocab for v in vocab]):
+                return
+
+            self._vocab = {k:v for k,v in self._vocab.items() if k in vocab}
+            for k in vocab:
+                if not k in self._vocab:
+                    p = k
+                    if not os.path.isabs(p):
+                        p = os.path.join(self.gui.modelDirectory(), k)
+                    if os.path.exists(p):
+                        with open(p, "r", encoding="utf-8") as f:
+                            self._vocab[k] = f.readlines()
+                    else:
+                        self.vocabRemove(k)
+            
+            for k in self._vocab:
+                total = len(self._vocab[k])
+                for i, line in enumerate(self._vocab[k]):
+                    line = line.strip()
+                    tag, order = line, int(((i+1)/total)*1000000)
+                    if "," in line:
+                        tag, deco = line.split(",",1)[0].strip(), line.rsplit(",",1)[-1].strip()
+                        self._dictionary_details[tag] = deco
+                    self._dictionary[tag] = order
+        
+        if self._sources["Keyword"]:
+            total = len(self._keywords)
+            for i, entry in enumerate(self._keywords):
+                order = int(((i+1)/total)*1000000)
+                self._dictionary[entry] = order
+
+    @pyqtSlot(str)
+    def vocabAdd(self, file):
+        vocab = self.gui.config.get("vocab", []) + [file]
+        self.gui.config.set("vocab", vocab)
+    
+    @pyqtSlot(str)
+    def vocabRemove(self, file):
+        vocab = [v for v in self.gui.config.get("vocab", []) if not v == file]
+        self.gui.config.set("vocab", vocab)
+
 def registerTypes():
     qmlRegisterType(ImageDisplay, "gui", 1, 0, "ImageDisplay")
     qmlRegisterType(FocusReleaser, "gui", 1, 0, "FocusReleaser")
@@ -657,3 +992,5 @@ def registerTypes():
     qmlRegisterType(MimeData, "gui", 1, 0, "MimeData")
     qmlRegisterUncreatableType(DownloadInstance, "gui", 1, 0, "DownloadInstance", "Not a QML type")
     qmlRegisterUncreatableType(DownloadManager, "gui", 1, 0, "DownloadManager", "Not a QML type")
+    qmlRegisterUncreatableType(SuggestionManager, "gui", 1, 0, "SuggestionManager", "Not a QML type")
+    qmlRegisterUncreatableType(SyntaxManager, "gui", 1, 0, "SyntaxManager", "Not a QML type")

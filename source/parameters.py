@@ -50,6 +50,31 @@ SETTABLE = [
 NETWORKS = {"LoRA":"lora","HN":"hypernet"}
 NETWORKS_INV = {"lora":"LoRA","hypernet":"HN"}
 
+GRID_TYPES = {
+    "None":"",
+    "Replace":"prompt",
+    "Steps":"int",
+    "Scale":"float",
+    "Seed":"int",
+    "Sampler":"options",
+    "Strength":"float",
+    "Upscaler":"options",
+    "Model":"options",
+    "UNET":"options",
+    "CLIP":"options",
+    "VAE":"options",
+    "CLIP Skip":"int"
+}
+
+GRID_OPTIONS = {
+    "Sampler":"true_samplers",
+    "Upscaler":"hr_upscalers",
+    "Model":"models",
+    "UNET":"UNETs",
+    "CLIP":"CLIPs",
+    "VAE":"VAEs"
+}
+
 def formatParameters(json):
     formatted = ""
     if "prompt" in json:
@@ -309,11 +334,12 @@ class ParametersParser(QObject):
     
 class Parameters(QObject):
     updated = pyqtSignal()
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, source=None):
         super().__init__(parent)
+        
         self.gui = parent
-
-        self.gui.optionsUpdated.connect(self.optionsUpdated)
+        if self.gui:
+            self.gui.optionsUpdated.connect(self.optionsUpdated)
 
         self._client_only = [
             "models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "SR", "LoRAs", "HNs", "LoRA", "HN", "TIs", "TI", "CN", "CNs", "hr_upscalers", "img2img_upscalers", 
@@ -333,6 +359,10 @@ class Parameters(QObject):
             "CN_modes": ["Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD", "Instruct", "Shuffle", "Inpaint", "Scribble", "Normal"],#, "Tile", "Segmentation"]
             "CN_preprocessors": ["None", "Invert", "Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD", "Shuffle", "Scribble", "Normal"]
         }
+
+        if source:
+            self._default_values = source._values._map.copy()
+
         self._values = VariantMap(self, self._default_values.copy(), strict=True)
         self._values.updating.connect(self.mapsUpdating)
         self._values.updated.connect(self.onUpdated)
@@ -924,6 +954,11 @@ class Parameters(QObject):
             self.doDeactivate(file)
         else:
             self.doActivate(file)
+
+    def copy(self):
+        out = Parameters(None, self)
+        out.gui = self.gui
+        return out
         
 def registerTypes():
     qmlRegisterUncreatableType(Parameters, "gui", 1, 0, "ParametersMap", "Not a QML type")

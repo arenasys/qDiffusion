@@ -21,13 +21,12 @@ from tabs.basic.basic_output import BasicOutput
 
 import misc
 import manager
+import parameters
 
 import PIL.Image
 import PIL.PngImagePlugin
 
 MIME_BASIC_DIVIDER = "application/x-qd-basic-divider"
-
-SUGGESTION_BLOCK_REGEX = lambda spaces: r'(?=\n|,|(?<!lora|rnet):|\||\[|\]|\(|\)'+ ('|\s)' if spaces else r')')
 
 class BasicImageWriter(QRunnable):
     guard = QMutex()
@@ -75,6 +74,7 @@ class Basic(QObject):
     pastedImage = pyqtSignal(QImage)
     openedUpdated = pyqtSignal()
     startBuildModel = pyqtSignal()
+    openingGrid = pyqtSignal()
     def __init__(self, parent=None):
         super().__init__(parent)
         self.gui = parent
@@ -92,13 +92,12 @@ class Basic(QObject):
         self._opened_index = -1
         self._opened_area = ""
 
-        self._collection = []
-        self._collection_details = {}
-        self._dictionary = {}
-        self._dictionary_details = {}
+        self._suggestions = misc.SuggestionManager(self.gui)
+        self._suggestions.setPromptSources()
 
-        self._suggestions = []
-        self._vocab = {}
+        self._grid_x_suggestions = misc.SuggestionManager(self.gui)
+        self._grid_x_suggestions.setPromptSources()
+        self._grid_y_suggestions = misc.SuggestionManager(self.gui)
 
         self._reply_index = None
         self._reply_id = None
@@ -108,7 +107,6 @@ class Basic(QObject):
         self.gui.result.connect(self.handleResult)
         self.gui.reset.connect(self.handleReset)
         self.gui.network.finished.connect(self.onNetworkReply)
-        self.gui.optionsUpdated.connect(self.optionsUpdated)
 
         self.conn = sql.Connection(self)
         self.conn.connect()
@@ -171,6 +169,8 @@ class Basic(QObject):
             self._outputs[id].setPreview(image)
         else:
             self._outputs[id].addArtifact(name, image)
+        
+        self.updated.emit()
 
     @pyqtSlot(int, object)
     def handleResponse(self, id, response):
@@ -750,211 +750,152 @@ class Basic(QObject):
     def doBuildModel(self):
         self.startBuildModel.emit()
 
-    @pyqtProperty(list, notify=suggestionsUpdated)
+    @pyqtProperty(misc.SuggestionManager, notify=suggestionsUpdated)
     def suggestions(self):
         return self._suggestions
-    
-    def suggestionBlocks(self, text, pos):
-        spaces = False
 
-        blank = lambda m: '#' * len(m.group())
-        safe = re.sub(r'__.+?__|<.+?>', blank, text)
-        safe_blocks = re.split(SUGGESTION_BLOCK_REGEX(spaces), safe)
-
-        blocks = []
-        i = 0
-        for b in safe_blocks:
-            blocks += [text[i:i+len(b)]]
-            i += len(b)
-
-        i = 0
-        before, after = "", ""
-        for block in blocks:
-            if pos <= i + len(block):
-                before, after = block[:pos-i], block[pos-i:]
-                break
-            i += len(block)
-        if before and before[0] in "\n,:|[]()":
-            before = before[1:]
-        return before, after
-
-    def beforePos(self, text, pos):
-        before, _ = self.suggestionBlocks(text, pos)
-
-        while before and before[0] in "\n\t, ":
-            before = before[1:]
-
-        return before, pos-len(before)
-    
-    def afterPos(self, text, pos):
-        _, after = self.suggestionBlocks(text, pos)
-
-        if after:
-            after = after.split("<",1)[0]
-
-        return after, pos+len(after)
-    
-    def getSuggestions(self, text, onlyModels):
-        text = text.lower().strip()
-        if not text:
-            return {}
-        staging = {}
-
-        for p,_ in self._collection:
-            pl = p.lower()
-            dl = self.suggestionDisplay(p).lower()
-            if pl == text or dl == text:
-                return {}
-            if text in pl or text in dl:
-                i = 1 - (len(text)/len(pl))
-            else:
-                continue
-            staging[p] = i
+    def buildAxis(self, type, input, match):
+        if type == "None":
+            return [""], [{}]
         
-        if onlyModels:
-            return staging
+        inputs = input.split(",")
+        values = []
+        labels = []
+        key = type.lower().replace(" ", "_")
+        prefix = type
+
+        mode = self.gridTypeMode(type)
+
+        if mode == "int":
+            inputs = [int(v.strip()) for v in inputs]
+        elif mode == "float":
+            inputs = [float(v.strip()) for v in inputs]
+        elif mode == "options":
+            opts = self._parameters._values.get(parameters.GRID_OPTIONS[type], [])
+            mapping = {o.lower():o for o in opts}
+            if type in {"Model", "UNET", "VAE", "CLIP", "Upscaler"}:
+                mapping = {self.gui.modelName(o).lower():o for o in opts}
+           
+            inputs = [mapping[v.strip().lower()] for v in inputs]
+            names = [self.gui.modelName(v) for v in inputs]
+
+            if type == "Model":
+                prefix = ""
+                values = [{"UNET":v, "CLIP":v, "VAE":v} for v in inputs]
+            if type == "Upscaler":
+                values = [{"img2img_upscaler":v, "hr_upscaler":v, "VAE":v} for v in inputs]
+            if type == "Sampler":
+                prefix = ""
+
+            labels = [f"{type}: {v}" if prefix else str(v) for v in names]
+        if type == "Replace":
+            if "\n" in input:
+                inputs = [v for v in input.split("\n")]
+            inputs = [v.strip() for v in inputs]
+            labels = [f'"{v}"' for v in inputs]
+            values = [{"replace":(match, v)} for v in inputs]
         
-        for t in self._dictionary:
-            tl = t.lower()
+        if not labels:
+            labels = [f"{type}: {v}" if prefix else str(v) for v in inputs]
+        if not values:
+            values = [{key:v} for v in inputs]
+        
+        return labels, values
 
-            if tl == text:
-                continue
-
-            i = -1
-            try:
-                i = tl.index(text)
-            except:
-                pass
-
-            if i == 0:
-                i = 1 - (len(text.split()[0])/len(tl.split()[0]))
-            elif i > 0:
-                i = 1 - (len(text)/len(tl))
-            else:
-                continue
-            staging[t] = i
-
-        return staging
-
-    @pyqtSlot(str, int, bool)
-    def updateSuggestions(self, text, pos, onlyModels):
-        self._suggestions = []
-
-        sensitivity = self.gui.config.get("autocomplete")
-        self.vocabSync()
-
-        before, _ = self.beforePos(text, pos)
-        if before and sensitivity and len(before) >= sensitivity:
-            staging = self.getSuggestions(before.lower(), onlyModels)
-            if staging:
-                key = lambda k: (staging[k], self._dictionary[k] if k in self._dictionary else 0)
-                self._suggestions = sorted(staging.keys(), key=key)
-                if len(self._suggestions) > 10:
-                    self._suggestions = self._suggestions[:10]
-
-        self.suggestionsUpdated.emit()
-
-    @pyqtSlot(str, result=str)
-    def suggestionDetail(self, text):
-        if text in self._collection_details:
-            return self._collection_details[text]
-        if text in self._dictionary_details:
-            return self._dictionary_details[text]
-        return ""
-    
-    @pyqtSlot(str, result=str)
-    def suggestionDisplay(self, text):
-        if text in self._collection_details:
-            detail = self._collection_details[text]
-            if detail == "LoRA":
-                return f"<lora:{text}>"
-            if detail == "HN":
-                return f"<hypernet:{text}>"
-            if detail == "Wild":
-                return f"__{text}__"
-        return text
-    
-    @pyqtSlot(str, int, result=str)
-    def suggestionCompletion(self, text, start):
-        if not text:
-            return text
-        if text in self._collection_details:
-            return self.suggestionDisplay(text)
-        return text
-
-    @pyqtSlot(str, result=QColor)
-    def suggestionColor(self, text):
-        if text in self._collection_details:
-            return {
-                "TI": QColor("#ffd893"),
-                "LoRA": QColor("#f9c7ff"),
-                "HN": QColor("#c7fff6"),
-                "Wild": QColor("#c7ffd2")
-            }.get(self._collection_details[text], QColor("#cccccc"))
-        return QColor("#cccccc")
-
-    @pyqtSlot(str, int, result=int)
-    def suggestionStart(self, text, pos):
-        text, start = self.beforePos(text, pos)
-        return start
-    
-    @pyqtSlot(str, int, result=int)
-    def suggestionEnd(self, text, pos):
-        text, end = self.afterPos(text, pos)
-        return end
-    
-    @pyqtSlot(str, int, result=bool)
-    def suggestionReplace(self, text, pos):
-        text, _ = self.beforePos(text, pos)
-        return len(text) > 1
-    
-    def vocabSync(self):
-        vocab = self.gui.config.get("vocab", [])
-        if all([v in self._vocab for v in vocab]):
-            return
-
-        self._vocab = {k:v for k,v in self._vocab.items() if k in vocab}
-        for k in vocab:
-            if not k in self._vocab:
-                p = k
-                if not os.path.isabs(p):
-                    p = os.path.join(self.gui.modelDirectory(), k)
-                if os.path.exists(p):
-                    with open(p, "r", encoding="utf-8") as f:
-                        self._vocab[k] = f.readlines()
-                else:
-                    self.vocabRemove(k)
-
-        self._dictionary = {}
-        self._dictionary_details = {}
-        for k in self._vocab:
-            total = len(self._vocab[k])
-            for i, line in enumerate(self._vocab[k]):
-                line = line.strip()
-                tag, order = line, int(((i+1)/total)*1000000)
-                if "," in line:
-                    tag, deco = line.split(",",1)[0].strip(), line.rsplit(",",1)[-1].strip()
-                    self._dictionary_details[tag] = deco
-                self._dictionary[tag] = order
-
-    @pyqtSlot(str)
-    def vocabAdd(self, file):
-        vocab = self.gui.config.get("vocab", []) + [file]
-        self.gui.config.set("vocab", vocab)
-    
-    @pyqtSlot(str)
-    def vocabRemove(self, file):
-        vocab = [v for v in self.gui.config.get("vocab", []) if not v == file]
-        self.gui.config.set("vocab", vocab)
+    @pyqtSlot(str, str, str, str, str, str)
+    def generateGrid(self, x_type, x_value, x_match, y_type, y_value, y_match):
+        grid = [self.buildAxis(x_type, x_value, x_match),
+                self.buildAxis(y_type, y_value, y_match)]
+        
+        self._manager.buildGridRequests(self._parameters, self._inputs, grid)
+        self._manager.makeRequest()
+        self.updated.emit()
 
     @pyqtSlot()
-    def optionsUpdated(self):
-        self._collection = []
-        if "TI" in self.gui._options:
-            self._collection += [(self.gui.modelName(n), "TI") for n in self.gui._options["TI"]]
-        if "LoRA" in self.gui._options:
-            self._collection += [(self.gui.modelName(n), "LoRA") for n in self.gui._options["LoRA"]]
-        if "HN" in self.gui._options:
-            self._collection += [(self.gui.modelName(n), "HN") for n in self.gui._options["HN"]]
-        self._collection += [(n, "Wild") for n in self.gui.wildcards._wildcards.keys()]
-        self._collection_details = {k:v for k,v in self._collection}
+    def openGrid(self):
+        self.openingGrid.emit()
+
+    @pyqtSlot(result=list)
+    def gridTypes(self):
+        return list(parameters.GRID_TYPES.keys())
+    
+    @pyqtSlot(str, result=str)
+    def gridTypeMode(self, type):
+        return parameters.GRID_TYPES[type]
+
+    @pyqtSlot(str, result=list)
+    def gridTypeOptions(self, type):
+        if type in parameters.GRID_OPTIONS:
+            opts = self._parameters._values.get(parameters.GRID_OPTIONS[type])
+            
+            if type in {"Model", "UNET", "VAE", "CLIP", "Upscaler"}:
+                opts = [self.gui.modelName(o) for o in opts]
+
+            return opts
+        return []
+    
+    @pyqtSlot(str, str, result=bool)
+    def gridValidate(self, type, value):
+        if not type or not value.strip():
+            return True
+        
+        mode = parameters.GRID_TYPES[type]
+        if not mode:
+            return True
+        
+        values = [v.strip() for v in value.split(",") if v.strip()]
+        
+        if mode == "int":
+            try:
+                values = [int(v) for v in values]
+            except:
+                return False
+        elif mode == "float":
+            try:
+                values = [float(v) for v in values]
+            except:
+                return False
+        elif mode == "options":
+            options = [o.lower() for o in self.gridTypeOptions(type)]
+            if not options:
+                return True
+            for v in values:
+                if not v.lower() in options:
+                    return False
+        
+        return True
+    
+    @pyqtProperty(misc.SuggestionManager, notify=suggestionsUpdated)
+    def gridXSuggestions(self):
+        return self._grid_x_suggestions
+    
+    @pyqtProperty(misc.SuggestionManager, notify=suggestionsUpdated)
+    def gridYSuggestions(self):
+        return self._grid_y_suggestions
+    
+    @pyqtSlot(str, misc.SuggestionManager, misc.SyntaxManager)
+    def gridConfigureRow(self, type, suggestions, highlighter):
+        if not type in parameters.GRID_TYPES:
+            return
+        
+        mode = parameters.GRID_TYPES[type]
+
+        if mode == "prompt":
+            suggestions.setSource("Prompt")
+            highlighter.setMode("Prompt")
+        elif mode == "int":
+            suggestions.setSource("")
+            highlighter.setMode("Integer")
+        elif mode == "float":
+            suggestions.setSource("")
+            highlighter.setMode("Float")
+        
+        if mode != "options":
+            return
+        
+        keywords = self.gridTypeOptions(type)
+
+        suggestions.setKeywords(keywords)
+        highlighter.setKeywords(keywords)
+        suggestions.setSource("Keyword")
+        highlighter.setMode("Keyword")

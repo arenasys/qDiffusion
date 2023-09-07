@@ -89,8 +89,9 @@ def loadTabs(app, backend):
             tab_instance = tab_class(parent=app)
             tab_instance.source = f"qrc:/tabs/{tab_name}/{tab_name_c}.qml"
             tabs += [tab_instance]
-        except Exception:
-            continue
+        except Exception as e:
+            raise e
+            #continue
     for tab in tabs:
         if not hasattr(tab, "priority"):
             tab.priority = len(tabs)
