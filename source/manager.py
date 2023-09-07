@@ -106,6 +106,7 @@ class RequestManager(QObject):
         return id
     
     def makeAnnotationRequest(self, request, input_id):
+        self.setGrid(None)
         id = self.makeRequest(request)
         self.annotations[id] = input_id
 
@@ -345,16 +346,17 @@ class RequestManager(QObject):
                 elementParams._values.set("seed", seed)
                 elementParams._values.set("subseed", subseed)
 
+                prompts = {k:parameters._values.get(k) for k in ["prompt", "negative_prompt"]}
+
                 for k, v in list(ix.items()) + list(iy.items()):
                     if k == "replace":
                         match, string = v
                         for t in {"prompt", "negative_prompt"}:
-                            prompt = elementParams._values.get(t)
                             if match:
-                                prompt = prompt.replace(match, string)
+                                prompts[t] = prompts[t].replace(match, string)
                             elif t == "prompt":
-                                prompt = string
-                            elementParams._values.set(t, prompt)
+                                prompts[t] = string
+                            elementParams._values.set(t, prompts[t])
                     else:
                         elementParams._values.set(k, v)
 
