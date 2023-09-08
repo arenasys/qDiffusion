@@ -786,6 +786,7 @@ class Basic(QObject):
                 values = [{"img2img_upscaler":v, "hr_upscaler":v, "VAE":v} for v in inputs]
             if type == "Sampler":
                 prefix = ""
+                values = [{"true_sampler":v} for v in inputs]
 
             labels = [f"{type}: {v}" if prefix else str(v) for v in names]
         if type == "Replace":
