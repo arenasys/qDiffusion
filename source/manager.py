@@ -85,6 +85,8 @@ class RequestManager(QObject):
         self.grid_images = {}
         self.grid_id = None
         self.grid_labels = labels
+        self.grid_metadata = None
+        self.grid_artifacts = False
 
     def setRequests(self, requests):
         self.requests = requests
@@ -331,6 +333,8 @@ class RequestManager(QObject):
         labels = [lx, ly]
         self.setGrid(grid, labels)
 
+        self.grid_artifacts = parameters._values.get("artifact_mode") == "Enabled"
+
         requests = []
         
         seed = int(parameters._values.get("seed"))
@@ -431,6 +435,9 @@ class RequestManager(QObject):
         else:
             return
         
+        if "metadata" in available and not self.grid_metadata:
+            self.grid_metadata = available["metadata"][0]
+        
         for i in range(len(images)-1, -1, -1):
             if not id + i in self.grid_ids:
                 self.grid_ids += [id + i]
@@ -514,14 +521,17 @@ class RequestManager(QObject):
             if id in self.ids:
                 self.ids.remove(id)
 
+            if self.grid_artifacts:
+                self.artifact.emit(out, image, f"Image {len(self.grid_images)}")
+
             if len(self.grid_ids) == cx*cy:
                 subfolder = self.subfolders.get(self.grid_id, "monitor")
                 filename = self.filenames.get(self.grid_id, None)
-                writer = OutputWriter(self.grid_image, None, self.gui.outputDirectory(), subfolder, filename)
+                writer = OutputWriter(self.grid_image, self.grid_metadata, self.gui.outputDirectory(), subfolder, filename)
                 file = writer.file
                 QThreadPool.globalInstance().start(writer)
 
-                self.result.emit(out, self.grid_image, None, file)
+                self.result.emit(out, self.grid_image, self.grid_metadata, file)
             else:
                 self.makeRequest()
         else:
