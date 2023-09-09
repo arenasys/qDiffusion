@@ -101,7 +101,7 @@ class GUI(QObject):
             "endpoint": "", "password": "", "output_directory": "outputs", "model_directory": "models", "device": "",
             "swap": False, "advanced": False, "autocomplete": 1, "vocab": [], "enforce_versions": True,
             "host_enabled": False, "host_address": "127.0.0.1", "host_port": 28888, "host_tunnel": False,
-            "host_read_only": True, "host_monitor": False, "tabs": []
+            "host_read_only": True, "host_monitor": False, "tabs": [], "grid_save_all": False
         })
         self._config.updated.connect(self.onConfigUpdated)
         self._remoteStatus = RemoteStatusMode.INACTIVE

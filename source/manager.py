@@ -15,7 +15,7 @@ from tabs.basic.basic_input import BasicInputRole
 
 class OutputWriter(QRunnable):
     guard = QMutex()
-    def __init__(self, img, metadata, outputs, subfolder, filename):
+    def __init__(self, img, metadata, outputs, folder, filename):
         super(OutputWriter, self).__init__()
         self.setAutoDelete(True)
 
@@ -27,7 +27,7 @@ class OutputWriter(QRunnable):
         if metadata:
             m.add_text("parameters", parameters.formatParameters(metadata))
 
-        folder = os.path.join(outputs, subfolder)
+        folder = os.path.join(outputs, folder)
         os.makedirs(folder, exist_ok=True)
 
         if not filename:
@@ -70,7 +70,7 @@ class RequestManager(QObject):
 
         self.annotations = {}
 
-        self.subfolders = {}
+        self.folders = {}
         self.filenames = {}
 
         self.monitoring = False
@@ -86,9 +86,15 @@ class RequestManager(QObject):
         self.grid_id = None
         self.grid_labels = labels
         self.grid_metadata = None
-        self.grid_artifacts = False
+        self.grid_save_all = False
 
     def setRequests(self, requests):
+        if self.parameters:
+            folder = self.parameters._values.get("output_folder")
+            for i in range(len(requests)):
+                if folder and not "folder" in requests[i]:
+                    requests[i]["folder"] = folder
+
         self.requests = requests
         self.count = len(requests)
 
@@ -97,13 +103,15 @@ class RequestManager(QObject):
             request = self.requests.pop()
         filename = self.finalizeRequest(request)
 
-        subfolder = ""
-        if self.parameters:
-            subfolder = self.parameters._values.get("output_folder")
+        folder = ""
+        if "folder" in request:
+            folder = request["folder"]
+            del request["folder"]
+
         id = self.gui.makeRequest(request)
 
-        self.subfolders[id] = subfolder or request["type"]
-        self.filenames[id] = filename if subfolder else ""
+        self.folders[id] = folder or request["type"]
+        self.filenames[id] = filename if folder else ""
         self.ids += [id]
         return id
     
@@ -307,7 +315,6 @@ class RequestManager(QObject):
         if subseed == -1:
             subseed = random.randrange(2147483646)
 
-
         for size, images, masks, areas, control in batches:
             request = self.parameters.buildRequest(size, images, masks, areas, control)
 
@@ -318,6 +325,7 @@ class RequestManager(QObject):
             if "subseed" in request["data"]:
                 request["data"]["subseed"] = subseed
                 subseed += size
+                        
             requests += [request]
         
         self.setRequests(requests)
@@ -333,7 +341,7 @@ class RequestManager(QObject):
         labels = [lx, ly]
         self.setGrid(grid, labels)
 
-        self.grid_artifacts = parameters._values.get("artifact_mode") == "Enabled"
+        self.grid_save_all = self.gui.config.get("grid_save_all")
 
         requests = []
         
@@ -369,6 +377,10 @@ class RequestManager(QObject):
         data = requests[0]["data"]
         w, h, factor = data["width"], data["height"], data.get("hr_factor",1)
         self.grid_size = (w*factor, h*factor)
+
+        if not parameters._values.get("output_folder"):
+            for i in range(len(requests)):
+                requests[i]["folder"] = "grid"
 
         self.setRequests(requests[::-1])
 
@@ -412,9 +424,8 @@ class RequestManager(QObject):
                 result = results[i]
                 meta = metadata[i] if metadata else None
 
-                subfolder = self.subfolders.get(id, "monitor")
-                filename = self.filenames.get(id, None)
-                writer = OutputWriter(result, meta, self.gui.outputDirectory(), subfolder, filename)
+                folder = self.folders.get(id, "monitor")
+                writer = OutputWriter(result, meta, self.gui.outputDirectory(), folder, None)
                 file = writer.file
                 QThreadPool.globalInstance().start(writer)
 
@@ -435,8 +446,9 @@ class RequestManager(QObject):
         else:
             return
         
+        metadata = available.get("metadata", None)
         if "metadata" in available and not self.grid_metadata:
-            self.grid_metadata = available["metadata"][0]
+            self.grid_metadata = metadata[0]
         
         for i in range(len(images)-1, -1, -1):
             if not id + i in self.grid_ids:
@@ -498,8 +510,9 @@ class RequestManager(QObject):
                 labels += [(lx[ix], ly[iy] if ly else "")]
 
         if not self.grid_image:
-            self.grid_image = QImage(QSize(int(pw + w*cx), int(ph + h*cy)), QImage.Format_ARGB32_Premultiplied)
-            self.grid_image.fill(QColor.fromRgbF(1.0, 1.0, 1.0))
+            gw, gh = int(pw + w*cx), int(ph + h*cy)
+            self.grid_image = QImage(QSize(gw, gh), QImage.Format_ARGB32_Premultiplied)
+            self.grid_image.fill(QColor.fromRgb(255, 255, 255))
 
             painter = QPainter(self.grid_image)
             painter.setRenderHint(QPainter.TextAntialiasing, True)
@@ -521,18 +534,21 @@ class RequestManager(QObject):
             if id in self.ids:
                 self.ids.remove(id)
 
-            if self.grid_artifacts:
-                self.artifact.emit(out, image, f"Image {len(self.grid_images)}")
+            if self.grid_save_all:
+                folder = self.folders.get(self.grid_id, "grid")
+                writer = OutputWriter(image, metadata[0], self.gui.outputDirectory(), folder, None)
+                file = writer.file
+                QThreadPool.globalInstance().start(writer)
 
             if len(self.grid_ids) == cx*cy:
-                subfolder = self.subfolders.get(self.grid_id, "monitor")
-                filename = self.filenames.get(self.grid_id, None)
-                writer = OutputWriter(self.grid_image, self.grid_metadata, self.gui.outputDirectory(), subfolder, filename)
+                folder = self.folders.get(self.grid_id, "grid")
+                writer = OutputWriter(self.grid_image, self.grid_metadata, self.gui.outputDirectory(), folder, None)
                 file = writer.file
                 QThreadPool.globalInstance().start(writer)
 
                 self.result.emit(out, self.grid_image, self.grid_metadata, file)
             else:
+                
                 self.makeRequest()
         else:
             self.artifact.emit(out, self.grid_image, "preview")

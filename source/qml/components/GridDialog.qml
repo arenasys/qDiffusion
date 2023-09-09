@@ -26,6 +26,8 @@ Dialog {
     property alias y_value: y_row.value
     property alias y_match: y_row.match
 
+    property var save_all: GUI.config != null ? GUI.config.get("grid_save_all") : false
+
     function tr(str, file = "GridDialog.qml") {
         return TRANSLATOR.instance.translate(str, file)
     }
@@ -91,15 +93,31 @@ Dialog {
         }
         SIconButton {
             color: "transparent"
-            icon: "qrc:/icons/eye.svg"
-            tooltip: dialog.tr("HMMMM")
+            icon: "qrc:/icons/settings.svg"
             anchors.top: parent.top
             anchors.right: parent.right
             height: 20
             width: 20
+            inset: 6
+
+            SContextMenu {
+                id: contextMenu
+                width: 100
+                SContextMenuItem {
+                    text: dialog.tr("Save all")
+                    checked: dialog.save_all
+                    checkable: true
+                    onCheckedChanged: {
+                        if(dialog.save_all != checked) {
+                            dialog.save_all = checked
+                            GUI.config.set("grid_save_all", checked)
+                        }
+                    }
+                }
+            }
 
             onPressed: {
-                //dialog.raw = !dialog.raw
+                contextMenu.popup(0,height)
             }
         }
     }
