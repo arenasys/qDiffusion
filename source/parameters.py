@@ -63,7 +63,10 @@ GRID_TYPES = {
     "UNET":"options",
     "CLIP":"options",
     "VAE":"options",
-    "CLIP Skip":"int"
+    "CLIP Skip":"int",
+    "Eta":"float",
+    "ToME Ratio": "float",
+    "CFG Rescale": "float"
 }
 
 GRID_OPTIONS = {

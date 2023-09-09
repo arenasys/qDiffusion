@@ -17,6 +17,7 @@ Dialog {
     closePolicy: Popup.NoAutoClose
 
     property var source
+    property var options
     
     property alias x_type: x_row.type
     property alias x_value: x_row.value
@@ -181,6 +182,7 @@ Dialog {
                 width: parent.width
                 label: "X"
                 source: dialog.source
+                model: dialog.options
                 menuActive: x_suggestions.active
             }
 
@@ -190,6 +192,7 @@ Dialog {
                 width: parent.width
                 label: "Y"
                 source: dialog.source
+                model: dialog.options
                 menuActive: y_suggestions.active
             }
         }

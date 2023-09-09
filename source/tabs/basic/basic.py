@@ -818,7 +818,11 @@ class Basic(QObject):
 
     @pyqtSlot(result=list)
     def gridTypes(self):
-        return list(parameters.GRID_TYPES.keys())
+        types = list(parameters.GRID_TYPES.keys())
+        if self.gui.config.get("advanced"):
+            return types
+        else:
+            return [t for t in types if not t in {"ToME Ratio", "CFG Rescale"}]
     
     @pyqtSlot(str, result=str)
     def gridTypeMode(self, type):

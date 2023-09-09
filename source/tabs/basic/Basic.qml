@@ -660,6 +660,14 @@ Item {
         dim: true
 
         source: BASIC
+        options: BASIC.gridTypes()
+
+        Connections {
+            target: GUI.config
+            function onUpdated() {
+                gridDialog.options = BASIC.gridTypes()
+            }
+        }
 
         onAccepted: {
             BASIC.generateGrid(x_type, x_value, x_match, y_type, y_value, y_match)

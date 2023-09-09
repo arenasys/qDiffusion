@@ -12,8 +12,7 @@ Item {
 
     property var source
     property var label
-
-    property var model: source.gridTypes()
+    property var model
 
     property alias type: choice_input.value
     property alias value: text_input.text
