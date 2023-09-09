@@ -733,7 +733,7 @@ class SuggestionManager(QObject):
         
         self._results = []
 
-        self.gui.optionsUpdated.connect(self.updateCollection)
+        self.gui.optionsUpdated.connect(self.update)
 
     @pyqtProperty(list, notify=updated)
     def results(self):
@@ -762,6 +762,7 @@ class SuggestionManager(QObject):
     @pyqtSlot()
     def update(self):
         self.updateCollection()
+        self.updateVocab()
         self.updated.emit()
     
     def suggestionBlocks(self, text, pos):
@@ -851,7 +852,6 @@ class SuggestionManager(QObject):
         self._results = []
 
         sensitivity = self.gui.config.get("autocomplete")
-        self.updateVocab()
 
         before, _ = self.beforePos(text, pos)
         if before and sensitivity and len(before) >= sensitivity:
@@ -944,9 +944,7 @@ class SuggestionManager(QObject):
 
         if self._sources["Vocab"]:
             vocab = self.gui.config.get("vocab", [])
-            if all([v in self._vocab for v in vocab]):
-                return
-
+            
             self._vocab = {k:v for k,v in self._vocab.items() if k in vocab}
             for k in vocab:
                 if not k in self._vocab:
@@ -979,11 +977,13 @@ class SuggestionManager(QObject):
     def vocabAdd(self, file):
         vocab = self.gui.config.get("vocab", []) + [file]
         self.gui.config.set("vocab", vocab)
+        self.updateVocab()
     
     @pyqtSlot(str)
     def vocabRemove(self, file):
         vocab = [v for v in self.gui.config.get("vocab", []) if not v == file]
         self.gui.config.set("vocab", vocab)
+        self.updateVocab()
 
 def registerTypes():
     qmlRegisterType(ImageDisplay, "gui", 1, 0, "ImageDisplay")

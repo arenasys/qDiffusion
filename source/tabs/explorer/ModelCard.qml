@@ -435,11 +435,10 @@ Item {
                         return
                     }
                     if(checked) {
-                        BASIC.vocabAdd(sql_name)
+                        BASIC.suggestions.vocabAdd(sql_name)
                     } else {
-                        BASIC.vocabRemove(sql_name)
+                        BASIC.suggestions.vocabRemove(sql_name)
                     }
-
                 }
             }
 

@@ -26,9 +26,11 @@ Item {
     property var targetEnd: null
     property var replace: false
 
+    property var modelsOnly: false
+
     function update() {
         if(root.typed) {
-            root.suggestions.updateSuggestions(root.text, root.position, false)
+            root.suggestions.updateSuggestions(root.text, root.position, root.modelsOnly)
             root.targetStart = root.suggestions.start(root.text, root.position)
             root.targetEnd = root.suggestions.end(root.text, root.position)
         }
@@ -58,7 +60,10 @@ Item {
     Connections {
         target: root.target
         function onInput(key) {
-            if(key == Qt.Key_Right || key == Qt.Key_Left) {
+            if(key == Qt.Key_Control) {
+                root.modelsOnly = true
+                root.update()
+            } else if(key == Qt.Key_Right || key == Qt.Key_Left) {
                 if (root.typed) {
                     root.update()
                 }
@@ -67,6 +72,13 @@ Item {
                     root.replace = root.suggestions.replace(root.text, root.position)
                 }
                 root.typed = true
+            }
+        }
+
+        function onRelease(key) {
+            if(key == Qt.Key_Control) {
+                root.modelsOnly = false
+                root.update()
             }
         }
 
