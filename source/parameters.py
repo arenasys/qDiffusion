@@ -65,8 +65,15 @@ GRID_TYPES = {
     "VAE":"options",
     "CLIP Skip":"int",
     "Eta":"float",
-    "ToME Ratio": "float",
-    "CFG Rescale": "float"
+    "ToME Ratio":"float",
+    "CFG Rescale":"float",
+    "Alpha":"float",
+    "CLIP Alpha":"float",
+    "VAE Source":"options",
+    "Rank":"int",
+    "Model A":"options",
+    "Model B":"options",
+    "Model C":"options"
 }
 
 GRID_OPTIONS = {
@@ -75,8 +82,15 @@ GRID_OPTIONS = {
     "Model":"models",
     "UNET":"UNETs",
     "CLIP":"CLIPs",
-    "VAE":"VAEs"
+    "VAE":"VAEs",
+    "Model A":"models",
+    "Model B":"models",
+    "Model C":"models"
 }
+
+GRID_ADV_OPTIONS = {"ToME Ratio", "CFG Rescale"}
+GRID_MERGE_OPTIONS = {"Alpha", "CLIP Alpha", "VAE Source", "Rank", "Model A", "Model B", "Model C"}
+GRID_MODEL_OPTIONS = {"Model", "UNET", "VAE", "CLIP", "Upscaler", "Model A", "Model B", "Model C"}
 
 def formatParameters(json):
     formatted = ""

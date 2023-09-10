@@ -659,22 +659,22 @@ Item {
         modal: true
         dim: true
 
-        source: BASIC
-        options: BASIC.gridTypes()
+        source: BASIC.grid
+        options: BASIC.grid.gridTypes()
 
         Connections {
             target: GUI.config
             function onUpdated() {
-                gridDialog.options = BASIC.gridTypes()
+                gridDialog.options = BASIC.grid.gridTypes()
             }
         }
 
         onAccepted: {
-            BASIC.generateGrid(x_type, x_value, x_match, y_type, y_value, y_match)
+            BASIC.grid.generateGrid(x_type, x_value, x_match, y_type, y_value, y_match)
         }
 
         Connections {
-            target: BASIC
+            target: BASIC.grid
             function onOpeningGrid() {
                 gridDialog.open()
             }

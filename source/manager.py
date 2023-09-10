@@ -56,7 +56,7 @@ class RequestManager(QObject):
     artifact = pyqtSignal(int, QImage, str)
     result = pyqtSignal(int, QImage, object, str)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, modifyRequest=None):
         super().__init__(parent)
         self.gui = parent
         self.parameters = None
@@ -74,6 +74,8 @@ class RequestManager(QObject):
         self.filenames = {}
 
         self.monitoring = False
+
+        self.modifyRequest = modifyRequest
 
         self.setGrid(None)
 
@@ -220,10 +222,16 @@ class RequestManager(QObject):
         self.setGrid(None)
 
         if segmentation:
-            self.buildSegmentationRequests(segmentation)
+            requests = self.buildSegmentationRequests(segmentation)
         else:
             batches = self.buildBatches(found, links, controls)
-            self.buildStandardRequests(batches)
+            requests = self.buildStandardRequests(batches)
+
+        if self.modifyRequest:
+            for i in range(len(requests)):
+                requests[i] = self.modifyRequest(requests[i])
+
+        self.setRequests(requests)
             
     def buildSegmentationRequests(self, segmentation):
         requests = []
@@ -237,7 +245,8 @@ class RequestManager(QObject):
                 }
             }
             requests += [request]
-        self.setRequests(requests)
+        
+        return requests
 
     def buildBatches(self, found, links, controls, single=False):
         images, masks, areas = [], [], []
@@ -327,8 +336,8 @@ class RequestManager(QObject):
                 subseed += size
                         
             requests += [request]
-        
-        self.setRequests(requests)
+
+        return requests
 
     def buildGridRequests(self, parameters, inputs, grid):
         self.parameters = parameters
@@ -360,8 +369,12 @@ class RequestManager(QObject):
 
                 prompts = {k:parameters._values.get(k) for k in ["prompt", "negative_prompt"]}
 
+                modifyParams = {}
                 for k, v in list(ix.items()) + list(iy.items()):
-                    if k == "replace":
+                    if k == "modify":
+                        for kk, vv in v.items():
+                            modifyParams[kk] = vv
+                    elif k == "replace":
                         match, string = v
                         for t in {"prompt", "negative_prompt"}:
                             if match:
@@ -372,7 +385,11 @@ class RequestManager(QObject):
                     else:
                         elementParams._values.set(k, v)
 
-                requests += [elementParams.buildRequest(*base)]
+                request = elementParams.buildRequest(*base)
+                if self.modifyRequest:
+                    request = self.modifyRequest(request, modifyParams)
+
+                requests += [request]
 
         data = requests[0]["data"]
         w, h, factor = data["width"], data["height"], data.get("hr_factor",1)

@@ -101,10 +101,14 @@ SMenuBar {
         }
 
         SMenuItem {
-            visible: GUI.currentTab == "Generate"
+            visible: GUI.currentTab == "Generate" || GUI.currentTab == "Merge"
             text: root.tr("XY Grid")
             onPressed: {
-                BASIC.openGrid()
+                if(GUI.currentTab == "Generate") {
+                    BASIC.grid.openGrid()
+                } else {
+                    MERGER.grid.openGrid()
+                }
             }
         }
     }

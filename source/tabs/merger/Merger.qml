@@ -149,7 +149,7 @@ Rectangle {
                         x: -8
                         y: 0
                         width: 6
-                        height: operationList.height - y + 35 + 30
+                        height: operationList.height - y + 35 + 30 + strengthSlider.height
                     }
                 }
 
@@ -458,7 +458,7 @@ Rectangle {
             Rectangle {
                 anchors.top: operationsColumn.bottom
                 anchors.topMargin: -2
-                height: 32
+                height: 32 + strengthSlider.height
                 anchors.right: operationsColumn.right
                 anchors.rightMargin: 20
                 width: Math.min(200, operationsColumn.width - 260)
@@ -466,20 +466,37 @@ Rectangle {
                 border.color: COMMON.bg4
                 border.width: 2
 
-                Row {
+                Column {
                     anchors.fill: parent
                     anchors.margins: 3
                     OChoice {
                         id: typeChoice
                         label: "Type"
                         width: parent.width
-                        height: parent.height - 2
+                        height: 24
                         
                         property var key: value == "Checkpoint" ? "models" : "LoRAs"
 
                         bindMap: MERGER.parameters
                         bindKeyCurrent: "type"
                         bindKeyModel: "types"
+                    }
+
+                    OSlider {
+                        id: strengthSlider
+                        label: "Strength"
+                        width: parent.width
+                        height: visible ? 24 : 0
+                        visible: typeChoice.value == "LoRA"
+
+                        bindMap: MERGER.parameters
+                        bindKey: "strength"
+
+                        minValue: 0
+                        maxValue: 1
+                        precValue: 2
+                        incValue: 0.01
+                        snapValue: 0.05
                     }
                 }
             }
@@ -488,7 +505,7 @@ Rectangle {
                 id: optionsColumn
                 clip: true
                 anchors.top: operationsColumn.bottom
-                anchors.topMargin: 10 + 32
+                anchors.topMargin: 10 + 32 + strengthSlider.height
                 anchors.right: parent.right
                 anchors.rightMargin: Math.max(10, (parent.width - width)/2)
                 width: 250
@@ -761,26 +778,10 @@ Rectangle {
                         visible: height != 0
                         height: (parent.mode == "LoRA" && !parent.hide_rank) ? 30 : 0
                         width: parent.width
-                        label: "LoRA Rank"
+                        label: "Rank"
                         
                         bindMap: root.operation.parameters
                         bindKey: "rank"
-
-                        minValue: 8
-                        maxValue: 256
-                        precValue: 0
-                        incValue: 8
-                        snapValue: 8
-                    }
-
-                    OSlider {
-                        visible: height != 0
-                        height: (parent.mode == "LoRA" && !parent.hide_rank) ? 30 : 0
-                        width: parent.width
-                        label: "LoCon Rank"
-                        
-                        bindMap: root.operation.parameters
-                        bindKey: "conv_rank"
 
                         minValue: 8
                         maxValue: 256
@@ -1652,6 +1653,36 @@ Rectangle {
         default:
             event.accepted = false
             break;
+        }
+    }
+
+    GridDialog {
+        id: gridDialog
+        title: root.tr("Grid")
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        width: Math.max(500, parent.width/3)
+        modal: true
+        dim: true
+
+        source: MERGER.grid
+        options: MERGER.grid.gridTypes()
+
+        Connections {
+            target: GUI.config
+            function onUpdated() {
+                gridDialog.options = MERGER.grid.gridTypes()
+            }
+        }
+
+        onAccepted: {
+            MERGER.grid.generateGrid(x_type, x_value, x_match, y_type, y_value, y_match)
+        }
+
+        Connections {
+            target: MERGER.grid
+            function onOpeningGrid() {
+                gridDialog.open()
+            }
         }
     }
 }

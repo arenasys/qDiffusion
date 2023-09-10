@@ -35,7 +35,6 @@ class MergeOperation(QObject):
             "alpha": 0.5,
             "clip_alpha": 0.5,
             "rank": 32,
-            "conv_rank": 16,
             "vae_source": "Model A",
             "sources": ["Model A", "Model B", "Model C"],
             "label": "4 Block",
@@ -235,16 +234,18 @@ class MergeOperation(QObject):
         if model_type == "Checkpoint":
             recipe["vae_source"] = ["Model A", "Model B", "Model C"].index(self._parameters.get("vae_source"))
         else:
-            for k in ["rank", "conv_rank"]:
-                recipe[k] = int(self._parameters.get(k))
+            rank = int(self._parameters.get("rank"))
+            recipe["rank"] = rank
+            recipe["conv_rank"] = max(int(rank//2), 8)
             recipe["clip_alpha"] = self._parameters.get("clip_alpha")
             
         del recipe["mode"]
-
+        
         return recipe
 
 class Merger(QObject):
     updated = pyqtSignal()
+    managersUpdated = pyqtSignal()
     selected = pyqtSignal()
     input = pyqtSignal()
     def __init__(self, parent=None):
@@ -255,12 +256,13 @@ class Merger(QObject):
         self._outputs = {}
         self._valid = False
 
-        self._manager = manager.RequestManager(self.gui)
+        self._manager = manager.RequestManager(self.gui, self.modifyRequest)
         self._forever = False
 
         self._parameters = VariantMap(self, {
             "type": "Checkpoint",
             "types": ["Checkpoint", "LoRA"],
+            "strength": 1.0
         })
 
         qmlRegisterSingletonType(Merger, "gui", 1, 0, "MERGER", lambda qml, js: self)
@@ -271,6 +273,8 @@ class Merger(QObject):
         self._selected_operation_index = 0
 
         self._opened_index = -1
+
+        self._grid = None
 
         self.gui.response.connect(self.handleResponse)
         self.gui.result.connect(self.handleResult)
@@ -285,6 +289,10 @@ class Merger(QObject):
         self._manager.artifact.connect(self.onArtifact)
 
         self._parameters.updated.connect(self.parametersUpdated)
+
+    def getGenerateParameters(self):
+        basic = [t for t in self.gui.tabs if t.name == "Generate"][0]
+        return basic._parameters
 
     @pyqtProperty(VariantMap, notify=updated)
     def parameters(self):
@@ -490,36 +498,53 @@ class Merger(QObject):
 
         self.selected.emit()
     
+    def modifyRequest(self, request, overrides=None):
+        model_type = self._parameters.get("type")
+
+        if overrides:
+            op = self.selectedOperation
+            backup_params = {k:v for k,v in op._parameters._map.items()}
+            backup_weights = {k:v for k,v in op._block_weights._map.items()}
+            for k,v in overrides.items():
+                if k in op._parameters._map:
+                    op._parameters._map[k] = v
+                if k in op._block_weights._map:
+                    op._block_weights._map[k] = v
+
+        operations = self.buildRecipe()
+        name = self.recipeName()
+
+        if overrides:
+            op._parameters._map = backup_params
+            op._block_weights._map = backup_weights
+
+        if model_type == "Checkpoint":
+            for k in ["unet", "clip", "vae", "model"]:
+                if k in request["data"]:
+                    del request["data"][k]
+        
+        if model_type == "Checkpoint":
+            request["data"]["merge_checkpoint_recipe"] = operations
+        elif model_type == "LoRA":
+            request["data"]["merge_lora_recipe"] = operations
+            request["data"]["merge_lora_strength"] = self._parameters.get("strength")
+        request["data"]["merge_name"] = name
+        request["data"]["network_mode"] = "Dynamic"
+        
+        return request
+
     @pyqtSlot()
     def generate(self, user=True):
         if user or not self._manager.requests:
-            basic = [t for t in self.gui.tabs if t.name == "Generate"][0]
-            self._manager.buildRequests(basic._parameters, [])
-
-            model_type = self._parameters.get("type")
-            operations = self.buildRecipe()
-            name = self.recipeName()
-
-            for request in self._manager.requests:
-                if model_type == "Checkpoint":
-                    for k in ["unet", "clip", "vae", "model"]:
-                        if k in request["data"]:
-                            del request["data"][k]
-                
-                if model_type == "Checkpoint":
-                    request["data"]["merge_checkpoint_recipe"] = operations
-                elif model_type == "LoRA":
-                    request["data"]["merge_lora_recipe"] = operations
-                request["data"]["merge_name"] = name
-                request["data"]["network_mode"] = "Dynamic"
+            self._manager.buildRequests(self.getGenerateParameters(), [])
         
         self._manager.makeRequest()
         self.updated.emit()
     
     @pyqtSlot(str)
     def buildModel(self, filename):
-        basic = [t for t in self.gui.tabs if t.name == "Generate"][0]
-        device = basic._parameters._values.get("device")
+        parameters = self.getGenerateParameters()
+        device = parameters._values.get("device")
 
         model_type = self._parameters.get("type")
         operations = self.buildRecipe()
@@ -527,8 +552,8 @@ class Merger(QObject):
 
         if model_type == "Checkpoint":
             request = {"type":"manage", "data":{"operation": "build", "merge_checkpoint_recipe":operations, "merge_name": name, "file":filename+".safetensors", "device_name": device}}
-            if basic._parameters._values.get("network_mode") == "Static":
-                request["data"]["prompt"] = basic._parameters.buildPrompts(1)
+            if parameters._values.get("network_mode") == "Static":
+                request["data"]["prompt"] = parameters.buildPrompts(1)
         elif model_type == "LoRA":
             request = {"type":"manage", "data":{"operation": "build_lora", "merge_lora_recipe":operations, "merge_name": name, "file":filename+".safetensors", "device_name": device}}
 
@@ -711,3 +736,9 @@ class Merger(QObject):
                 score = m_score
         
         return best
+    
+    @pyqtProperty(misc.GridManager, notify=managersUpdated)
+    def grid(self):
+        if not self._grid:
+            self._grid = misc.GridManager(self.getGenerateParameters(), self._manager, self)
+        return self._grid

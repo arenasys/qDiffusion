@@ -69,12 +69,11 @@ class BasicImageWriter(QRunnable):
 
 class Basic(QObject):
     updated = pyqtSignal()
-    suggestionsUpdated = pyqtSignal()
+    managersUpdated = pyqtSignal()
     pastedText = pyqtSignal(str)
     pastedImage = pyqtSignal(QImage)
     openedUpdated = pyqtSignal()
     startBuildModel = pyqtSignal()
-    openingGrid = pyqtSignal()
     def __init__(self, parent=None):
         super().__init__(parent)
         self.gui = parent
@@ -82,6 +81,7 @@ class Basic(QObject):
         self.name = "Generate"
         self._parameters = parameters.Parameters(parent)
         self._manager = manager.RequestManager(self.gui)
+        self._grid = misc.GridManager(self._parameters, self._manager, self)
 
         self._inputs = []
         self._outputs = {}
@@ -94,10 +94,6 @@ class Basic(QObject):
 
         self._suggestions = misc.SuggestionManager(self.gui)
         self._suggestions.setPromptSources()
-
-        self._grid_x_suggestions = misc.SuggestionManager(self.gui)
-        self._grid_x_suggestions.setPromptSources()
-        self._grid_y_suggestions = misc.SuggestionManager(self.gui)
 
         self._reply_index = None
         self._reply_id = None
@@ -750,157 +746,10 @@ class Basic(QObject):
     def doBuildModel(self):
         self.startBuildModel.emit()
 
-    @pyqtProperty(misc.SuggestionManager, notify=suggestionsUpdated)
+    @pyqtProperty(misc.SuggestionManager, notify=managersUpdated)
     def suggestions(self):
         return self._suggestions
-
-    def buildAxis(self, type, input, match):
-        if type == "None":
-            return [""], [{}]
-        
-        inputs = input.split(",")
-        values = []
-        labels = []
-        key = type.lower().replace(" ", "_")
-        prefix = type
-
-        mode = self.gridTypeMode(type)
-
-        if mode == "int":
-            inputs = [int(v.strip()) for v in inputs]
-        elif mode == "float":
-            inputs = [float(v.strip()) for v in inputs]
-        elif mode == "options":
-            opts = self._parameters._values.get(parameters.GRID_OPTIONS[type], [])
-            mapping = {o.lower():o for o in opts}
-            if type in {"Model", "UNET", "VAE", "CLIP", "Upscaler"}:
-                mapping = {self.gui.modelName(o).lower():o for o in opts}
-           
-            inputs = [mapping[v.strip().lower()] for v in inputs]
-            names = [self.gui.modelName(v) for v in inputs]
-
-            if type == "Model":
-                prefix = ""
-                values = [{"UNET":v, "CLIP":v, "VAE":v} for v in inputs]
-            if type == "Upscaler":
-                values = [{"img2img_upscaler":v, "hr_upscaler":v, "VAE":v} for v in inputs]
-            if type == "Sampler":
-                prefix = ""
-                values = [{"true_sampler":v} for v in inputs]
-
-            labels = [f"{type}: {v}" if prefix else str(v) for v in names]
-        if type == "Replace":
-            if "\n" in input:
-                inputs = [v for v in input.split("\n")]
-            inputs = [v.strip() for v in inputs]
-            labels = [f'"{v}"' for v in inputs]
-            values = [{"replace":(match, v)} for v in inputs]
-        
-        if not labels:
-            labels = [f"{type}: {v}" if prefix else str(v) for v in inputs]
-        if not values:
-            values = [{key:v} for v in inputs]
-        
-        return labels, values
-
-    @pyqtSlot(str, str, str, str, str, str)
-    def generateGrid(self, x_type, x_value, x_match, y_type, y_value, y_match):
-        grid = [self.buildAxis(x_type, x_value, x_match),
-                self.buildAxis(y_type, y_value, y_match)]
-        
-        self._manager.buildGridRequests(self._parameters, self._inputs, grid)
-        self._manager.makeRequest()
-        self.updated.emit()
-
-    @pyqtSlot()
-    def openGrid(self):
-        self.openingGrid.emit()
-
-    @pyqtSlot(result=list)
-    def gridTypes(self):
-        types = list(parameters.GRID_TYPES.keys())
-        if self.gui.config.get("advanced"):
-            return types
-        else:
-            return [t for t in types if not t in {"ToME Ratio", "CFG Rescale"}]
     
-    @pyqtSlot(str, result=str)
-    def gridTypeMode(self, type):
-        return parameters.GRID_TYPES[type]
-
-    @pyqtSlot(str, result=list)
-    def gridTypeOptions(self, type):
-        if type in parameters.GRID_OPTIONS:
-            opts = self._parameters._values.get(parameters.GRID_OPTIONS[type])
-            
-            if type in {"Model", "UNET", "VAE", "CLIP", "Upscaler"}:
-                opts = [self.gui.modelName(o) for o in opts]
-
-            return opts
-        return []
-    
-    @pyqtSlot(str, str, result=bool)
-    def gridValidate(self, type, value):
-        if not type or not value.strip():
-            return True
-        
-        mode = parameters.GRID_TYPES[type]
-        if not mode:
-            return True
-        
-        values = [v.strip() for v in value.split(",") if v.strip()]
-        
-        if mode == "int":
-            try:
-                values = [int(v) for v in values]
-            except:
-                return False
-        elif mode == "float":
-            try:
-                values = [float(v) for v in values]
-            except:
-                return False
-        elif mode == "options":
-            options = [o.lower() for o in self.gridTypeOptions(type)]
-            if not options:
-                return True
-            for v in values:
-                if not v.lower() in options:
-                    return False
-        
-        return True
-    
-    @pyqtProperty(misc.SuggestionManager, notify=suggestionsUpdated)
-    def gridXSuggestions(self):
-        return self._grid_x_suggestions
-    
-    @pyqtProperty(misc.SuggestionManager, notify=suggestionsUpdated)
-    def gridYSuggestions(self):
-        return self._grid_y_suggestions
-    
-    @pyqtSlot(str, misc.SuggestionManager, misc.SyntaxManager)
-    def gridConfigureRow(self, type, suggestions, highlighter):
-        if not type in parameters.GRID_TYPES:
-            return
-        
-        mode = parameters.GRID_TYPES[type]
-
-        if mode == "prompt":
-            suggestions.setSource("Prompt")
-            highlighter.setMode("Prompt")
-        elif mode == "int":
-            suggestions.setSource("")
-            highlighter.setMode("Integer")
-        elif mode == "float":
-            suggestions.setSource("")
-            highlighter.setMode("Float")
-        
-        if mode != "options":
-            return
-        
-        keywords = self.gridTypeOptions(type)
-
-        suggestions.setKeywords(keywords)
-        highlighter.setKeywords(keywords)
-        suggestions.setSource("Keyword")
-        highlighter.setMode("Keyword")
+    @pyqtProperty(misc.GridManager, notify=managersUpdated)
+    def grid(self):
+        return self._grid

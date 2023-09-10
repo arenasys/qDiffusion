@@ -200,7 +200,7 @@ Dialog {
         Suggestions {
             id: x_suggestions
             target: x_row.target
-            suggestions: BASIC.gridXSuggestions
+            suggestions: source.gridXSuggestions
             x: x_row.target.mapToItem(content, 0, 0).x + area.cursorRectangle.x;
             y: x_row.target.mapToItem(content, 0, 0).y + area.cursorRectangle.y;
             height: area.cursorRectangle.height
@@ -208,7 +208,7 @@ Dialog {
             property var type: x_row.type
             property alias highlighter: x_row.highlighter
             onTypeChanged: {
-                BASIC.gridConfigureRow(type, suggestions, highlighter)
+                source.gridConfigureRow(type, suggestions, highlighter)
                 area.text = area.text + " " //update highlighting
                 area.text = area.text.slice(0, -1)
             }
@@ -217,7 +217,7 @@ Dialog {
         Suggestions {
             id: y_suggestions
             target: y_row.target
-            suggestions: BASIC.gridXSuggestions
+            suggestions: source.gridXSuggestions
             flip: true
             x: y_row.target.mapToItem(content, 0, 0).x + area.cursorRectangle.x;
             y: y_row.target.mapToItem(content, 0, 0).y + area.cursorRectangle.y;
@@ -226,7 +226,7 @@ Dialog {
             property var type: y_row.type
             property alias highlighter: y_row.highlighter
             onTypeChanged: {
-                BASIC.gridConfigureRow(type, suggestions, highlighter)
+                source.gridConfigureRow(type, suggestions, highlighter)
                 area.text = area.text + " " //update highlighting
                 area.text = area.text.slice(0, -1)
             }
