@@ -62,7 +62,7 @@ Rectangle {
         Flickable {
             id: flickable
             anchors.fill: parent
-            contentHeight: operationsColumn.height + optionsColumn.height + (advancedColumn.visible ? advancedColumn.height + 10 : 0) + 60
+            contentHeight: operationsColumn.height + optionsColumn.height + (advancedColumn.visible ? advancedColumn.height + 10 : 0) + 60 + strengthSlider.height
             contentWidth: width
             boundsBehavior: Flickable.StopAtBounds
             clip: true
@@ -882,7 +882,7 @@ Rectangle {
                                     maxValue: 1
                                     precValue: 2
                                     incValue: 0.01
-                                    snapValue: 0.01
+                                    snapValue: 0.05
 
                                     onSelected: {
                                         blockWeightPresets.clear()
@@ -1081,7 +1081,7 @@ Rectangle {
                                 maxValue: 1
                                 precValue: 2
                                 incValue: 0.01
-                                snapValue: 0.01
+                                snapValue: 0.05
 
                                 onSelected: {
                                     blockWeightPresets.clear()
@@ -1117,7 +1117,7 @@ Rectangle {
                                     maxValue: 1
                                     precValue: 2
                                     incValue: 0.01
-                                    snapValue: 0.01
+                                    snapValue: 0.05
 
                                     onSelected: {
                                         blockWeightPresets.clear()

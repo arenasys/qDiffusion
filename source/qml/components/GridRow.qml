@@ -50,7 +50,7 @@ Item {
                 anchors.topMargin: 2
                 visible: choice_input.value == "Replace"
                 width: parent.width + 2
-                height: 30
+                height: visible ? 30 : 0
                 label: "Match"
                 overlay: value == "None"
             }

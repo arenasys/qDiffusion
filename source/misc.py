@@ -252,7 +252,7 @@ class SyntaxHighlighter(QSyntaxHighlighter):
                         self.setFormat(s, e-s, ok)
                     else:
                         self.setFormat(s, e-s, good)
-                    break
+                        break
             else:
                 self.setFormat(s, e-s, err)
 
@@ -1004,6 +1004,7 @@ class GridManager(QObject):
         if type == "None":
             return [""], [{}]
         
+        match = match.strip()
         inputs = input.split(",")
         values = []
         labels = []
@@ -1017,7 +1018,16 @@ class GridManager(QObject):
         elif mode == "float":
             inputs = [float(v.strip()) for v in inputs]
         elif mode == "options":
-            opts = self.parameters._values.get(parameters.GRID_OPTIONS[type], [])
+            if type == "Block":
+                prefix = ""
+                opts = self.gridTypeOptions("Block")
+                if inputs[0] == "4 Block":
+                    inputs = parameters.MERGE_BLOCKS_4
+                if inputs[0] == "12 Block":
+                    inputs = parameters.MERGE_BLOCKS_12
+            else:
+                opts = self.parameters._values.get(parameters.GRID_OPTIONS[type], [])
+
             mapping = {o.lower():o for o in opts}
             if type in parameters.GRID_MODEL_OPTIONS:
                 mapping = {self.gui.modelName(o).lower():o for o in opts}
@@ -1088,6 +1098,8 @@ class GridManager(QObject):
                 opts = [self.gui.modelName(o) for o in opts]
 
             return opts
+        if type == "Block":
+            return parameters.MERGE_BLOCKS_4 + parameters.MERGE_BLOCKS_12 + ["4 Block", "12 Block", "UP", "DOWN", "IN", "OUT"]
         return []
     
     @pyqtSlot(str, str, result=bool)

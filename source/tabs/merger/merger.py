@@ -4,7 +4,7 @@ import time
 import json
 import difflib
 
-from parameters import VariantMap
+from parameters import VariantMap, MERGE_BLOCKS_4, MERGE_BLOCKS_12
 import sql
 import misc
 from tabs.basic.basic_output import BasicOutput
@@ -41,8 +41,8 @@ class MergeOperation(QObject):
             "labels": ["4 Block", "12 Block"]
         })
 
-        self._block_labels_12 = ["IN00","IN01","IN02","IN03","IN04","IN05","IN06","IN07","IN08","IN09","IN10","IN11", "M00", "OUT00","OUT01","OUT02","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
-        self._block_labels_4 = ["DOWN0","DOWN1","DOWN2","DOWN3","MID","UP0","UP1","UP2","UP3"]
+        self._block_labels_12 = MERGE_BLOCKS_12
+        self._block_labels_4 = MERGE_BLOCKS_4
         self._block_weights = VariantMap(self, {k:0.0 for k in self._block_labels_12 + self._block_labels_4})
 
         self.setBlockWeightPreset("Linear")
@@ -508,8 +508,13 @@ class Merger(QObject):
             for k,v in overrides.items():
                 if k in op._parameters._map:
                     op._parameters._map[k] = v
-                if k in op._block_weights._map:
-                    op._block_weights._map[k] = v
+            
+            if "block" in overrides and op._parameters._map["mode"] == "Advanced":
+                alpha = op._parameters._map["alpha"]
+                block = overrides["block"]
+                for k in op._block_weights._map:
+                    if k.startswith(block):
+                        op._block_weights._map[k] = alpha
 
         operations = self.buildRecipe()
         name = self.recipeName()
@@ -530,6 +535,8 @@ class Merger(QObject):
             request["data"]["merge_lora_strength"] = self._parameters.get("strength")
         request["data"]["merge_name"] = name
         request["data"]["network_mode"] = "Dynamic"
+
+        request["folder"] = "merge"
         
         return request
 
@@ -610,6 +617,8 @@ class Merger(QObject):
             self._outputs[id].setPreview(image)
         else:
             self._outputs[id].addArtifact(name, image)
+
+        self.updated.emit()
 
     @pyqtSlot(int)
     def handleReset(self, id):
