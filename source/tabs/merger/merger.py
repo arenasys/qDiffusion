@@ -4,7 +4,7 @@ import time
 import json
 import difflib
 
-from parameters import VariantMap, MERGE_BLOCKS_4, MERGE_BLOCKS_12
+from parameters import VariantMap
 import sql
 import misc
 from tabs.basic.basic_output import BasicOutput
@@ -41,8 +41,8 @@ class MergeOperation(QObject):
             "labels": ["4 Block", "12 Block"]
         })
 
-        self._block_labels_12 = MERGE_BLOCKS_12
-        self._block_labels_4 = MERGE_BLOCKS_4
+        self._block_labels_12 = misc.MERGE_BLOCKS_12
+        self._block_labels_4 = misc.MERGE_BLOCKS_4
         self._block_weights = VariantMap(self, {k:0.0 for k in self._block_labels_12 + self._block_labels_4})
 
         self.setBlockWeightPreset("Linear")

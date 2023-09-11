@@ -23,8 +23,6 @@ from PyQt5.QtGui import QColor, QImage, QSyntaxHighlighter, QColor
 from PyQt5.QtNetwork import QNetworkRequest, QNetworkReply, QNetworkAccessManager
 from PyQt5.QtQml import qmlRegisterType, qmlRegisterUncreatableType
 
-import parameters
-
 class FocusReleaser(QQuickItem):
     releaseFocus = pyqtSignal()
     dropped = pyqtSignal()
@@ -987,6 +985,51 @@ class SuggestionManager(QObject):
         self.gui.config.set("vocab", vocab)
         self.updateVocab()
 
+GRID_TYPES = {
+    "None":"",
+    "Replace":"prompt",
+    "Steps":"int",
+    "Scale":"float",
+    "Seed":"int",
+    "Sampler":"options",
+    "Strength":"float",
+    "Upscaler":"options",
+    "Model":"options",
+    "UNET":"options",
+    "CLIP":"options",
+    "VAE":"options",
+    "CLIP Skip":"int",
+    "Eta":"float",
+    "ToME Ratio":"float",
+    "CFG Rescale":"float",
+    "Alpha":"float",
+    "CLIP Alpha":"float",
+    "Rank":"int",
+    "Block": "options",
+    "Model A":"options",
+    "Model B":"options",
+    "Model C":"options"
+}
+
+GRID_OPTIONS = {
+    "Sampler":"true_samplers",
+    "Upscaler":"hr_upscalers",
+    "Model":"models",
+    "UNET":"UNETs",
+    "CLIP":"CLIPs",
+    "VAE":"VAEs",
+    "Model A":"models",
+    "Model B":"models",
+    "Model C":"models",
+}
+
+GRID_ADV_OPTIONS = {"ToME Ratio", "CFG Rescale"}
+GRID_MERGE_OPTIONS = {"Alpha", "CLIP Alpha", "VAE Source", "Rank", "Model A", "Model B", "Model C", "Block"}
+GRID_MODEL_OPTIONS = {"Model", "UNET", "VAE", "CLIP", "Upscaler", "Model A", "Model B", "Model C"}
+
+MERGE_BLOCKS_4 = ["DOWN0","DOWN1","DOWN2","DOWN3","MID","UP0","UP1","UP2","UP3"]
+MERGE_BLOCKS_12 = ["IN00","IN01","IN02","IN03","IN04","IN05","IN06","IN07","IN08","IN09","IN10","IN11", "M00", "OUT00","OUT01","OUT02","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
+
 class GridManager(QObject):
     suggestionsUpdated = pyqtSignal()
     openingGrid = pyqtSignal()
@@ -1022,14 +1065,14 @@ class GridManager(QObject):
                 prefix = ""
                 opts = self.gridTypeOptions("Block")
                 if inputs[0] == "4 Block":
-                    inputs = parameters.MERGE_BLOCKS_4
+                    inputs = MERGE_BLOCKS_4
                 if inputs[0] == "12 Block":
-                    inputs = parameters.MERGE_BLOCKS_12
+                    inputs = MERGE_BLOCKS_12
             else:
-                opts = self.parameters._values.get(parameters.GRID_OPTIONS[type], [])
+                opts = self.parameters._values.get(GRID_OPTIONS[type], [])
 
             mapping = {o.lower():o for o in opts}
-            if type in parameters.GRID_MODEL_OPTIONS:
+            if type in GRID_MODEL_OPTIONS:
                 mapping = {self.gui.modelName(o).lower():o for o in opts}
            
             inputs = [mapping[v.strip().lower()] for v in inputs]
@@ -1051,7 +1094,7 @@ class GridManager(QObject):
             inputs = [v.strip() for v in inputs]
             labels = [f'"{v}"' for v in inputs]
             values = [{"replace":(match, v)} for v in inputs]
-        if type in parameters.GRID_MERGE_OPTIONS:
+        if type in GRID_MERGE_OPTIONS:
             values = [{"modify":{key:v}} for v in inputs]
         if not labels:
             labels = [f"{type}: {v}" if prefix else str(v) for v in inputs]
@@ -1078,28 +1121,28 @@ class GridManager(QObject):
 
     @pyqtSlot(result=list)
     def gridTypes(self):
-        types = list(parameters.GRID_TYPES.keys())
+        types = list(GRID_TYPES.keys())
         if not self.gui.config.get("advanced"):
-            types = [t for t in types if not t in parameters.GRID_ADV_OPTIONS]
+            types = [t for t in types if not t in GRID_ADV_OPTIONS]
         if not self.parent().name == "Merge":
-            types = [t for t in types if not t in parameters.GRID_MERGE_OPTIONS]
+            types = [t for t in types if not t in GRID_MERGE_OPTIONS]
         return types
     
     @pyqtSlot(str, result=str)
     def gridTypeMode(self, type):
-        return parameters.GRID_TYPES[type]
+        return GRID_TYPES[type]
 
     @pyqtSlot(str, result=list)
     def gridTypeOptions(self, type):
-        if type in parameters.GRID_OPTIONS:
-            opts = self.parameters._values.get(parameters.GRID_OPTIONS[type])
+        if type in GRID_OPTIONS:
+            opts = self.parameters._values.get(GRID_OPTIONS[type])
             
-            if type in parameters.GRID_MODEL_OPTIONS:
+            if type in GRID_MODEL_OPTIONS:
                 opts = [self.gui.modelName(o) for o in opts]
 
             return opts
         if type == "Block":
-            return parameters.MERGE_BLOCKS_4 + parameters.MERGE_BLOCKS_12 + ["4 Block", "12 Block", "UP", "DOWN", "IN", "OUT"]
+            return MERGE_BLOCKS_4 + MERGE_BLOCKS_12 + ["4 Block", "12 Block", "UP", "DOWN", "IN", "OUT"]
         return []
     
     @pyqtSlot(str, str, result=bool)
@@ -1107,7 +1150,7 @@ class GridManager(QObject):
         if not type or not value.strip():
             return True
         
-        mode = parameters.GRID_TYPES[type]
+        mode = GRID_TYPES[type]
         if not mode:
             return True
         
@@ -1143,10 +1186,10 @@ class GridManager(QObject):
     
     @pyqtSlot(str, SuggestionManager, SyntaxManager)
     def gridConfigureRow(self, type, suggestions, highlighter):
-        if not type in parameters.GRID_TYPES:
+        if not type in GRID_TYPES:
             return
         
-        mode = parameters.GRID_TYPES[type]
+        mode = GRID_TYPES[type]
 
         if mode == "prompt":
             suggestions.setSource("Prompt")

@@ -50,51 +50,6 @@ SETTABLE = [
 NETWORKS = {"LoRA":"lora","HN":"hypernet"}
 NETWORKS_INV = {"lora":"LoRA","hypernet":"HN"}
 
-GRID_TYPES = {
-    "None":"",
-    "Replace":"prompt",
-    "Steps":"int",
-    "Scale":"float",
-    "Seed":"int",
-    "Sampler":"options",
-    "Strength":"float",
-    "Upscaler":"options",
-    "Model":"options",
-    "UNET":"options",
-    "CLIP":"options",
-    "VAE":"options",
-    "CLIP Skip":"int",
-    "Eta":"float",
-    "ToME Ratio":"float",
-    "CFG Rescale":"float",
-    "Alpha":"float",
-    "CLIP Alpha":"float",
-    "Rank":"int",
-    "Block": "options",
-    "Model A":"options",
-    "Model B":"options",
-    "Model C":"options"
-}
-
-GRID_OPTIONS = {
-    "Sampler":"true_samplers",
-    "Upscaler":"hr_upscalers",
-    "Model":"models",
-    "UNET":"UNETs",
-    "CLIP":"CLIPs",
-    "VAE":"VAEs",
-    "Model A":"models",
-    "Model B":"models",
-    "Model C":"models",
-}
-
-GRID_ADV_OPTIONS = {"ToME Ratio", "CFG Rescale"}
-GRID_MERGE_OPTIONS = {"Alpha", "CLIP Alpha", "VAE Source", "Rank", "Model A", "Model B", "Model C", "Block"}
-GRID_MODEL_OPTIONS = {"Model", "UNET", "VAE", "CLIP", "Upscaler", "Model A", "Model B", "Model C"}
-
-MERGE_BLOCKS_4 = ["DOWN0","DOWN1","DOWN2","DOWN3","MID","UP0","UP1","UP2","UP3"]
-MERGE_BLOCKS_12 = ["IN00","IN01","IN02","IN03","IN04","IN05","IN06","IN07","IN08","IN09","IN10","IN11", "M00", "OUT00","OUT01","OUT02","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
-
 def formatParameters(json):
     formatted = ""
     if "prompt" in json:
