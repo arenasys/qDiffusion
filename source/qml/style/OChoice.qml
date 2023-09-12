@@ -64,8 +64,14 @@ Item {
         return model
     }
 
-    function searchModel(model) {       
-        return GUI.searchOptions(model, searchBox.text)
+    function searchModel(model) {    
+        var re = new RegExp(searchBox.text, "i");
+        return model.filter((entry) => re.test(entry));
+    }
+
+    function underlineOption(text, search) {
+        var re = new RegExp("("+search+")", "i");
+        return text.replace(re, "<u>$1</u>");
     }
 
     function setCurrent(c, m, all_m) {
@@ -243,7 +249,7 @@ Item {
                 anchors.right: decoText.left
 
                 height: 22
-                text: GUI.underlineOption(root.display(modelData), searchBox.text)
+                text: root.underlineOption(root.display(modelData), searchBox.text)
                 color: COMMON.fg0
                 font.pointSize:  8.5
                 leftPadding: 5

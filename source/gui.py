@@ -728,17 +728,6 @@ class GUI(QObject):
                 except Exception:
                     pass
 
-    @pyqtSlot(list, str, result=list)
-    def searchOptions(self, model, search):
-        filtered = [m for m in model if search.lower() in m.lower().rsplit(os.path.sep,1)[-1]]
-        if not filtered:
-            return model
-        return filtered
-    
-    @pyqtSlot(str, str, result=str)
-    def underlineOption(self, text, search):
-        return re.sub(f"({search})", r"<u>\1</u>", text, flags=re.IGNORECASE)
-    
     @pyqtSlot(str, str)
     def importModel(self, mode, file):
         old = QUrl(file).toLocalFile()
