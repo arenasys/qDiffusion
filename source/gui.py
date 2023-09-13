@@ -656,10 +656,13 @@ class GUI(QObject):
     @pyqtSlot(list)
     def visitFiles(self, files):
         folder = os.path.dirname(files[0])
-        if not IS_WIN:
-            self.visitFolder(folder)
+        if IS_WIN:
+            try:
+                misc.showFilesInExplorer(folder, files)
+            except:
+                self.setError("Visiting", f"Failed to visit: {folder}, {files}", "")
         else:
-            misc.showFilesInExplorer(folder, files)
+            self.visitFolder(folder)    
 
     @pyqtSlot(str)
     def openModelFolder(self, mode):
