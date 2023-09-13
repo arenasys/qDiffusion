@@ -1074,8 +1074,9 @@ class GridManager(QObject):
             mapping = {o.lower():o for o in opts}
             if type in GRID_MODEL_OPTIONS:
                 mapping = {self.gui.modelName(o).lower():o for o in opts}
-           
-            inputs = [mapping[v.strip().lower()] for v in inputs]
+
+            inputs = [v.strip().lower() for v in inputs]
+            inputs = [mapping[v] for v in inputs if v]
             names = [self.gui.modelName(v) for v in inputs]
 
             if type == "Model":
@@ -1105,8 +1106,19 @@ class GridManager(QObject):
 
     @pyqtSlot(str, str, str, str, str, str)
     def generateGrid(self, x_type, x_value, x_match, y_type, y_value, y_match):
-        grid = [self.buildAxis(x_type, x_value, x_match),
-                self.buildAxis(y_type, y_value, y_match)]
+        try:
+            x_axis = self.buildAxis(x_type, x_value, x_match)
+        except:
+            self.gui.setError("Parsing", "Invalid X axis values", "")
+            return
+
+        try:
+            y_axis = self.buildAxis(y_type, y_value, y_match)
+        except:
+            self.gui.setError("Parsing", "Invalid Y axis values", "")
+            return
+
+        grid = [x_axis, y_axis]
         
         inputs = []
         if hasattr(self.parent(), "_inputs"):
