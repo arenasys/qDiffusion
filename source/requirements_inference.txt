@@ -1,5 +1,4 @@
-diffusers==0.18.1
-pytorch-lightning==2.0.2
+diffusers==0.21.0
 einops==0.6.1
 k_diffusion==0.0.15
 lark==1.1.5
