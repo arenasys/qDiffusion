@@ -393,7 +393,7 @@ class RequestManager(QObject):
 
         data = requests[0]["data"]
         w, h, factor = data["width"], data["height"], data.get("hr_factor",1)
-        self.grid_size = (w*factor, h*factor)
+        self.grid_size = (int(w*factor), int(h*factor))
 
         if not parameters._values.get("output_folder"):
             for i in range(len(requests)):
@@ -543,7 +543,7 @@ class RequestManager(QObject):
         id = self.grid_ids[-1]
         image = self.grid_images[id]
         px, py = positions[len(self.grid_ids)-1]
-        painter.drawImage(QRect(px,py, w, h), image)
+        painter.drawImage(QRect(px,py,w,h), image)
 
         painter.end()
 
