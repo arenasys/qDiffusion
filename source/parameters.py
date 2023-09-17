@@ -39,12 +39,14 @@ LABELS = [
     ("hr_steps", "Hires steps"),
     ("hr_eta", "Hires sampler eta"),
     ("img2img_upscaler", "Upscaler"),
+    ("cfg_rescale", "CFG rescale"),
+    ("prediction_type", "Prediction type")
 ]
 
 SETTABLE = [
     "prompt", "negative_prompt", "steps", "sampler", "schedule", "scale", "seed", "width", "height",
     "model", "UNET", "VAE", "CLIP", "model", "subseed", "subseed_strength", "strength", "eta", "clip_skip", "img2img_upscaler",
-    "hr_factor", "hr_strength", "hr_upscaler", "hr_sampler", "hr_steps", "hr_eta"
+    "hr_factor", "hr_strength", "hr_upscaler", "hr_sampler", "hr_steps", "hr_eta", "cfg_rescale", "prediction_type"
 ]
 
 NETWORKS = {"LoRA":"lora","HN":"hypernet"}
@@ -319,7 +321,8 @@ class Parameters(QObject):
         self._client_only = [
             "models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "SR", "LoRAs", "HNs", "LoRA", "HN", "TIs", "TI", "CN", "CNs", "hr_upscalers", "img2img_upscalers", 
             "attentions", "device", "devices", "batch_count", "prompt", "negative_prompt", "vram_usages", "artifact_modes", "preview_modes", "schedules",
-            "CN_modes", "CN_preprocessors", "vram_modes", "true_samplers", "schedule", "network_modes", "model", "output_folder", "mask_fill_modes", "autocast_modes"
+            "CN_modes", "CN_preprocessors", "vram_modes", "true_samplers", "schedule", "network_modes", "model", "output_folder", "mask_fill_modes", "autocast_modes",
+            "prediction_types", "tiling_modes"
         ]
         self._default_values = {
             "prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7.0, "strength": 0.75, "seed": -1, "eta": 1.0,
@@ -327,12 +330,13 @@ class Parameters(QObject):
             "sampler":"Euler a", "samplers":[], "hr_upscaler":"Latent (nearest)", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
             "model":"", "models":[], "UNET":"", "UNETs":[], "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[],
             "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "schedule": "Default", "schedules": ["Default", "Karras", "Exponential"],
-            "vram_mode": "Default", "vram_modes": ["Maximal", "Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"], "preview_mode": "Light",
+            "vram_mode": "Default", "vram_modes": ["Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"], "preview_mode": "Light",
             "preview_modes": ["Disabled", "Light", "Medium", "Full"], "preview_interval":1, "true_samplers": [], "true_sampler": "Euler a",
             "network_mode": "Dynamic", "network_modes": ["Dynamic", "Static"], "mask_fill": "Original", "mask_fill_modes": ["Original", "Noise"],
             "tome_ratio": 0.0, "hr_tome_ratio": 0.0, "cfg_rescale": 0.0, "output_folder": "", "autocast": "Disabled", "autocast_modes": ["Disabled", "Enabled"],
             "CN_modes": ["Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD", "Instruct", "Shuffle", "Inpaint", "Scribble", "Normal"],#, "Tile", "Segmentation"]
-            "CN_preprocessors": ["None", "Invert", "Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD", "Shuffle", "Scribble", "Normal"]
+            "CN_preprocessors": ["None", "Invert", "Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD", "Shuffle", "Scribble", "Normal"],
+            "prediction_type": "Default", "prediction_types": ["Default", "Epsilon", "V"], "tiling_mode": "Disabled", "tiling_modes": ["Disabled", "Enabled"]
         }
 
         if source:
@@ -636,8 +640,8 @@ class Parameters(QObject):
             data["show_preview"] = data["preview_mode"]
         del data["preview_mode"]
 
-        for k in ["hr_tome_ratio", "tome_ratio", "cfg_rescale"]:
-            if k in data and (data[k] == 0.0 or not self.gui.config.get("advanced")):
+        for k in ["hr_tome_ratio", "tome_ratio", "cfg_rescale", "prediction_type", "tiling_mode"]:
+            if k in data and (data[k] in {0.0, "Default"} or not self.gui.config.get("advanced")):
                 del data[k]
 
         data["autocast"] = data["autocast"] == "Enabled"

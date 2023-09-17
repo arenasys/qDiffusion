@@ -894,6 +894,7 @@ Item {
                         height: 30
 
                         disabled: hrFactorInput.value == 1.0
+                        overlay: value == 0.0
 
                         bindMap: root.binding.values
                         bindKey: "hr_tome_ratio"
@@ -1015,20 +1016,19 @@ Item {
                         bounded: false
                     }
 
-                    OSlider {
+                    OChoice {
                         visible: root.advanced
-                        label: root.tr("ToMe Ratio")
+                        label: root.tr("Prediction")
                         width: parent.width
                         height: 30
 
                         bindMap: root.binding.values
-                        bindKey: "tome_ratio"
+                        bindKeyCurrent: "prediction_type"
+                        bindKeyModel: "prediction_types"
 
-                        minValue: 0
-                        maxValue: 1
-                        precValue: 2
-                        incValue: 0.01
-                        snapValue: 0.05
+                        function display(text) {
+                            return root.tr(text, "Options")
+                        }
                     }
                     
                     OSlider {
@@ -1041,6 +1041,24 @@ Item {
 
                         bindMap: root.binding.values
                         bindKey: "cfg_rescale"
+
+                        minValue: 0
+                        maxValue: 1
+                        precValue: 2
+                        incValue: 0.01
+                        snapValue: 0.05
+                    }
+
+                    OSlider {
+                        visible: root.advanced
+                        label: root.tr("ToMe Ratio")
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKey: "tome_ratio"
+
+                        overlay: value == 0.0
 
                         minValue: 0
                         maxValue: 1
@@ -1181,6 +1199,22 @@ Item {
                     }
 
                     OChoice {
+                        visible: root.advanced
+                        label: root.tr("VAE Tiling")
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "tiling_mode"
+                        bindKeyModel: "tiling_modes"
+
+                        function display(text) {
+                            return root.tr(text, "Options")
+                        }
+                    }
+
+                    OChoice {
+                        visible: root.advanced
                         label: root.tr("Autocast")
                         width: parent.width
                         height: 30
