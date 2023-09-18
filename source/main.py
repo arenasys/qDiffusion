@@ -21,6 +21,7 @@ from PyQt5.QtGui import QIcon
 from translation import Translator
 
 NAME = "qDiffusion"
+APPID = "arenasys.qdiffusion.v1"
 
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning) 
@@ -213,6 +214,8 @@ class Coordinator(QObject):
 
         with open(os.path.join("source", "requirements_gui.txt")) as file:
             self.required = [line.rstrip() for line in file]
+        if IS_WIN:
+            self.required += ["pywin32==306"]
 
         with open(os.path.join("source", "requirements_inference.txt")) as file:
             self.optional = [line.rstrip() for line in file]
@@ -402,7 +405,7 @@ class Coordinator(QObject):
 def launch():
     try:
         import ctypes
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(NAME)
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(APPID)
         import setproctitle
         setproctitle.setproctitle(NAME)
     except:
@@ -426,6 +429,19 @@ def launch():
     coordinator = Coordinator(app, engine)
 
     engine.load(QUrl('file:source/qml/Splash.qml'))
+
+    try:
+        from win32com.propsys import propsys, pscon
+        import pythoncom
+        hwnd = engine.rootObjects()[0].winId()
+        launcher = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "qDiffusion.exe")
+        propStore = propsys.SHGetPropertyStoreForWindow(hwnd, propsys.IID_IPropertyStore)
+        propStore.SetValue(pscon.PKEY_AppUserModel_ID, propsys.PROPVARIANTType(APPID, pythoncom.VT_ILLEGAL))
+        propStore.SetValue(pscon.PKEY_AppUserModel_RelaunchDisplayNameResource, propsys.PROPVARIANTType(NAME, pythoncom.VT_ILLEGAL))
+        propStore.SetValue(pscon.PKEY_AppUserModel_RelaunchCommand, propsys.PROPVARIANTType(launcher, pythoncom.VT_ILLEGAL))
+        propStore.Commit()
+    except:
+        pass
 
     os._exit(app.exec())
 

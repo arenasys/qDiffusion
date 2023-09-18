@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"syscall"
 	"time"
+	"unsafe"
 
 	"github.com/schollz/progressbar/v3"
 	"github.com/walle/targz"
@@ -31,7 +33,11 @@ func attach() {
 	if attached {
 		return
 	}
-	proc := syscall.MustLoadDLL("kernel32.dll").MustFindProc("AllocConsole")
+	proc := syscall.MustLoadDLL("shell32.dll").MustFindProc("SetCurrentProcessExplicitAppUserModelID")
+	name, _ := syscall.UTF16PtrFromString("arenasys.qdiffusion.v1")
+	proc.Call(uintptr(unsafe.Pointer(name)))
+
+	proc = syscall.MustLoadDLL("kernel32.dll").MustFindProc("AllocConsole")
 	proc.Call()
 	out, _ := windows.GetStdHandle(windows.STD_OUTPUT_HANDLE)
 	outF := os.NewFile(uintptr(out), "/dev/stdout")
@@ -82,14 +88,46 @@ func exists(path string) bool {
 	return false
 }
 
+func write_test() error {
+	f, err := os.OpenFile("crash.log", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	if err != nil {
+		return err
+	}
+	_, err = f.WriteString("POKE" + "\n")
+	if err != nil {
+		return err
+	}
+	f.Close()
+	return nil
+}
+
 func main() {
+	exe, _ := os.Executable()
+	exe_path := filepath.Dir(exe)
+	os.Chdir(exe_path)
+
+	if !exists(".\\source") {
+		attach()
+		fmt.Println("PLEASE FULLY EXTRACT THE ZIP, JUST THE EXE ALONE WONT WORK")
+		time.Sleep(10 * time.Second)
+		return
+	}
+
 	python := ".\\venv\\Scripts\\pythonw"
 	if !exists(".\\venv") {
 		python = ".\\python\\python.exe"
 		if !exists(".\\python") {
 			attach()
+
+			err := write_test()
+			if err != nil {
+				fmt.Println("CANNOT WRITE HERE, EXTRACT TO A FOLDER WITH WRITE PERMISSIONS")
+				time.Sleep(10 * time.Second)
+				return
+			}
+
 			fmt.Println("DOWNLOADING PYTHON...")
-			err := download("python-3.10.11.tar.gz", "https://github.com/indygreg/python-build-standalone/releases/download/20230507/cpython-3.10.11+20230507-x86_64-pc-windows-msvc-shared-install_only.tar.gz")
+			err = download("python-3.10.11.tar.gz", "https://github.com/indygreg/python-build-standalone/releases/download/20230507/cpython-3.10.11+20230507-x86_64-pc-windows-msvc-shared-install_only.tar.gz")
 			if err != nil {
 				log(err)
 				return
