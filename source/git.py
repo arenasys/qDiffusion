@@ -5,11 +5,20 @@ import pygit2
 QDIFF_URL = "https://github.com/arenasys/qDiffusion"
 INFER_URL = "https://github.com/arenasys/sd-inference-server"
 
+def git_repair(repo, origin):
+    repo.remotes.delete("origin")
+    repo.create_remote("origin", origin)
+    repo.remotes["origin"].fetch()
+
 def git_reset(path, origin):
     repo = pygit2.Repository(os.path.abspath(path))
     repo.remotes.set_url("origin", origin)
-    repo.remotes[0].fetch()
-    head = repo.lookup_reference("refs/remotes/origin/master").raw_target
+    repo.remotes["origin"].fetch()
+    try:
+        head = repo.lookup_reference("refs/remotes/origin/master").raw_target
+    except:
+        git_repair(repo, origin)
+        head = repo.lookup_reference("refs/remotes/origin/master").raw_target
     repo.reset(head, pygit2.GIT_RESET_HARD)
 
 def git_last(path):
