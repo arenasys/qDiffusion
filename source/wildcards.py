@@ -17,14 +17,16 @@ class Wildcards(QObject):
     def reload(self):
         wildcards = {}
         sources = {}
+        folder = os.path.join(self.gui.modelDirectory(), "WILDCARD")
         for ext in ["*.txt", "*.csv"]:
-            for file in glob.glob(os.path.join(self.gui.modelDirectory(), "WILDCARD", ext)):
+            for file in glob.glob(os.path.join(folder, os.path.join("**", ext)), recursive=True):
                 with open(file, 'r', encoding='utf-8') as f:
                     lines = [l.strip() for l in f.readlines() if l.strip()]
                     if not lines:
                         continue
-                    name = file.rsplit(os.path.sep,1)[-1].rsplit('.',1)[0]
-                    sources[name] = file.rsplit(os.path.sep,1)[-1]
+                    path = os.path.relpath(file, folder)
+                    name = path.rsplit('.',1)[0].replace(os.path.sep, "/")
+                    sources[name] = path
                     wildcards[name] = lines
         self._wildcards = wildcards
         self._sources = sources

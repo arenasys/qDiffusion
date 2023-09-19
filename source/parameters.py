@@ -893,6 +893,7 @@ class Parameters(QObject):
             self._values.set("hr_upscaler", file)
             self._values.set("img2img_upscaler", file)
 
+        name = file.split(os.path.sep,1)[-1].rsplit('.',1)[0].replace(os.path.sep, "/")
         if file.startswith("WILDCARD") and name in self.gui.wildcards._wildcards:
             append(f"__{name}__")
         
@@ -924,6 +925,7 @@ class Parameters(QObject):
             self._values.set("hr_upscaler", "Latent (nearest)")
             self._values.set("img2img_upscaler", "Lanczos")
 
+        name = file.split(os.path.sep,1)[-1].rsplit('.',1)[0].replace(os.path.sep, "/")
         if file.startswith("WILDCARD") and name in self.gui.wildcards._wildcards:
             remove(fr"__{name}__")
 
