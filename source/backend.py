@@ -105,7 +105,9 @@ class Backend(QObject):
 
     def wait(self):
         if self.inference:
-            self.inference.wait()
+            self.inference.response.disconnect(self.onResponse)
+            if not self.inference.wait(100):
+                self.inference.terminate()
     
     def debugLogging(self, type, data):
         if self.gui._debugJSONLogging:
