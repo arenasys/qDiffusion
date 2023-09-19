@@ -790,12 +790,21 @@ class Parameters(QObject):
         wildcards = self.gui.wildcards._wildcards
         counter = self.gui.wildcards._counter
         prompts = []
-        pattern = re.compile("@?__([^\s]+?)__(?!___)")
+        file_pattern = re.compile(r"@?__([^\s]+?)__(?!___)")
+        inline_pattern = re.compile(r"{([^{}|]+(?:\|[^{}|]+)*)}")
         for i in range(batch_size):
             sp = self.parseSubprompts(str(prompt))
             for j in range(len(sp)):
                 p = sp[j]
-                while m := pattern.search(p):
+
+                while m := inline_pattern.search(p):
+                    p = list(p)
+                    s,e = m.span(0)
+                    options = m.group(1).split("|")
+                    p[s:e] = random.SystemRandom().choice(options)
+                    p = ''.join(p)
+
+                while m := file_pattern.search(p):
                     s,e = m.span(0)
                     name = m.group(1)
                     p = list(p)
