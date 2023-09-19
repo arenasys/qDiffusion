@@ -27,11 +27,7 @@ class Settings(QObject):
         self._currentUpload = ""
         self._currentUploadMode = 0
 
-        self._log = ""
-
         qmlRegisterSingletonType(Settings, "gui", 1, 0, "SETTINGS", lambda qml, js: self)
-
-        self.gui.response.connect(self.onResponse)
 
         self._needRestart = False
         self._currentGitInfo = None
@@ -65,13 +61,8 @@ class Settings(QObject):
         self._currentUploadMode = mode
         self.updated.emit()
 
-    @pyqtProperty(str, notify=updated)
-    def log(self):
-        return self._log
-
     @pyqtSlot()
     def restart(self):
-        self._log = ""
         self.updated.emit()
         self.gui.restartBackend()
 
@@ -123,14 +114,6 @@ class Settings(QObject):
         for url in mimeData.urls():
             if url.isLocalFile():
                 return url.toLocalFile() 
-    
-    @pyqtSlot(int, object)
-    def onResponse(self, id, response):
-        if response["type"] != "downloaded":
-            return
-        self._log += response["data"]["message"] + "\n"
-        self.updated.emit()   
-        self.gui.backend.makeRequest({"type":"options"})
 
     @pyqtProperty(str, notify=updated)
     def gitInfo(self):

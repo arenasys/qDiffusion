@@ -686,6 +686,7 @@ class DownloadManager(QObject):
             if "label" in data:
                 instance.setLabel(data["label"])
             instance.doFinish()
+            self.gui.refreshModels()
         if data["status"] == "error":
             instance.setError(data["message"])
             self.gui.setError("Downloading", data["message"], data["trace"])
