@@ -21,7 +21,19 @@ class Wildcards(QObject):
         for ext in ["*.txt", "*.csv"]:
             for file in glob.glob(os.path.join(folder, os.path.join("**", ext)), recursive=True):
                 with open(file, 'r', encoding='utf-8') as f:
-                    lines = [l.strip() for l in f.readlines() if l.strip()]
+                    lines = []
+                    for l in [l.strip() for l in f.readlines() if l.strip()]:
+                        if l[0] == '#':
+                            continue
+                        if ',' in l:
+                            a, b = l.rsplit(',',1)
+                            try:
+                                b = int(b)
+                                l = a
+                            except:
+                                pass
+                        lines += [l]
+
                     if not lines:
                         continue
                     path = os.path.relpath(file, folder)
