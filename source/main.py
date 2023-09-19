@@ -72,7 +72,8 @@ def buildQMLPy():
     
     status = subprocess.run(["pyrcc5", "-o", qml_py, qml_rc], capture_output=True, shell=IS_WIN)
     if status.returncode != 0:
-        raise Exception(status.stderr)
+        if not os.path.exists(qml_py):
+            raise Exception(status.stderr)
 
     shutil.rmtree(os.path.join(qml_path, "tabs"))
     os.remove(qml_rc)
