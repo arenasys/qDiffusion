@@ -202,7 +202,8 @@ class RemoteInference(QThread):
         self.requests.put(request)
 
     def onResponse(self, response):
-        self.response.emit(response)
+        if not self.stopping:
+            self.response.emit(response)
 
     @pyqtSlot(str)
     def onUploadDone(self, file):
