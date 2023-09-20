@@ -170,7 +170,7 @@ Rectangle {
                         width: parent.width
                         color: selected ? COMMON.bg2 : COMMON.bg0
 
-                        property var modelNumber: operationText.text == "Add Difference" ? 3 : 2
+                        property var modelNumber: modelData.modelCount
                         property var modelSize:  Math.max(100, (width - 125) / modelNumber)
                         property var selected: MERGER.selectedOperationIndex == index
 
@@ -595,6 +595,10 @@ Rectangle {
                             if(operationChoice.value == "Extract LoRA") {
                                 return "α(A - B)"
                             }
+                            if(operationChoice.value == "Modify LoRA") {
+                                return "αA"
+                            }
+
                             return ""
                         }
                         
@@ -645,7 +649,8 @@ Rectangle {
                     }
 
                     OChoice {
-                        height: 30
+                        visible: height != 0
+                        height: root.operation.modelCount >= 2 ? 30 : 0
                         width: parent.width
                         label: (bindKeyModel == "models" ? "Model" : "LoRA") + " B"
 
@@ -677,7 +682,7 @@ Rectangle {
 
                     OChoice {
                         visible: height != 0
-                        height: operationChoice.value == "Add Difference" ? 30 : 0
+                        height: root.operation.modelCount >= 3 ? 30 : 0
                         width: parent.width
                         label: (bindKeyModel == "models" ? "Model" : "LoRA") + " C"
 
@@ -1208,7 +1213,7 @@ Rectangle {
                     visible: placeholder.visible
                     anchors.fill: placeholder
                     source: placeholder
-                    color: COMMON.bg4
+                    color: COMMON.bg3
                 }
 
                 MovableItem {

@@ -24,7 +24,7 @@ class MergeOperation(QObject):
         self._parameters = VariantMap(self, {
             "operation": "Weighted Sum",
             "operations_checkpoint": ["Weighted Sum", "Add Difference", "Insert LoRA"],
-            "operations_lora": ["Weighted Sum", "Add Difference"],#, "Extract LoRA"],
+            "operations_lora": ["Weighted Sum", "Add Difference", "Modify LoRA"],#, "Extract LoRA"],
             "mode": "Simple",
             "modes": ["Simple", "Advanced"],
             "preset": "None",
@@ -52,19 +52,34 @@ class MergeOperation(QObject):
     @pyqtProperty(VariantMap, notify=updated)
     def parameters(self):
         return self._parameters
+
+    @pyqtProperty(int, notify=updated)
+    def modelCount(self):
+        type = self._merger._parameters.get("type")
+        operation = self._parameters.get("operation")
+        types = self.operationModelTypes(type, operation)
+        return len([t for t in types if t])
     
     def operationModelTypes(self, type, op):
         return {
             "Weighted Sum": [type, type, None],
             "Add Difference": [type, type, type],
             "Insert LoRA": ["Checkpoint", "LoRA", None],
-            "Extract LoRA": ["Checkpoint", "Checkpoint", None]
+            "Extract LoRA": ["Checkpoint", "Checkpoint", None],
+            "Modify LoRA": ["LoRA", None, None]
         }[op]
 
     @pyqtSlot(str)
     def parametersUpdated(self, key):
         if key == "operation":
             self.enforceModelTypes()
+
+            operation = self._parameters.get("operation")
+            default_alpha = 0.5
+            if operation == "Modify LoRA":
+                default_alpha = 1.0
+            self._parameters.set("alpha", default_alpha)
+            self._parameters.set("clip_alpha", default_alpha)
 
     def enforceModelTypes(self):
         type = self._merger._parameters.get("type")
@@ -224,8 +239,11 @@ class MergeOperation(QObject):
         for k in ["model_a", "model_b", "model_c"]:
             if recipe[k].startswith("_result_"):
                 recipe[k] = recipe[k].split(os.path.sep)[0]
-            
-        if self.operationModelTypes(model_type, recipe["operation"])[-1] == None:
+        
+        model_types = self.operationModelTypes(model_type, recipe["operation"])
+        if model_types[1] == None:
+            del recipe["model_b"]
+        if model_types[2] == None:
             del recipe["model_c"]
 
         if recipe["mode"] == "Advanced":
@@ -335,9 +353,9 @@ class Merger(QObject):
         names = []
         for op in self.buildRecipe():
             a = self.gui.modelName(op['model_a'])
-            b = self.gui.modelName(op['model_b'])
             alpha = op['alpha']
             if op['operation'] == "Weighted Sum":
+                b = self.gui.modelName(op['model_b'])
                 if type(alpha) == float:
                     names += [f"{alpha:.2f}({a})+{1-alpha:.2f}({b})"]
                 else:
@@ -346,17 +364,21 @@ class Merger(QObject):
                         weights = f"[{','.join([str(a) for a in alpha])}]"
                     names += [f"%({a})+%({b}){weights}"]
             elif op['operation'] == "Add Difference":
+                b = self.gui.modelName(op['model_b'])
                 c = self.gui.modelName(op['model_c'])
                 if type(alpha) == float:
                     names += [f"({a})+{alpha:.2f}({b}-{c})"]
                 else:
                     names += [f"({a})+%({b}-{c})"]
             elif op['operation'] == "Insert LoRA":
+                b = self.gui.modelName(op['model_b'])
                 clip_alpha = op['clip_alpha']
                 if type(alpha) == float:
                     names += [f"({a})+({alpha:.2f},{clip_alpha:.2f})({b})"]
                 else:
                     names += [f"({a})+(%,{clip_alpha:.2f})({b})"]
+            elif op['operation'] == "Modify LoRA":
+                names += [f"{a}"]
         for i in range(len(names)):
             match = f"_result_{i}"
             for k in range(len(names)):
