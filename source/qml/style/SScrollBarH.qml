@@ -22,9 +22,6 @@ ScrollBar {
 
             color: control.pressed ? COMMON.fg3 : COMMON.bg7
             opacity: control.policy === ScrollBar.AlwaysOn || (control.active && control.size < 1.0) ? 0.75 : 0
-            Behavior on opacity {
-                NumberAnimation {}
-            }
         }
     }
 }

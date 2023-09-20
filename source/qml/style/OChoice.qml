@@ -64,7 +64,7 @@ Item {
         return model
     }
 
-    function searchModel(model) {    
+    function searchModel(model) {
         var re = new RegExp(searchBox.text, "i");
         return model.filter((entry) => re.test(entry));
     }

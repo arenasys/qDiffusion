@@ -113,6 +113,16 @@ FocusReleaser {
     }
 
     Shortcut {
+        sequences: COMMON.keys_merge
+        onActivated: GUI.currentTab = "Merge"
+    }
+
+    /*Shortcut {
+        sequences: COMMON.keys_train
+        onActivated: GUI.currentTab = "Train"
+    }*/
+
+    Shortcut {
         sequences: COMMON.keys_settings
         onActivated: GUI.currentTab = "Settings"
     }

@@ -35,6 +35,7 @@ Rectangle {
 
     SContextMenu {
         id: contextMenu
+        width: 80
         SContextMenuItem {
             text: "Cut"
             onPressed: {

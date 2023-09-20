@@ -25,9 +25,6 @@ ScrollBar {
             anchors.right: parent.right
             color: control.pressed ? control.pressedColor : control.color
             opacity: control.policy === ScrollBar.AlwaysOn || (control.active && control.size < 1.0) ? 0.75 : 0
-            Behavior on opacity {
-                NumberAnimation {}
-            }
         }
     }
 }
