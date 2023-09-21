@@ -123,13 +123,13 @@ def formatRecipe(metadata):
     if lora_recipe and lora_strength:
         recipe = {
             "type": "LoRA",
-            "operations": json.loads(lora_recipe),
+            "operations": lora_recipe,
             "strength": lora_strength
         }
     elif checkpoint_recipe:
         recipe = {
             "type": "Checkpoint",
-            "operations": json.loads(checkpoint_recipe)
+            "operations": checkpoint_recipe
         }
     else:
         return ""
