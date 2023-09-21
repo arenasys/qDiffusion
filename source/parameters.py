@@ -116,6 +116,26 @@ def getParameters(img):
             params += f", Denoising strength: {data['strength']}"
     return params
 
+def formatRecipe(metadata):
+    checkpoint_recipe = metadata.get("merge_checkpoint_recipe","")
+    lora_recipe = metadata.get("merge_lora_recipe","")
+    lora_strength = metadata.get("merge_lora_strength","")
+    if lora_recipe and lora_strength:
+        recipe = {
+            "type": "LoRA",
+            "operations": json.loads(lora_recipe),
+            "strength": lora_strength
+        }
+    elif checkpoint_recipe:
+        recipe = {
+            "type": "Checkpoint",
+            "operations": json.loads(checkpoint_recipe)
+        }
+    else:
+        return ""
+    
+    return json.dumps(recipe)
+
 def getIndex(folder):
     def get_idx(filename):
         try:

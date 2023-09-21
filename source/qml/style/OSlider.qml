@@ -18,13 +18,27 @@ Item {
     property double incValue: 1
     property var snapValue: null
     property var labelWidth: 70
-    property var bounded: true
     property var disabled: false
     property var overlay: root.disabled
     property alias active: valueInput.activeFocus
 
     property var validator: RegExpValidator {
         regExp: /|[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)/
+    }
+
+    property var bounded: true
+    property var minBounded: true
+
+    onBoundedChanged: {
+        if(root.value > root.maxValue) {
+            root.value = root.maxValue
+        }
+    }
+
+    onMinBoundedChanged: {
+        if(root.value < root.minValue) {
+            root.value = root.minValue
+        }
     }
 
     property alias control: control
@@ -115,7 +129,10 @@ Item {
             preventStealing: true
 
             function update() {
-                var pos = Math.max(0, mouseX)
+                var pos = mouseX
+                if(root.minBounded) {
+                    pos = Math.max(0, mouseX)
+                }
                 if(root.bounded) {
                     pos = Math.min(width, pos)
                 }

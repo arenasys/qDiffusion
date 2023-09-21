@@ -436,7 +436,7 @@ Rectangle {
 
                     FileDialog {
                         id: loadFileDialog
-                        nameFilters: [root.tr("Recipe files") + " (*.json)"]
+                        nameFilters: [root.tr("Recipe files") + " (*.json)", root.tr("Image files") + " (*.png)"]
 
                         onAccepted: {
                             MERGER.loadRecipe(file)
@@ -497,6 +497,8 @@ Rectangle {
                         precValue: 2
                         incValue: 0.01
                         snapValue: 0.05
+
+                        bounded: false
                     }
                 }
             }
@@ -544,7 +546,8 @@ Rectangle {
 
                     OChoice {
                         id: modeChoice
-                        height: 30
+                        visible: root.operation.hasAlpha
+                        height: visible ? 30 : 0
                         width: parent.width
                         label: "Mode"
 
@@ -593,10 +596,13 @@ Rectangle {
                                 return "A + αB"
                             }
                             if(operationChoice.value == "Extract LoRA") {
-                                return "α(A - B)"
+                                return "A - B"
                             }
                             if(operationChoice.value == "Modify LoRA") {
                                 return "αA"
+                            }
+                            if(operationChoice.value == "Combine LoRA") {
+                                return "A + B"
                             }
 
                             return ""
@@ -748,8 +754,8 @@ Rectangle {
                     property var hide_rank: operationChoice.value == "Insert LoRA"
 
                     OSlider {
-                        visible: height != 0
-                        height: modeChoice.value == "Advanced" ? 0 : 30
+                        visible: modeChoice.value != "Advanced" && root.operation.hasAlpha
+                        height: visible ? 30 : 0
                         width: parent.width
                         label: "Alpha (α)"
                         
@@ -761,11 +767,14 @@ Rectangle {
                         precValue: 2
                         incValue: 0.01
                         snapValue: 0.05
+
+                        bounded: root.operation.limitAlpha
+                        minBounded: bounded
                     }
 
                     OSlider {
-                        visible: height != 0
-                        height: 30
+                        visible: root.operation.hasAlpha
+                        height: visible ? 30 : 0
                         width: parent.width
                         label: "CLIP Alpha (α)"
                         
@@ -777,6 +786,9 @@ Rectangle {
                         precValue: 2
                         incValue: 0.01
                         snapValue: 0.05
+
+                        bounded: root.operation.limitAlpha
+                        minBounded: bounded
                     }
 
                     OSlider {
@@ -822,7 +834,7 @@ Rectangle {
                 width: blockWeightLabels.big ? parent.width - 20 : 350
 
                 height: blockWeightLabels.big ? 396 : 306
-                visible: modeChoice.value == "Advanced"
+                visible: modeChoice.value == "Advanced" && root.operation.hasAlpha
 
                 Rectangle {
                     width: 6
@@ -888,6 +900,9 @@ Rectangle {
                                     precValue: 2
                                     incValue: 0.01
                                     snapValue: 0.05
+
+                                    bounded: root.operation.limitAlpha
+                                    minBounded: bounded
 
                                     onSelected: {
                                         blockWeightPresets.clear()
@@ -1088,6 +1103,9 @@ Rectangle {
                                 incValue: 0.01
                                 snapValue: 0.05
 
+                                bounded: root.operation.limitAlpha
+                                minBounded: bounded
+
                                 onSelected: {
                                     blockWeightPresets.clear()
                                 }
@@ -1124,6 +1142,9 @@ Rectangle {
                                     incValue: 0.01
                                     snapValue: 0.05
 
+                                    bounded: root.operation.limitAlpha
+                                    minBounded: bounded
+
                                     onSelected: {
                                         blockWeightPresets.clear()
                                     }
@@ -1157,6 +1178,13 @@ Rectangle {
                 color: "transparent"
                 border.color: COMMON.bg4
                 border.width: 2
+            }
+        }
+        SFileDrop {
+            anchors.fill: parent
+            filters: ["*.json", "*.png"]
+            onDropped: {
+                MERGER.drop(mimeData)
             }
         }
     }

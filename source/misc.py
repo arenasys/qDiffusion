@@ -176,6 +176,22 @@ class DropArea(QQuickItem):
     @pyqtProperty(list, notify=updated)
     def filters(self):
         return self._filters
+    
+    def accepted(self, mimeData):
+        if not self._filters:
+            return True
+        formats = mimeData.formats()
+        if any([f in formats for f in self._filters]):
+            return True
+        if mimeData.hasUrls():
+            for url in mimeData.urls():
+                if url.scheme() in self._filters:
+                    return True
+                if url.isLocalFile():
+                    ext = "*." + url.toLocalFile().rsplit('.',1)[-1].lower()
+                    if ext in self._filters:
+                        return True
+        return False
 
     @filters.setter
     def filters(self, filters):
@@ -183,8 +199,7 @@ class DropArea(QQuickItem):
         self.updated.emit()
 
     def dragEnterEvent(self, enter):
-        formats = enter.mimeData().formats()
-        if not self._filters or any([f in formats for f in self._filters]):
+        if self.accepted(enter.mimeData()):
             enter.accept()
             self._containsDrag = True
             self.updated.emit()
@@ -195,13 +210,11 @@ class DropArea(QQuickItem):
         self.updated.emit()
 
     def dragMoveEvent(self, move):
-        formats = move.mimeData().formats()
-        if not self._filters or any([f in formats for f in self._filters]):
+        if self.accepted(move.mimeData()):
             move.accept()
 
     def dropEvent(self, drop):
-        formats = drop.mimeData().formats()
-        if not self._filters or any([f in formats for f in self._filters]):
+        if self.accepted(drop.mimeData()):
             drop.accept()
             self._containsDrag = False
             self.updated.emit()

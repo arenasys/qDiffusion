@@ -4,6 +4,7 @@ import time
 import json
 import difflib
 
+import parameters
 from parameters import VariantMap
 import sql
 import misc
@@ -24,7 +25,7 @@ class MergeOperation(QObject):
         self._parameters = VariantMap(self, {
             "operation": "Weighted Sum",
             "operations_checkpoint": ["Weighted Sum", "Add Difference", "Insert LoRA"],
-            "operations_lora": ["Weighted Sum", "Add Difference", "Modify LoRA"],#, "Extract LoRA"],
+            "operations_lora": ["Weighted Sum", "Add Difference", "Modify LoRA", "Combine LoRA", "Extract LoRA"],
             "mode": "Simple",
             "modes": ["Simple", "Advanced"],
             "preset": "None",
@@ -60,13 +61,24 @@ class MergeOperation(QObject):
         types = self.operationModelTypes(type, operation)
         return len([t for t in types if t])
     
+    @pyqtProperty(bool, notify=updated)
+    def hasAlpha(self):
+        operation = self._parameters.get("operation")
+        return not operation in {"Extract LoRA", "Combine LoRA"}
+    
+    @pyqtProperty(bool, notify=updated)
+    def limitAlpha(self):
+        type = self._merger._parameters.get("type")
+        return type == "Checkpoint"
+    
     def operationModelTypes(self, type, op):
         return {
             "Weighted Sum": [type, type, None],
             "Add Difference": [type, type, type],
             "Insert LoRA": ["Checkpoint", "LoRA", None],
             "Extract LoRA": ["Checkpoint", "Checkpoint", None],
-            "Modify LoRA": ["LoRA", None, None]
+            "Modify LoRA": ["LoRA", None, None],
+            "Combine LoRA": ["LoRA", "LoRA", None],
         }[op]
 
     @pyqtSlot(str)
@@ -76,7 +88,7 @@ class MergeOperation(QObject):
 
             operation = self._parameters.get("operation")
             default_alpha = 0.5
-            if operation == "Modify LoRA":
+            if operation in {"Insert LoRA", "Modify LoRA"}:
                 default_alpha = 1.0
             self._parameters.set("alpha", default_alpha)
             self._parameters.set("clip_alpha", default_alpha)
@@ -259,6 +271,11 @@ class MergeOperation(QObject):
             
         del recipe["mode"]
         
+        if not self.hasAlpha:
+            for k in ["alpha", "clip_alpha"]:
+                if k in recipe:
+                    del recipe[k]
+        
         return recipe
 
 class Merger(QObject):
@@ -352,10 +369,10 @@ class Merger(QObject):
     def recipeName(self, full=False):
         names = []
         for op in self.buildRecipe():
-            a = self.gui.modelName(op['model_a'])
-            alpha = op['alpha']
             if op['operation'] == "Weighted Sum":
+                a = self.gui.modelName(op['model_a'])
                 b = self.gui.modelName(op['model_b'])
+                alpha = op['alpha']
                 if type(alpha) == float:
                     names += [f"{alpha:.2f}({a})+{1-alpha:.2f}({b})"]
                 else:
@@ -364,21 +381,34 @@ class Merger(QObject):
                         weights = f"[{','.join([str(a) for a in alpha])}]"
                     names += [f"%({a})+%({b}){weights}"]
             elif op['operation'] == "Add Difference":
+                a = self.gui.modelName(op['model_a'])
                 b = self.gui.modelName(op['model_b'])
                 c = self.gui.modelName(op['model_c'])
+                alpha = op['alpha']
                 if type(alpha) == float:
                     names += [f"({a})+{alpha:.2f}({b}-{c})"]
                 else:
                     names += [f"({a})+%({b}-{c})"]
             elif op['operation'] == "Insert LoRA":
+                a = self.gui.modelName(op['model_a'])
                 b = self.gui.modelName(op['model_b'])
+                alpha = op['alpha']
                 clip_alpha = op['clip_alpha']
                 if type(alpha) == float:
                     names += [f"({a})+({alpha:.2f},{clip_alpha:.2f})({b})"]
                 else:
                     names += [f"({a})+(%,{clip_alpha:.2f})({b})"]
             elif op['operation'] == "Modify LoRA":
+                a = self.gui.modelName(op['model_a'])
                 names += [f"{a}"]
+            elif op['operation'] == "Extract LoRA":
+                a = self.gui.modelName(op['model_a'])
+                b = self.gui.modelName(op['model_b'])
+                names += [f"({a})-({b})"]
+            elif op['operation'] == "Combine LoRA":
+                a = self.gui.modelName(op['model_a'])
+                b = self.gui.modelName(op['model_b'])
+                names += [f"({a})+({b})"]
         for i in range(len(names)):
             match = f"_result_{i}"
             for k in range(len(names)):
@@ -414,18 +444,33 @@ class Merger(QObject):
     def loadRecipe(self, file):
         file = file.toLocalFile()
         recipe = []
-        try:
-            with open(file, 'r', encoding="utf-8") as f:
-                recipe = json.load(f)
-        except:
-            return
 
-        if type(recipe) == list:
-            model_type = "Checkpoint"
-            operations = recipe
-        else:
+        if file.endswith(".json"):
+            try:
+                with open(file, 'r', encoding="utf-8") as f:
+                    recipe = json.load(f)
+            except:
+                return
+
+            if type(recipe) == list:
+                model_type = "Checkpoint"
+                operations = recipe
+            else:
+                model_type = recipe["type"]
+                operations = recipe["operations"]
+        elif file.endswith(".png"):
+            image = QImage(file)
+            recipe = image.text("recipe")
+            if not recipe:
+                return
+            recipe = json.loads(recipe)
             model_type = recipe["type"]
             operations = recipe["operations"]
+            strength = recipe.get("strength", None)
+            if strength != None:
+                self._parameters.set("strength", strength)
+        else:
+            return
 
         self._parameters.set("type", model_type)
         
@@ -445,7 +490,8 @@ class Merger(QObject):
                         model = op[k]
                         if model.startswith("_result_"):
                             index = int(model.split("_")[-1])
-                            model = os.path.join(f"_result_{index}", f"Model {index}")
+                            label = "Model" if model_type == "Checkpoint" else "LoRA"
+                            model = os.path.join(f"_result_{index}", f"{label} {index}")
                         else:
                             model = self.gui.closestModel(model, models[t])
                         operation._parameters.set(k, model)
@@ -475,6 +521,14 @@ class Merger(QObject):
         self.check()
         self._selected_operation_index = 0
         self.selected.emit()
+
+    @pyqtSlot(misc.MimeData)
+    def drop(self, mimeData):
+        mimeData = mimeData.mimeData
+        for url in mimeData.urls():
+            if url.isLocalFile():
+                self.loadRecipe(url)
+                break
 
     @pyqtProperty(bool, notify=updated)
     def valid(self):

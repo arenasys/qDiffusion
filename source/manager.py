@@ -26,6 +26,9 @@ class OutputWriter(QRunnable):
         m = PIL.PngImagePlugin.PngInfo()
         if metadata:
             m.add_text("parameters", parameters.formatParameters(metadata))
+            recipe = parameters.formatRecipe(metadata)
+            if recipe:
+                m.add_text("recipe", recipe)
 
         folder = os.path.join(outputs, folder)
         os.makedirs(folder, exist_ok=True)
