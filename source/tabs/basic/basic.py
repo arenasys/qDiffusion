@@ -116,6 +116,8 @@ class Basic(QObject):
 
     @pyqtSlot()
     def generate(self, user=True):
+        if user:
+            self._manager.cancelRequest()
         if user or not self._manager.requests:
             self._manager.buildRequests(self._parameters, self._inputs)
         self._manager.makeRequest()

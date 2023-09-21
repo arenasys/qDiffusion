@@ -1138,6 +1138,7 @@ class GridManager(QObject):
         if hasattr(self.parent(), "_inputs"):
             inputs = self.parent()._inputs
 
+        self.manager.cancelRequest()
         self.manager.buildGridRequests(self.parameters, inputs, grid)
         self.manager.makeRequest()
 

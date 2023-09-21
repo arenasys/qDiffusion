@@ -568,7 +568,7 @@ class RequestManager(QObject):
 
                 self.result.emit(out, self.grid_image, self.grid_metadata, file)
             else:
-                
-                self.makeRequest()
+                if self.requests:
+                    self.makeRequest()
         else:
             self.artifact.emit(out, self.grid_image, "preview")
