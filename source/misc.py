@@ -23,8 +23,6 @@ from PyQt5.QtGui import QColor, QImage, QSyntaxHighlighter, QColor
 from PyQt5.QtNetwork import QNetworkRequest, QNetworkReply, QNetworkAccessManager
 from PyQt5.QtQml import qmlRegisterType, qmlRegisterUncreatableType
 
-import numpy as np
-
 class FocusReleaser(QQuickItem):
     releaseFocus = pyqtSignal()
     dropped = pyqtSignal()
@@ -1023,6 +1021,8 @@ def format_float(x):
     return f"{x:.4f}".rstrip('0').rstrip('.')
 
 def expandRanges(input, mode):
+    import numpy as np
+    
     brackets = {"[":"]", "(":")"}
     pattern = re.compile(r"([+\-\d\.]+)-([+\-\d\.]+)((?:\(|\[)([+\-\d\.]+)(?:\)|\]))")
 
