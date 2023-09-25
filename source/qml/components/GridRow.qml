@@ -72,6 +72,7 @@ Item {
 
                     Component.onCompleted: {
                         root.highlighter = GUI.setHighlighting(area.textDocument)
+                        root.highlighter.setRanges(true)
                     }
                 }
 

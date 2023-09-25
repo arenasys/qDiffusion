@@ -226,12 +226,17 @@ class SyntaxManager(QObject):
     def __init__(self, gui):
         super().__init__(gui)
         self.mode = "Prompt"
+        self.ranges = False
         self.keywords = []
         self.highlighter = SyntaxHighlighter(self, gui)
 
     @pyqtSlot(str)
     def setMode(self, mode):
         self.mode = mode
+
+    @pyqtSlot(bool)
+    def setRanges(self, ranges):
+        self.ranges = ranges
 
     @pyqtSlot(list)
     def setKeywords(self, keywords):
@@ -250,9 +255,10 @@ class SyntaxHighlighter(QSyntaxHighlighter):
             self.highlightKeywords(text)
         elif self.manager.mode == "Integer":
             self.highlightIntegers(text)
-            self.highlightRanges(text)
         elif self.manager.mode == "Float":
             self.highlightFloats(text)
+
+        if self.manager.ranges:
             self.highlightRanges(text)
         
     def highlightKeywords(self, text):
@@ -1034,7 +1040,7 @@ def expandRanges(input, mode):
 
         if mode == "int":
             start, end = int(start), int(end)
-        elif mode == "float":
+        else:
             start, end = float(start), float(end)
 
         if specifier[0] == "[":
@@ -1050,7 +1056,7 @@ def expandRanges(input, mode):
         else:
             values = [float(v) for v in np.arange(start,end,interval)] + [end]
         
-        values = [format_float(v) if mode == "float" else str(int(v)) for v in values]
+        values = [str(int(v)) if mode == "int" else format_float(v) for v in values]
         result = []
         for v in values:
             if not v in result:
