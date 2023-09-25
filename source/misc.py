@@ -23,6 +23,8 @@ from PyQt5.QtGui import QColor, QImage, QSyntaxHighlighter, QColor
 from PyQt5.QtNetwork import QNetworkRequest, QNetworkReply, QNetworkAccessManager
 from PyQt5.QtQml import qmlRegisterType, qmlRegisterUncreatableType
 
+import numpy as np
+
 class FocusReleaser(QQuickItem):
     releaseFocus = pyqtSignal()
     dropped = pyqtSignal()
@@ -234,7 +236,7 @@ class SyntaxManager(QObject):
     @pyqtSlot(list)
     def setKeywords(self, keywords):
         self.keywords = [k.lower() for k in keywords]
-        
+
 class SyntaxHighlighter(QSyntaxHighlighter):
     def __init__(self, manager, gui):
         super().__init__(gui)
@@ -243,13 +245,15 @@ class SyntaxHighlighter(QSyntaxHighlighter):
 
     def highlightBlock(self, text):
         if self.manager.mode == "Prompt":
-            return self.highlightPrompt(text)
-        if self.manager.mode == "Keyword":
-            return self.highlightKeywords(text)
-        if self.manager.mode == "Integer":
-            return self.highlightIntegers(text)
-        if self.manager.mode == "Float":
-            return self.highlightFloats(text)
+            self.highlightPrompt(text)
+        elif self.manager.mode == "Keyword":
+            self.highlightKeywords(text)
+        elif self.manager.mode == "Integer":
+            self.highlightIntegers(text)
+            self.highlightRanges(text)
+        elif self.manager.mode == "Float":
+            self.highlightFloats(text)
+            self.highlightRanges(text)
         
     def highlightKeywords(self, text):
         good = QColor("#d0ff93")
@@ -266,6 +270,16 @@ class SyntaxHighlighter(QSyntaxHighlighter):
                         break
             else:
                 self.setFormat(s, e-s, err)
+
+    def highlightRanges(self,text):
+        range = QColor("#93ffe9")
+        range_bg = QColor("#d4faf2")
+
+        for m in re.finditer(r"([+\-\d\.]+)-([+\-\d\.]+)((?:\(|\[)([+\-\d\.]+)(?:\)|\]))", text):
+            s,e = m.span(0)
+            self.setFormat(s, e-s, range_bg)
+            for s,e in [m.span(1), m.span(2), m.span(4)]:
+                self.setFormat(s, e-s, range)
 
     def highlightIntegers(self, text):
         err = QColor("#ff9393")
@@ -999,6 +1013,54 @@ class SuggestionManager(QObject):
         self.gui.config.set("vocab", vocab)
         self.updateVocab()
 
+def format_float(x):
+    return f"{x:.4f}".rstrip('0').rstrip('.')
+
+def expandRanges(input, mode):
+    brackets = {"[":"]", "(":")"}
+    pattern = re.compile(r"([+\-\d\.]+)-([+\-\d\.]+)((?:\(|\[)([+\-\d\.]+)(?:\)|\]))")
+
+    while m := pattern.search(input):
+        p = list(input)
+        s,e = m.span(0)
+
+        start = m.group(1)
+        end = m.group(2)
+        specifier = m.group(3)
+        interval = m.group(4)
+
+        if brackets[specifier[0]] != specifier[-1]:
+            return input
+
+        if mode == "int":
+            start, end = int(start), int(end)
+        elif mode == "float":
+            start, end = float(start), float(end)
+
+        if specifier[0] == "[":
+            interval = int(interval)
+        else:
+            interval = float(interval)
+
+        if not interval:
+            return input
+
+        if specifier[0] == "[":
+            values = np.linspace(start,end,interval)
+        else:
+            values = [float(v) for v in np.arange(start,end,interval)] + [end]
+        
+        values = [format_float(v) if mode == "float" else str(int(v)) for v in values]
+        result = []
+        for v in values:
+            if not v in result:
+                result += [v]
+        
+        p[s:e] = ", ".join(result)
+        input = ''.join(p)
+
+    return input
+
 GRID_TYPES = {
     "None":"",
     "Replace":"prompt",
@@ -1060,15 +1122,15 @@ class GridManager(QObject):
     def buildAxis(self, type, input, match):
         if type == "None":
             return [""], [{}]
-        
+        mode = self.gridTypeMode(type)
+
+        input = expandRanges(input, mode)
         match = match.strip()
         inputs = input.split(",")
         values = []
         labels = []
         key = type.lower().replace(" ", "_")
         prefix = type
-
-        mode = self.gridTypeMode(type)
 
         if mode == "int":
             inputs = [int(v.strip()) for v in inputs]
@@ -1181,6 +1243,7 @@ class GridManager(QObject):
         if not mode:
             return True
         
+        value = expandRanges(value, mode)
         values = [v.strip() for v in value.split(",") if v.strip()]
         
         if mode == "int":

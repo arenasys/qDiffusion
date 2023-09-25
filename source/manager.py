@@ -5,6 +5,7 @@ import io
 import PIL.Image
 import random
 import copy
+import re
 
 from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QSize, QThreadPool, QRect, QMutex, QRunnable, QRectF
 from PyQt5.QtGui import QImage, QPainter, QColor, QFont, QFontMetrics, QTextOption
@@ -381,7 +382,7 @@ class RequestManager(QObject):
                         match, string = v
                         for t in {"prompt", "negative_prompt"}:
                             if match:
-                                prompts[t] = prompts[t].replace(match, string)
+                                prompts[t] = re.sub(match, string, prompts[t])
                             elif t == "prompt":
                                 prompts[t] = string
                             elementParams._values.set(t, prompts[t])
