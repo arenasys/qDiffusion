@@ -266,7 +266,10 @@ class Basic(QObject):
                 curr.setLinked(prev)
                 continue
             if prev._linked:
-                linked_roles = set([p.effectiveRole() for p in self._inputs if p._linked == prev._linked and p != curr])
+                linked = [p for p in self._inputs if p._linked == prev._linked and p != curr]
+                if any([p.isTile for p in linked]):
+                    continue
+                linked_roles = set([p.effectiveRole() for p in linked])
                 curr_role = curr.effectiveRole()
                 if not curr_role in linked_roles or curr_role == BasicInputRole.CONTROL:
                     curr.setLinked(prev._linked)

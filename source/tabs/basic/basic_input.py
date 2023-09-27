@@ -61,6 +61,8 @@ class BasicInput(QObject):
             "bool": "False", "bool_label": "", "slider_a": 0.0, "slider_a_label": "", "slider_b": 0.0, "slider_b_label": ""
             })
         self._control_settings.updated.connect(self.onControlSettingsUpdated)
+        self._tiles = []
+        self._tile_size = 0
 
         # Subprompts
         self._areas = []
@@ -84,6 +86,7 @@ class BasicInput(QObject):
             if self._linked and self._linked.image and not self._linked.image.isNull():
                 bg = self._linked.image
                 self.resizeImage(bg.size())
+                self.linkedUpdated.emit()
             else:
                 if (self._role == BasicInputRole.IMAGE and self.basic.hasMask(self)) or self._role == BasicInputRole.SEGMENTATION:
                     self._image = self._original
@@ -99,6 +102,14 @@ class BasicInput(QObject):
         self.updated.emit()
 
     def resizeImage(self, out_z):
+        if self.isTile:
+            self._image = QImage(out_z, QImage.Format_ARGB32_Premultiplied)
+            self._image.fill(0)
+            self._original = self._image
+            self._display = None
+            self.updateTiles()
+            return
+
         self._originalCrop = cropImage(self._original, out_z, self._offset)
         self._image = self._originalCrop.scaled(out_z, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
         self._image.convertTo(self._originalCrop.format())
@@ -212,16 +223,24 @@ class BasicInput(QObject):
         return (not self._image.isNull()) or (self._folder != "")
     
     @pyqtProperty(bool, notify=updated)
+    def isTile(self):
+        return self._role == BasicInputRole.CONTROL and self._control_mode == "Tile"
+    
+    @pyqtProperty(bool, notify=updated)
     def canPaint(self):
-        return self._role in {BasicInputRole.IMAGE, BasicInputRole.MASK, BasicInputRole.SUBPROMPT, BasicInputRole.CONTROL}
+        return self._role in {BasicInputRole.IMAGE, BasicInputRole.MASK, BasicInputRole.SUBPROMPT} or (self._role == BasicInputRole.CONTROL and self._control_mode != "Tile")
     
     @pyqtProperty(bool, notify=updated)
     def isMask(self):
         return self._role in {BasicInputRole.MASK, BasicInputRole.SUBPROMPT} or (self._role == BasicInputRole.CONTROL and self._control_mode == "Inpaint")
     
     @pyqtProperty(bool, notify=updated)
+    def isOverlay(self):
+        return self._role in {BasicInputRole.MASK, BasicInputRole.SUBPROMPT} or (self._role == BasicInputRole.CONTROL and self._control_mode in {"Inpaint", "Tile"})
+
+    @pyqtProperty(bool, notify=updated)
     def isCanvas(self):
-        return self._role in {BasicInputRole.IMAGE, BasicInputRole.CONTROL}
+        return self._role in {BasicInputRole.IMAGE} or (self._role == BasicInputRole.CONTROL and self._control_mode != "Tile")
 
     @pyqtProperty(bool, notify=updated)
     def hasSettings(self):
@@ -229,7 +248,7 @@ class BasicInput(QObject):
     
     @pyqtProperty(bool, notify=updated)
     def canAnnotate(self):
-        return self._role in {BasicInputRole.CONTROL} and self._control_mode != "Inpaint"
+        return self._role in {BasicInputRole.CONTROL} and not self._control_mode in {"Inpaint", "Tile"}
     
     @pyqtProperty(bool, notify=updated)
     def showingArtifact(self):
@@ -284,6 +303,14 @@ class BasicInput(QObject):
     def extentWarning(self):
         return self._extentWarning
     
+    @pyqtProperty(list, notify=extentUpdated)
+    def tiles(self):
+        return self._tiles
+    
+    @pyqtProperty(int, notify=extentUpdated)
+    def tile_size(self):
+        return self._tile_size
+    
     @pyqtProperty(parameters.VariantMap, notify=updated)
     def controlSettings(self):
         return self._control_settings
@@ -294,9 +321,16 @@ class BasicInput(QObject):
             value = self._control_settings.get("mode")
             self._control_mode = value
 
+            self._tiles = []
+            self._tile_size = 0
             if value == "Inpaint":
                 preprocessors = ["Inpaint"]
                 preprocessor = "Inpaint"
+            elif value == "Tile":
+                preprocessors = ["Tile"]
+                preprocessor = "Tile"
+                self.clearImage()
+                self.setImageCanvas()
             else:
                 preprocessors = self.basic._parameters._values.get("CN_preprocessors")
                 preprocessor = value
@@ -309,6 +343,7 @@ class BasicInput(QObject):
             self.setArtifacts({})
             
             self.updated.emit()
+            self.extentUpdated.emit()
             self.parent().updated.emit()
         if key == "preprocessor":
             self.setArtifacts({})
@@ -334,8 +369,17 @@ class BasicInput(QObject):
                     "bool": "False", "bool_label": "Hands and Face",
                     "slider_a_label": "", "slider_b_label": ""
                 }
+            if value == "Tile":
+                settings = {
+                    "bool_label": "",
+                    "slider_a_label": "Tile size", "slider_a": 512,
+                    "slider_b_label": "Tile scale", "slider_b": 1.25
+                }
             for k,v in settings.items():
                 self._control_settings.set(k,v)
+        
+        if self.isTile:
+            self.updateTiles()
 
     @pyqtProperty(str, notify=updated)
     def controlMode(self):
@@ -630,6 +674,59 @@ class BasicInput(QObject):
         self._extent = QRect(x1,y1,x2-x1,y2-y1)
         self._extentWarning = (x2-x1) > working[0] or (y2-y1) > working[1]
         self.extentUpdated.emit()
+
+    def get_tiles(self, img_size, tile_size, upscale=1.25):
+        img_width, img_height = img_size
+
+        tile_size = int(tile_size / upscale)
+        tile_size -= tile_size % 8
+
+        if tile_size > min(img_height, img_width):
+            tile_size = min(img_height, img_width)
+
+        overlap = tile_size / 4
+
+        count_x = math.ceil(img_width/(tile_size-overlap/2))
+        count_y = math.ceil(img_height/(tile_size-overlap/2))
+        
+        match_width = tile_size == img_width
+        match_height = tile_size == img_height
+
+        if match_width and match_height:
+            count_x, count_y = 2, 2
+            tile_size = int((tile_size + overlap)/2)
+        elif match_width:
+            count_x = 1
+        elif match_height:
+            count_y = 1
+        else:
+            size_x = ((overlap*(count_x-1)) + img_width)/count_x
+            size_y = ((overlap*(count_y-1)) + img_height)/count_y
+            tile_size = int(max(size_x, size_y))
+
+        interval_x = 0 if count_x == 1 else tile_size - ((count_x*tile_size)-img_width)/(count_x-1)
+        interval_y = 0 if count_y == 1 else tile_size - ((count_y*tile_size)-img_height)/(count_y-1)
+
+        tiles = []
+        for x in range(count_x):
+            for y in range(count_y):
+                position_x = int(x*interval_x)
+                position_y = int(y*interval_y)
+                tiles += [QRect(position_x, position_y, tile_size, tile_size)]
+        
+        return tiles, tile_size
+
+    def updateTiles(self):
+        img_size = (self.width, self.height)
+        tile_size = int(self._control_settings.get("slider_a"))
+        tile_upscale = self._control_settings.get("slider_b")
+
+        if tile_size == 0 or tile_upscale < 1:
+            return
+
+        self._tiles, self._tile_size = self.get_tiles(img_size, tile_size, tile_upscale)
+        self.extentUpdated.emit()
+        return
 
     @pyqtSlot()
     def clearImage(self):

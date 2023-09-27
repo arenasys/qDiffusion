@@ -13,6 +13,7 @@ Item {
     property var painting: false
     property var editing: masking || painting
     property var segmenting: false
+    property var tiling: false
     property var file: null
     property var image: null
     visible: false
@@ -81,10 +82,12 @@ Item {
             root.masking = target.isMask
             root.painting = !target.isMask && target.isCanvas
             root.segmenting = (target.role == 5)
+            root.tiling = target.isTile
         } else {
             root.masking = false
             root.painting = false
             root.segmenting = false
+            root.tiling = false
         }
 
         var reset = false
@@ -104,6 +107,13 @@ Item {
             root.image = null
             movable.itemWidth = canvas.sourceSize.width
             movable.itemHeight = canvas.sourceSize.height
+            root.file = null
+        } else if (root.tiling) {
+            canvas.visible = false
+            root.image = Qt.binding(function () { return root.target.linked ? root.target.linkedImage : root.target.image; })
+            reset = movable.itemWidth != (root.target.linked ? root.target.linkedWidth : root.target.width) || movable.itemHeight != (root.target.linked ? root.target.linkedHeight : root.target.height)
+            movable.itemWidth = Qt.binding(function () { return root.target.linked ? root.target.linkedWidth : root.target.width; })
+            movable.itemHeight = Qt.binding(function () { return root.target.linked ? root.target.linkedHeight : root.target.height; })
             root.file = null
         } else {
             canvas.visible = false
@@ -375,6 +385,29 @@ Item {
                 y: show ? root.target.extent.y*factor : 0
                 width: show ? root.target.extent.width*factor : 0
                 height: show ? root.target.extent.height*factor : 0
+            }
+        }
+
+        Item {
+            visible: root.tiling
+            anchors.fill: item
+
+            Repeater {
+                id: tiles
+                property var show: root.target != null && root.target.tiles != undefined
+                model: show ? root.target.tiles : []
+
+                Rectangle {
+                    property var factor: (item.width/root.target.width)
+                    border.color: Qt.hsva(index/tiles.model.length, 1.0, 1.0, 0.75)
+                    border.width: 2
+                    color: Qt.hsva(index/tiles.model.length, 1.0, 1.0, 0.1)
+
+                    x: show ? modelData.x*factor : 0
+                    y: show ? modelData.y*factor : 0
+                    width: show ? Math.floor(modelData.width*factor) : 0
+                    height: show ? Math.floor(modelData.height*factor) : 0
+                }
             }
         }
 

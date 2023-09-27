@@ -3,6 +3,8 @@ import os
 import ctypes
 import math
 
+#NOTE: imported by launcher
+
 try:
     ctypes.windll.ole32.CoInitialize.restype = ctypes.HRESULT
     ctypes.windll.ole32.CoInitialize.argtypes = [ctypes.c_void_p]
@@ -1022,7 +1024,7 @@ def format_float(x):
 
 def expandRanges(input, mode):
     import numpy as np
-    
+
     brackets = {"[":"]", "(":")"}
     pattern = re.compile(r"([+\-\d\.]+)-([+\-\d\.]+)((?:\(|\[)([+\-\d\.]+)(?:\)|\]))")
 

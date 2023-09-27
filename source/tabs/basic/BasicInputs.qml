@@ -310,6 +310,24 @@ Item {
                         }
 
                         Repeater {
+                            id: tiles
+                            model: modelData.tiles
+
+                            Rectangle {
+                                visible: itemImage.sourceWidth > 0
+                                border.color: Qt.hsva(index/tiles.model.length, 1.0, 1.0, 0.75)
+                                border.width: 2
+                                color: Qt.hsva(index/tiles.model.length, 1.0, 1.0, 0.1)
+
+                                x: modelData.x*parent.factor
+                                y: modelData.y*parent.factor
+                                width: Math.floor(modelData.width*parent.factor)
+                                height: Math.floor(modelData.height*parent.factor)
+                            }
+                        }
+
+
+                        Repeater {
                             visible: modelData.role == 5
                             model: visible ? modelData.segmentationPoints : []
 
@@ -379,7 +397,7 @@ Item {
                         }
 
                         Rectangle {
-                            visible: sizeLabel.text != ""
+                            visible: sizeLabel.visible
                             anchors.fill: sizeLabel
                             color: "#e0101010"
                             border.width: 1
@@ -388,9 +406,34 @@ Item {
 
                         SText {
                             id: sizeLabel
+                            visible: text != ""
                             text: modelData.size
                             anchors.top: parent.top
                             anchors.right: parent.right
+                            height: roleLabel.height
+                            leftPadding: 3
+                            topPadding: 3
+                            rightPadding: 3
+                            bottomPadding: 3
+                            color: COMMON.fg1_5
+                            font.pointSize: 9.2
+                        }
+
+                        Rectangle {
+                            visible: tileLabel.visible
+                            anchors.fill: tileLabel
+                            color: "#e0101010"
+                            border.width: 1
+                            border.color: COMMON.bg3
+                        }
+
+                        SText {
+                            id: tileLabel
+                            visible: modelData.tile_size != 0
+                            text: modelData.tile_size
+                            anchors.top: sizeLabel.bottom
+                            anchors.right: parent.right
+                            anchors.topMargin: -1
                             height: roleLabel.height
                             leftPadding: 3
                             topPadding: 3
@@ -634,7 +677,7 @@ Item {
                     spacing: 5
 
                     SIconButton {
-                        visible: !modelData.hasSource
+                        visible: !modelData.hasSource && modelData.isTile
                         id: uploadButton
                         icon: "qrc:/icons/folder.svg"
                         onPressed: {
@@ -699,7 +742,7 @@ Item {
                         OChoice {
                             label: root.tr("Preprocessor")
                             width: parent.width
-                            visible: modelData.role == 4
+                            visible: modelData.role == 4 && !modelData.isTile
                             height: visible ? 22 : 0
 
                             bindMap: modelData.controlSettings
@@ -729,15 +772,18 @@ Item {
                             bindKey: "slider_a"
                             bindKeyLabel: "slider_a_label"
 
+                            property var tile: modelData.isTile
+
                             function label_display(text) {
                                 return root.tr(text)
                             }
 
-                            minValue: 0
-                            maxValue: 1
-                            precValue: 2
-                            incValue: 0.01
-                            snapValue: 0.05
+                            minValue: tile ? 256 : 0
+                            maxValue: tile ? 1024 : 1
+                            precValue: tile ? 0 : 2
+                            incValue: tile ? 8 : 0.01
+                            snapValue: tile ? 64 : 0.05
+                            bounded: tile ? false : true
                         }
                         OSlider {
                             visible: label != ""
@@ -748,15 +794,18 @@ Item {
                             bindKey: "slider_b"
                             bindKeyLabel: "slider_b_label"
 
+                            property var tile: modelData.isTile
+
                             function label_display(text) {
                                 return root.tr(text)
                             }
 
-                            minValue: 0
-                            maxValue: 1
+                            minValue: tile ? 1 : 0
+                            maxValue: tile ? 2 : 1
                             precValue: 2
                             incValue: 0.01
                             snapValue: 0.05
+                            bounded: tile ? false : true
                         }
                         OSlider {
                             width: parent.width
@@ -847,7 +896,9 @@ Item {
                     width: parent.width - 20
 
                     onDropped: {
-                        modelData.setImageDrop(mimeData, index)
+                        if (!modelData.isTile) {
+                            modelData.setImageDrop(mimeData, index)
+                        }
                     }
                 }
 
