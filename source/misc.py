@@ -1045,32 +1045,35 @@ def expandRanges(input, mode):
         if brackets[specifier[0]] != specifier[-1]:
             return input
 
-        if mode == "int":
-            start, end = int(start), int(end)
-        else:
-            start, end = float(start), float(end)
+        try:
+            if mode == "int":
+                start, end = int(start), int(end)
+            else:
+                start, end = float(start), float(end)
 
-        if specifier[0] == "[":
-            interval = int(interval)
-        else:
-            interval = float(interval)
+            if specifier[0] == "[":
+                interval = int(interval)
+            else:
+                interval = float(interval)
 
-        if not interval:
+            if not interval:
+                return input
+
+            if specifier[0] == "[":
+                values = np.linspace(start,end,interval)
+            else:
+                values = [float(v) for v in np.arange(start,end,interval)] + [end]
+            
+            values = [str(int(v)) if mode == "int" else format_float(v) for v in values]
+            result = []
+            for v in values:
+                if not v in result:
+                    result += [v]
+            
+            p[s:e] = ", ".join(result)
+            input = ''.join(p)
+        except:
             return input
-
-        if specifier[0] == "[":
-            values = np.linspace(start,end,interval)
-        else:
-            values = [float(v) for v in np.arange(start,end,interval)] + [end]
-        
-        values = [str(int(v)) if mode == "int" else format_float(v) for v in values]
-        result = []
-        for v in values:
-            if not v in result:
-                result += [v]
-        
-        p[s:e] = ", ".join(result)
-        input = ''.join(p)
 
     return input
 
