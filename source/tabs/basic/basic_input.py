@@ -36,8 +36,13 @@ class BasicInput(QObject):
         self._role = role
         self._linked = None
         self._dragging = False
-        self._offset = 0.5
         self._canvas = False
+
+        self._offset_x = 0
+        self._offset_y = 0
+        self._scale = 1.0
+
+        self._warning = ""
 
         self._display = None
         self._artifacts = {}
@@ -110,7 +115,11 @@ class BasicInput(QObject):
             self.updateTiles()
             return
 
-        self._originalCrop = cropImage(self._original, out_z, self._offset)
+        ox, oy, s = self._offset_x, self._offset_y, self._scale
+        if not self.isCanvas or self.isMask:
+            ox, oy, s = 0, 0, 1
+
+        self._originalCrop = cropImage(self._original, out_z, ox, oy, s)
         self._image = self._originalCrop.scaled(out_z, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
         self._image.convertTo(self._originalCrop.format())
 
@@ -145,6 +154,12 @@ class BasicInput(QObject):
     @pyqtSlot()
     def updateLinked(self):
         self.updateImage()
+        if self.isTile:
+            if self._linked:
+                self._warning = ""
+            else:
+                self._warning = "Tile needs an image"
+            self.updated.emit()
         self.linkedUpdated.emit()
     
     @pyqtProperty(int, notify=updated)
@@ -154,8 +169,11 @@ class BasicInput(QObject):
     @role.setter
     def role(self, role):
         self._role = BasicInputRole(role)
+        self._warning = ""
         if self._role != BasicInputRole.CONTROL:
             self._control_settings.set("mode", "")
+        if self._role == BasicInputRole.SEGMENTATION:
+            self.resetSegmentation()
         self.updateImage()
         self.parent().updated.emit()
 
@@ -192,20 +210,40 @@ class BasicInput(QObject):
         return self._image.height()
     
     @pyqtProperty(float, notify=updated)
-    def offset(self):
-        return self._offset
+    def offsetX(self):
+        return self._offset_x
     
-    @offset.setter
-    def offset(self, offset):
-        self._offset = max(0.0, min(1.0, offset))
+    @offsetX.setter
+    def offsetX(self, offset):
+        self._offset_x = max(-1.0, min(1.0, offset))
         self.updateImage()
 
-    @pyqtProperty(bool, notify=updated)
-    def offsetDirection(self):
-        rw = self._image.width() / self._original.width()
-        rh = self._image.height() / self._original.height()
-        return rw > rh
+    @pyqtProperty(float, notify=updated)
+    def offsetY(self):
+        return self._offset_y
     
+    @offsetY.setter
+    def offsetY(self, offset):
+        self._offset_y = max(-1.0, min(1.0, offset))
+        self.updateImage()
+
+    @pyqtProperty(float, notify=updated)
+    def scale(self):
+        return self._scale
+    
+    @scale.setter
+    def scale(self, scale):
+        self._scale = max(1.0, scale)
+        self.updateImage()
+
+    @pyqtProperty(str, notify=updated)
+    def warning(self):
+        return self._warning
+    
+    @pyqtProperty(QImage, notify=updated)
+    def original(self):
+        return self._original
+
     @pyqtProperty(int, notify=updated)
     def originalWidth(self):
         return self._original.width()
@@ -213,6 +251,24 @@ class BasicInput(QObject):
     @pyqtProperty(int, notify=updated)
     def originalHeight(self):
         return self._original.height()
+    
+    @pyqtProperty(float, notify=updated)
+    def proportionX(self):
+        if not self._originalCrop:
+            return 0
+        diff = self._original.width() - self._originalCrop.width()
+        if diff == 0:
+            return 0
+        return self._original.width()/diff
+    
+    @pyqtProperty(float, notify=updated)
+    def proportionY(self):
+        if not self._originalCrop:
+            return 0
+        diff = self._original.height() - self._originalCrop.height()
+        if diff == 0:
+            return 0
+        return self._original.height()/diff
 
     @pyqtProperty(bool, notify=updated)
     def empty(self):
@@ -349,6 +405,15 @@ class BasicInput(QObject):
             self.setArtifacts({})
 
             value = self._control_settings.get("preprocessor")
+
+            mode = self._control_settings.get("mode")
+
+            if not value in {mode, "None"}:
+                self._warning = "Non-standard preprocessor"
+            else:
+                self._warning = ""
+            self.updated.emit()
+
             settings = {
                 "bool_label": "", "slider_a_label": "", "slider_b_label": ""
             }
@@ -441,8 +506,17 @@ class BasicInput(QObject):
     @pyqtSlot()
     def resetSegmentation(self):
         self._segmentation_points = []
+        self.warnSegmentation()
         self.updated.emit()
     
+    def warnSegmentation(self):
+        if not self._role == BasicInputRole.SEGMENTATION:
+            return
+        if len(self._segmentation_points) == 0 :
+            self._warning = "Segmentation needs points"
+        else:
+            self._warning = ""
+
     @pyqtSlot(int, int, int, int)
     def moveSegmentationPoint(self, x, y, newX, newY):
         for i, p in enumerate(self._segmentation_points):
@@ -455,6 +529,7 @@ class BasicInput(QObject):
     @pyqtSlot(int, int, int)
     def addSegmentationPoint(self, x, y, label):
         self._segmentation_points += [(x,y,label)]
+        self.warnSegmentation()
         self.updated.emit()
     
     @pyqtSlot(int, int)
@@ -465,6 +540,7 @@ class BasicInput(QObject):
         else:
             return
         self._segmentation_points.pop(i)
+        self.warnSegmentation()
         self.updated.emit()
     
     def setArtifacts(self, artifacts):
@@ -559,11 +635,8 @@ class BasicInput(QObject):
     def getAreas(self):
         out = []
         for a in self._areas:
-            size = self._image.size()
-            a = a.scaled(size, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
-            dx = int((a.width()-size.width())*self._offset)
-            dy = int((a.height()-size.height())*self._offset)
-            a = a.copy(dx, dy, size.width(), size.height())
+            z = self._image.size()
+            a = cropImage(a, z)
             out += [a]
         return out
 
@@ -597,7 +670,9 @@ class BasicInput(QObject):
                 source = self.basic._inputs[source]
                 if not source._display:
                     self._image = source._original
-                    self._offset = source._offset
+                    self._offset_x = source._offset_x
+                    self._offset_y = source._offset_y
+                    self._scale = source._scale
                 else:
                     self._image = source.display
                 found = True
@@ -664,6 +739,8 @@ class BasicInput(QObject):
         if bound == None:
             self._extent = QRect()
             self.extentUpdated.emit()
+            self._warning = ""
+            self.updated.emit()
             return
 
         source = (self._image.width(), self._image.height())
@@ -674,6 +751,12 @@ class BasicInput(QObject):
         self._extent = QRect(x1,y1,x2-x1,y2-y1)
         self._extentWarning = (x2-x1) > working[0] or (y2-y1) > working[1]
         self.extentUpdated.emit()
+
+        if self._extentWarning:
+            self._warning = "Inpainting at lower resolution"
+        else:
+            self._warning = ""
+        self.updated.emit()
 
     def get_tiles(self, img_size, tile_size, upscale=1.25):
         img_width, img_height = img_size

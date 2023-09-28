@@ -566,7 +566,6 @@ class RequestManager(QObject):
                 writer = OutputWriter(self.grid_image, self.grid_metadata, self.gui.outputDirectory(), folder, None)
                 file = writer.file
                 QThreadPool.globalInstance().start(writer)
-
                 self.result.emit(out, self.grid_image, self.grid_metadata, file)
             else:
                 if self.requests:

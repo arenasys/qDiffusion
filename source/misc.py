@@ -393,7 +393,7 @@ def encodeImage(img):
     img.save(bf, "PNG")
     return ba.data()
 
-def cropImage(img, size, offset = 0.5):
+def cropImage(img, size, offset_x = 0, offset_y = 0, scale = 1):
     in_z = img.size()
         
     ar = size.width()/size.height()
@@ -408,8 +408,13 @@ def cropImage(img, size, offset = 0.5):
     elif size.height() * rw > in_z.height():
         w = math.ceil(h * ar)
 
-    dx = int((in_z.width()-w)*offset)
-    dy = int((in_z.height()-h)*offset)
+    w, h = int(w / scale), int(h / scale)
+
+    ox = (offset_x + 1)/2
+    oy = (offset_y + 1)/2
+
+    dx = int((in_z.width()-w)*ox)
+    dy = int((in_z.height()-h)*oy)
 
     return img.copy(dx, dy, w, h)
 

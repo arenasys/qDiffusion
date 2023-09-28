@@ -478,13 +478,13 @@ Item {
                     anchors.fill: parent
                     acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
                     property var startPosition: Qt.point(0,0)
-                    property var startOffset: 0
+                    property var startOffset: Qt.point(0,0)
                     property bool ready: false
                     property var image
                     z: -1
                     onPressed: {
                         startPosition = Qt.point(mouse.x, mouse.y)
-                        startOffset = modelData.offset
+                        startOffset = Qt.point(modelData.offsetX, modelData.offsetY)
                         if (mouse.button == Qt.LeftButton) {
                             inputListView.currentIndex = index
                             itemFrame.forceActiveFocus()
@@ -513,22 +513,28 @@ Item {
                             }
                         }
                         if(pressedButtons & Qt.MiddleButton) {
-                            var d = 0
-                            var z = 0
-                            if(modelData.offsetDirection) {
-                                d = mouse.y-startPosition.y
-                                z = ((trueFrame.width/modelData.originalWidth)*modelData.originalHeight) - trueFrame.height
-                            } else {
-                                d = mouse.x-startPosition.x
-                                z = ((trueFrame.height/modelData.originalHeight)*modelData.originalWidth) - trueFrame.width
-                            }
+                            var s = 1/modelData.scale
 
-                            modelData.offset = startOffset - (d/z)
+                            var px = modelData.proportionX
+                            var py = modelData.proportionY
+
+                            var dx = s*(mouse.x-startPosition.x)/(itemImage.width)
+                            var dy = s*(mouse.y-startPosition.y)/(itemImage.height)
+
+
+                            modelData.offsetX = startOffset.x - 2*px*dx
+                            modelData.offsetY = startOffset.y - 2*py*dy
+                            modelData.resetDisplay()
                         }
                     }
 
                     onWheel: {
-                        wheel.accepted = false
+                        if(wheel.angleDelta.y < 0) {
+                            modelData.scale -= 0.05
+                        } else {
+                            modelData.scale += 0.05
+                        }
+                        modelData.resetDisplay()
                     }
 
                     SContextMenu {
@@ -614,6 +620,55 @@ Item {
                 }
 
 
+                Item {
+                    visible: modelData.warning != ""
+                    x: borderFrame.x + 1
+                    y: borderFrame.y + borderFrame.height - (settingsArea.visible ? settingsArea.height : (settingsButton.visible ? 21 : 1)) - height
+                    height: 22
+                    width: 20
+                    clip: true
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.leftMargin: -1
+                        color: "#e0101010"
+                        border.color: COMMON.bg3
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        id: warningMouse
+                        hoverEnabled: true
+                        acceptedButtons: Qt.NoButton
+                    }
+
+                    SToolTip {
+                        x: -1
+                        y: -height + 1
+                        visible: warningMouse.containsMouse
+                        delay: 100
+                        text: modelData.warning
+                        font.pointSize: 9
+                    }
+
+                    Image {
+                        id: warningImg
+                        source: "qrc:/icons/warning.svg"
+                        width: parent.height - 7
+                        height: width
+                        sourceSize: Qt.size(parent.width, parent.height)
+                        anchors.centerIn: parent
+                        smooth: true
+                        antialiasing: true
+                    }
+
+                    ColorOverlay {
+                        id: color
+                        anchors.fill: warningImg
+                        source: warningImg
+                        color: "#ffe459"
+                    }
+                }
+
                 Rectangle {
                     anchors.bottom: refreshButton.bottom
                     anchors.right: refreshButton.right
@@ -677,7 +732,7 @@ Item {
                     spacing: 5
 
                     SIconButton {
-                        visible: !modelData.hasSource && modelData.isTile
+                        visible: !modelData.hasSource && !modelData.isTile
                         id: uploadButton
                         icon: "qrc:/icons/folder.svg"
                         onPressed: {
