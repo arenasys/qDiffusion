@@ -9,6 +9,7 @@ import shutil
 import importlib
 import pkg_resources
 import json
+import hashlib
 
 import platform
 IS_WIN = platform.system() == 'Windows'
@@ -21,8 +22,8 @@ from PyQt5.QtGui import QIcon
 from translation import Translator
 
 NAME = "qDiffusion"
-APPID = "arenasys.qdiffusion.v1"
 LAUNCHER = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "qDiffusion.exe")
+APPID = "arenasys.qdiffusion." + hashlib.md5(LAUNCHER.encode("utf-8")).hexdigest()
 ERRORED = False
 
 import warnings
@@ -275,7 +276,19 @@ class Coordinator(QObject):
     @mode.setter
     def mode(self, mode):
         self._mode = mode
+        self.writeMode()
         self.updated.emit()
+
+    def writeMode(self):
+        cfg = {}
+        try:
+            with open("config.json", "r", encoding="utf-8") as f:
+                cfg = json.load(f)
+        except Exception as e:
+            pass
+        cfg['mode'] = self._modes[self._mode]
+        with open("config.json", "w", encoding="utf-8") as f:
+            json.dump(cfg, f, indent=4)
 
     @pyqtProperty(bool, notify=updated)
     def enforceVersions(self):
@@ -389,15 +402,7 @@ class Coordinator(QObject):
     
     @pyqtSlot()
     def doneInstalling(self):
-        cfg = {}
-        try:
-            with open("config.json", "r", encoding="utf-8") as f:
-                cfg = json.load(f)
-        except Exception as e:
-            pass
-        cfg['mode'] = self._modes[self._mode]
-        with open("config.json", "w", encoding="utf-8") as f:
-            json.dump(cfg, f)
+        self.writeMode()
 
         self._installing = ""
         self.installer = None

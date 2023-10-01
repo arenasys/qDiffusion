@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
@@ -50,23 +52,23 @@ func (p *ProgressWriter) Write(data []byte) (n int, err error) {
 	return n, nil
 }
 
-func ErrorPopup(err string) {
+func errorPopup(err string) {
 	zenity.Error(err, zenity.Title("Error occurred"), zenity.ErrorIcon)
 	fmt.Fprintln(os.Stderr, err)
 	os.Exit(-1)
 }
 
-func Log(err error) {
+func log(err error) {
 	if err.Error() == "abort" {
 		return
 	}
 	f, _ := os.OpenFile("crash.log", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 	f.WriteString(fmt.Sprintf("LAUNCHER %s\n%s\n\n", time.Now().Local().String(), err.Error()))
 	f.Close()
-	ErrorPopup(fmt.Sprintf("%s.\n\nError saved to crash.log", err.Error()))
+	errorPopup(fmt.Sprintf("%s.\n\nError saved to crash.log", err.Error()))
 }
 
-func Download(path, url string, dlg zenity.ProgressDialog) error {
+func download(path, url string, dlg zenity.ProgressDialog) error {
 	req, _ := http.NewRequest("GET", url, nil)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -86,7 +88,7 @@ func Download(path, url string, dlg zenity.ProgressDialog) error {
 	return err
 }
 
-func Run(args ...string) (err error) {
+func run(args ...string) (err error) {
 	if args[0], err = exec.LookPath(args[0]); err == nil {
 		r, w, _ := os.Pipe()
 		var procAttr os.ProcAttr
@@ -111,7 +113,7 @@ func Run(args ...string) (err error) {
 	return err
 }
 
-func Launch(args ...string) (p *os.Process, err error) {
+func launch(args ...string) (p *os.Process, err error) {
 	if args[0], err = exec.LookPath(args[0]); err == nil {
 		var procAttr os.ProcAttr
 		procAttr.Files = []*os.File{os.Stdin, os.Stdout, os.Stderr}
@@ -121,14 +123,14 @@ func Launch(args ...string) (p *os.Process, err error) {
 	return nil, err
 }
 
-func Exists(path string) bool {
+func exists(path string) bool {
 	if stat, err := os.Stat(path); err == nil && stat.IsDir() {
 		return true
 	}
 	return false
 }
 
-func WriteTest() error {
+func writeTest() error {
 	f, err := os.OpenFile("crash.log", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return err
@@ -141,17 +143,22 @@ func WriteTest() error {
 	return nil
 }
 
-func SetCurrentProcessExplicitAppUserModelID(appID string) bool {
+func setAppUserModelID(appID string) bool {
 	shell32 := syscall.NewLazyDLL("shell32.dll")
-	procSetCurrentProcessExplicitAppUserModelID := shell32.NewProc("SetCurrentProcessExplicitAppUserModelID")
+	proc := shell32.NewProc("SetCurrentProcessExplicitAppUserModelID")
 
 	wAppID, err := syscall.UTF16PtrFromString(appID)
 	if err != nil {
 		return false
 	}
 
-	result, _, _ := procSetCurrentProcessExplicitAppUserModelID.Call(uintptr(unsafe.Pointer(wAppID)))
+	result, _, _ := proc.Call(uintptr(unsafe.Pointer(wAppID)))
 	return result == 0
+}
+
+func Checksum(s string) string {
+	b := md5.Sum([]byte(s))
+	return hex.EncodeToString(b[:])
 }
 
 func main() {
@@ -160,27 +167,27 @@ func main() {
 	os.Chdir(exe_dir)
 
 	// Set early (also set in main.py) to avoid flickering
-	SetCurrentProcessExplicitAppUserModelID("arenasys.qdiffusion.v1")
+	setAppUserModelID("arenasys.qdiffusion." + Checksum(exe))
 
 	args := os.Args[1:]
 	if len(args) >= 2 {
 		if args[0] == "-e" {
-			ErrorPopup(args[1])
+			errorPopup(args[1])
 			return
 		}
 	}
 
-	if !Exists(".\\source") {
-		ErrorPopup("Missing sources. Please extract the ZIP archive.")
+	if !exists(".\\source") {
+		errorPopup("Missing sources. Please extract the ZIP archive.")
 		return
 	}
 
 	var dlg zenity.ProgressDialog = nil
 
-	if !Exists(".\\python") {
-		err := WriteTest()
+	if !exists(".\\python") {
+		err := writeTest()
 		if err != nil {
-			ErrorPopup("Write failed. Please extract the ZIP archive to a folder with write permissions.")
+			errorPopup("Write failed. Please extract the ZIP archive to a folder with write permissions.")
 			return
 		}
 
@@ -188,31 +195,31 @@ func main() {
 
 		dlg.Text("Downloading Python")
 		dlg.Value(0)
-		err = Download(python_file, python_url, dlg)
+		err = download(python_file, python_url, dlg)
 		if err != nil {
-			Log(err)
+			log(err)
 			return
 		}
 
 		dlg.Text("Installing Python")
 		err = targz.Extract(python_file, ".")
 		if err != nil {
-			Log(err)
+			log(err)
 			return
 		}
 		os.Remove(python_file)
 	}
 
 	python := ".\\python\\pythonw.exe"
-	if !Exists(".\\venv") {
+	if !exists(".\\venv") {
 		if dlg == nil {
 			dlg, _ = zenity.Progress(zenity.Title("qDiffusion"), zenity.WindowIcon(exe))
 		}
 
 		dlg.Text("Creating Environment")
 		dlg.Value(99)
-		if err := Run(python, "-m", "venv", "venv"); err != nil {
-			Log(err)
+		if err := run(python, "-m", "venv", "venv"); err != nil {
+			log(err)
 			return
 		}
 	}
@@ -235,22 +242,22 @@ func main() {
 		}
 	}
 
-	if !Exists(".\\venv\\Lib\\site-packages\\PyQt5") {
+	if !exists(".\\venv\\Lib\\site-packages\\PyQt5") {
 		if dlg == nil {
 			dlg, _ = zenity.Progress(zenity.Title("qDiffusion"), zenity.WindowIcon(exe))
 		}
 
 		dlg.Text("Downloading PyQT5")
 		dlg.Value(0)
-		err := Download(pyqt_file, pyqt_url, dlg)
+		err := download(pyqt_file, pyqt_url, dlg)
 		if err != nil {
-			Log(err)
+			log(err)
 			return
 		}
 
 		dlg.Text("Installing PyQT5")
-		if err := Run(python, "-m", "pip", "install", pyqt_file); err != nil {
-			Log(err)
+		if err := run(python, "-m", "pip", "install", pyqt_file); err != nil {
+			log(err)
 			return
 		}
 		os.Remove(pyqt_file)
@@ -260,8 +267,8 @@ func main() {
 		dlg.Close()
 	}
 
-	if proc, err := Launch(python, "source\\main.py"); err != nil {
-		ErrorPopup(err.Error())
+	if proc, err := launch(python, "source\\main.py"); err != nil {
+		errorPopup(err.Error())
 	} else {
 		proc.Release()
 	}

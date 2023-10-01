@@ -728,7 +728,7 @@ class GUI(QObject):
                 data = list(self._favourites)
                 try:
                     with open("fav.json", 'w', encoding="utf-8") as f:
-                        json.dump(data, f)
+                        json.dump(data, f, indent=4)
                 except Exception:
                     pass
 
