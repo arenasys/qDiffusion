@@ -127,7 +127,7 @@ Item {
                         rightPadding: 3
                         bottomPadding: 3
                         color: COMMON.fg1_5
-                        font.pointSize: 9.8
+                        pointSize: 9.8
                     }
 
                     Rectangle {
@@ -148,7 +148,7 @@ Item {
                         rightPadding: 3
                         bottomPadding: 3
                         color: COMMON.fg1_5
-                        font.pointSize: 9.8
+                        pointSize: 9.8
                     }
 
                     Rectangle {
@@ -169,7 +169,7 @@ Item {
                         rightPadding: 3
                         bottomPadding: 3
                         color: COMMON.fg1_5
-                        font.pointSize: 9.2
+                        pointSize: 9.2
                     }
 
                     Rectangle {

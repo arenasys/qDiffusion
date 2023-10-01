@@ -89,7 +89,7 @@ Dialog {
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             text: dialog.title
-            font.pointSize: 9
+            pointSize: 9
             font.bold: true
         }
         SIconButton {
@@ -148,7 +148,7 @@ Dialog {
                     id: contentText
                     color: COMMON.fg1
                     text: control.text
-                    font.pointSize: 9
+                    pointSize: 9
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }

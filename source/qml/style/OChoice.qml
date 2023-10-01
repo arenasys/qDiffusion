@@ -238,7 +238,7 @@ Item {
                 height: 22
                 text: root.decoration(modelData)
                 color: width < contentWidth ? "transparent" : COMMON.fg2
-                font.pointSize:  8.5
+                pointSize:  8.5
                 rightPadding: 8
                 horizontalAlignment: Text.AlignRight
                 verticalAlignment: Text.AlignVCenter
@@ -251,7 +251,7 @@ Item {
                 height: 22
                 text: root.underlineOption(root.display(modelData), searchBox.text)
                 color: COMMON.fg0
-                font.pointSize:  8.5
+                pointSize:  8.5
                 leftPadding: 5
                 rightPadding: 10
                 elide: Text.ElideRight
@@ -319,7 +319,7 @@ Item {
                 anchors.bottom: parent.bottom
                 leftPadding: 5
                 text: root.label_display(root.label)
-                font.pointSize: root.mini ? 7.85 : COMMON.pointLabel
+                pointSize: root.mini ? 7.85 : COMMON.pointLabel
                 color: COMMON.fg1_5
                 verticalAlignment: Text.AlignVCenter
                 elide: Text.ElideRight
@@ -336,7 +336,7 @@ Item {
                 rightPadding: 7
 
                 text: root.display(root.value)
-                font.pointSize: root.mini ? 7.7 : COMMON.pointValue
+                pointSize: root.mini ? 7.7 : COMMON.pointValue
                 color: COMMON.fg0
                 horizontalAlignment: Text.AlignRight
                 verticalAlignment: Text.AlignVCenter
@@ -349,6 +349,7 @@ Item {
             implicitHeight: 30
             color: COMMON.bg2_5
             border.color: COMMON.bg4
+            border.width: 1
         }
 
         popup: Popup {

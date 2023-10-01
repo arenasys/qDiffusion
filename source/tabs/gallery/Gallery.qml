@@ -113,7 +113,7 @@ Rectangle {
                 anchors.fill: parent
                 color: COMMON.fg0
                 font.bold: false
-                font.pointSize: 11
+                pointSize: 11
                 selectByMouse: true
                 verticalAlignment: Text.AlignVCenter
                 leftPadding: 8
@@ -130,7 +130,7 @@ Rectangle {
                 anchors.fill: parent
                 verticalAlignment: Text.AlignVCenter
                 font.bold: false
-                font.pointSize: 11
+                pointSize: 11
                 leftPadding: 8
                 topPadding: 1
                 color: COMMON.fg2
@@ -154,6 +154,15 @@ Rectangle {
             anchors.top: searchDivider.bottom
             anchors.bottom: parent.bottom
             clip: true
+
+            SText {
+                anchors.centerIn: parent
+                visible: gallery.count == 0
+                text: root.tr("Nothing found")
+                color: COMMON.fg2
+                pointSize: 9.8
+            }
+
             model: Sql {
                 id: filesSql
                 query: root.asleep ? "" : ("SELECT file, width, height, parameters FROM images WHERE folder = '" + folder.currentValue + "' AND parameters LIKE '%" + search.text + "%' ORDER BY idx DESC;")
@@ -298,9 +307,9 @@ Rectangle {
             verticalAlignment: Text.AlignVCenter
             rightPadding: 8
             leftPadding: 8
-            topPadding: 8
-            bottomPadding: 1
-            font.pointSize: 9
+            topPadding: 6
+            bottomPadding: 2
+            pointSize: 9
             text: root.tr("%1 images").arg(gallery.count)
         }
 
@@ -328,7 +337,7 @@ Rectangle {
             leftPadding: 8
             topPadding: 8
             bottomPadding: 1
-            font.pointSize: 9
+            pointSize: 9
             text: gallery.selectedLength > 1 ? root.tr("%1 images selected").arg(gallery.selectedLength)  : ""
         }
     }
@@ -353,7 +362,25 @@ Rectangle {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: imageDivider.top
-            height: Math.max(200, imageDivider.y)   
+            height: Math.max(200, imageDivider.y)
+
+            property var empty: view.itemWidth == 0
+            Image {
+                id: placeholder
+                visible: view.empty
+                source: "qrc:/icons/placeholder_black.svg"
+                height: 50
+                width: height
+                sourceSize: Qt.size(width*1.25, height*1.25)
+                anchors.centerIn: view.item
+            }
+
+            ColorOverlay {
+                visible: placeholder.visible
+                anchors.fill: placeholder
+                source: placeholder
+                color: COMMON.bg3
+            }  
         }
 
         Rectangle {
@@ -380,7 +407,7 @@ Rectangle {
             leftPadding: 8
             topPadding: 1
             bottomPadding: 8
-            font.pointSize: 9
+            pointSize: 9
             color: COMMON.fg1_5
             text: gallery.currentWidth != 0 ? gallery.currentWidth + "x" + gallery.currentHeight : ""
         }
@@ -400,10 +427,11 @@ Rectangle {
             anchors.margins: 5
             border.width: 1
             border.color: COMMON.bg4
-            color: "transparent"
+            color: COMMON.bg0
             clip: true
 
             Rectangle {
+                visible: !view.empty
                 id: headerParams
                 anchors.top: parent.top
                 anchors.left: parent.left
@@ -412,6 +440,7 @@ Rectangle {
                 border.width: 1
                 border.color: COMMON.bg4
                 color: COMMON.bg3
+                
                 SText {
                     anchors.fill: parent
                     text: root.tr("Parameters")
@@ -421,6 +450,7 @@ Rectangle {
                 }
 
                 SIconButton {
+                    visible: !view.empty
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
                     anchors.right: inspectButton.left
@@ -437,6 +467,7 @@ Rectangle {
                 }
 
                 SIconButton {
+                    visible: !view.empty
                     id: inspectButton
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
@@ -455,6 +486,7 @@ Rectangle {
             }
 
             STextArea {
+                visible: !view.empty
                 id: parameters
                 color: COMMON.bg1
                 anchors.left: parent.left

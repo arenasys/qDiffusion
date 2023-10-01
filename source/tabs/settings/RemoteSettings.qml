@@ -89,7 +89,7 @@ Item {
             height: 30
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignHCenter
-            font.pointSize: 9.8
+            pointSize: 9.8
             color: COMMON.fg2
         }
 
@@ -294,7 +294,7 @@ Item {
                             leftPadding: 5
                             rightPadding: 5
                             bottomPadding: 2
-                            font.pointSize: 9.5
+                            pointSize: 9.5
                             color: COMMON.fg1_5
                             text: modelData.label
                             elide: Text.ElideRight
@@ -350,7 +350,7 @@ Item {
                                 anchors.fill: parent
                                 verticalAlignment: Text.AlignVCenter
                                 horizontalAlignment: Text.AlignHCenter
-                                font.pointSize: 8.85
+                                pointSize: 8.85
                                 font.bold: true
                                 color: COMMON.fg1_5
                                 text: {
@@ -372,7 +372,7 @@ Item {
                                 verticalAlignment: Text.AlignVCenter
                                 horizontalAlignment: Text.AlignRight
                                 rightPadding: 5
-                                font.pointSize: 8.85
+                                pointSize: 8.85
                                 font.bold: true
                                 color: COMMON.fg1_5
                                 text: modelData.eta

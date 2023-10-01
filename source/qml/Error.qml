@@ -19,7 +19,7 @@ Item {
         anchors.fill: parent
         padding: 20
         color: COMMON.fg2
-        font.pointSize: 9.8
+        pointSize: 9.8
         text: root.tr("Error: %1").arg(root.error)
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter

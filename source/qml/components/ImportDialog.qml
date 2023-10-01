@@ -87,7 +87,7 @@ Dialog {
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             text: dialog.title
-            font.pointSize: 9
+            pointSize: 9
             font.bold: true
         }
         SIconButton {
@@ -188,7 +188,7 @@ Dialog {
                     text: dialog.tr(modelData.label)
                     color: COMMON.fg1
                     opacity: 0.8
-                    font.pointSize: 9.8
+                    pointSize: 9.8
                 }
 
                 Rectangle {
@@ -215,7 +215,7 @@ Dialog {
                     elide: Text.ElideRight
                     color: COMMON.fg2
                     opacity: 0.8
-                    font.pointSize: 9.8
+                    pointSize: 9.8
                 }                
             }
         }
@@ -283,7 +283,7 @@ Dialog {
                     id: contentText
                     color: COMMON.fg1
                     text: control.text
-                    font.pointSize: 9
+                    pointSize: 9
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }

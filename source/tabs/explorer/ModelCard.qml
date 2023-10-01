@@ -169,7 +169,7 @@ Item {
                 id: descText
                 anchors.fill: parent
                 readOnly: !modelCard.editing
-                font.pointSize: 9.8
+                pointSize: 9.8
                 area.color: COMMON.fg2
                 area.textFormat: TextEdit.AutoText
                 property var shortText: (sql_desc.length > grid.descLength ? sql_desc.substring(0, grid.descLength) + "..." : sql_desc)
@@ -264,7 +264,7 @@ Item {
                 elide: Text.ElideRight
                 leftPadding: 5
                 rightPadding: 5
-                font.pointSize: 9.2
+                pointSize: 9.2
                 opacity: 0.8
             }
 

@@ -58,7 +58,7 @@ Item {
             height: 25
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignHCenter
-            font.pointSize: 9.8
+            pointSize: 9.8
             color: GUI.hostEndpoint != "" ? COMMON.fg2 : COMMON.accent(0)
         }
 
@@ -69,7 +69,7 @@ Item {
             visible: GUI.hostPassword != ""
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignHCenter
-            font.pointSize: 9.8
+            pointSize: 9.8
             color: COMMON.fg2
         }
 

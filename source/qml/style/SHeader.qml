@@ -29,7 +29,7 @@ Item {
         anchors.top: hasDivider ? divider.bottom : parent.top
         SText {
             text: root.text
-            font.pointSize: 11
+            pointSize: 11
             leftPadding: 8
             rightPadding: 16
             font.bold: false

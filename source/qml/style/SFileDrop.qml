@@ -36,7 +36,7 @@ AdvancedDropArea {
             anchors.bottom: dropIcon.top
             anchors.bottomMargin: 5
             color: COMMON.fg2
-            font.pointSize: 10
+            pointSize: 10
             font.bold: true
         }
 

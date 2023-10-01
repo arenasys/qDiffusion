@@ -5,10 +5,11 @@ import gui 1.0
 
 ToolTip {
     id: control
-    font.pointSize: 10
+    property alias pointSize: text.pointSize 
     contentItem: SText {
+        id: text
         text: control.text
-        font: control.font
+        pointSize: 10
         color: "white"
     }
 

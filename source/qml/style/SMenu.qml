@@ -11,7 +11,12 @@ Menu {
     bottomPadding: 2
     property var clipShadow: false
 
-    delegate: SContextMenuItem {
+    property var pointSize: 10.6
+    property var color: COMMON.fg1
+
+    delegate: SMenuItem {
+        pointSize: root.pointSize
+        color: root.color
         menuItemSize: root.menuItemSize
     }
 

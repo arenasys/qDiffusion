@@ -400,7 +400,7 @@ Item {
                 height: 20
                 text: BASIC.suggestions.detail(modelData)
                 color: width < contentWidth ? "transparent" : COMMON.fg2
-                font.pointSize: 8.5
+                pointSize: 8.5
                 rightPadding: 8
                 horizontalAlignment: Text.AlignRight
                 verticalAlignment: Text.AlignVCenter
@@ -413,7 +413,7 @@ Item {
                 height: 20
                 text: BASIC.suggestions.display(modelData)
                 color: BASIC.suggestions.color(modelData)
-                font.pointSize: 8.5
+                pointSize: 8.5
                 leftPadding: 5
                 rightPadding: 10
                 elide: Text.ElideRight

@@ -10,6 +10,7 @@ Item {
 
     property var label: "Label"
     property var tooltip: ""
+    property var override: ""
     property double value: 0
     property var defaultValue: null
     property double minValue: 0
@@ -172,7 +173,7 @@ Item {
                 rightPadding: 5
                 width: root.labelWidth
                 verticalAlignment: Text.AlignVCenter
-                font.pointSize: root.mini ? 7.85 : COMMON.pointLabel
+                pointSize: root.mini ? 7.85 : COMMON.pointLabel
                 color: COMMON.fg1_5
                 monospace: false
             }
@@ -195,7 +196,7 @@ Item {
                     rightPadding: 5
                     width: root.labelWidth
                     verticalAlignment: Text.AlignVCenter
-                    font.pointSize: root.mini ? 7.85 : COMMON.pointLabel
+                    pointSize: root.mini ? 7.85 : COMMON.pointLabel
                     color: COMMON.fg1
                     monospace: false
                 }
@@ -237,7 +238,7 @@ Item {
 
 
                 color: COMMON.fg0
-                font.pointSize: root.mini ? 7.7 : COMMON.pointValue
+                pointSize: root.mini ? 7.7 : COMMON.pointValue
                 activeFocusOnPress: false
                 leftPadding: 5
                 rightPadding: 5
@@ -294,6 +295,29 @@ Item {
                         valueInput.selectAll()
                     }
                 }
+            }
+
+            Rectangle {
+                visible: overrideText.visible
+                anchors.fill: overrideText
+                color: COMMON.bg2_5
+                anchors.margins: 2
+            }
+
+            SText {
+                id: overrideText
+                anchors.fill: parent
+
+                color: COMMON.fg2
+                pointSize: 9.8
+                monospace: true
+                rightPadding: 7
+
+                verticalAlignment: Text.AlignVCenter
+                horizontalAlignment: Text.AlignRight
+                
+                text: root.override
+                visible: root.override != ""
             }
         }
 

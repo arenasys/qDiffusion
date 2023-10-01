@@ -51,7 +51,7 @@ Item {
             leftPadding: 7
 
             text: root.label
-            font.pointSize: root.mini ? 7.7 : 9.6
+            pointSize: root.mini ? 7.7 : 9.6
             color: COMMON.fg0
             horizontalAlignment: Text.AlignLeft
             verticalAlignment: Text.AlignVCenter
@@ -66,7 +66,7 @@ Item {
             rightPadding: 7
 
             text: root.type
-            font.pointSize: root.mini ? 7.7 : 9.6
+            pointSize: root.mini ? 7.7 : 9.6
             color: COMMON.fg2
             horizontalAlignment: Text.AlignRight
             verticalAlignment: Text.AlignVCenter

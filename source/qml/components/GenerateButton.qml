@@ -61,7 +61,7 @@ Rectangle {
         anchors.top: parent.top
         anchors.right: parent.right
         text: root.remaining
-        font.pointSize: 9
+        pointSize: 9
         font.bold: true
         rightPadding: 5
         leftPadding: 3

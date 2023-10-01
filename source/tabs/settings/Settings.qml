@@ -63,7 +63,7 @@ Item {
         verticalAlignment: Text.AlignVCenter
         horizontalAlignment: Text.AlignHCenter
         monospace: true
-        font.pointSize: 9.5
+        pointSize: 9.5
 
         color: COMMON.fg2
         text: GraphicsInfo.api + " " + GraphicsInfo.majorVersion + " " + GraphicsInfo.minorVersion + " " + GraphicsInfo.profile

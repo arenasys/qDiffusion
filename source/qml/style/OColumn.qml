@@ -37,7 +37,7 @@ Item {
             id: labelText
             text: root.text
             font.weight: Font.Medium
-            font.pointSize: 10.5
+            pointSize: 10.5
             leftPadding: 6
             rightPadding: 16
             color: COMMON.fg0

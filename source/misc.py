@@ -6,6 +6,8 @@ import math
 #NOTE: imported by launcher
 
 try:
+    from ctypes import wintypes
+
     ctypes.windll.ole32.CoInitialize.restype = ctypes.HRESULT
     ctypes.windll.ole32.CoInitialize.argtypes = [ctypes.c_void_p]
     ctypes.windll.ole32.CoUninitialize.restype = None
@@ -16,7 +18,41 @@ try:
     ctypes.windll.shell32.SHOpenFolderAndSelectItems.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_void_p, ctypes.c_ulong]
     ctypes.windll.shell32.ILFree.restype = None
     ctypes.windll.shell32.ILFree.argtypes = [ctypes.c_void_p]
-except Exception:
+
+    GUID = ctypes.c_ubyte * 16
+
+    class PROPERTYKEY(ctypes.Structure):
+        _fields_ = [("fmtid", GUID),
+                    ("pid", wintypes.DWORD)]
+
+    class PROPVARIANT(ctypes.Structure):
+        _fields_ = [("vt", wintypes.USHORT),
+                    ("wReserved1", wintypes.USHORT),
+                    ("wReserved2", wintypes.USHORT),
+                    ("wReserved3", wintypes.USHORT),
+                    ("pszVal", wintypes.LPWSTR)]
+
+    class IPropertyStoreVtbl(ctypes.Structure):
+        _fields_ = [
+            ('QueryInterface', ctypes.CFUNCTYPE(ctypes.HRESULT, ctypes.c_void_p, ctypes.POINTER(GUID), ctypes.POINTER(ctypes.c_void_p))),
+            ('AddRef', ctypes.CFUNCTYPE(ctypes.c_ulong, ctypes.c_void_p)),
+            ('Release', ctypes.CFUNCTYPE(ctypes.c_ulong, ctypes.c_void_p)),
+            ('GetCount', ctypes.CFUNCTYPE(ctypes.HRESULT, ctypes.c_void_p, ctypes.POINTER(ctypes.c_ulong))),
+            ('GetAt', ctypes.CFUNCTYPE(ctypes.HRESULT, ctypes.c_void_p, ctypes.c_ulong, ctypes.POINTER(PROPERTYKEY))),
+            ('GetValue', ctypes.CFUNCTYPE(ctypes.HRESULT, ctypes.c_void_p, ctypes.POINTER(PROPERTYKEY), ctypes.POINTER(PROPVARIANT))),
+            ('SetValue', ctypes.CFUNCTYPE(ctypes.HRESULT, ctypes.c_void_p, ctypes.POINTER(PROPERTYKEY), ctypes.POINTER(PROPVARIANT))),
+            ('Commit', ctypes.CFUNCTYPE(ctypes.HRESULT, ctypes.c_void_p))
+        ]
+
+    class IPropertyStore(ctypes.Structure):
+        _fields_ = [('lpVtbl', ctypes.POINTER(IPropertyStoreVtbl))]
+
+    ctypes.windll.shell32.SHGetPropertyStoreForWindow.restype = ctypes.HRESULT
+    ctypes.windll.shell32.SHGetPropertyStoreForWindow.argtypes = [wintypes.HWND, ctypes.POINTER(GUID), ctypes.POINTER(ctypes.POINTER(IPropertyStore))]
+
+    IID_IPropertyStore = (GUID)(*bytearray.fromhex("eb8e6d88f28c46448d02cdba1dbdcf99"))
+    PKEY_AppUserModel = (GUID)(*bytearray.fromhex("55284c9f799f394ba8d0e1d42de1d5f3"))
+except:
     pass
 
 from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent, QMimeData, QByteArray, QBuffer, QIODevice, QUrl
@@ -421,24 +457,54 @@ def cropImage(img, size, offset_x = 0, offset_y = 0, scale = 1):
 def showFilesInExplorer(folder, files):
     ctypes.windll.ole32.CoInitialize(None)
 
-    files = [os.path.normpath(f) for f in files]
-    folder = os.path.normpath(folder)
-    count = len(files)
-
     folder_pidl = ctypes.windll.shell32.ILCreateFromPathW(folder.encode('utf-16le') + b'\0')
-    files_pidl = [
-        ctypes.windll.shell32.ILCreateFromPathW(f.encode('utf-16le') + b'\0') for f in files
-    ]
+    files_pidl = [ctypes.windll.shell32.ILCreateFromPathW(f.encode('utf-16le') + b'\0') for f in files]
+    files_pidl_arr = (ctypes.c_void_p * len(files_pidl))(*files_pidl)
 
-    files_pidl_arr = (ctypes.c_void_p * count)(*files_pidl)
-
-    ctypes.windll.shell32.SHOpenFolderAndSelectItems(folder_pidl, count, files_pidl_arr, 0)
+    ctypes.windll.shell32.SHOpenFolderAndSelectItems(folder_pidl, len(files_pidl_arr), files_pidl_arr, 0)
 
     for pidl in files_pidl[::-1]:
         ctypes.windll.shell32.ILFree(pidl)
     ctypes.windll.shell32.ILFree(folder_pidl)
 
     ctypes.windll.ole32.CoUninitialize()
+
+def setWindowProperties(hwnd, app_id, display_name, relaunch_path):
+    ctypes.windll.ole32.CoInitialize(None)
+
+    prop_store = ctypes.POINTER(IPropertyStore)()
+    result = ctypes.windll.shell32.SHGetPropertyStoreForWindow(int(hwnd), IID_IPropertyStore, ctypes.pointer(prop_store))
+    if result != 0:
+        return False
+    functions = prop_store.contents.lpVtbl.contents
+    
+    success = False
+    # PID of PKEY_AppUserModel_ID is 5, etc
+    values = (5, app_id), (4, display_name), (2, relaunch_path)
+    for pid, value in values:
+        prop_key = PROPERTYKEY()
+        prop_key.fmtid = PKEY_AppUserModel
+        prop_key.pid = pid
+
+        prop_variant = PROPVARIANT()
+        prop_variant.vt = 31 # VT_LPWSTR
+        prop_variant.pszVal = value
+
+        result = functions.SetValue(prop_store, prop_key, prop_variant)
+        if result != 0:
+            break
+    else:
+        success = True
+    
+    if success:
+        functions.Commit(prop_store)
+
+    functions.Release(prop_store)
+    ctypes.windll.ole32.CoUninitialize()
+    return success
+
+def setAppID(app_id):
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
 
 NATSORT_KEY = lambda s: [int(t) if t.isdigit() else t.lower() for t in re.split('(\d+)', s)]
 
@@ -1175,7 +1241,7 @@ class GridManager(QObject):
                 prefix = ""
                 values = [{"UNET":v, "CLIP":v, "VAE":v} for v in inputs]
             if type == "Upscaler":
-                values = [{"img2img_upscaler":v, "hr_upscaler":v, "VAE":v} for v in inputs]
+                values = [{"img2img_upscaler":v, "hr_upscaler":v} for v in inputs]
             if type == "Sampler":
                 prefix = ""
                 values = [{"true_sampler":v} for v in inputs]

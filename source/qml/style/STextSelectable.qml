@@ -13,9 +13,12 @@ TextEdit {
     FontLoader {
         source: "qrc:/fonts/SourceCodePro-Regular.ttf"
     }
+    
+    property var pointSize: 10.8
     property var monospace: false
+
     font.family: monospace ? "Source Code Pro" : "Cantarell"
-    font.pointSize: 10.8
+    font.pointSize: pointSize * COORDINATOR.scale
     color: COMMON.fg0
     readOnly: true
     wrapMode: Text.WordWrap

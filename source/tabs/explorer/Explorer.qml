@@ -116,7 +116,7 @@ Item {
                     anchors.fill: parent
                     color: COMMON.fg0
                     font.bold: false
-                    font.pointSize: 11
+                    pointSize: 11
                     selectByMouse: true
                     verticalAlignment: Text.AlignVCenter
                     leftPadding: 8
@@ -132,7 +132,7 @@ Item {
                     anchors.fill: parent
                     verticalAlignment: Text.AlignVCenter
                     font.bold: false
-                    font.pointSize: 11
+                    pointSize: 11
                     leftPadding: 8
                     topPadding: 1
                     color: COMMON.fg2

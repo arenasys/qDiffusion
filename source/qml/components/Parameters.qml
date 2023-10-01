@@ -131,11 +131,47 @@ Item {
             contentHeight: paramColumn.height
             contentWidth: parent.width
             boundsBehavior: Flickable.StopAtBounds
+            interactive: false
 
+            ScrollBar.vertical: SScrollBarV {
+                id: paramScrollBar
+                padding: 0
+                barWidth: 2
+                stepSize: 1/(paramScroll.contentHeight/40)
+                policy: ScrollBar.AlwaysOff
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.NoButton
+                onWheel: {
+                    if(wheel.angleDelta.y < 0) {
+                        paramScrollBar.increase()
+                    } else {
+                        paramScrollBar.decrease()
+                    }
+                }
+            }
+
+            property var positionTarget: null
             function position(item) {
-                var yy = paramScroll.mapFromItem(item, 0, item.height).y - paramScroll.height
-                if(yy > 0) {
-                    paramScroll.contentY = yy
+                var yy = paramColumn.mapFromItem(item, 0, item.height).y
+                if(yy > paramScroll.contentY && yy < paramScroll.contentY + paramScroll.height) {
+                    return
+                }
+                if(yy - paramScroll.height < 0) {
+                    return
+                }
+                paramScroll.contentY = yy - paramScroll.height
+            }
+
+            function targetPosition(item) {
+                positionTarget = item
+            }
+
+            onContentHeightChanged: {
+                if(positionTarget != null) {
+                    position(positionTarget)
                 }
             }
 
@@ -148,7 +184,7 @@ Item {
                     width: parent.width
 
                     onExpanded: {
-                        paramScroll.position(optColumn)
+                        paramScroll.targetPosition(optColumn)
                     }
 
                     OSlider {
@@ -260,33 +296,7 @@ Item {
                             }
                         }
 
-                        Rectangle {
-                            visible: randomLabel.visible
-                            anchors.fill: randomLabel
-                            color: COMMON.bg2_5
-                            anchors.margins: 2
-                        }
-
-                        SText {
-                            visible: seedInput.value == "-1" && !seedInput.active
-                            id: randomLabel
-                            text: "Random"
-                            
-                            anchors.top: seedInput.top
-                            anchors.bottom: seedInput.bottom
-                            anchors.right: seedInput.right
-
-                            anchors.margins: 2
-                            anchors.bottomMargin: 0
-
-                            color: COMMON.fg2
-                            font.pointSize: 9.8
-                            monospace: true
-                            rightPadding: 7
-
-                            verticalAlignment: Text.AlignVCenter
-                            horizontalAlignment: Text.AlignRight
-                        }
+                        override: value == "-1" && !active ? "Random" : ""
                     }
                 }
                 OColumn {
@@ -296,7 +306,7 @@ Item {
                     isCollapsed: true
 
                     onExpanded: {
-                        paramScroll.position(samplerColumn)
+                        paramScroll.targetPosition(samplerColumn)
                     }
 
                     input: OChoice {
@@ -369,7 +379,7 @@ Item {
                     property var componentMode: unetInput.value != vaeInput.value || unetInput.value != clipInput.value
 
                     onExpanded: {
-                        paramScroll.position(modelColumn)
+                        paramScroll.targetPosition(modelColumn)
                     }
 
                     input: OChoice {
@@ -505,7 +515,7 @@ Item {
                     isCollapsed: true
 
                     onExpanded: {
-                        paramScroll.position(netColumn)
+                        paramScroll.targetPosition(netColumn)
                     }
 
                     Item {
@@ -642,7 +652,7 @@ Item {
                     isCollapsed: true
 
                     onExpanded: {
-                        paramScroll.position(ipColumn)
+                        paramScroll.targetPosition(ipColumn)
                     }
 
                     OSlider {
@@ -713,34 +723,7 @@ Item {
                         snapValue: 16
                         bounded: false
 
-                        Rectangle {
-                            visible: fullLabel.visible
-                            anchors.fill: fullLabel
-                            color: COMMON.bg0
-                            anchors.margins: 2
-                        }
-
-                        SText {
-                            visible: paddingInput.value == "-1" && !paddingInput.active
-                            id: fullLabel
-                            text: "Full"
-                            
-                            anchors.top: paddingInput.top
-                            anchors.bottom: paddingInput.bottom
-                            anchors.right: paddingInput.right
-                            
-                            anchors.margins: 2
-                            anchors.rightMargin: 10
-                            anchors.bottomMargin: 0
-
-                            color: COMMON.fg2
-                            font.pointSize: 9.8
-                            monospace: true
-                            rightPadding: 7
-
-                            verticalAlignment: Text.AlignVCenter
-                            horizontalAlignment: Text.AlignRight
-                        }
+                        override: value == "-1" && !active ? "Full" : ""
                     }
 
                     OSlider {
@@ -812,7 +795,7 @@ Item {
                             text: hrColumn.getHRSize()
                             anchors.fill: parent
                             color: COMMON.fg2
-                            font.pointSize: 9.2
+                            pointSize: 9.2
                             opacity: 0.7
                             verticalAlignment: Text.AlignVCenter
                             horizontalAlignment: Text.AlignRight
@@ -821,7 +804,7 @@ Item {
                     }
 
                     onExpanded: {
-                        paramScroll.position(hrColumn)
+                        paramScroll.targetPosition(hrColumn)
                     }
 
                     OSlider {
@@ -965,7 +948,7 @@ Item {
                     isCollapsed: true
 
                     onExpanded: {
-                        paramScroll.position(miscColumn)
+                        paramScroll.targetPosition(miscColumn)
                     }
 
                     OSlider {
@@ -1099,6 +1082,8 @@ Item {
                             bottom: -1
                             top: 2147483646
                         }
+
+                        override: value == "-1" && !active ? "Random" : ""
                     }
                 }
                 OColumn {
@@ -1108,7 +1093,7 @@ Item {
                     isCollapsed: true
 
                     onExpanded: {
-                        paramScroll.position(opColumn)
+                        paramScroll.targetPosition(opColumn)
                     }
 
                     OChoice {

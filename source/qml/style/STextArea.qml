@@ -8,6 +8,7 @@ Rectangle {
 
     property alias text: textArea.text
     property alias font: textArea.font
+    property alias pointSize: textArea.pointSize
     property alias monospace: textArea.monospace
     property alias readOnly: textArea.readOnly
     property alias area: textArea
@@ -92,9 +93,11 @@ Rectangle {
                 source: "qrc:/fonts/SourceCodePro-Regular.ttf"
             }
 
+            property var pointSize: 10.8
             property var monospace: false
+
             font.family: monospace ? "Source Code Pro" : "Cantarell"
-            font.pointSize: 10.8
+            font.pointSize: pointSize * COORDINATOR.scale
             color: COMMON.fg1
 
             onCursorRectangleChanged: {

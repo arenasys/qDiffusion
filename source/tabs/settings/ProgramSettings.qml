@@ -35,7 +35,7 @@ Item {
             height: 30
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignHCenter
-            font.pointSize: 9.8
+            pointSize: 9.8
             color: COMMON.fg2
         }
         STextSelectable {
@@ -45,7 +45,7 @@ Item {
             visible: SETTINGS.gitServerInfo != ""
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignHCenter
-            font.pointSize: 9.8
+            pointSize: 9.8
             color: COMMON.fg2
         }
         
@@ -59,11 +59,11 @@ Item {
             }
             SText {
                 text: root.tr("Restart required")
-                visible: !SETTINGS.updating && SETTINGS.needRestart
+                visible: (!SETTINGS.updating && SETTINGS.needRestart) || scalingChoice.needRestart
                 anchors.fill: parent
                 verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignHCenter
-                font.pointSize: 9.0
+                pointSize: 9.0
                 color: COMMON.accent(0)
             }
         }
@@ -223,6 +223,24 @@ Item {
             model: [root.tr("Hide", "General"), root.tr("Show", "General")]
             onCurrentIndexChanged: {
                 GUI.config.set("advanced", currentIndex != 0)
+            }
+        }
+        OChoice {
+            id: scalingChoice
+            x: -2
+            width: parent.width+2
+            height: 30
+            label: root.tr("Force Window Scaling")
+            currentIndex: GUI.config.get("scaling") ? 1 : 0 
+            model: [root.tr("Disabled", "General"), root.tr("Enabled", "General")]
+            onCurrentIndexChanged: {
+                GUI.config.set("scaling", currentIndex != 0)
+            }
+            
+            property var original: 0
+            property var needRestart: original != currentIndex
+            Component.onCompleted: {
+                original = GUI.config.get("scaling") ? 1 : 0 
             }
         }
     }

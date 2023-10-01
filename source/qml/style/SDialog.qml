@@ -56,7 +56,7 @@ Dialog {
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             text: dialog.title
-            font.pointSize: 9
+            pointSize: 9
             font.bold: true
         }
     }
@@ -93,7 +93,7 @@ Dialog {
                     id: contentText
                     color: COMMON.fg1
                     text: dialog.tr(control.text, "General")
-                    font.pointSize: 9
+                    pointSize: 9
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }

@@ -10,6 +10,7 @@ TabButton {
     width: implicitWidth
     property var selected: false
     property var working: false
+    property alias pointSize: label.pointSize
 
     signal dragEnter()
 
@@ -51,10 +52,11 @@ TabButton {
             }
 
             SText {
+                id: label
                 anchors.fill: parent
                 topPadding: 1
                 text: control.text
-                font.pointSize: 10.9
+                pointSize: 10.9
                 opacity: selected ? 1.0 : 0.7
                 color: COMMON.fg0
                 horizontalAlignment: Text.AlignHCenter

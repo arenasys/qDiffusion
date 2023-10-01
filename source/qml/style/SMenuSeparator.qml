@@ -5,7 +5,7 @@ import QtGraphicalEffects 1.15
 import gui 1.0
 
 MenuSeparator {
-    height: visible ? 13 : 0
+    height: visible ? 10 : 0
     contentItem: Item {
         Rectangle {
             x: -1

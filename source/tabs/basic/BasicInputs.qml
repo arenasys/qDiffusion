@@ -252,7 +252,7 @@ Item {
                                         text: index
                                         color: parent.selected ? COMMON.fg1_5 : COMMON.fg2
                                         monospace: true
-                                        font.pointSize: 9.5
+                                        pointSize: 9.5
                                         verticalAlignment: Text.AlignVCenter
                                         horizontalAlignment: Text.AlignHCenter
                                         opacity: 0.75
@@ -271,7 +271,7 @@ Item {
                                         leftPadding: 5
                                         rightPadding: 5
                                         elide: Text.ElideRight
-                                        font.pointSize: 9.5
+                                        pointSize: 9.5
                                         verticalAlignment: Text.AlignVCenter
                                         horizontalAlignment: Text.AlignLeft
                                     }
@@ -370,7 +370,7 @@ Item {
                             rightPadding: 3
                             bottomPadding: 3
                             color: COMMON.fg1_5
-                            font.pointSize: 9.8
+                            pointSize: 9.8
                         }
 
                         Rectangle {
@@ -393,7 +393,7 @@ Item {
                             rightPadding: 3
                             bottomPadding: 3
                             color: COMMON.fg1_5
-                            font.pointSize: 9.8
+                            pointSize: 9.8
                         }
 
                         Rectangle {
@@ -416,7 +416,7 @@ Item {
                             rightPadding: 3
                             bottomPadding: 3
                             color: COMMON.fg1_5
-                            font.pointSize: 9.2
+                            pointSize: 9.2
                         }
 
                         Rectangle {
@@ -440,7 +440,7 @@ Item {
                             rightPadding: 3
                             bottomPadding: 3
                             color: COMMON.fg1_5
-                            font.pointSize: 9.2
+                            pointSize: 9.2
                         }
 
                         Rectangle {
@@ -647,7 +647,7 @@ Item {
                         visible: warningMouse.containsMouse
                         delay: 100
                         text: modelData.warning
-                        font.pointSize: 9
+                        pointSize: 9
                     }
 
                     Image {

@@ -278,7 +278,7 @@ class Explorer(QObject):
         self.conn.connect()
         self.conn.doQuery("CREATE TABLE models(name TEXT, category TEXT, display TEXT, type TEXT, file TEXT, folder TEXT, desc TEXT, idx INTEGER, width INTEGER, height INTEGER, CONSTRAINT unq UNIQUE (category, idx));")
     
-        self._currentTab = "favourite"
+        self._currentTab = "checkpoint"
         self._currentFolder = ""
         self._cellSize = 150
         self._showInfo = False

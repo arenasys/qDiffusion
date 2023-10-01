@@ -116,7 +116,7 @@ Rectangle {
                         leftPadding: 10
                         bottomPadding: 2
                         font.weight: Font.Medium
-                        font.pointSize: 10.5
+                        pointSize: 10.5
                         color: COMMON.fg1
                     }
 
@@ -239,7 +239,7 @@ Rectangle {
                                     height: parent.height
                                     verticalAlignment: Text.AlignVCenter
                                     horizontalAlignment: Text.AlignHCenter
-                                    font.pointSize: 9.8
+                                    pointSize: 9.8
                                     color: COMMON.fg2
                                     opacity: 0.8
                                     monospace: true
@@ -263,7 +263,7 @@ Rectangle {
                                     height: parent.height
                                     verticalAlignment: Text.AlignVCenter
                                     horizontalAlignment: Text.AlignHCenter
-                                    font.pointSize: 9.4
+                                    pointSize: 9.4
                                     color: COMMON.fg1
 
                                     bindMap: modelData.parameters
@@ -282,7 +282,7 @@ Rectangle {
                                 height: parent.height
                                 verticalAlignment: Text.AlignVCenter
                                 horizontalAlignment: Text.AlignHCenter
-                                font.pointSize: 9.4
+                                pointSize: 9.4
                                 color: COMMON.fg1_5
                                 elide: Text.ElideRight
                                 leftPadding: 3
@@ -310,7 +310,7 @@ Rectangle {
                                 height: parent.height
                                 verticalAlignment: Text.AlignVCenter
                                 horizontalAlignment: Text.AlignHCenter
-                                font.pointSize: 9.4
+                                pointSize: 9.4
                                 color: COMMON.fg1_5
                                 elide: Text.ElideRight
                                 leftPadding: 3
@@ -340,7 +340,7 @@ Rectangle {
                                 height: parent.height
                                 verticalAlignment: Text.AlignVCenter
                                 horizontalAlignment: Text.AlignHCenter
-                                font.pointSize: 9.4
+                                pointSize: 9.4
                                 color: COMMON.fg1_5
                                 elide: Text.ElideRight
                                 leftPadding: 3
@@ -523,7 +523,7 @@ Rectangle {
                         leftPadding: 10
                         topPadding: 1
                         font.weight: Font.Medium
-                        font.pointSize: 10.5
+                        pointSize: 10.5
                         color: COMMON.fg1
                     }
                 }
@@ -579,7 +579,7 @@ Rectangle {
                         leftPadding: 10
                         bottomPadding: 2
                         font.weight: Font.Medium
-                        font.pointSize: 10.5
+                        pointSize: 10.5
                         color: COMMON.fg1
                     }
 
@@ -613,7 +613,7 @@ Rectangle {
                         horizontalAlignment: Text.AlignRight
                         rightPadding: 10
                         bottomPadding: 2
-                        font.pointSize: 9.8
+                        pointSize: 9.8
                         color: COMMON.fg1_5
                     }
 
@@ -741,7 +741,7 @@ Rectangle {
                         leftPadding: 10
                         bottomPadding: 2
                         font.weight: Font.Medium
-                        font.pointSize: 10.5
+                        pointSize: 10.5
                         color: COMMON.fg1
                     }
                 }
@@ -863,7 +863,7 @@ Rectangle {
                             leftPadding: 10
                             bottomPadding: 2
                             font.weight: Font.Medium
-                            font.pointSize: 10.5
+                            pointSize: 10.5
                             color: COMMON.fg1
                         }
                     }
@@ -957,7 +957,7 @@ Rectangle {
                                         leftPadding: 10
                                         topPadding: 1
                                         font.weight: Font.Medium
-                                        font.pointSize: 10.5
+                                        pointSize: 10.5
                                         color: COMMON.fg1
                                     }
                                 }
@@ -973,7 +973,7 @@ Rectangle {
                                     anchors.margins: 4
                                     anchors.topMargin: 32
                                     anchors.bottomMargin: 27
-                                    font.pointSize: 9.5
+                                    pointSize: 9.5
                                     area.color: COMMON.fg1_5
 
                                     property var syncing: true
@@ -1494,7 +1494,7 @@ Rectangle {
                                 rightPadding: 3
                                 bottomPadding: 3
                                 color: COMMON.fg1_5
-                                font.pointSize: 9.2
+                                pointSize: 9.2
                             }
 
                             Rectangle {

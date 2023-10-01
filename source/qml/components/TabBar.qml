@@ -61,6 +61,7 @@ Item {
             text: "▼"
             width: 35
             selected: dropdownContextMenu.activeFocus
+            pointSize: 9
 
             onPressed: {
                 dropdownContextMenu.popup(0,height)

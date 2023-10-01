@@ -10,6 +10,7 @@ Item {
     property var tooltip: ""
     property var value: ""
     property var placeholder: ""
+    property var override: ""
     property var defaultValue: null
     property var mini: height == 20
     property var validator: RegExpValidator { regExp: /.*/ }
@@ -62,7 +63,7 @@ Item {
             anchors.bottom: parent.bottom
             leftPadding: 5
             verticalAlignment: Text.AlignVCenter
-            font.pointSize: control.mini ? 7.85 : COMMON.pointLabel
+            pointSize: control.mini ? 7.85 : COMMON.pointLabel
             color: COMMON.fg1_5
             monospace: false
         }
@@ -109,7 +110,7 @@ Item {
                 rightPadding: 5
                 verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignRight
-                font.pointSize: control.mini ? 7.85 : COMMON.pointValue
+                pointSize: control.mini ? 7.85 : COMMON.pointValue
                 color: COMMON.fg0
                 monospace: true
                 validator: control.validator
@@ -171,11 +172,37 @@ Item {
             rightPadding: 5
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignRight
-            font.pointSize: control.mini ? 7.85 : 9.8
+            pointSize: control.mini ? 7.85 : 9.8
             color: COMMON.fg2
             monospace: true
             text: control.placeholder
             visible: control.value == "" && !valueText.activeFocus
+        }
+
+        Rectangle {
+            visible: overrideText.visible
+            anchors.fill: overrideText
+            color: COMMON.bg2_5
+            anchors.margins: 2
+        }
+
+        SText {
+            id: overrideText
+            anchors.left: labelText.right
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+
+            color: COMMON.fg2
+            pointSize: 9.8
+            monospace: true
+            rightPadding: 7
+
+            verticalAlignment: Text.AlignVCenter
+            horizontalAlignment: Text.AlignRight
+            
+            text: control.override
+            visible: control.override != ""
         }
 
         Rectangle {

@@ -39,7 +39,7 @@ FocusReleaser {
                 height: 40
                 verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignHCenter
-                font.pointSize: 10.8
+                pointSize: 10.8
                 color: COMMON.fg1
             }
 
@@ -114,7 +114,7 @@ FocusReleaser {
                                 height: 20
                                 verticalAlignment: Text.AlignVCenter
                                 horizontalAlignment: Text.AlignHCenter
-                                font.pointSize: 9.8
+                                pointSize: 9.8
                                 color: COMMON.fg1
                             }
                         }
@@ -143,7 +143,7 @@ FocusReleaser {
                 height: 30
                 verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignHCenter
-                font.pointSize: 9.8
+                pointSize: 9.8
                 color: COMMON.fg2
             }
 
@@ -166,7 +166,7 @@ FocusReleaser {
                     anchors.bottom: versionCheck.bottom
                     anchors.right: versionCheck.left
                     rightPadding: 7
-                    font.pointSize: 9.8
+                    pointSize: 9.8
                     color: COMMON.fg2
                     opacity: 0.9
                 }
@@ -213,7 +213,7 @@ FocusReleaser {
                     anchors.fill: parent
 
                     area.color: COMMON.fg2
-                    font.pointSize: 9.8
+                    pointSize: 9.8
                     monospace: true
 
                     Connections {

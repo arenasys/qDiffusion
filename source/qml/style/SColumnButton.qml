@@ -47,7 +47,7 @@ Item {
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignHCenter
             anchors.fill: parent
-            font.pointSize: 10.8
+            pointSize: 10.8
             opacity: active ? 1 : 0.7
             color: COMMON.fg1
         }

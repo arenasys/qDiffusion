@@ -22,6 +22,8 @@ from translation import Translator
 
 NAME = "qDiffusion"
 APPID = "arenasys.qdiffusion.v1"
+LAUNCHER = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "qDiffusion.exe")
+ERRORED = False
 
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning) 
@@ -70,7 +72,12 @@ def buildQMLPy():
     if os.path.exists(qml_py):
         os.remove(qml_py)
     
-    status = subprocess.run(["pyrcc5", "-o", qml_py, qml_rc], capture_output=True, shell=IS_WIN)
+    startupinfo = None
+    if IS_WIN:
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+
+    status = subprocess.run(["pyrcc5", "-o", qml_py, qml_rc], capture_output=True, startupinfo=startupinfo)
     if status.returncode != 0:
         raise Exception(status.stderr)
 
@@ -143,9 +150,14 @@ class Installer(QThread):
             pkg = p.split("=",1)[0]
             if pkg in {"torch", "torchvision"}:
                 args = ["pip", "install", "-U", pkg, "--index-url", "https://download.pytorch.org/whl/" + p.rsplit("+",1)[-1]]
-            args = ["python", "-m"] + args
-            #print("INSTALL", " ".join(args))
-            self.proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, shell=IS_WIN)
+            args = [sys.executable, "-m"] + args
+
+            startupinfo = None
+            if IS_WIN:
+                startupinfo = subprocess.STARTUPINFO()
+                startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+
+            self.proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=os.environ, startupinfo=startupinfo)
 
             output = ""
             while self.proc.poll() == None:
@@ -214,8 +226,6 @@ class Coordinator(QObject):
 
         with open(os.path.join("source", "requirements_gui.txt")) as file:
             self.required = [line.rstrip() for line in file]
-        if IS_WIN:
-            self.required += ["pywin32==306"]
 
         with open(os.path.join("source", "requirements_inference.txt")) as file:
             self.optional = [line.rstrip() for line in file]
@@ -333,7 +343,7 @@ class Coordinator(QObject):
     def loaded(self):
         ready()
         self.ready.emit()
-        
+
         if self.override or (self.in_venv and self.packages):
             self.show.emit()
         else:
@@ -401,19 +411,34 @@ class Coordinator(QObject):
         if all([p in self._installed for p in self.packages]):
             self._needRestart = True
             self.updated.emit()
+
+    @pyqtProperty(float, constant=True)
+    def scale(self):
+        if IS_WIN:
+            factor = round(self.parent().desktop().logicalDpiX()*(100/96))
+            if factor == 125:
+                return 0.82
+        return 1.0
     
 def launch():
-    try:
-        import ctypes
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(APPID)
-        import setproctitle
-        setproctitle.setproctitle(NAME)
-    except:
-        pass
+    import misc
+    if IS_WIN:
+        misc.setAppID(APPID)
     
     QCoreApplication.setAttribute(Qt.AA_UseDesktopOpenGL, True)
     QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
     QCoreApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+
+    scaling = False
+    try:
+        if os.path.exists("config.json"):
+            with open("config.json", "r") as f:
+                scaling = json.load(f)["scaling"]
+    except:
+        pass
+
+    if scaling:
+        QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
 
     app = Application([NAME])
     signal.signal(signal.SIGINT, lambda sig, frame: app.quit())
@@ -430,18 +455,9 @@ def launch():
 
     engine.load(QUrl('file:source/qml/Splash.qml'))
 
-    try:
-        from win32com.propsys import propsys, pscon
-        import pythoncom
+    if IS_WIN:
         hwnd = engine.rootObjects()[0].winId()
-        launcher = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "qDiffusion.exe")
-        propStore = propsys.SHGetPropertyStoreForWindow(hwnd, propsys.IID_IPropertyStore)
-        propStore.SetValue(pscon.PKEY_AppUserModel_ID, propsys.PROPVARIANTType(APPID, pythoncom.VT_ILLEGAL))
-        propStore.SetValue(pscon.PKEY_AppUserModel_RelaunchDisplayNameResource, propsys.PROPVARIANTType(NAME, pythoncom.VT_ILLEGAL))
-        propStore.SetValue(pscon.PKEY_AppUserModel_RelaunchCommand, propsys.PROPVARIANTType(launcher, pythoncom.VT_ILLEGAL))
-        propStore.Commit()
-    except:
-        pass
+        misc.setWindowProperties(hwnd, APPID, NAME, LAUNCHER)
 
     os._exit(app.exec())
 
@@ -473,12 +489,21 @@ def start(engine, app):
     loadTabs(backend, backend)
 
 def exceptHook(exc_type, exc_value, exc_tb):
+    global ERRORED
     tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
     with open("crash.log", "a", encoding='utf-8') as f:
         f.write(f"GUI {datetime.datetime.now()}\n{tb}\n")
     print(tb)
     print("TRACEBACK SAVED: crash.log")
-    QApplication.quit()
+
+    if IS_WIN and os.path.exists(LAUNCHER) and not ERRORED:
+        ERRORED = True
+        message = f"{tb}\nError saved to crash.log"
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        subprocess.run([LAUNCHER, "-e", message], startupinfo=startupinfo)
+
+    QApplication.exit(-1)
 
 def main():
     if not os.path.exists("source"):

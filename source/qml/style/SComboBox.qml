@@ -16,7 +16,7 @@ ComboBox {
         contentItem: SText {
             text: modelData
             color: COMMON.fg0
-            font: control.font
+            pointSize: 10
             elide: Text.ElideRight
 
             verticalAlignment: Text.AlignVCenter
@@ -57,7 +57,7 @@ ComboBox {
         rightPadding: control.indicator.width + control.spacing
 
         text: control.displayText
-        font: control.font
+        pointSize: 10.2
         color: COMMON.fg0
         verticalAlignment: Text.AlignVCenter
         elide: Text.ElideRight

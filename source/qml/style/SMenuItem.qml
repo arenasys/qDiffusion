@@ -9,7 +9,9 @@ MenuItem {
     implicitWidth: 150
     implicitHeight: menuItemSize
     hoverEnabled: true
-    font.pointSize: 10.5
+    
+    property var pointSize: 10.6
+    property var color: COMMON.fg1
 
     height: visible ? menuItemSize : 0
 
@@ -87,7 +89,8 @@ MenuItem {
             width: implicitWidth
             leftPadding: menuItem.checkable ? menuItem.indicator.width : 8
             text: menuItem.text
-            color: COMMON.fg1
+            color: menuItem.color
+            pointSize: menuItem.pointSize
             horizontalAlignment: Text.AlignLeft
             verticalAlignment: Text.AlignVCenter
         }
@@ -98,7 +101,7 @@ MenuItem {
             width: parent.width - label.width
             rightPadding: 8
             text: menuItem.shortcut
-            font.pointSize: 9.8
+            pointSize: menuItem.pointSize - 0.7
             color: COMMON.fg2
             horizontalAlignment: Text.AlignRight
             verticalAlignment: Text.AlignVCenter
