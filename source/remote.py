@@ -12,10 +12,11 @@ import math
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QThread
 from PyQt5.QtWidgets import QApplication
 
-import base64
+import secrets
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.fernet import Fernet, InvalidToken
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.exceptions import InvalidTag
 
 DEFAULT_PASSWORD = "qDiffusion"
 FRAGMENT_SIZE = 524288
@@ -35,21 +36,21 @@ def get_scheme(password):
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
         length=32,
-        salt=h.finalize()[:16], #lol
+        salt=h.finalize()[:16],
         iterations=480000,
     )
-    key = base64.urlsafe_b64encode(kdf.derive(password))
-    return Fernet(key)
+    return AESGCM(kdf.derive(password))
 
 def encrypt(scheme, obj):
     data = bson.dumps(obj)
     if scheme:
-        data = base64.urlsafe_b64decode(scheme.encrypt(data))
+        nonce = secrets.token_bytes(16)
+        data = nonce + scheme.encrypt(nonce, data, b"")
     return data
 
 def decrypt(scheme, data):
     if scheme:
-        data = scheme.decrypt(base64.urlsafe_b64encode(data))
+        data = scheme.decrypt(data[:16], data[16:], b"")
     obj = bson.loads(data)
     return obj
 
@@ -180,7 +181,7 @@ class RemoteInference(QThread):
                 self.onResponse({"type": "remote_error", "data": {"message": "Connection closed"}})
                 break
             except Exception as e:
-                if type(e) == InvalidToken or type(e) == IndexError:
+                if type(e) == InvalidTag or type(e) == IndexError:
                     self.onResponse({"type": "remote_error", "data": {"message": "Incorrect password"}})
                 else:
                     self.onResponse({"type": "remote_error", "data": {"message": str(e)}})
