@@ -1422,21 +1422,6 @@ Rectangle {
                     property var modelObj: MERGER.outputs(sql_id)
                     property var selected: MERGER.openedIndex == sql_id
 
-                    onSelectedChanged: {
-                        if(selected) {
-                            listView.positionViewAtIndex(index, ListView.Contain)
-                        }
-                    }
-
-                    Connections {
-                        target: MERGER
-                        function onInput() {
-                            if(selected) {
-                                itemFrame.forceActiveFocus()
-                            }
-                        }
-                    }
-
                     Rectangle {
                         id: itemFrame
                         anchors.fill: parent
@@ -1512,7 +1497,7 @@ Rectangle {
                             onPressed: {
                                 if (mouse.button == Qt.LeftButton) {
                                     listView.currentIndex = index
-                                    itemFrame.forceActiveFocus()
+                                    listView.forceActiveFocus()
                                     startPosition = Qt.point(mouse.x, mouse.y)
                                     MERGER.openedIndex = sql_id
                                 }
@@ -1609,33 +1594,42 @@ Rectangle {
                             }
                         }
 
-                        Keys.onPressed: {
-                            event.accepted = true
-                            if(event.modifiers & Qt.ControlModifier) {
-                                switch(event.key) {
-                                case Qt.Key_C:
-                                    modelObj.copy()
-                                    break;
-                                default:
-                                    event.accepted = false
-                                    break;
-                                }
-                            } else {
-                                switch(event.key) {
-                                case Qt.Key_Left:
-                                    MERGER.left()
-                                    break
-                                case Qt.Key_Right:
-                                    MERGER.right()
-                                    break 
-                                case Qt.Key_Delete:
-                                    MERGER.deleteOutput(sql_id)
-                                    break;
-                                default:
-                                    event.accepted = false
-                                    break;
-                                }
-                            }
+                        
+                    }
+                }
+
+                Connections {
+                    target: MERGER
+                    function onOpenedIndexChanged() {
+                        listView.positionViewAtIndex(MERGER.outputIDToIndex(MERGER.openedIndex), ListView.Contain)
+                    }
+                }
+
+                Keys.onPressed: {
+                    event.accepted = true
+                    if(event.modifiers & Qt.ControlModifier) {
+                        switch(event.key) {
+                        case Qt.Key_C:
+                            MERGER.outputs(MERGER.openedIndex).copy()
+                            break;
+                        default:
+                            event.accepted = false
+                            break;
+                        }
+                    } else {
+                        switch(event.key) {
+                        case Qt.Key_Left:
+                            MERGER.left()
+                            break;
+                        case Qt.Key_Right:
+                            MERGER.right()
+                            break;
+                        case Qt.Key_Delete:
+                            MERGER.deleteOutput(sql_id)
+                            break;
+                        default:
+                            event.accepted = false
+                            break;
                         }
                     }
                 }

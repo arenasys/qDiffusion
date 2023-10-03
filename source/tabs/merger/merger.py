@@ -281,7 +281,9 @@ class MergeOperation(QObject):
 class Merger(QObject):
     updated = pyqtSignal()
     managersUpdated = pyqtSignal()
-    selected = pyqtSignal()
+    operationSelected = pyqtSignal()
+    outputSelected = pyqtSignal()
+    
     input = pyqtSignal()
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -520,7 +522,7 @@ class Merger(QObject):
             self._operations += [operation]
         self.check()
         self._selected_operation_index = 0
-        self.selected.emit()
+        self.operationSelected.emit()
 
     @pyqtSlot(misc.MimeData)
     def drop(self, mimeData):
@@ -538,7 +540,7 @@ class Merger(QObject):
     def operations(self):
         return self._operations
     
-    @pyqtProperty(int, notify=selected)
+    @pyqtProperty(int, notify=operationSelected)
     def selectedOperationIndex(self):
         return self._selected_operation_index
     
@@ -546,9 +548,9 @@ class Merger(QObject):
     def selectedOperationIndex(self, index):
         if index != self._selected_operation_index:
             self._selected_operation_index = index
-            self.selected.emit()
+            self.operationSelected.emit()
 
-    @pyqtProperty(MergeOperation, notify=selected)
+    @pyqtProperty(MergeOperation, notify=operationSelected)
     def selectedOperation(self):
         return self._operations[self._selected_operation_index]
 
@@ -572,7 +574,7 @@ class Merger(QObject):
         for op in self._operations:
             op.enforceModelTypes()
 
-        self.selected.emit()
+        self.operationSelected.emit()
     
     def modifyRequest(self, request, overrides=None):
         model_type = self._parameters.get("type")
@@ -732,7 +734,7 @@ class Merger(QObject):
         index = self.outputIndexToID(0)
         if index in self._outputs and self._outputs[index]._ready:
             self._opened_index = index
-            self.updated.emit()
+            self.outputSelected.emit()
 
     @pyqtSlot()
     def right(self):
@@ -743,7 +745,7 @@ class Merger(QObject):
         id = self.outputIndexToID(idx)
         if id in self._outputs:
             self._opened_index = id
-            self.updated.emit()
+            self.outputSelected.emit()
             self.input.emit()
 
     @pyqtSlot()
@@ -755,7 +757,7 @@ class Merger(QObject):
         id = self.outputIndexToID(idx)
         if id in self._outputs:
             self._opened_index = id
-            self.updated.emit()
+            self.outputSelected.emit()
             self.input.emit()
 
     @pyqtSlot(int, result=BasicOutput)
@@ -763,14 +765,14 @@ class Merger(QObject):
         if id in self._outputs:
             return self._outputs[id]
         
-    @pyqtProperty(int, notify=updated)
+    @pyqtProperty(int, notify=outputSelected)
     def openedIndex(self):
         return self._opened_index
     
     @openedIndex.setter
     def openedIndex(self, index):
         self._opened_index = index
-        self.updated.emit()
+        self.outputSelected.emit()
 
     @pyqtSlot(int)
     def deleteOutput(self, id):
