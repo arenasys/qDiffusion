@@ -570,7 +570,7 @@ class Parameters(QObject):
         data["sampler"] = data["true_sampler"]
         del data["true_sampler"]
 
-        if data["steps"] == 0 and images:
+        if (data["steps"] == 0 or data["strength"] == 0.0) and images:
             request["type"] = "upscale"
             data["image"] = images
             if any(masks):
@@ -674,7 +674,7 @@ class Parameters(QObject):
 
         if request["type"] == "upscale":
             for k in list(data.keys()):
-                if not k in {"img2img_upscaler", "width", "height", "image", "mask", "mask_blur", "padding"}:
+                if not k in {"img2img_upscaler", "width", "height", "image", "mask", "mask_blur", "padding", "device_name"}:
                     del data[k]
         
         data = {k.lower():v for k,v in data.items()}
@@ -688,6 +688,7 @@ class Parameters(QObject):
             "cn_image": [image],
             "cn_annotator": [mode],
             "cn_args": [args],
+            "device_name": self._values.get("device")
         }
         return {"type":"annotate", "data": data}
 
