@@ -4,8 +4,8 @@ import datetime
 import json
 import bson
 import difflib
-import re
 import platform
+import urllib.parse
 IS_WIN = platform.system() == 'Windows'
 
 from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent, QMimeData, QUrl, QSize, QThreadPool
@@ -766,6 +766,15 @@ class GUI(QObject):
     @hostPassword.setter
     def hostPassword(self, password):
         self._hostSetPassword = password
+
+    @pyqtProperty(str, notify=statusUpdated)
+    def hostWeb(self):
+        url = self._hostEndpoint
+        password = self._hostPassword
+        if url.startswith("wss") or "127.0.0.1" in url:
+            return "https://arenasys.github.io/?" + urllib.parse.urlencode({'endpoint': url, "password": password})
+        else:
+            return ""
 
     @pyqtSlot(str, float, int, int, result='QVariant')
     def weightText(self, text, inc, start, end):

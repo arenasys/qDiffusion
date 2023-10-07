@@ -567,6 +567,7 @@ class Basic(QObject):
             elif url.scheme() == "http" or url.scheme() == "https":
                 if url.fileName().rsplit(".")[-1] in {"png", "jpg", "jpeg", "webp", "gif"}:
                     self.download(url, None)
+                    break
 
         if image and not image.isNull():
             self.pastedImage.emit(image)

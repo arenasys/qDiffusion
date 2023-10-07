@@ -73,6 +73,27 @@ Item {
             color: COMMON.fg2
         }
 
+        SText {
+            text: "Web: https://arenasys.github.io/?..."
+            width: parent.width
+            height: visible ? 25 : 0
+            visible: GUI.hostWeb != ""
+            verticalAlignment: Text.AlignVCenter
+            horizontalAlignment: Text.AlignHCenter
+            pointSize: 9.8
+            font.underline: linkMouse.containsMouse
+            color: COMMON.fg2
+            MouseArea {
+                id: linkMouse
+                hoverEnabled: true
+                visible: parent.visible
+                anchors.fill: parent
+                onPressed: {
+                    Qt.openUrlExternally(GUI.hostWeb)
+                }
+            }
+        }
+
         Item {
             visible: GUI.hostPassword == ""
             width: parent.width
