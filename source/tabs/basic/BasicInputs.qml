@@ -876,6 +876,7 @@ Item {
                             precValue: 2
                             incValue: 0.01
                             snapValue: 0.05
+                            bounded: false
                         }
                         OChoice {
                             width: parent.width
