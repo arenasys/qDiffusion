@@ -18,8 +18,9 @@ except Exception:
     MISSING_QT = True
 
 def get_env():
-    env = {k:v for k,v in os.environ.items() if not k.startswith("QT")}
+    env = {k:v for k,v in os.environ.items() if not k.startswith("QT") and not k.startswith("PIP") and not k.startswith("PYTHON")}
     env["VIRTUAL_ENV"] = VENV_DIR
+    env["PIP_CONFIG_FILE"] = os.devnull
     if IS_WIN:
         env["PATH"] = VENV_DIR+"\\Scripts;" + env["PATH"]
     else:

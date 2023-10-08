@@ -210,6 +210,14 @@ func main() {
 		os.Remove(python_file)
 	}
 
+	// Cleanup Env variables
+	for _, entry := range os.Environ() {
+		key := strings.Split(entry, "=")[0]
+		if strings.HasPrefix(key, "QT") || strings.HasPrefix(key, "PIP") || strings.HasPrefix(key, "PYTHON") {
+			os.Unsetenv(key)
+		}
+	}
+
 	python := ".\\python\\pythonw.exe"
 	if !exists(".\\venv") {
 		if dlg == nil {
@@ -227,20 +235,12 @@ func main() {
 	// Activate VENV
 	os.Setenv("PATH", filepath.Join(exe_dir, "venv", "Scripts")+";"+os.Getenv("PATH"))
 	os.Setenv("VIRTUAL_ENV", filepath.Join(exe_dir, "venv"))
-	os.Unsetenv("PYTHONHOME")
+	os.Setenv("PIP_CONFIG_FILE", "nul")
 	python = ".\\venv\\Scripts\\pythonw.exe"
 
 	// Set AMD variables
 	os.Setenv("HSA_OVERRIDE_GFX_VERSION", "10.3.0")
 	os.Setenv("MIOPEN_LOG_LEVEL", "4")
-
-	// Cleanup Qt variables
-	for _, entry := range os.Environ() {
-		key := strings.Split(entry, "=")[0]
-		if strings.HasPrefix(key, "QT") {
-			os.Unsetenv(key)
-		}
-	}
 
 	if !exists(".\\venv\\Lib\\site-packages\\PyQt5") {
 		if dlg == nil {
