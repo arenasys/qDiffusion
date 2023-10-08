@@ -7,6 +7,7 @@ Built from the ground up alongside [sd-inference-server](https://github.com/aren
 1. [Download](https://github.com/arenasys/qDiffusion/archive/refs/heads/master.zip) this repo as a zip and extract it.
 2. Run `qDiffusion.exe`, `start_win.bat` or `start_linux.sh`.
 	- First time users will need to wait for Python and PyQt5 to be downloaded.
+	- AMD Ubuntu users need to follow: [Install ROCm](https://github.com/arenasys/qDiffusion/wiki/Install#ubuntu-22).
 3. Select a mode. `Remote`, `Nvidia` and `AMD` are available.
 	- `Remote` needs `~500MB` of space, `NVIDIA`/`AMD` need `~5-10GB`.
 	- Choose `Remote` if you only want to generate using cloud/server instances.
@@ -28,6 +29,10 @@ Notebooks for running a remote instance are available: [Colab](https://colab.res
 4. Wait for the requirements to be downloaded and the server to start.
 5. Copy the Endpoint and Password to qDiffusion under `Settings->Remote`, press Connect.
 6. Done. See [Downloads](https://github.com/arenasys/qDiffusion/wiki/Guide#downloading) for how to get models onto the instance.
+
+### Mobile
+[qDiffusion Web](https://github.com/arenasys/arenasys.github.io) is available for mobile users. Features are limited compared to the full GUI (txt2img only).
+Follow the **Remote** instructions, then follow the web link.
 
 ### Overview
 - Stable diffusion 1.x, 2.x (including v-prediction), XL (only Base)
