@@ -118,7 +118,7 @@ class RemoteInference(QThread):
         self.scheme = None
         if not password:
             password = DEFAULT_PASSWORD
-        self.scheme = get_scheme(password)
+        self.password = password
         self.id = None
         self.uploads = {}
 
@@ -144,6 +144,7 @@ class RemoteInference(QThread):
             self.requests.put({"type":"options"})
 
     def run(self):
+        self.scheme = get_scheme(self.password)
         self.connect()
         while self.client and not self.stopping:
             try:
