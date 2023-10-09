@@ -255,11 +255,12 @@ class Coordinator(QObject):
         except:
             pass
 
-        self.nvidia_torch_version = "2.0.1+cu118"
-        self.nvidia_torchvision_version = "0.15.2+cu118"
+        self.nvidia_torch_version = "2.1.0+cu118"
+        self.nvidia_torchvision_version = "0.16+cu118"
 
-        self.amd_torch_version = "2.0.1+rocm5.4.2"
-        self.amd_torchvision_version = "0.15.2+rocm5.4.2"
+        self.amd_torch_version = "2.1.0+rocm5.6"
+        self.amd_torchvision_version = "0.16.0+rocm5.6"
+
         self.amd_torch_directml_version = "0.2.0.dev230426"
         
         self.required_need = check(self.required, self.enforce)
@@ -324,19 +325,19 @@ class Coordinator(QObject):
         mode = self._modes[self._mode]
         needed = []
         if mode == "nvidia":
-            if not "+cu" in self.torch_version or (self.enforce and self.torch_version != self.nvidia_torch_version):
+            if not "+cu" in self.torch_version:
                 needed += ["torch=="+self.nvidia_torch_version]
-            if not "+cu" in self.torchvision_version or (self.enforce and self.torchvision_version != self.nvidia_torchvision_version):
+            if not "+cu" in self.torchvision_version:
                 needed += ["torchvision=="+self.nvidia_torchvision_version]
             needed += self.optional_need
         if mode == "amd":
             if IS_WIN:
-                if not self.directml_version or (self.enforce and self.directml_version != self.amd_torch_directml_version):
+                if not self.directml_version:
                     needed += ["torch-directml==" + self.amd_torch_directml_version]
             else:
-                if not "+rocm" in self.torch_version or (self.enforce and self.torch_version != self.amd_torch_version):
+                if not "+rocm" in self.torch_version:
                     needed += ["torch=="+self.amd_torch_version]
-                if not "+rocm" in self.torchvision_version or (self.enforce and self.torchvision_version != self.amd_torchvision_version):
+                if not "+rocm" in self.torchvision_version:
                     needed += ["torchvision=="+self.amd_torchvision_version]
             needed += self.optional_need
 
