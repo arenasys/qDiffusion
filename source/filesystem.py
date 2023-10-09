@@ -26,7 +26,7 @@ class WatcherRunnable(QRunnable):
     def run(self):
         try:
             files = glob.glob(os.path.join(self.folder, "*.*"))
-            files = sorted(files, reverse=True)
+            files = sorted(files, key = os.path.getmtime, reverse=True)
 
             file_batch = []
             idx_batch = []
