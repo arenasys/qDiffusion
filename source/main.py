@@ -519,4 +519,7 @@ def main():
     launch()
 
 if __name__ == "__main__":
+    env = {k:v for k,v in os.environ.items() if not k.startswith("QT") and not k.startswith("PIP") and not k.startswith("PYTHON")}
+    env["PIP_CONFIG_FILE"] = os.devnull
+    os.environ = env
     main()
