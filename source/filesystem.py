@@ -4,7 +4,7 @@ import os
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject, QThreadPool, QRunnable, QFileSystemWatcher
 
 class WatcherRunnableSignals(QObject):
-    result = pyqtSignal(str, str, int)
+    result = pyqtSignal(str, list, list)
     finished = pyqtSignal(str, int)
     def __init__(self, folder):
         super().__init__()
@@ -26,11 +26,20 @@ class WatcherRunnable(QRunnable):
     def run(self):
         try:
             files = glob.glob(os.path.join(self.folder, "*.*"))
-            files = sorted(files, key = os.path.getmtime)
+            files = sorted(files)
+
+            file_batch = []
+            idx_batch = []
             for i, file in enumerate(files):
                 if self.signals.stopping:
                     return
-                self.signals.result.emit(self.folder, os.path.abspath(file), i)
+                file_batch += [os.path.abspath(file)]
+                idx_batch += [i]
+                if len(file_batch) >= 128 or i == len(files) - 1:
+                    self.signals.result.emit(self.folder, file_batch, idx_batch)
+                    file_batch = []
+                    idx_batch = []
+            
             if not self.signals.stopping:
                 self.signals.finished.emit(self.folder, len(files))
         except Exception:
@@ -39,7 +48,7 @@ class WatcherRunnable(QRunnable):
 class Watcher(QObject):
     started = pyqtSignal(str)
     parent_changed = pyqtSignal(str)
-    folder_changed = pyqtSignal(str, str, int)
+    folder_changed = pyqtSignal(str, list, list)
     file_changed = pyqtSignal(str)
     finished = pyqtSignal(str, int)
     kill = pyqtSignal(str)
@@ -142,6 +151,6 @@ class Watcher(QObject):
             del self.running[folder]
         self.finished.emit(folder, total)
 
-    @pyqtSlot(str, str, int)
-    def onWatcherResult(self, folder, file, idx):
-        self.folder_changed.emit(folder, file, idx)
+    @pyqtSlot(str, list, list)
+    def onWatcherResult(self, folder, files, idxs):
+        self.folder_changed.emit(folder, files, idxs)

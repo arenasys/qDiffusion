@@ -30,7 +30,7 @@ class Populater(QObject):
             os.makedirs(os.path.join(self.output, s), exist_ok=True)
 
         self.conn = None
-        self.watcher = filesystem.Watcher.instance
+        self.watcher = gui.watcher
         self.folders = set()
 
     @pyqtSlot()
@@ -91,39 +91,48 @@ class Populater(QObject):
         self.conn.enableNotifications("images")
         self.gui.setTabWorking(self.name, False)
 
-    @pyqtSlot(str, str, int)
-    def onResult(self, folder, file, idx):
+    @pyqtSlot(str, list, list)
+    def onResult(self, folder, files, idxs):
         if not folder in self.folders:
             return
-        
-        ext = file.split(".")[-1]
-        if not ext in {"png"}:
-            return
-        
-        parameters = ""
-        try:
-            with PIL.Image.open(file) as img:
-                if "parameters" in img.info:
-                    parameters = img.info["parameters"]
-                width, height = img.size
-        except Exception:
-            return
-        
-        if idx == 0:
+
+        if 0 in idxs:
             self.gui.setTabWorking(self.name, True)
             self.conn.disableNotifications("images")
-        if idx % 1000 == 999:
-            self.conn.relayNotification("images")
 
-        parameters = parameters.replace("'", "''")
+        data = zip(files, idxs)
+        
+        files, folders, idxs, widths, heights, parameters = [], [], [], [], [], []
+        for f, i in data:
+            if not f.split(".")[-1] in {"png"}:
+                continue
+            w, h, p = 0, 0, ""
+            try:
+                with PIL.Image.open(f) as img:
+                    if "parameters" in img.info:
+                        p = img.info["parameters"]
+                    w, h = img.size
+            except Exception:
+                continue
+            if w == 0 or h == 0:
+                continue
+            files += [f]
+            folders += [folder]
+            idxs += [i]
+            widths += [w]
+            heights += [h]
+            parameters += [p.replace("'", "''")]
+
         q = QSqlQuery(self.conn.db)
-        q.prepare(f"INSERT OR REPLACE INTO images(file, folder, parameters, idx, width, height) VALUES (:file, :folder, '{parameters}', :idx, :width, :height);")
-        q.bindValue(":file", file)
-        q.bindValue(":folder", folder)
-        q.bindValue(":idx", idx)
-        q.bindValue(":width", width)
-        q.bindValue(":height", height)
-        self.conn.doQuery(q)
+        q.prepare(f"INSERT OR REPLACE INTO images(file, folder, parameters, idx, width, height) VALUES (:file, :folder, :param, :idx, :width, :height);")
+        q.bindValue(":file", files)
+        q.bindValue(":folder", folders)
+        q.bindValue(":param", parameters)
+        q.bindValue(":idx", idxs)
+        q.bindValue(":width", widths)
+        q.bindValue(":height", heights)
+        q.execBatch()
+        self.conn.relayNotification("images")
 
 class Deleter(QThread):
     def __init__(self, gui, files):
