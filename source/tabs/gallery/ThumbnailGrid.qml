@@ -192,6 +192,11 @@ GridView {
         }
     }
 
+    footer: Item {
+        width: 10
+        height: 10
+    }
+
     delegate: Thumbnail {
         id: thumb
         width: cellWidth

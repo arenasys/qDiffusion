@@ -130,6 +130,8 @@ class Sql(QAbstractListModel):
 
     @query.setter
     def query(self, value):
+        if value == self.currentQuery:
+            return
         self.setQuery(value)
 
     def setQuery(self, value):

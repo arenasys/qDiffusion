@@ -81,11 +81,15 @@ Rectangle {
 
             model: Sql {
                 id: foldersSql
-                query: "SELECT name, folder FROM folders;"
+                query: "SELECT name, folder FROM folders ORDER BY idx;"
             }
 
             onCurrentIndexChanged: {
                 root.releaseFocus()
+            }
+
+            onCurrentValueChanged: {
+                GALLERY.currentFolder = currentValue
             }
         }
 
@@ -190,6 +194,13 @@ Rectangle {
                 }
             }
 
+            Connections {
+                target: GALLERY
+                function onForceReload() {
+                    filesSql.reload()
+                }
+            }
+
             onContextMenu: {
                 let files = gallery.getSelectedFiles()
                 if(files.length > 0) {
@@ -208,7 +219,7 @@ Rectangle {
 
                 Sql {
                     id: destinationsSql
-                    query: "SELECT name, folder FROM folders WHERE folder != '" + folder.currentValue + "';"
+                    query: "SELECT name, folder FROM folders WHERE folder != '" + folder.currentValue + "' ORDER BY idx;"
                 }
 
                 SContextMenuItem {

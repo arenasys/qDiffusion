@@ -26,16 +26,17 @@ class WatcherRunnable(QRunnable):
     def run(self):
         try:
             files = glob.glob(os.path.join(self.folder, "*.*"))
-            files = sorted(files)
+            files = sorted(files, reverse=True)
 
             file_batch = []
             idx_batch = []
+            batch_size = 128
             for i, file in enumerate(files):
                 if self.signals.stopping:
                     return
                 file_batch += [os.path.abspath(file)]
-                idx_batch += [i]
-                if len(file_batch) >= 128 or i == len(files) - 1:
+                idx_batch += [len(files)-1-i]
+                if len(file_batch) >= batch_size or i == len(files) - 1:
                     self.signals.result.emit(self.folder, file_batch, idx_batch)
                     file_batch = []
                     idx_batch = []
@@ -117,7 +118,7 @@ class Watcher(QObject):
             self.running[folder].signals.result.disconnect()
             self.running[folder].signals.finished.disconnect()
             self.kill.emit(folder)
-        
+
         watcher = WatcherRunnable(folder)
         watcher.signals.result.connect(self.onWatcherResult)
         watcher.signals.finished.connect(self.onWatcherFinished)

@@ -4,7 +4,7 @@ import os
 import send2trash
 import glob
 
-from PyQt5.QtCore import pyqtSlot, pyqtSignal, pyqtProperty, QObject, QThread, QUrl, QMimeData
+from PyQt5.QtCore import pyqtSlot, pyqtSignal, pyqtProperty, QObject, QThread, QUrl, QMimeData, Qt
 from PyQt5.QtSql import QSqlQuery
 from PyQt5.QtQml import qmlRegisterSingletonType
 from PyQt5.QtGui import QDesktopServices
@@ -12,14 +12,19 @@ from PyQt5.QtWidgets import QApplication
 import sql
 import filesystem
 import parameters
+import time
 
 class Populater(QObject):
+    forceReload = pyqtSignal(str)
     stop = pyqtSignal(str)
     def __init__(self, gui, name):
         super().__init__()
         self.paths = []
         self.gui = gui
         self.name = name
+
+        self.primary = ""
+        self.remaining = []
 
         self.output = self.gui.outputDirectory()
 
@@ -32,6 +37,9 @@ class Populater(QObject):
         self.conn = None
         self.watcher = gui.watcher
         self.folders = set()
+        self.working = set()
+        self.fresh = set()
+        self.initial = True
 
     @pyqtSlot()
     def started(self):
@@ -40,65 +48,85 @@ class Populater(QObject):
         self.conn.doQuery("CREATE TABLE folders(folder TEXT UNIQUE, name TEXT UNIQUE, idx INTEGER UNIQUE);")
         self.conn.doQuery("CREATE TABLE images(file TEXT UNIQUE, folder TEXT, parameters TEXT, idx INTEGER, width INTEGER, height INTEGER, CONSTRAINT unq UNIQUE (folder, idx));")
         self.conn.enableNotifications("folders")
-        self.conn.enableNotifications("images")
+        self.conn.disableNotifications("images")
 
-        self.addAllFolders()
+        self.prepareFolders()
 
         self.watcher.finished.connect(self.onFinished)
         self.watcher.folder_changed.connect(self.onResult)
         self.watcher.parent_changed.connect(self.onParentChanged)
 
-    def addAllFolders(self):
+    def prepareFolders(self):
         subfolders = [s.rsplit(os.path.sep,1)[-1] for s in list(filter(os.path.isdir, glob.glob(self.output + "/*")))]
         subfolders = [o for o in self.order if o in subfolders] + [s for s in subfolders if not s in self.order]
-        for i, name in enumerate(subfolders):
+
+        self.primary = ""
+        self.remaining = []
+
+        for idx, name in enumerate(subfolders):
             label = self.labels.get(name, name.capitalize())
-            self.addFolder(label, os.path.join(self.output, name), i)
-        self.finishFolders(len(subfolders))
+            folder = os.path.join(self.output, name)
+            
+            if idx == 0:
+                self.primary = folder
+                self.watcher.watchFolder(self.primary)
+            else:
+                self.remaining += [folder]
 
-    def addFolder(self, name, folder, idx):
-        q = QSqlQuery(self.conn.db)
-        q.prepare("INSERT OR REPLACE INTO folders(folder, name, idx) VALUES (:folder, :name, :idx);")
-        q.bindValue(":folder", folder)
-        q.bindValue(":name", name)
-        q.bindValue(":idx", idx)
-        self.conn.doQuery(q)
+            q = QSqlQuery(self.conn.db)
+            q.prepare("INSERT OR REPLACE INTO folders(folder, name, idx) VALUES (:folder, :name, :idx);")
+            q.bindValue(":folder", folder)
+            q.bindValue(":name", label)
+            q.bindValue(":idx", idx)
+            self.conn.doQuery(q)
+            self.folders.add(folder)
+            self.fresh.add(folder)
 
-        self.folders.add(folder)
-        self.watcher.watchFolder(folder)
-
-    def finishFolders(self, total):
         q = QSqlQuery(self.conn.db)
         q.prepare("DELETE FROM folders WHERE idx >= :total;")
-        q.bindValue(":total", total)
+        q.bindValue(":total", len(subfolders))
         self.conn.doQuery(q)
+
+    def resumeFolders(self):
+        for subfolder in self.remaining:
+            self.watcher.watchFolder(subfolder)
+        self.primary = ""
+        self.remaining = []
 
     @pyqtSlot(str)
     def onParentChanged(self, folder):
         if folder == self.output:
-            self.addAllFolders()
+            self.prepareFolders()
 
     @pyqtSlot(str, int)
     def onFinished(self, folder, total):
         if not folder in self.folders:
             return
+
         q = QSqlQuery(self.conn.db)
         q.prepare("DELETE FROM images WHERE folder == :folder AND idx >= :total;")
         q.bindValue(":folder", folder)
         q.bindValue(":total", total)
         self.conn.doQuery(q)
-        
-        self.conn.enableNotifications("images")
-        self.gui.setTabWorking(self.name, False)
+
+        self.working.discard(folder)
+        self.fresh.discard(folder)
+        if len(self.working) == 0 and len(self.fresh) == 0:
+            self.gui.setTabWorking(self.name, False)
+
+        if folder == self.primary:
+            self.conn.enableNotifications("images")
+            self.initial = False
+            self.resumeFolders()
 
     @pyqtSlot(str, list, list)
     def onResult(self, folder, files, idxs):
         if not folder in self.folders:
             return
-
-        if 0 in idxs:
+        
+        if len(self.working) == 0:
             self.gui.setTabWorking(self.name, True)
-            self.conn.disableNotifications("images")
+        self.working.add(folder)
 
         data = zip(files, idxs)
         
@@ -132,7 +160,9 @@ class Populater(QObject):
         q.bindValue(":width", widths)
         q.bindValue(":height", heights)
         q.execBatch()
-        self.conn.relayNotification("images")
+
+        if self.initial:
+            self.forceReload.emit(folder)
 
 class Deleter(QThread):
     def __init__(self, gui, files):
@@ -150,17 +180,21 @@ class Deleter(QThread):
 class Gallery(QObject):
     update = pyqtSignal()
 
+    forceReload = pyqtSignal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.gui = parent
         self.priority = 3
         self.name = "History"
+        self.folder = ""
 
         self._cellSize = 200
 
         qmlRegisterSingletonType(Gallery, "gui", 1, 0, "GALLERY", lambda qml, js: self)
 
         self.populater = Populater(self.gui, self.name)
+        self.populater.forceReload.connect(self.populaterForcedReload)
 
         self.populaterThread = QThread()
         self.populaterThread.started.connect(self.populater.started)
@@ -225,3 +259,16 @@ class Gallery(QObject):
         if cellSize >= 100 and cellSize <= 200:
             self._cellSize = cellSize
             self.update.emit()
+        
+    @pyqtSlot(str)
+    def populaterForcedReload(self, folder):
+        if folder == self.folder:
+            self.forceReload.emit()
+
+    @pyqtProperty(str, notify=update)
+    def currentFolder(self):
+        return self.folder
+    
+    @currentFolder.setter
+    def currentFolder(self, folder):
+        self.folder = folder
