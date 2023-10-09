@@ -32,7 +32,6 @@ Notebooks for running a remote instance are available: [Colab](https://colab.res
 
 ### Mobile
 [qDiffusion Web](https://github.com/arenasys/arenasys.github.io) is available for mobile users. Features are limited compared to the full GUI (txt2img only).
-Follow the **Remote** instructions, then follow the web link.
 
 ### Overview
 - Stable diffusion 1.x, 2.x (including v-prediction), XL (only Base)
