@@ -1,4 +1,1 @@
-go build github.com/josephspurrier/goversioninfo/cmd/goversioninfo
-.\goversioninfo.exe -icon='icon.ico'
-go build -ldflags -H=windowsgui
-cp qDiffusion.exe ..\..\qDiffusion.exe
+Build with .NET v4.6.0 since its built into Windows 10
