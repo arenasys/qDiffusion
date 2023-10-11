@@ -1,1 +1,1 @@
-Build with .NET v4.6.0 since its built into Windows 10
+Build with .NET v4.6.0 since its built into Windows 10.
