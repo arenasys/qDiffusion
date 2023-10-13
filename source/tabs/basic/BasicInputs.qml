@@ -732,7 +732,7 @@ Item {
                     spacing: 5
 
                     SIconButton {
-                        visible: !modelData.hasSource && !modelData.isTile
+                        visible: !modelData.hasSource && modelData.canLoad
                         id: uploadButton
                         icon: "qrc:/icons/folder.svg"
                         onPressed: {
@@ -952,7 +952,7 @@ Item {
                     width: parent.width - 20
 
                     onDropped: {
-                        if (!modelData.isTile) {
+                        if (modelData.canLoad) {
                             modelData.setImageDrop(mimeData, index)
                         }
                     }

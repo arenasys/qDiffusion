@@ -1,3 +1,7 @@
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning) 
+warnings.filterwarnings("ignore", category=DeprecationWarning) 
+
 import sys
 import signal
 import traceback
@@ -25,9 +29,6 @@ NAME = "qDiffusion"
 LAUNCHER = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "qDiffusion.exe")
 APPID = "arenasys.qdiffusion." + hashlib.md5(LAUNCHER.encode("utf-8")).hexdigest()
 ERRORED = False
-
-import warnings
-warnings.filterwarnings("ignore", category=UserWarning) 
 
 class Application(QApplication):
     t = QElapsedTimer()
@@ -519,7 +520,4 @@ def main():
     launch()
 
 if __name__ == "__main__":
-    env = {k:v for k,v in os.environ.items() if not k.startswith("QT") and not k.startswith("PIP") and not k.startswith("PYTHON")}
-    env["PIP_CONFIG_FILE"] = os.devnull
-    os.environ = env
     main()

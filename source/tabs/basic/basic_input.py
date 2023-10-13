@@ -284,7 +284,11 @@ class BasicInput(QObject):
     
     @pyqtProperty(bool, notify=updated)
     def canPaint(self):
-        return self._role in {BasicInputRole.IMAGE, BasicInputRole.MASK, BasicInputRole.SUBPROMPT} or (self._role == BasicInputRole.CONTROL and self._control_mode != "Tile")
+        return self._role in {BasicInputRole.IMAGE, BasicInputRole.MASK, BasicInputRole.SUBPROMPT} or (self._role == BasicInputRole.CONTROL and not self._control_mode in {"Tile", "QR"})
+    
+    @pyqtProperty(bool, notify=updated)
+    def canLoad(self):
+        return self._role in {BasicInputRole.IMAGE, BasicInputRole.MASK, BasicInputRole.SEGMENTATION} or (self._role == BasicInputRole.CONTROL and self._control_mode != "Tile")
     
     @pyqtProperty(bool, notify=updated)
     def isMask(self):
