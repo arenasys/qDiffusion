@@ -22,8 +22,8 @@ Text {
     color: COMMON.fg0
 
     Component.onCompleted: {
-        if(font.bold) {
-            font.letterSpacing = -1.2
+        if(font.bold && font.letterSpacing == 0) {
+            font.letterSpacing = -1.0
         }
     }
 }
