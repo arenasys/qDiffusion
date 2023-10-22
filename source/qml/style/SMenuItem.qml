@@ -8,7 +8,6 @@ MenuItem {
     id: menuItem
     implicitWidth: 150
     implicitHeight: menuItemSize
-    hoverEnabled: true
     
     property var pointSize: 10.6
     property var color: COMMON.fg1
@@ -112,6 +111,14 @@ MenuItem {
     background: Rectangle {
         implicitWidth: 150
         implicitHeight: menuItemSize
-        color: menuItem.hovered ? COMMON.bg4 : "transparent"
+        color: backgroundMouseArea.containsMouse ? COMMON.bg4 : "transparent"
+
+        MouseArea {
+            id: backgroundMouseArea
+            anchors.fill: parent
+            acceptedButtons: Qt.NoButton
+            hoverEnabled: true
+            preventStealing: true
+        }
     }
 }
