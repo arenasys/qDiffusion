@@ -1245,6 +1245,7 @@ Rectangle {
                             }
                         
                             Canvas {
+                                renderStrategy: Canvas.Cooperative
                                 property var points: TRAINER.learningRatePoints
 
                                 onPointsChanged: {
@@ -1420,6 +1421,7 @@ Rectangle {
                             }
 
                             Canvas {
+                                renderStrategy: Canvas.Cooperative
                                 property var points: TRAINER.lossPoints
 
                                 onPointsChanged: {

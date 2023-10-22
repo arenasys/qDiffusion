@@ -60,6 +60,7 @@ Item {
 
         Canvas {
             id: indicator
+            renderStrategy: Canvas.Cooperative
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             anchors.right: parent.right

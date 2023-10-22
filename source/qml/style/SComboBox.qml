@@ -34,6 +34,7 @@ ComboBox {
         width: 12
         height: 8
         contextType: "2d"
+        renderStrategy: Canvas.Cooperative
 
         Connections {
             target: control.popup

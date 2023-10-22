@@ -279,6 +279,7 @@ Item {
             color: COMMON.bg4
             Canvas {
                 id: canvas
+                renderStrategy: Canvas.Cooperative
                 anchors.fill: parent
                 contextType: "2d"
 

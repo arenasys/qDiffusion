@@ -338,6 +338,7 @@ Item {
 
                 Canvas {
                     anchors.fill: parent
+                    renderStrategy: Canvas.Cooperative
 
                     onVisibleChanged: {
                         requestPaint()
@@ -381,6 +382,7 @@ Item {
 
                 Canvas {
                     anchors.fill: parent
+                    renderStrategy: Canvas.Cooperative
 
                     onVisibleChanged: {
                         requestPaint()

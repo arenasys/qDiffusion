@@ -71,6 +71,7 @@ MenuItem {
         implicitWidth: 20
         implicitHeight: 20
         visible: menuItem.subMenu
+        renderStrategy: Canvas.Cooperative
         onPaint: {
             var ctx = getContext("2d")
             ctx.fillStyle = menuItem.highlighted ? "#ffffff" : "#aaa"

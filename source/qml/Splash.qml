@@ -20,17 +20,18 @@ ApplicationWindow {
         height: 80
         sourceSize: Qt.size(width, height)
         anchors.centerIn: parent
-        smooth:true
+        smooth: true
         antialiasing: true   
     }
 
     RotationAnimator {
+        id: spinnerAnimator
         loops: Animation.Infinite
         target: spinner
         from: 0
         to: 360
         duration: 1000
-        running: true
+        running: spinner.visible
     }
 
     Component.onCompleted: {
@@ -56,7 +57,12 @@ ApplicationWindow {
             if(component.status != Component.Ready) {
                 console.log("ERROR", component.errorString())
             } else {
-                component.incubateObject(root, { window: root })
+                var incubator = component.incubateObject(root, { window: root })
+                incubator.onStatusChanged = function(status) {
+                    if (status === Component.Ready) {
+                        spinner.visible = false
+                    }
+                };
             }
         }
     }
