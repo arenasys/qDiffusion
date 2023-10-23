@@ -146,16 +146,20 @@ Item {
 
     Connections {
         target: bindMapModel
-        function onUpdated() {
-            root.update()
+        function onUpdated(key) {
+            if(key == bindKeyCurrent || key == bindKeyLabel || key == bindKeyModel) {
+                root.update()
+            }
         }
     }
 
     Connections {
         target: bindMapCurrent
-        function onUpdated() {
+        function onUpdated(key) {
             if(bindMapCurrent != bindMapModel) {
-                root.update()
+                if(key == bindKeyCurrent || key == bindKeyLabel || key == bindKeyModel) {
+                    root.update()
+                }
             }
         }
     }

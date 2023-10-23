@@ -57,13 +57,15 @@ Item {
 
     Connections {
         target: bindMap
-        function onUpdated() {
-            var v = root.bindMap.get(root.bindKey)
-            if(v != root.value) {
-                root.value = v
-            }
-            if(root.bindKeyLabel != null) {
-                root.label = root.bindMap.get(root.bindKeyLabel);
+        function onUpdated(key) {
+            if(key == bindKey || key == bindKeyLabel) {
+                var v = root.bindMap.get(root.bindKey)
+                if(v != root.value) {
+                    root.value = v
+                }
+                if(root.bindKeyLabel != null) {
+                    root.label = root.bindMap.get(root.bindKeyLabel);
+                }
             }
         }
     }

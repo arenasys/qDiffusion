@@ -38,14 +38,18 @@ Item {
 
     Connections {
         target: bindMap
-        function onUpdated() {
-            var p = root.bindMap.get("prompt")
-            if(p != root.positivePrompt) {
-                root.positivePrompt = p
+        function onUpdated(key) {
+            if(key == "prompt") {
+                var p = root.bindMap.get("prompt")
+                if(p != root.positivePrompt) {
+                    root.positivePrompt = p
+                }
             }
-            var n = root.bindMap.get("negative_prompt")
-            if(n != root.negativePrompt) {
-                root.negativePrompt = n
+            if(key == "negative_prompt") {
+                var n = root.bindMap.get("negative_prompt")
+                if(n != root.negativePrompt) {
+                    root.negativePrompt = n
+                }
             }
         }
     }

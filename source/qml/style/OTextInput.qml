@@ -23,10 +23,12 @@ Item {
 
     Connections {
         target: bindMap
-        function onUpdated() {
-            var v = control.bindMap.get(control.bindKey)
-            if(v != control.value) {
-                control.value = v
+        function onUpdated(key) {
+            if(key == bindKey) {
+                var v = control.bindMap.get(control.bindKey)
+                if(v != control.value) {
+                    control.value = v
+                }
             }
         }
     }

@@ -150,7 +150,6 @@ class Basic(QObject):
             self.generate(user=False)
         else:
             self._manager.count = 0
-            self.updated.emit()
 
     @pyqtSlot(int, QImage, str)
     def onArtifact(self, id, image, name):
@@ -167,8 +166,6 @@ class Basic(QObject):
             self._outputs[id].setPreview(image)
         else:
             self._outputs[id].addArtifact(name, image)
-        
-        self.updated.emit()
 
     @pyqtSlot(int, object)
     def handleResponse(self, id, response):
