@@ -436,19 +436,21 @@ class Parameters(QObject):
 
     @pyqtSlot(str, 'QVariant', 'QVariant')
     def mapsUpdating(self, key, prev, curr):
+        changed = False
         pairs = [("true_sampler", "hr_sampler"), ("eta", "hr_eta"), ("steps", "hr_steps")]
         for src, dst in pairs:
             if key == src:
                 val = self._values.get(dst)
                 if val == prev:
+                    changed = True
                     self._values.set(dst, curr)
 
-        self.updated.emit()
+        if changed:
+            self.updated.emit()
 
     @pyqtSlot(str)
     def onUpdated(self, key):
         self.getActive()
-        self.updated.emit()
 
         if key != "sampler" and key != "schedule":
             return
@@ -863,6 +865,7 @@ class Parameters(QObject):
 
     @pyqtSlot()
     def getActive(self):
+        last = set(self._active)
         self._active = []
 
         prompt = self._values.get("prompt") + " " + self._values.get("negative_prompt")
@@ -897,6 +900,9 @@ class Parameters(QObject):
             self._active += [hr]
         if img in sr:
             self._active += [img]
+
+        if set(self._active) != last:
+            self.updated.emit()
 
     @pyqtSlot(str)
     def doActivate(self, file):
