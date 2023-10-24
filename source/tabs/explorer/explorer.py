@@ -111,6 +111,9 @@ class Populater(QObject):
                 continue
             break
         
+        if not preview:
+            preview = os.path.join(self.gui.modelDirectory(), name + ".png")
+        
         description = ""
         desc_exts = [".txt", ".csv", ".civitai.info"]
         possible_descs = [file_name + e for e in  desc_exts] + [file_name_no_ext + e for e in desc_exts]
@@ -354,13 +357,25 @@ class Explorer(QObject):
             image.save(file)
             self.gui.thumbnails.remove(file)
             self.gui.watchModelDirectory()
+            q = QSqlQuery(self.conn.db)
+            q.prepare("UPDATE models SET width = :width, height = :height WHERE file = :file;")
+            q.bindValue(":file", file)
+            q.bindValue(":width", image.width())
+            q.bindValue(":height", image.height())
+            self.conn.doQuery(q)
             
     @pyqtSlot(str)
     def doClear(self, file):
         if os.path.exists(file):
             os.remove(file)
             self.gui.thumbnails.remove(file)
-
+            q = QSqlQuery(self.conn.db)
+            q.prepare("UPDATE models SET width = :width, height = :height WHERE file = :file;")
+            q.bindValue(":file", file)
+            q.bindValue(":width", 0)
+            q.bindValue(":height", 0)
+            self.conn.doQuery(q)
+    
     @pyqtSlot(str)
     def doDelete(self, file):
         request = {"type":"manage", "data": {"operation": "modify", "old_file": file, "new_file": ""}}

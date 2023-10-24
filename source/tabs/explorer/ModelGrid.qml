@@ -112,6 +112,9 @@ Item {
 
         delegate: ModelCard {
             grid: root
+            onChanged: {
+                modelsSql.reload()
+            }
             onDeleteModel: {
                 root.deleteModel(model)
             }

@@ -18,6 +18,7 @@ Item {
         return TRANSLATOR.instance.translate(str, file)
     }
 
+    signal changed()
     signal deleteModel(string model)
 
     RectangularGlow {
@@ -398,6 +399,7 @@ Item {
                 text: root.tr("Clear", "General")
                 onPressed: {
                     EXPLORER.doClear(sql_file)
+                    root.changed()
                 }
             }
 
@@ -449,6 +451,7 @@ Item {
 
             onDropped: {
                 EXPLORER.doReplace(mimeData, sql_file)
+                root.changed()
                 thumbnail.source = ""
                 fullThumbnail.source = ""
                 thumbnail.source = Qt.binding(function() { return thumbnail.trueSource })
