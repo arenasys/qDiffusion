@@ -21,7 +21,7 @@ Rectangle {
     property var hue: 0.0
     property var label: null
     property var isHovered: mouseArea.containsMouse && !working && !disabled
-    property var isPressed: mouseArea.down && !working && !disabled
+    property var isPressed: mouseArea.containsPress && !working && !disabled
     property var disabled: false
 
     signal pressed();
@@ -77,7 +77,7 @@ Rectangle {
     SText {
         anchors.fill: parent
         text: root.working ? (mouseArea.containsMouse && root.info != "" ? root.info : root.tr("Working...")) : root.tr(root.text)
-        color: Qt.lighter(COMMON.fg0, mouseArea.down ? 0.85 : 1.0)
+        color: Qt.lighter(COMMON.fg0, mouseArea.containsPress ? 0.85 : 1.0)
         font.bold: true
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
@@ -90,23 +90,30 @@ Rectangle {
 
     MouseArea {
         id: mouseArea
-        anchors.fill: parent
         hoverEnabled: true
-        acceptedButtons: Qt.LeftButton | Qt.RightButton
-        property var down: false
+        anchors.fill: parent
+        acceptedButtons: Qt.LeftButton
         onPressed: {
-            if (!root.disabled && mouse.button === Qt.LeftButton) {
-                mouseArea.down = true
+            mouse.accepted = true
+        }
+    }
+
+    MouseArea {
+        anchors.fill: parent
+        acceptedButtons: Qt.LeftButton
+        onPressed: {
+            if (!root.disabled) {
                 root.pressed()
             }
-            if (mouse.button === Qt.RightButton) {
-                root.contextMenu()
-            }
+            mouse.accepted = false
         }
-        onReleased: {
-            if (mouse.button === Qt.LeftButton) {
-                mouseArea.down = false
-            }
+    }
+
+    MouseArea {
+        anchors.fill: parent
+        acceptedButtons: Qt.RightButton
+        onPressed: {
+            root.contextMenu()
         }
     }
 }

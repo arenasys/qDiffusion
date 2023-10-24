@@ -53,12 +53,16 @@ Item {
             anchors.margins: 2
             height: 40
 
+            function sync() {
+                genButton.progress = GUI.statusProgress
+                genButton.working = GUI.statusMode == 2 || GUI.statusMode == 5
+            }
+
             Timer {
                 id: genButtonTimer
                 interval: 100
                 onTriggered: {
-                    genButton.progress = GUI.statusProgress
-                    genButton.working = GUI.statusMode == 2
+                    genButton.sync()
                 }
             }
             Connections {
@@ -73,17 +77,17 @@ Item {
 
             progress: -1
             working: false
-            disabled: (GUI.statusMode != 1 && GUI.statusMode != 2) || GUI.modelCount == 0
+            disabled: (GUI.statusMode != 1 && GUI.statusMode != 2 && GUI.statusMode != 5) || GUI.modelCount == 0
             info: GUI.statusInfo
             remaining: root.remaining
 
             onPressed: {
                 if(GUI.statusMode == 1) {
                     root.generate()
-                }
-                if(GUI.statusMode == 2) {
+                } else if(GUI.statusMode == 2) {
                     root.cancel()
                 }
+                genButton.sync()
             }
 
             onContextMenu: {

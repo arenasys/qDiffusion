@@ -46,6 +46,7 @@ class StatusMode(Enum):
     WORKING = 2
     ERRORED = 3
     INACTIVE = 4
+    ABORTING = 5
 
 class RemoteStatusMode(Enum):
     INACTIVE = 0
@@ -301,6 +302,19 @@ class GUI(QObject):
         self.statusUpdated.emit()
         self.errorUpdated.emit()
 
+    def setSending(self):
+        self._statusMode = StatusMode.WORKING
+        self._statusInfo = "Sending..."
+        self._statusText = "Sending"
+        self._statusProgress = -1.0
+        self.statusUpdated.emit()
+
+    def setCancelling(self):
+        self._statusMode = StatusMode.ABORTING
+        self._statusInfo = "Aborting..."
+        self._statusText = "Aborting"
+        self.statusUpdated.emit()
+
     @pyqtSlot(object)
     def onResponse(self, response):
         id = response.get("id", -1)
@@ -315,7 +329,7 @@ class GUI(QObject):
         if monitor and not type in {"result", "artifact"}:
             return
 
-        if type == "status":
+        if type == "status" and self._statusMode != StatusMode.ABORTING:
             self._statusText = data["message"]
             self._statusInfo = ""
             if self._statusText == "Initializing" or self._statusText == "Connecting":
@@ -377,7 +391,7 @@ class GUI(QObject):
             self.reset.emit(id)
             self.setReady()
 
-        if type == "progress":
+        if type == "progress" and self._statusMode != StatusMode.ABORTING:
             self._statusProgress = data["current"]/data["total"]
             self._statusInfo = ""
             if response['data']['rate']:

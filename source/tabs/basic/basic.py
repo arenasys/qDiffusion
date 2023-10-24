@@ -118,6 +118,7 @@ class Basic(QObject):
     def generate(self, user=True):
         if user:
             self._manager.cancelRequest()
+        self.gui.setSending()
         if user or not self._manager.requests:
             self._manager.buildRequests(self._parameters, self._inputs)
         self._manager.makeRequest()
@@ -189,7 +190,8 @@ class Basic(QObject):
 
     @pyqtSlot()
     def cancel(self):
-        self._manager.cancelRequest()
+        if self._manager.cancelRequest():
+            self.gui.setCancelling()
         self.updated.emit()
 
     @pyqtProperty(bool, notify=updated)

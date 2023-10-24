@@ -99,7 +99,7 @@ Rectangle {
 
             color: "transparent"
             border.width: 2
-            border.color: [COMMON.accent(0.2), COMMON.accent(0.4), COMMON.accent(0.6), "#a0000000", "#a0000000"][GUI.statusMode]
+            border.color: [COMMON.accent(0.2), COMMON.accent(0.4), COMMON.accent(0.6), "#a0000000", "#a0000000", COMMON.accent(0.0)][GUI.statusMode]
 
             SText {
                 anchors.fill: parent

@@ -7,7 +7,7 @@ import random
 import copy
 import re
 
-from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QSize, QThreadPool, QRect, QMutex, QRunnable, QRectF
+from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QSize, QThreadPool, QRect, QMutex, QRunnable, QRectF, QCoreApplication
 from PyQt5.QtGui import QImage, QPainter, QColor, QFont, QFontMetrics, QTextOption
 
 import parameters
@@ -55,6 +55,19 @@ class OutputWriter(QRunnable):
         os.replace(self.tmp, self.file)
 
         OutputWriter.guard.unlock()
+
+class BuilderRunnable(QRunnable):
+    def __init__(self, manager, inputs):
+        super(BuilderRunnable, self).__init__()
+        self.manager = manager
+        self.inputs = inputs
+        self.results = None
+        self.done = False
+    
+    @pyqtSlot()
+    def run(self):
+        self.results = self.manager.parseInputs(self.inputs)
+        self.done = True
 
 class RequestManager(QObject):
     artifact = pyqtSignal(int, QImage, str)
@@ -130,6 +143,8 @@ class RequestManager(QObject):
         if self.ids:
             self.setRequests([])
             self.gui.cancelRequest(self.ids.pop())
+            return True
+        return False
 
     def finalizeRequest(self, request):
         data = request["data"]
@@ -217,11 +232,18 @@ class RequestManager(QObject):
                         segmentation += data
 
         return found, links, controls, segmentation
-
+    
     def buildRequests(self, parameters, inputs):
         self.parameters = parameters
 
-        found, links, controls, segmentation = self.parseInputs(inputs)
+        builder = BuilderRunnable(self, inputs)
+        QThreadPool.globalInstance().start(builder)
+
+        while not builder.done:
+            QCoreApplication.processEvents()
+            time.sleep(1/60)
+
+        found, links, controls, segmentation = builder.results
         
         self.setGrid(None)
 

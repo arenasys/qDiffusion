@@ -23,7 +23,7 @@ Rectangle {
         Rectangle {
             id: statusColor
             anchors.fill: parent
-            color: GUI.statusProgress <= 0 ? [COMMON.accent(0.2), COMMON.accent(0.4), COMMON.accent(0.6), "#a0000000", "#a0000000"][GUI.statusMode] : Qt.lighter(COMMON.accent(0), 0.75)
+            color: GUI.statusProgress <= 0 ? [COMMON.accent(0.2), COMMON.accent(0.4), COMMON.accent(0.6), "#a0000000", "#a0000000", COMMON.accent(0.0)][GUI.statusMode] : Qt.lighter(COMMON.accent(0), 0.75)
         }
 
         Rectangle {
