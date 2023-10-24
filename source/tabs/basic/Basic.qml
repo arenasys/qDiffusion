@@ -14,6 +14,8 @@ Item {
     id: root
     clip: true
     property var swap: GUI.config != null ? GUI.config.get("swap") : false
+    property var autocomplete: GUI.config != null ? GUI.config.get("autocomplete") != 0 : false
+
     onSwapChanged: {
         leftDivider.offset = 210
         rightDivider.offset = 210
@@ -288,6 +290,9 @@ Item {
             target: prompts
 
             function onInput(key) {
+                if(!root.autocomplete) {
+                    return
+                }
                 if(key == Qt.Key_Control) {
                     promptCursor.onlyModels = true
                     promptCursor.update()
@@ -305,6 +310,9 @@ Item {
             }
 
             function onRelease(key) {
+                if(!root.autocomplete) {
+                    return
+                }
                 if(key == Qt.Key_Control) {
                     promptCursor.onlyModels = false
                     promptCursor.update()
@@ -312,6 +320,9 @@ Item {
             }
 
             function onCursorTextChanged() {
+                if(!root.autocomplete) {
+                    return
+                }
                 if(prompts.cursorText == null) {
                     promptCursor.reset()
                 } else if (promptCursor.typed) {
