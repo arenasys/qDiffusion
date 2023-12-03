@@ -626,8 +626,8 @@ class Merger(QObject):
         self._manager.makeRequest()
         self.updated.emit()
     
-    @pyqtSlot(str)
-    def buildModel(self, filename):
+    @pyqtSlot(str, bool)
+    def buildModel(self, filename, prompt):
         parameters = self.getGenerateParameters()
         device = parameters._values.get("device")
 
@@ -637,7 +637,7 @@ class Merger(QObject):
 
         if model_type == "Checkpoint":
             request = {"type":"manage", "data":{"operation": "build", "merge_checkpoint_recipe":operations, "merge_name": name, "file":filename+".safetensors", "device_name": device}}
-            if parameters._values.get("network_mode") == "Static":
+            if prompt:
                 request["data"]["prompt"] = parameters.buildPrompts(1)
         elif model_type == "LoRA":
             request = {"type":"manage", "data":{"operation": "build_lora", "merge_lora_recipe":operations, "merge_name": name, "file":filename+".safetensors", "device_name": device}}

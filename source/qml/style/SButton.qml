@@ -10,6 +10,7 @@ Item {
     property alias color: labelText.color
 
     signal pressed()
+    signal contextMenu()
     width: 100
     height: 30
 
@@ -23,10 +24,15 @@ Item {
             id: mouseArea
             anchors.fill: parent
             hoverEnabled: true
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
 
             onPressed: {
                 if(!root.disabled) {
-                    root.pressed()
+                    if (mouse.button === Qt.LeftButton) {
+                        root.pressed()
+                    } else {
+                        root.contextMenu()
+                    }
                 }
             }
         }

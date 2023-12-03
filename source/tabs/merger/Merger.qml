@@ -28,6 +28,8 @@ Rectangle {
         modal: true
         dim: true
 
+        property var prompt: false
+
         onOpened: {
             filenameInput.value = MERGER.recipeName()
         }
@@ -44,7 +46,7 @@ Rectangle {
         height: 87
 
         onAccepted: {
-            MERGER.buildModel(filenameInput.value)
+            MERGER.buildModel(filenameInput.value, buildDialog.prompt)
         }
     }
 
@@ -406,14 +408,36 @@ Rectangle {
                 Row {
                     anchors.fill: parent
                     anchors.margins: 3
+                    SContextMenu {
+                        id: buildMenu
+                        width: 130
+                        SContextMenuItem {
+                            text: "Build with LoRAs"
+                            pointSize: 9.8
+                            onTriggered: {
+                                buildDialog.prompt = true
+                                buildDialog.open()
+                            }
+                        }
+                    }
+
                     SButton {
                         label: "Build"
                         disabled: !MERGER.valid
                         width: parent.width/3
                         height: parent.height
+                        
                         onPressed: {
+                            buildDialog.prompt = false
                             buildDialog.open()
                         }
+
+                        onContextMenu: {
+                            if(typeChoice.value == "Checkpoint") {
+                                buildMenu.popup()
+                            }
+                        }
+
                     }
                     SButton {
                         label: "Save"
