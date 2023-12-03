@@ -924,6 +924,29 @@ Item {
                         bindKeyCurrent: "hr_sampler"
                         bindKeyModel: "true_samplers"
                     }
+
+                    OSlider {
+                        visible: root.advanced
+                        id: hrScaleInput
+                        label: root.tr("HR Scale")
+                        width: parent.width
+                        height: 30
+                        
+                        bindMap: root.binding.values
+                        bindKey: "hr_scale"
+
+                        disabled: hrFactorInput.value == 1.0
+                        overlay: hrFactorInput.value == 1.0 || scaleInput.value == hrScaleInput.value
+                        defaultValue: root.binding.values.get("scale")
+
+                        minValue: 1
+                        maxValue: 20
+                        precValue: 1
+                        incValue: 1
+                        snapValue: 0.5
+                        bounded: false
+                    }
+
                     OSlider {
                         visible: !samplerColumn.isCollapsed && root.advanced
                         id: hrEtaInput

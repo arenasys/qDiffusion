@@ -38,6 +38,7 @@ LABELS = [
     ("hr_sampler", "Hires sampler"),
     ("hr_steps", "Hires steps"),
     ("hr_eta", "Hires sampler eta"),
+    ("hr_scale", "Hires CFG scale"),
     ("img2img_upscaler", "Upscaler"),
     ("cfg_rescale", "CFG rescale"),
     ("prediction_type", "Prediction type")
@@ -46,7 +47,7 @@ LABELS = [
 SETTABLE = [
     "prompt", "negative_prompt", "steps", "sampler", "schedule", "scale", "seed", "width", "height",
     "model", "UNET", "VAE", "CLIP", "model", "subseed", "subseed_strength", "strength", "eta", "clip_skip", "img2img_upscaler",
-    "hr_factor", "hr_strength", "hr_upscaler", "hr_sampler", "hr_steps", "hr_eta", "cfg_rescale", "prediction_type"
+    "hr_factor", "hr_strength", "hr_upscaler", "hr_sampler", "hr_steps", "hr_eta", "hr_scale", "cfg_rescale", "prediction_type"
 ]
 
 NETWORKS = {"LoRA":"lora","HN":"hypernet"}
@@ -346,7 +347,7 @@ class Parameters(QObject):
         ]
         self._default_values = {
             "prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7.0, "strength": 0.75, "seed": -1, "eta": 1.0,
-            "hr_factor": 1.0, "hr_strength":  0.7, "hr_sampler": "Euler a", "hr_steps": 25, "hr_eta": 1.0, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "mask_expand": 0, "subseed":-1, "subseed_strength": 0.0,
+            "hr_factor": 1.0, "hr_strength":  0.7, "hr_sampler": "Euler a", "hr_steps": 25, "hr_eta": 1.0, "hr_scale": 7.0, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "mask_expand": 0, "subseed":-1, "subseed_strength": 0.0,
             "sampler":"Euler a", "samplers":[], "hr_upscaler":"Latent (nearest)", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
             "model":"", "models":[], "UNET":"", "UNETs":[], "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[],
             "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "schedule": "Default", "schedules": ["Default", "Karras", "Exponential"],
@@ -437,11 +438,11 @@ class Parameters(QObject):
     @pyqtSlot(str, 'QVariant', 'QVariant')
     def mapsUpdating(self, key, prev, curr):
         changed = False
-        pairs = [("true_sampler", "hr_sampler"), ("eta", "hr_eta"), ("steps", "hr_steps")]
+        pairs = [("true_sampler", "hr_sampler"), ("eta", "hr_eta"), ("steps", "hr_steps"), ("scale", "hr_scale")]
         for src, dst in pairs:
             if key == src:
                 val = self._values.get(dst)
-                if val == prev:
+                if val == prev or (type(val) == float and abs(val - prev) < 0.001):
                     changed = True
                     self._values.set(dst, curr)
 
@@ -611,6 +612,7 @@ class Parameters(QObject):
             del data["hr_steps"]
             del data["hr_sampler"]
             del data["hr_eta"]
+            del data["hr_scale"]
             del data["hr_tome_ratio"]
         else:
             if data["hr_steps"] == data["steps"]:
@@ -619,6 +621,8 @@ class Parameters(QObject):
                 del data["hr_eta"]
             if data["hr_sampler"] == data["sampler"]:
                 del data["hr_sampler"]
+            if data["hr_scale"] == data["scale"]:
+                del data["hr_scale"]
         
         if not request["type"] in {"img2img", "upscale"}:
             del data["img2img_upscaler"]
@@ -801,6 +805,8 @@ class Parameters(QObject):
                     value = self.values.get("steps")
                 elif name == "hr_sampler":
                     value = self.values.get("sampler")
+                elif name == "hr_scale":
+                    value = self.values.get("scale")
                 elif name in self._default_values:
                     value = self._default_values.get(name)
 

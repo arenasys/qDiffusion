@@ -98,6 +98,7 @@ Item {
                 }
             }
         }
+        
         Glow {
             opacity: 0.5
             anchors.fill: indicator
