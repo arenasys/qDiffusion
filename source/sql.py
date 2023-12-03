@@ -197,13 +197,13 @@ class Sql(QAbstractListModel):
             srcIdx = find(self.results[i:], newResults[0])
             dstIdx = find(newResults, self.results[i])
             if srcIdx == -1 and dstIdx == -1:
-                self.beginRemoveRows(QModelIndex(), i, len(self.results)-1)
-                self.results = self.results[:i]
-                self.endRemoveRows()
+                self.results[i] = newResults.pop(0)
+                self.dataChanged.emit(self.index(i), self.index(i))
                 changed = True
-                break
-
-            elif srcIdx > 0:
+                i += 1
+                continue
+            
+            if srcIdx > 0:
                 self.beginRemoveRows(QModelIndex(), i, i+srcIdx-1)
                 self.results = self.results[:i] + self.results[i+srcIdx:]
                 self.endRemoveRows()
