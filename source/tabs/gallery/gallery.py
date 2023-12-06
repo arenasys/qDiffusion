@@ -208,14 +208,26 @@ class Gallery(QObject):
     
     @pyqtSlot(list)
     def doOpenFiles(self, files):
-        self.gui.openFiles([os.path.abspath(f) for f in files])
+        files = [os.path.abspath(f) for f in files if os.path.exists(f)]
+        if not files:
+            return
+        
+        self.gui.openFiles(files)
 
     @pyqtSlot(list)
     def doVisitFiles(self, files):
-        self.gui.visitFiles([os.path.abspath(f) for f in files])
+        files = [os.path.abspath(f) for f in files if os.path.exists(f)]
+        if not files:
+            return
+        
+        self.gui.visitFiles(files)
 
     @pyqtSlot(str, list)
     def doCopy(self, folder, files):
+        files = [os.path.abspath(f) for f in files if os.path.exists(f)]
+        if not files:
+            return
+        
         idx = parameters.getIndex(folder)
         for src in files:
             dst = os.path.join(folder, f"{idx:07d}.png")
@@ -224,6 +236,10 @@ class Gallery(QObject):
 
     @pyqtSlot(str, list)
     def doMove(self, folder, files):
+        files = [os.path.abspath(f) for f in files if os.path.exists(f)]
+        if not files:
+            return
+        
         idx = parameters.getIndex(folder)
         for src in files:
             dst = os.path.join(folder, f"{idx:07d}.png")
@@ -232,16 +248,28 @@ class Gallery(QObject):
 
     @pyqtSlot(list)
     def doDelete(self, files):
+        files = [os.path.abspath(f) for f in files if os.path.exists(f)]
+        if not files:
+            return
+        
         deleter = Deleter(self.gui, files)
         deleter.start()
         self.deleters += [deleter]
 
     @pyqtSlot(list)
     def doClipboard(self, files):
+        files = [os.path.abspath(f) for f in files if os.path.exists(f)]
+        if not files:
+            return
+        
         self.gui.copyFiles(files)
 
     @pyqtSlot(list)
     def doDrag(self, files):
+        files = [os.path.abspath(f) for f in files if os.path.exists(f)]
+        if not files:
+            return
+        
         self.gui.dragFiles(files)
 
     @pyqtSlot()
