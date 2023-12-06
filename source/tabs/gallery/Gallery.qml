@@ -151,7 +151,6 @@ Rectangle {
                 onAccepted: {
                     search.text = searchInput.text
                     searchAnimation.restart()
-                    root.releaseFocus()
                 }
             }
 
