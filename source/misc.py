@@ -429,6 +429,11 @@ def encodeImage(img):
     img.save(bf, "PNG")
     return ba.data()
 
+def decodeImage(data):
+    img = QImage()
+    img.loadFromData(data, "png")
+    return img
+
 def cropImage(img, size, offset_x = 0, offset_y = 0, scale = 1):
     in_z = img.size()
         

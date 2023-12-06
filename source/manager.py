@@ -11,7 +11,7 @@ from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QSize,
 from PyQt5.QtGui import QImage, QPainter, QColor, QFont, QFontMetrics, QTextOption
 
 import parameters
-from misc import encodeImage
+from misc import encodeImage, decodeImage
 from tabs.basic.basic_input import BasicInputRole
 
 class OutputWriter(QRunnable):
@@ -419,7 +419,12 @@ class RequestManager(QObject):
 
         data = requests[0]["data"]
         w, h, factor = data["width"], data["height"], data.get("hr_factor",1)
-        self.grid_size = (int(w*factor), int(h*factor))
+
+        if requests[0]["type"] == "img2img" and "mask" in requests[0]["data"]:
+            img = decodeImage(requests[0]["data"]["image"][0])
+            self.grid_size = (img.width(), img.height())
+        else:
+            self.grid_size = (int(w*factor), int(h*factor))
 
         if not parameters._values.get("output_folder"):
             for i in range(len(requests)):
