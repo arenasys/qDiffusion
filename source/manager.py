@@ -20,10 +20,6 @@ class OutputWriter(QRunnable):
         super(OutputWriter, self).__init__()
         self.setAutoDelete(True)
 
-        if not OutputWriter.guard.tryLock(5000):
-            OutputWriter.guard.unlock()
-            OutputWriter.guard.lock()
-
         m = PIL.PngImagePlugin.PngInfo()
         if metadata:
             m.add_text("parameters", parameters.formatParameters(metadata))
@@ -31,17 +27,25 @@ class OutputWriter(QRunnable):
             if recipe:
                 m.add_text("recipe", recipe)
 
+        self.img = img
+        self.metadata = m
+
+        if not OutputWriter.guard.tryLock(5000):
+            OutputWriter.guard.unlock()
+            OutputWriter.guard.lock()
+
         folder = os.path.join(outputs, folder)
         os.makedirs(folder, exist_ok=True)
 
         if not filename:
             idx = parameters.getIndex(folder)
             filename = f"{idx:08d}-" + datetime.datetime.now().strftime("%m%d%H%M")
-
-        self.img = img
+        
         self.tmp = os.path.join(folder, f"{filename}.tmp")
         self.file = os.path.join(folder, f"{filename}.png")
-        self.metadata = m
+        open(self.tmp, 'a').close()
+
+        OutputWriter.guard.unlock()
 
     @pyqtSlot()
     def run(self):
@@ -53,8 +57,6 @@ class OutputWriter(QRunnable):
 
         self.img.save(self.tmp, format="PNG", pnginfo=self.metadata)
         os.replace(self.tmp, self.file)
-
-        OutputWriter.guard.unlock()
 
 class BuilderRunnable(QRunnable):
     def __init__(self, manager, inputs):
