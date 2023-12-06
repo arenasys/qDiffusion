@@ -1336,14 +1336,14 @@ Rectangle {
                 height: 40
                 text: "Preview"
 
-                remaining: MERGER.remaining
+                remaining: MERGER.manager.remaining
 
                 Timer {
                     id: genButtonTimer
                     interval: 100
                     onTriggered: {
                         genButton.progress = GUI.statusProgress
-                        genButton.working = GUI.statusMode == 2
+                        genButton.working = (GUI.statusMode == 2) || genButton.remaining > 0
                     }
                 }
 

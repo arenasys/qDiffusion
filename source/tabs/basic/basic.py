@@ -203,12 +203,6 @@ class Basic(QObject):
         self._forever = forever
         self.updated.emit()
 
-    @pyqtProperty(int, notify=updated)
-    def remaining(self):
-        if self._manager.count > 1:
-            return len(self._manager.requests) + 1
-        return 0
-
     @pyqtProperty(parameters.Parameters, notify=updated)
     def parameters(self):
         return self._parameters
@@ -661,7 +655,7 @@ class Basic(QObject):
         request = {"type":"manage", "data":{"operation": "build", "unet":unet, "vae":vae, "clip":clip, "file":filename, "device_name": device}}
 
         if self._parameters._values.get("network_mode") == "Static":
-            request["data"]["prompt"] = self._parameters.buildPrompts(1)
+            request["data"]["prompt"] = self._parameters.buildPrompts()
 
         self.gui.makeRequest(request)    
 
@@ -755,6 +749,10 @@ class Basic(QObject):
     def suggestions(self):
         return self._suggestions
     
+    @pyqtProperty(manager.RequestManager, notify=managersUpdated)
+    def manager(self):
+        return self._manager
+
     @pyqtProperty(misc.GridManager, notify=managersUpdated)
     def grid(self):
         return self._grid

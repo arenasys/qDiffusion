@@ -187,7 +187,7 @@ Item {
             binding: BASIC.parameters
             swap: root.swap
 
-            remaining: BASIC.remaining
+            remaining: BASIC.manager.remaining
 
             onGenerate: {
                 BASIC.generate()

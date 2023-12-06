@@ -55,7 +55,7 @@ Item {
 
             function sync() {
                 genButton.progress = GUI.statusProgress
-                genButton.working = GUI.statusMode == 2 || GUI.statusMode == 5
+                genButton.working = GUI.statusMode == 2 || GUI.statusMode == 5 || genButton.remaining > 0
             }
 
             Timer {

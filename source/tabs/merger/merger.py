@@ -353,12 +353,6 @@ class Merger(QObject):
         self._forever = forever
         self.updated.emit()
 
-    @pyqtProperty(int, notify=updated)
-    def remaining(self):
-        if self._manager.count > 1:
-            return len(self._manager.requests) + 1
-        return 0
-
     @pyqtSlot()
     def buildRecipe(self):
         recipe = []
@@ -638,7 +632,7 @@ class Merger(QObject):
         if model_type == "Checkpoint":
             request = {"type":"manage", "data":{"operation": "build", "merge_checkpoint_recipe":operations, "merge_name": name, "file":filename+".safetensors", "device_name": device}}
             if prompt:
-                request["data"]["prompt"] = parameters.buildPrompts(1)
+                request["data"]["prompt"] = parameters.buildPrompts()
         elif model_type == "LoRA":
             request = {"type":"manage", "data":{"operation": "build_lora", "merge_lora_recipe":operations, "merge_name": name, "file":filename+".safetensors", "device_name": device}}
 
@@ -725,13 +719,14 @@ class Merger(QObject):
         idx = self.outputIDToIndex(self._opened_index)
         if idx == 0 or idx == -1:
             return True
-        if idx == 1 and not self._outputs[self.outputIndexToID(0)].ready:
+        if idx > 0 and not self._outputs[self.outputIndexToID(idx-1)].ready:
             return True
         return False
 
     @pyqtSlot()
     def stick(self):
-        index = self.outputIndexToID(0)
+        i = max(0, self.outputIDToIndex(self._opened_index)-1)
+        index = self.outputIndexToID(i)
         if index in self._outputs and self._outputs[index]._ready:
             self._opened_index = index
             self.outputSelected.emit()
@@ -824,6 +819,10 @@ class Merger(QObject):
         
         return best
     
+    @pyqtProperty(manager.RequestManager, notify=managersUpdated)
+    def manager(self):
+        return self._manager
+
     @pyqtProperty(misc.GridManager, notify=managersUpdated)
     def grid(self):
         if not self._grid:

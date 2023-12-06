@@ -479,11 +479,13 @@ def start(engine, app):
     import sql
     import canvas
     import parameters
+    import manager
 
     sql.registerTypes()
     canvas.registerTypes()
     canvas.registerMiscTypes()
     parameters.registerTypes()
+    manager.registerTypes()
 
     backend = gui.GUI(parent=app)
 

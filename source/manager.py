@@ -9,6 +9,7 @@ import re
 
 from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QSize, QThreadPool, QRect, QMutex, QRunnable, QRectF, QCoreApplication
 from PyQt5.QtGui import QImage, QPainter, QColor, QFont, QFontMetrics, QTextOption
+from PyQt5.QtQml import qmlRegisterUncreatableType
 
 import parameters
 from misc import encodeImage, decodeImage
@@ -72,6 +73,7 @@ class BuilderRunnable(QRunnable):
         self.done = True
 
 class RequestManager(QObject):
+    updated = pyqtSignal()
     artifact = pyqtSignal(int, QImage, str)
     result = pyqtSignal(int, QImage, object, str)
 
@@ -118,10 +120,13 @@ class RequestManager(QObject):
 
         self.requests = requests
         self.count = len(requests)
+        self.updated.emit()
 
     def makeRequest(self, request=None):
         if not request:
             request = self.requests.pop()
+            self.updated.emit()
+        
         filename = self.finalizeRequest(request)
 
         folder = ""
@@ -169,6 +174,12 @@ class RequestManager(QObject):
             filename = filename.rsplit(os.path.sep, 1)[-1].rsplit(".", 1)[0]
 
         return filename
+    
+    @pyqtProperty(int, notify=updated)
+    def remaining(self):
+        if self.count > 1:
+            return len(self.requests) + 1
+        return 0
     
     def parseInputs(self, inputs):
         found = {}
@@ -353,7 +364,7 @@ class RequestManager(QObject):
             subseed = random.randrange(2147483646)
 
         for size, images, masks, areas, control in batches:
-            request = self.parameters.buildRequest(size, images, masks, areas, control)
+            request = self.parameters.buildRequest(size, seed, images, masks, areas, control)
 
             if "seed" in request["data"]:
                 request["data"]["seed"] = seed
@@ -413,7 +424,11 @@ class RequestManager(QObject):
                     else:
                         elementParams._values.set(k, v)
 
-                request = elementParams.buildRequest(*base)
+                
+                size, b_i, b_m, b_a, b_c = base
+                sd = int(elementParams._values.get("seed"))
+
+                request = elementParams.buildRequest(size, sd, b_i, b_m, b_a, b_c)
                 if self.modifyRequest:
                     request = self.modifyRequest(request, modifyParams)
 
@@ -438,6 +453,10 @@ class RequestManager(QObject):
         if not id in self.ids:
             if not (self.monitoring and name == "result"):
                 return
+
+        if not self.requests and name == "result":
+            self.count = 0
+            self.updated.emit()
 
         if not id in self.mapping:
             self.mapping[id] = (time.time_ns() // 1000000) % (2**31 - 1)
@@ -603,3 +622,6 @@ class RequestManager(QObject):
                     self.makeRequest()
         else:
             self.artifact.emit(out, self.grid_image, "preview")
+
+def registerTypes():
+    qmlRegisterUncreatableType(RequestManager, "gui", 1, 0, "RequestManager", "Not a QML type")

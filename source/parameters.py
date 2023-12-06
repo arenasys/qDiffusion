@@ -553,12 +553,12 @@ class Parameters(QObject):
 
         self.updated.emit()
 
-    def buildPrompts(self, batch_size):
-        pos = self.parsePrompt(self._values._map['prompt'], batch_size)
-        neg = self.parsePrompt(self._values._map['negative_prompt'], batch_size)
+    def buildPrompts(self, batch_size=0, seed=-1):
+        pos = self.parsePrompt(self._values._map['prompt'], batch_size, seed)
+        neg = self.parsePrompt(self._values._map['negative_prompt'], batch_size, seed)
         return list(zip(pos, neg))
 
-    def buildRequest(self, batch_size, images=[], masks=[], areas=[], control=[]):
+    def buildRequest(self, batch_size, seed, images=[], masks=[], areas=[], control=[]):
         request = {}
         data = {}
 
@@ -567,8 +567,9 @@ class Parameters(QObject):
                 data[k] = v
 
         data['batch_size'] = int(batch_size)
+        data['seed'] = seed
 
-        data['prompt'] = self.buildPrompts(batch_size)
+        data['prompt'] = self.buildPrompts(batch_size, seed)
 
         data["sampler"] = data["true_sampler"]
         del data["true_sampler"]
@@ -598,7 +599,6 @@ class Parameters(QObject):
                     areas[a] = areas[a][:s]
             data["area"] = areas
 
-        
         if not "mask" in data and not "area" in data:
             del data["mask_blur"]
             del data["mask_expand"]
@@ -821,13 +821,17 @@ class Parameters(QObject):
 
         self.updated.emit()
 
-    def parsePrompt(self, prompt, batch_size):
+    def parsePrompt(self, prompt, batch_size, seed):
         wildcards = self.gui.wildcards._wildcards
         counter = self.gui.wildcards._counter
         prompts = []
         file_pattern = re.compile(r"@?__([^\s]+?)__(?!___)")
         inline_pattern = re.compile(r"{([^{}|]+(?:\|[^{}|]+)*)}")
+        seed = random.randrange(2147483646) if seed == -1 else seed
+        
         for i in range(batch_size):
+            roll = random.Random(seed+i)
+
             sp = self.parseSubprompts(str(prompt))
             for j in range(len(sp)):
                 p = sp[j]
@@ -836,7 +840,7 @@ class Parameters(QObject):
                     p = list(p)
                     s,e = m.span(0)
                     options = m.group(1).split("|")
-                    p[s:e] = random.SystemRandom().choice(options)
+                    p[s:e] = roll.choice(options)
                     p = ''.join(p)
 
                 while m := file_pattern.search(p):
@@ -851,7 +855,7 @@ class Parameters(QObject):
                             c = wildcards[name][counter[name]%len(wildcards[name])]
                             counter[name] += 1
                         else:
-                            c = random.SystemRandom().choice(wildcards[name])
+                            c = roll.choice(wildcards[name])
                     p[s:e] = c
                     p = ''.join(p)
                 sp[j] = p
