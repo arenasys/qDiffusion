@@ -10,10 +10,25 @@ import "components"
 
 FocusReleaser {
     property var window
-    anchors.fill: parent  
+    property var spinner
+    anchors.fill: parent
+    layer.enabled: true
+    opacity: 0.0
+
+    NumberAnimation on opacity {
+        id: opacityAnimator
+        from: 0
+        to: 1
+        duration: 250
+        onFinished: {
+            layer.enabled = false
+            spinner.visible = false
+        }
+    }
     
     Component.onCompleted: {
         window.title = Qt.binding(function() { return TRANSLATOR.instance.translate(GUI.title, "Title"); })
+        opacityAnimator.start()
     }
 
     Rectangle {

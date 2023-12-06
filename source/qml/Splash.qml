@@ -21,7 +21,7 @@ ApplicationWindow {
         sourceSize: Qt.size(width, height)
         anchors.centerIn: parent
         smooth: true
-        antialiasing: true   
+        antialiasing: true
     }
 
     RotationAnimator {
@@ -57,12 +57,7 @@ ApplicationWindow {
             if(component.status != Component.Ready) {
                 console.log("ERROR", component.errorString())
             } else {
-                var incubator = component.incubateObject(root, { window: root })
-                incubator.onStatusChanged = function(status) {
-                    if (status === Component.Ready) {
-                        spinner.visible = false
-                    }
-                };
+                component.incubateObject(root, { window: root, spinner: spinner })
             }
         }
     }
