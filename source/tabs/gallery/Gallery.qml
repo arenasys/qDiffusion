@@ -111,6 +111,31 @@ Rectangle {
             clip: true
 
             property var text: ""
+
+            Rectangle {
+                id: searchIndicator
+                anchors.left: parent.left
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                width: p * parent.width
+                color: COMMON.bg2
+
+                property var p: 0
+                NumberAnimation on p {
+                    id: searchAnimation
+                    from: 0
+                    to: 1.0
+                    duration: 250
+                    running: false
+                    easing.type: Easing.InOutElastic;
+                    easing.amplitude: 2.0;
+                    easing.period: 1.5
+
+                    onFinished: {
+                        searchIndicator.p = 0
+                    }
+                }
+            }
             
             STextInput {
                 id: searchInput
@@ -125,6 +150,7 @@ Rectangle {
 
                 onAccepted: {
                     search.text = searchInput.text
+                    searchAnimation.restart()
                     root.releaseFocus()
                 }
             }
