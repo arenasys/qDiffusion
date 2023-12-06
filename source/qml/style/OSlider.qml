@@ -366,10 +366,22 @@ Item {
                 }
 
                 MouseArea {
+                    visible: !root.disabled
                     anchors.fill: parent
                     preventStealing: true
                     onPressed: {
-                        root.value = Math.min(root.value + root.incValue, root.maxValue)
+                        if(root.bounded) {
+                            root.value = Math.min(root.value + root.incValue, root.maxValue)
+                        } else {
+                            root.value = root.value + root.incValue
+                        }
+                    }
+                    
+                    Rectangle {
+                        anchors.fill: parent
+                        color: "black"
+                        visible: parent.containsMouse
+                        opacity: 0.1
                     }
                 }
 
@@ -410,11 +422,23 @@ Item {
                 }
 
                 MouseArea {
+                    visible: !root.disabled
                     anchors.fill: parent
                     preventStealing: true
 
                     onPressed: {
-                        root.value = Math.max(root.value - root.incValue, root.minValue)
+                        if(root.minBounded) {
+                            root.value = Math.max(root.value - root.incValue, root.minValue)
+                        } else {
+                            root.value = root.value - root.incValue
+                        }
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        color: "black"
+                        visible: parent.containsMouse
+                        opacity: 0.1
                     }
                 }
             }

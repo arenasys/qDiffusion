@@ -987,11 +987,10 @@ Item {
                         bindKey: "clip_skip"
 
                         minValue: 1
-                        maxValue: 4
+                        maxValue: 12
                         precValue: 0
                         incValue: 1
                         snapValue: 1
-                        bounded: false
                     }
 
                     OSlider {

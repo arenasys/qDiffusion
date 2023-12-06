@@ -169,7 +169,22 @@ Rectangle {
 
             model: Sql {
                 id: filesSql
-                query: root.asleep ? "" : ("SELECT file, width, height, parameters FROM images WHERE folder = '" + folder.currentValue + "' AND parameters LIKE '%" + search.text + "%' ORDER BY idx DESC;")
+
+                query: {
+                    if(root.asleep) {
+                        return ""
+                    }
+                    var pre_str = "SELECT file, width, height, parameters FROM images WHERE folder = '" + folder.currentValue + "'"
+                    var post_str = " ORDER BY idx DESC;"
+
+                    var searches = search.text.split(";")
+                    var search_str = ""
+                    for(var i = 0; i < searches.length; i++) {
+                        search_str += " AND parameters LIKE '%" + searches[i].trim() + "%'"
+                    }
+
+                    return pre_str + search_str + post_str;
+                 }
                 
                 property bool reset: false
 

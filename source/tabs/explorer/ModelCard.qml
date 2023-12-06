@@ -182,6 +182,7 @@ Item {
 
                 area.onActiveFocusChanged: {
                     if(area.activeFocus) {
+                        contextMenu.input = descText.area
                         modelCard.select()
                     }
                 }
@@ -358,6 +359,12 @@ Item {
                 color: COMMON.fg1
                 leftPadding: 5
                 rightPadding: 5
+
+                onActiveFocusChanged: {
+                    if(activeFocus) {
+                        contextMenu.input = labelTextEdit
+                    }
+                }
             }
         }
 
@@ -370,10 +377,51 @@ Item {
                 contextMenu.popup()
             }
         }
-        
+
         SContextMenu {
             id: contextMenu
             width: 80
+
+            property var input: null
+
+
+            SContextMenuItem {
+                text: "Cut"
+                visible: modelCard.editing
+                height: visible ? 20 : 0
+                onPressed: {
+                    if(contextMenu.input) {
+                        contextMenu.input.cut()
+                    }
+                }
+            }
+
+            SContextMenuItem {
+                text: "Copy"
+                visible: modelCard.editing
+                height: visible ? 20 : 0
+                onPressed: {
+                    if(contextMenu.input) {
+                        contextMenu.input.copy()
+                    }
+                }
+            }
+
+            SContextMenuItem {
+                text: "Paste"
+                visible: modelCard.editing
+                height: visible ? 20 : 0
+                onPressed: {
+                    if(contextMenu.input) {
+                        contextMenu.input.paste()
+                    }
+                }
+            }
+
+            SContextMenuSeparator {
+                visible: modelCard.editing
+                height: visible ? 11 : 0
+            }
 
             SContextMenuItem {
                 text: modelCard.editing ? root.tr("Save", "General") : root.tr("Edit", "General")
