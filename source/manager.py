@@ -463,6 +463,7 @@ class RequestManager(QObject):
             results = self.gui._results[id]["result"]
             metadata = self.gui._results[id].get("metadata", None)
             artifacts = {k:v for k,v in self.gui._results[id].items() if not k in {"result", "metadata", "preview"}}
+
             out = self.mapping[id]
 
             if id in self.annotations:
@@ -481,9 +482,10 @@ class RequestManager(QObject):
 
                 self.result.emit(out, result, meta, file)
 
-                artifacts = {k:v[i%len(v)] for k,v in artifacts.items() if v[i%len(v)]}
                 for k, v in artifacts.items():
-                    self.artifact.emit(out, v, k)
+                    vv = v[i%len(v)]
+                    if vv:
+                        self.artifact.emit(out, vv, k)    
 
                 out += 1
 
