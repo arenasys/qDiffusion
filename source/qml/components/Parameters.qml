@@ -1204,6 +1204,10 @@ Item {
                         bindKeyCurrent: "attention"
                         bindKeyModel: "attentions"
 
+                        onSelected: {
+                            GUI.config.set("attention", value)
+                        }
+
                         function display(text) {
                             return root.tr(text, "Options")
                         }
@@ -1218,6 +1222,48 @@ Item {
                         bindMap: root.binding.values
                         bindKeyCurrent: "tiling_mode"
                         bindKeyModel: "tiling_modes"
+
+                        onSelected: {
+                            GUI.config.set("vae_tiling", value)
+                        }
+
+                        function display(text) {
+                            return root.tr(text, "Options")
+                        }
+                    }
+
+                    OChoice {
+                        visible: root.advanced
+                        label: root.tr("Precision")
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "precision"
+                        bindKeyModel: "precisions"
+
+                        onSelected: {
+                            GUI.config.set("precision", value)
+                        }
+
+                        function display(text) {
+                            return root.tr(text, "Options")
+                        }
+                    }
+
+                    OChoice {
+                        visible: root.advanced
+                        label: root.tr("VAE Precision")
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "vae_precision"
+                        bindKeyModel: "precisions"
+
+                        onSelected: {
+                            GUI.config.set("vae_precision", value)
+                        }
 
                         function display(text) {
                             return root.tr(text, "Options")

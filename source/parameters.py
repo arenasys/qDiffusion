@@ -343,21 +343,22 @@ class Parameters(QObject):
             "models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "SR", "LoRAs", "HNs", "LoRA", "HN", "TIs", "TI", "CN", "CNs", "hr_upscalers", "img2img_upscalers", 
             "attentions", "device", "devices", "batch_count", "prompt", "negative_prompt", "vram_usages", "artifact_modes", "preview_modes", "schedules",
             "CN_modes", "CN_preprocessors", "vram_modes", "true_samplers", "schedule", "network_modes", "model", "output_folder", "mask_fill_modes", "autocast_modes",
-            "prediction_types", "tiling_modes"
+            "prediction_types", "tiling_modes", "precisions"
         ]
         self._default_values = {
             "prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7.0, "strength": 0.75, "seed": -1, "eta": 1.0,
             "hr_factor": 1.0, "hr_strength":  0.7, "hr_sampler": "Euler a", "hr_steps": 25, "hr_eta": 1.0, "hr_scale": 7.0, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "mask_expand": 0, "subseed":-1, "subseed_strength": 0.0,
-            "sampler":"Euler a", "samplers":[], "hr_upscaler":"Latent (nearest)", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
+            "sampler": "Euler a", "samplers":[], "hr_upscaler":"Lanczos", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
             "model":"", "models":[], "UNET":"", "UNETs":[], "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[],
             "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "schedule": "Default", "schedules": ["Default", "Karras", "Exponential"],
             "vram_mode": "Default", "vram_modes": ["Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"], "preview_mode": "Light",
             "preview_modes": ["Disabled", "Light", "Medium", "Full"], "preview_interval":1, "true_samplers": [], "true_sampler": "Euler a",
-            "network_mode": "Dynamic", "network_modes": ["Dynamic", "Static"], "mask_fill": "Original", "mask_fill_modes": ["Original", "Noise"],
+            "network_mode": "Static", "network_modes": ["Dynamic", "Static"], "mask_fill": "Original", "mask_fill_modes": ["Original", "Noise"],
             "tome_ratio": 0.0, "hr_tome_ratio": 0.0, "cfg_rescale": 0.0, "output_folder": "", "autocast": "Disabled", "autocast_modes": ["Disabled", "Enabled"],
             "CN_modes": ["Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD", "Instruct", "Shuffle", "Inpaint", "Scribble", "Normal", "Tile", "QR"],#, "Segmentation"]
             "CN_preprocessors": ["None", "Invert", "Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD", "Shuffle", "Scribble", "Normal"],
-            "prediction_type": "Default", "prediction_types": ["Default", "Epsilon", "V"], "tiling_mode": "Disabled", "tiling_modes": ["Disabled", "Enabled"]
+            "prediction_type": "Default", "prediction_types": ["Default", "Epsilon", "V"], "tiling_mode": "Disabled", "tiling_modes": ["Disabled", "Enabled"],
+            "precisions": ["FP16", "FP32"], "vae_precision": "FP16", "precision": "FP16"
         }
 
         if source:
@@ -528,25 +529,22 @@ class Parameters(QObject):
         if self._values.get("hr_upscaler") not in self._values.get("hr_upscalers"):
             self._values.set("hr_upscaler", "Latent (nearest)")
 
-        pref_device = self.gui.config.get("device")
-        if pref_device and pref_device in self._values.get("devices"):
-            self._values.set("device", pref_device)
+        config = [
+            ("device", "device", "devices"),
+            ("artifacts", "artifact_mode", "artifact_modes"),
+            ("previews", "preview_mode", "preview_modes"),
+            ("preview_interval", "preview_interval", None),
+            ("vram", "vram_mode", "vram_modes"),
+            ("attention", "attention", "attentions"),
+            ("precision", "precision", "precisions"),
+            ("vae_precision", "vae_precision", "precisions"),
+            ("vae_tiling", "tiling_mode", "tiling_modes")
+        ]
 
-        pref_artifacts = self.gui.config.get("artifacts")
-        if pref_artifacts and pref_artifacts in self._values.get("artifact_modes"):
-            self._values.set("artifact_mode", pref_artifacts)
-
-        pref_previews = self.gui.config.get("previews")
-        if pref_previews and pref_previews in self._values.get("preview_modes"):
-            self._values.set("preview_mode", pref_previews)
-
-        pref_preview_interval = self.gui.config.get("preview_interval")
-        if pref_preview_interval and pref_preview_interval >= 0:
-            self._values.set("preview_interval", pref_preview_interval)
-
-        pref_vram = self.gui.config.get("vram")
-        if pref_vram and pref_vram in self._values.get("vram_modes"):
-            self._values.set("vram_mode", pref_vram)
+        for cfg, key, opts in config:
+            val = self.gui.config.get(cfg)
+            if val and (not opts or val in self._values.get(opts)):
+                self._values.set(key, val)
 
         self._values.set("true_samplers", self._values.get("samplers"))
         self._values.set("samplers", [s for s in self._values.get("samplers") if not "Karras" in s and not "Exponential" in s])
@@ -672,7 +670,7 @@ class Parameters(QObject):
             data["show_preview"] = data["preview_mode"]
         del data["preview_mode"]
 
-        for k in ["hr_tome_ratio", "tome_ratio", "cfg_rescale", "prediction_type", "tiling_mode"]:
+        for k in ["hr_tome_ratio", "tome_ratio", "cfg_rescale", "prediction_type", "tiling_mode", "vae_precision", "precision"]:
             if k in data and (data[k] in {0.0, "Default"} or not self.gui.config.get("advanced")):
                 del data[k]
 
