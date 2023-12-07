@@ -509,6 +509,11 @@ class Merger(QObject):
                     operation.setBlockWeightValues(",".join([str(a) for a in alpha]))
                 else:
                     operation._parameters.set("alpha", alpha)
+
+                for k in ["clip_alpha", "rank", "conv_rank"]:
+                    if k in op:
+                        operation._parameters.set(k, op[k])
+                
             except Exception as e:
                 print(e)
                 pass
