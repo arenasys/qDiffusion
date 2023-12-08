@@ -110,7 +110,13 @@ class Backend(QObject):
     
     def debugLogging(self, type, data):
         if self.gui._debugJSONLogging:
-            j = copy.deepcopy(data)
+            try:
+                j = copy.deepcopy(data)
+            except:
+                with open("debug.log", "a", encoding='utf-8') as f:
+                    f.write(f"FAIL {type} {datetime.datetime.now()}\n{str(data)}\n")
+                    return
+                
             hideBytes(j)
             j = json.dumps(j)
             with open("debug.log", "a", encoding='utf-8') as f:
