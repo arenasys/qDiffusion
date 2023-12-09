@@ -75,7 +75,7 @@ class BuilderRunnable(QRunnable):
 class RequestManager(QObject):
     updated = pyqtSignal()
     artifact = pyqtSignal(int, QImage, str)
-    result = pyqtSignal(int, QImage, object, str)
+    result = pyqtSignal(int, QImage, object, str, bool)
 
     def __init__(self, parent=None, modifyRequest=None):
         super().__init__(parent)
@@ -147,8 +147,8 @@ class RequestManager(QObject):
         self.annotations[id] = input_id
 
     def cancelRequest(self):
+        self.setRequests([])
         if self.ids:
-            self.setRequests([])
             self.gui.cancelRequest(self.ids.pop())
             return True
         return False
@@ -499,7 +499,9 @@ class RequestManager(QObject):
                 file = writer.file
                 QThreadPool.globalInstance().start(writer)
 
-                self.result.emit(out, result, meta, file)
+                last = i==0
+
+                self.result.emit(out, result, meta, file, last)
 
                 for k, v in artifacts.items():
                     vv = v[i%len(v)]
@@ -616,7 +618,7 @@ class RequestManager(QObject):
                 writer = OutputWriter(self.grid_image, self.grid_metadata, self.gui.outputDirectory(), folder, None)
                 file = writer.file
                 QThreadPool.globalInstance().start(writer)
-                self.result.emit(out, self.grid_image, self.grid_metadata, file)
+                self.result.emit(out, self.grid_image, self.grid_metadata, file, True)
             else:
                 if self.requests:
                     self.makeRequest()

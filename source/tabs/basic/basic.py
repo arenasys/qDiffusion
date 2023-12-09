@@ -28,31 +28,36 @@ import PIL.PngImagePlugin
 
 MIME_BASIC_DIVIDER = "application/x-qd-basic-divider"
 
+
 class BasicImageWriter(QRunnable):
     guard = QMutex()
-    def __init__(self, img, metadata, outputs, subfolder, filename):
+    def __init__(self, img, metadata, outputs, folder, filename):
         super(BasicImageWriter, self).__init__()
         self.setAutoDelete(True)
-
-        if not BasicImageWriter.guard.tryLock(5000):
-            BasicImageWriter.guard.unlock()
-            BasicImageWriter.guard.lock()
 
         m = PIL.PngImagePlugin.PngInfo()
         if metadata:
             m.add_text("parameters", parameters.formatParameters(metadata))
 
-        folder = os.path.join(outputs, subfolder)
+        self.img = img
+        self.metadata = m
+
+        if not BasicImageWriter.guard.tryLock(5000):
+            BasicImageWriter.guard.unlock()
+            BasicImageWriter.guard.lock()
+
+        folder = os.path.join(outputs, folder)
         os.makedirs(folder, exist_ok=True)
 
         if not filename:
             idx = parameters.getIndex(folder)
             filename = f"{idx:08d}-" + datetime.datetime.now().strftime("%m%d%H%M")
-
-        self.img = img
+        
         self.tmp = os.path.join(folder, f"{filename}.tmp")
         self.file = os.path.join(folder, f"{filename}.png")
-        self.metadata = m
+        open(self.tmp, 'a').close()
+
+        BasicImageWriter.guard.unlock()
 
     @pyqtSlot()
     def run(self):
@@ -64,8 +69,6 @@ class BasicImageWriter(QRunnable):
 
         self.img.save(self.tmp, format="PNG", pnginfo=self.metadata)
         os.replace(self.tmp, self.file)
-
-        BasicImageWriter.guard.unlock()
 
 class Basic(QObject):
     updated = pyqtSignal()
@@ -135,8 +138,8 @@ class Basic(QObject):
         q.bindValue(":id", id)
         self.conn.doQuery(q)
 
-    @pyqtSlot(int, QImage, object, str)
-    def onResult(self, id, image, metadata, filename):
+    @pyqtSlot(int, QImage, object, str, bool)
+    def onResult(self, id, image, metadata, filename, last):
         sticky = self.isSticky()
 
         if not id in self._outputs:
@@ -147,10 +150,11 @@ class Basic(QObject):
         if sticky:
             self.stick()
 
-        if self._forever or self._manager.requests:
-            self.generate(user=False)
-        else:
-            self._manager.count = 0
+        if last:
+            if self._forever or self._manager.requests:
+                self.generate(user=False)
+            else:
+                self._manager.count = 0
 
     @pyqtSlot(int, QImage, str)
     def onArtifact(self, id, image, name):
