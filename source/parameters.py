@@ -542,9 +542,7 @@ class Parameters(QObject):
         ]
 
         for cfg, key, opts in config:
-            val = self.gui.config.get(cfg)
-            if type(val) == QVariant:
-                continue
+            val = self.gui.config.get(cfg, None)
             if val and (not opts or val in self._values.get(opts)):
                 self._values.set(key, val)
 
