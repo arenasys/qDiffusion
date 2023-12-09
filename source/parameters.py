@@ -541,10 +541,13 @@ class Parameters(QObject):
             ("vae_tiling", "tiling_mode", "tiling_modes")
         ]
 
+        remote = self.gui.config.get("mode", "").lower() == "remote"
         for cfg, key, opts in config:
             val = self.gui.config.get(cfg, None)
             if val and (not opts or val in self._values.get(opts)):
                 self._values.set(key, val)
+            elif cfg == "preview_interval" and remote:
+                self._values.set(key, 5)
 
         self._values.set("true_samplers", self._values.get("samplers"))
         self._values.set("samplers", [s for s in self._values.get("samplers") if not "Karras" in s and not "Exponential" in s])
