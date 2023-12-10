@@ -634,11 +634,9 @@ class Parameters(QObject):
         if data["padding"] == -1:
             del data["padding"]
         
-        if data["subseed_strength"] != 0.0:
-            data["subseed"] = (data["subseed"], data["subseed_strength"])
-        else:
+        if data["subseed_strength"] == 0.0:
             del data["subseed"]
-        del data["subseed_strength"]
+            del data["subseed_strength"]
 
         data["device_name"] = self._values.get("device")
 
