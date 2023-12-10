@@ -1104,9 +1104,8 @@ Item {
                         bindMap: root.binding.values
                         bindKey: "subseed"
 
-                        validator: IntValidator { 
-                            bottom: -1
-                            top: 2147483646
+                        validator: RegExpValidator {
+                            regExp: /-1||\d{1,10}/
                         }
 
                         override: value == "-1" && !active ? "Random" : ""
