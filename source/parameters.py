@@ -371,6 +371,14 @@ class Parameters(QObject):
         self._activeNetworks = []
         self._active = []
 
+    def resolution(self):
+        w, h = self.values.get("width"), self.values.get("height")
+        if self.gui.config.get("always_hr_resolution", True):
+            factor = self.values.get("hr_factor")
+            w = int(w * factor)
+            h = int(h * factor)
+        return QSize(w,h)
+
     @pyqtSlot()
     def promptsChanged(self):
         positive = self._values.get("prompt")

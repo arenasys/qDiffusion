@@ -108,6 +108,7 @@ class BasicInput(QObject):
 
     def resizeImage(self, out_z):
         if self.isTile:
+            out_z = self.basic.parameters.resolution()
             self._image = QImage(out_z, QImage.Format_ARGB32_Premultiplied)
             self._image.fill(0)
             self._original = self._image
