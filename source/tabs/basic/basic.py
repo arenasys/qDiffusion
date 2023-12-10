@@ -28,48 +28,6 @@ import PIL.PngImagePlugin
 
 MIME_BASIC_DIVIDER = "application/x-qd-basic-divider"
 
-
-class BasicImageWriter(QRunnable):
-    guard = QMutex()
-    def __init__(self, img, metadata, outputs, folder, filename):
-        super(BasicImageWriter, self).__init__()
-        self.setAutoDelete(True)
-
-        m = PIL.PngImagePlugin.PngInfo()
-        if metadata:
-            m.add_text("parameters", parameters.formatParameters(metadata))
-
-        self.img = img
-        self.metadata = m
-
-        if not BasicImageWriter.guard.tryLock(5000):
-            BasicImageWriter.guard.unlock()
-            BasicImageWriter.guard.lock()
-
-        folder = os.path.join(outputs, folder)
-        os.makedirs(folder, exist_ok=True)
-
-        if not filename:
-            idx = parameters.getIndex(folder)
-            filename = f"{idx:08d}-" + datetime.datetime.now().strftime("%m%d%H%M")
-        
-        self.tmp = os.path.join(folder, f"{filename}.tmp")
-        self.file = os.path.join(folder, f"{filename}.png")
-        open(self.tmp, 'a').close()
-
-        BasicImageWriter.guard.unlock()
-
-    @pyqtSlot()
-    def run(self):
-        if type(self.img) == QImage:
-            self.img = encodeImage(self.img)
-
-        if type(self.img) == bytes:
-            self.img = PIL.Image.open(io.BytesIO(self.img))
-
-        self.img.save(self.tmp, format="PNG", pnginfo=self.metadata)
-        os.replace(self.tmp, self.file)
-
 class Basic(QObject):
     updated = pyqtSignal()
     managersUpdated = pyqtSignal()

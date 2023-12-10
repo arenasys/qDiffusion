@@ -31,10 +31,6 @@ class OutputWriter(QRunnable):
         self.img = img
         self.metadata = m
 
-        if not OutputWriter.guard.tryLock(5000):
-            OutputWriter.guard.unlock()
-            OutputWriter.guard.lock()
-
         folder = os.path.join(outputs, folder)
         os.makedirs(folder, exist_ok=True)
 
@@ -45,8 +41,6 @@ class OutputWriter(QRunnable):
         self.tmp = os.path.join(folder, f"{filename}.tmp")
         self.file = os.path.join(folder, f"{filename}.png")
         open(self.tmp, 'a').close()
-
-        OutputWriter.guard.unlock()
 
     @pyqtSlot()
     def run(self):
