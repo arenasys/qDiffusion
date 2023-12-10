@@ -431,7 +431,12 @@ class GUI(QObject):
         for d in data:
             if type(d) == bytes or type(d) == bytearray:
                 img = QImage()
-                img.loadFromData(d, "png")
+                
+                typ = "png"
+                if name == "preview":
+                    typ = "jpg"
+
+                img.loadFromData(d, typ)
                 self._results[id][name] += [img]
             else:
                 self._results[id][name] += [d]
