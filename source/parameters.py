@@ -39,6 +39,9 @@ LABELS = [
     ("hr_steps", "Hires steps"),
     ("hr_eta", "Hires sampler eta"),
     ("hr_scale", "Hires CFG scale"),
+    ("hr_model", "Hires Model"),
+    ("hr_cfg_rescale", "Hires CFG rescale"),
+    ("hr_prediction_type", "Hires Prediction type"),
     ("img2img_upscaler", "Upscaler"),
     ("cfg_rescale", "CFG rescale"),
     ("prediction_type", "Prediction type")
@@ -47,7 +50,8 @@ LABELS = [
 SETTABLE = [
     "prompt", "negative_prompt", "steps", "sampler", "schedule", "scale", "seed", "width", "height",
     "model", "UNET", "VAE", "CLIP", "model", "subseed", "subseed_strength", "strength", "eta", "clip_skip", "img2img_upscaler",
-    "hr_factor", "hr_strength", "hr_upscaler", "hr_sampler", "hr_steps", "hr_eta", "hr_scale", "cfg_rescale", "prediction_type"
+    "hr_factor", "hr_strength", "hr_upscaler", "hr_sampler", "hr_steps", "hr_eta", "hr_scale", "hr_model", "hr_cfg_rescale", "hr_prediction_type",
+    "cfg_rescale", "prediction_type"
 ]
 
 NETWORKS = {"LoRA":"lora","HN":"hypernet"}
@@ -345,6 +349,11 @@ class Parameters(QObject):
             "CN_modes", "CN_preprocessors", "vram_modes", "true_samplers", "schedule", "network_modes", "model", "output_folder", "mask_fill_modes", "autocast_modes",
             "prediction_types", "tiling_modes", "precisions"
         ]
+
+        self._adv_only = [
+            "tome_ratio", "cfg_rescale", "prediction_type", "tiling_mode", "vae_precision", "precision",
+            "hr_sampler", "hr_scale", "hr_model", "hr_prediction_type", "hr_cfg_rescale", "hr_tome_ratio", "hr_eta"
+        ]
         self._default_values = {
             "prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7.0, "strength": 0.75, "seed": -1, "eta": 1.0,
             "hr_factor": 1.0, "hr_strength":  0.7, "hr_sampler": "Euler a", "hr_steps": 25, "hr_eta": 1.0, "hr_scale": 7.0, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "mask_expand": 0, "subseed":-1, "subseed_strength": 0.0,
@@ -354,7 +363,8 @@ class Parameters(QObject):
             "vram_mode": "Default", "vram_modes": ["Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"], "preview_mode": "Light",
             "preview_modes": ["Disabled", "Light", "Medium", "Full"], "preview_interval":1, "true_samplers": [], "true_sampler": "Euler a",
             "network_mode": "Static", "network_modes": ["Dynamic", "Static"], "mask_fill": "Original", "mask_fill_modes": ["Original", "Noise"],
-            "tome_ratio": 0.0, "hr_tome_ratio": 0.0, "cfg_rescale": 0.0, "output_folder": "", "autocast": "Disabled", "autocast_modes": ["Disabled", "Enabled"],
+            "tome_ratio": 0.0, "hr_tome_ratio": 0.0, "hr_model": "", "hr_cfg_rescale": 0.0, "hr_prediction_type": "Default",
+            "cfg_rescale": 0.0, "output_folder": "", "autocast": "Disabled", "autocast_modes": ["Disabled", "Enabled"],
             "CN_modes": ["Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD", "Instruct", "Shuffle", "Inpaint", "Scribble", "Normal", "Tile", "QR"],#, "Segmentation"]
             "CN_preprocessors": ["None", "Invert", "Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD", "Shuffle", "Scribble", "Normal"],
             "prediction_type": "Default", "prediction_types": ["Default", "Epsilon", "V"], "tiling_mode": "Disabled", "tiling_modes": ["Disabled", "Enabled"],
@@ -447,7 +457,8 @@ class Parameters(QObject):
     @pyqtSlot(str, 'QVariant', 'QVariant')
     def mapsUpdating(self, key, prev, curr):
         changed = False
-        pairs = [("true_sampler", "hr_sampler"), ("eta", "hr_eta"), ("steps", "hr_steps"), ("scale", "hr_scale")]
+        pairs = [("true_sampler", "hr_sampler"), ("eta", "hr_eta"), ("steps", "hr_steps"), ("scale", "hr_scale"), ("UNET", "hr_model"),
+                 ("cfg_rescale", "hr_cfg_rescale"), ("prediction_type", "hr_prediction_type")]
         for src, dst in pairs:
             if key == src:
                 val = self._values.get(dst)
@@ -615,14 +626,9 @@ class Parameters(QObject):
             del data["mask_fill"]
 
         if data["hr_factor"] == 1.0:
-            del data["hr_factor"]
-            del data["hr_strength"]
-            del data["hr_upscaler"]
-            del data["hr_steps"]
-            del data["hr_sampler"]
-            del data["hr_eta"]
-            del data["hr_scale"]
-            del data["hr_tome_ratio"]
+            for k in list(data.keys()):
+                if k.startswith("hr_"):
+                    del data[k]
         else:
             if data["hr_steps"] == data["steps"]:
                 del data["hr_steps"]
@@ -632,6 +638,12 @@ class Parameters(QObject):
                 del data["hr_sampler"]
             if data["hr_scale"] == data["scale"]:
                 del data["hr_scale"]
+            if data["hr_cfg_rescale"] == data["cfg_rescale"]:
+                del data["hr_cfg_rescale"]
+            if data["hr_prediction_type"] == data["prediction_type"]:
+                del data["hr_prediction_type"]
+            if data["hr_model"] == data["UNET"]:
+                del data["hr_model"]
         
         if not request["type"] in {"img2img", "upscale"}:
             del data["img2img_upscaler"]
@@ -679,8 +691,12 @@ class Parameters(QObject):
             data["show_preview"] = data["preview_mode"]
         del data["preview_mode"]
 
-        for k in ["hr_tome_ratio", "tome_ratio", "cfg_rescale", "prediction_type", "tiling_mode", "vae_precision", "precision"]:
-            if k in data and (data[k] in {0.0, "Default"} or not self.gui.config.get("advanced")):
+        for k in self._adv_only:
+            if k in data and not self.gui.config.get("advanced"):
+                del data[k]
+
+        for k in ["tome_ratio", "cfg_rescale", "prediction_type", "tiling_mode", "vae_precision", "precision", "hr_tome_ratio", "hr_cfg_rescale", "hr_prediction_type"]:
+            if k in data and data[k] in {0.0, "Default"}:
                 del data[k]
 
         data["autocast"] = data["autocast"] == "Enabled"
@@ -769,12 +785,17 @@ class Parameters(QObject):
         reset = processed["reset"][1]
         del processed["reset"]
         
-        for k in ["UNET", "CLIP", "VAE"]:
+        for k in ["UNET", "CLIP", "VAE", "hr_model"]:
             if not k in processed:
                 continue
 
             value, checked = processed[k]
-            available = self._values._map[k+"s"]
+
+            a = k + "s"
+            if not a in self._values._map:
+                a = "UNETs"
+
+            available = self._values._map[a]
             closest_match = self.gui.closestModel(value, available)
             processed[k] = (closest_match, checked)
 

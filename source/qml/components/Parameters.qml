@@ -875,24 +875,6 @@ Item {
                         }
                     }
                     OSlider {
-                        visible: root.advanced
-                        label: root.tr("HR ToMe Ratio")
-                        width: parent.width
-                        height: 30
-
-                        disabled: hrFactorInput.value == 1.0
-                        overlay: value == 0.0
-
-                        bindMap: root.binding.values
-                        bindKey: "hr_tome_ratio"
-
-                        minValue: 0
-                        maxValue: 1
-                        precValue: 2
-                        incValue: 0.01
-                        snapValue: 0.05
-                    }
-                    OSlider {
                         id: hrStepsInput
                         label: root.tr("HR Steps")
                         width: parent.width
@@ -945,6 +927,86 @@ Item {
                         incValue: 1
                         snapValue: 0.5
                         bounded: false
+                    }
+
+                    OChoice {
+                        id: hrModelInput
+                        label: root.tr("HR Model")
+                        width: parent.width
+                        height: 30
+
+                        disabled: hrFactorInput.value == 1.0
+                        overlay: hrFactorInput.value == 1.0 || unetInput.value == hrModelInput.value
+
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "hr_model"
+                        bindKeyModel: "models"
+
+                        tooltip: value
+
+                        popupHeight: root.height + 100
+
+                        function display(text) {
+                            return GUI.modelName(text)
+                        }
+                    }
+
+                    OChoice {
+                        id: hrPredictionInput
+                        visible: root.advanced
+                        label: root.tr("HR Prediction")
+                        width: parent.width
+                        height: 30
+
+                        disabled: hrFactorInput.value == 1.0
+                        overlay: hrFactorInput.value == 1.0 || predictionInput.value == hrPredictionInput.value
+
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "hr_prediction_type"
+                        bindKeyModel: "prediction_types"
+
+                        function display(text) {
+                            return root.tr(text, "Options")
+                        }
+                    }
+
+                    OSlider {
+                        id: hrCfgRescaleInput
+                        visible: root.advanced
+                        label: root.tr("HR CFG Rescale")
+                        width: parent.width
+                        height: 30
+
+                        disabled: hrFactorInput.value == 1.0
+                        overlay: hrFactorInput.value == 1.0 || cfgRescaleInput.value == hrCfgRescaleInput.value
+
+                        bindMap: root.binding.values
+                        bindKey: "hr_cfg_rescale"
+
+                        minValue: 0
+                        maxValue: 1
+                        precValue: 2
+                        incValue: 0.01
+                        snapValue: 0.05
+                    }
+
+                    OSlider {
+                        visible: root.advanced
+                        label: root.tr("HR ToMe Ratio")
+                        width: parent.width
+                        height: 30
+
+                        disabled: hrFactorInput.value == 1.0
+                        overlay: value == 0.0
+
+                        bindMap: root.binding.values
+                        bindKey: "hr_tome_ratio"
+
+                        minValue: 0
+                        maxValue: 1
+                        precValue: 2
+                        incValue: 0.01
+                        snapValue: 0.05
                     }
 
                     OSlider {
@@ -1026,6 +1088,7 @@ Item {
                     }
 
                     OChoice {
+                        id: predictionInput
                         visible: root.advanced
                         label: root.tr("Prediction")
                         width: parent.width
@@ -1041,6 +1104,7 @@ Item {
                     }
                     
                     OSlider {
+                        id: cfgRescaleInput
                         visible: root.advanced
                         label: root.tr("CFG Rescale")
                         width: parent.width
