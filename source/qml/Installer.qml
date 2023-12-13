@@ -50,7 +50,7 @@ FocusReleaser {
                 label: root.tr("Mode")
                 disabled: COORDINATOR.disable
                 currentIndex: COORDINATOR.mode
-                model: COORDINATOR.modes
+                entries: COORDINATOR.modes
                 onCurrentIndexChanged: {
                     currentIndex = currentIndex
                     COORDINATOR.mode = currentIndex

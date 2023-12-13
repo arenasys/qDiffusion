@@ -39,7 +39,7 @@ Item {
                 height: 30
                 rightPadding: false
                 label: root.label
-                model: root.model
+                entries: root.model
 
                 overlay: value == "None"
             }

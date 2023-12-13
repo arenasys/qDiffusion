@@ -209,7 +209,7 @@ Item {
             height: 30
             label: root.tr("Debug Logging")
             currentIndex: GUI.config.get("debug") ? 1 : 0 
-            model: [root.tr("Disabled", "General"), root.tr("Enabled", "General")]
+            entries: [root.tr("Disabled", "General"), root.tr("Enabled", "General")]
             onCurrentIndexChanged: {
                 GUI.config.set("debug", currentIndex != 0)
             }
@@ -220,7 +220,7 @@ Item {
             height: 30
             label: root.tr("Advanced Parameters")
             currentIndex: GUI.config.get("advanced") ? 1 : 0 
-            model: [root.tr("Hide", "General"), root.tr("Show", "General")]
+            entries: [root.tr("Hide", "General"), root.tr("Show", "General")]
             onCurrentIndexChanged: {
                 GUI.config.set("advanced", currentIndex != 0)
             }
@@ -232,7 +232,7 @@ Item {
             height: 30
             label: root.tr("Force Window Scaling")
             currentIndex: GUI.config.get("scaling") ? 1 : 0 
-            model: [root.tr("Disabled", "General"), root.tr("Enabled", "General")]
+            entries: [root.tr("Disabled", "General"), root.tr("Enabled", "General")]
             onCurrentIndexChanged: {
                 GUI.config.set("scaling", currentIndex != 0)
             }

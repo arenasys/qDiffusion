@@ -28,7 +28,7 @@ Item {
             width: parent.width+2
             height: 30
             label: root.tr("Hosting")
-            model: [root.tr("Disabled", "General"), root.tr("Enabled", "General")]
+            entries: [root.tr("Disabled", "General"), root.tr("Enabled", "General")]
 
             currentIndex: GUI.config.get("host_enabled") ? 1 : 0 
             onCurrentIndexChanged: {
@@ -180,7 +180,7 @@ Item {
                 height: 30
                 rightPadding: false
                 label: root.tr("Tunnel")
-                model: [root.tr("Disabled", "General"), root.tr("Enabled", "General")]
+                entries: [root.tr("Disabled", "General"), root.tr("Enabled", "General")]
                 disabled: !hostEnabled.hosting
 
                 currentIndex: GUI.config.get("host_tunnel") ? 1 : 0 
@@ -193,7 +193,7 @@ Item {
                 height: 30
                 rightPadding: false
                 label: root.tr("Read-only")
-                model: [root.tr("Disabled", "General"), root.tr("Enabled", "General")]
+                entries: [root.tr("Disabled", "General"), root.tr("Enabled", "General")]
                 disabled: !hostEnabled.hosting
 
                 currentIndex: GUI.config.get("host_read_only") ? 1 : 0 
@@ -205,7 +205,7 @@ Item {
                 width: parent.width / 3
                 height: 30
                 label: root.tr("Monitor")
-                model: [root.tr("Disabled", "General"), root.tr("Enabled", "General")]
+                entries: [root.tr("Disabled", "General"), root.tr("Enabled", "General")]
                 disabled: !hostEnabled.hosting
 
                 currentIndex: GUI.config.get("host_monitor") ? 1 : 0 

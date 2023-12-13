@@ -108,7 +108,7 @@ Item {
                 width: 140
                 height: 30
                 label: root.tr("Type")
-                model: ["Checkpoint", "LoRA", "Embedding", "Upscaler"]//["SD", "LoRA", "TI", "SR"]
+                entries: ["Checkpoint", "LoRA", "Embedding", "Upscaler"]//["SD", "LoRA", "TI", "SR"]
                 disabled: !root.show
             }
             OTextInput {
@@ -150,7 +150,7 @@ Item {
                 width: 140
                 height: 30
                 label: root.tr("Type")
-                model: ["Checkpoint", "LoRA", "Embedding", "Upscaler"]
+                entries: ["Checkpoint", "LoRA", "Embedding", "Upscaler"]
                 disabled: !root.show
             }
             OTextInput {
