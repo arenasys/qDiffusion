@@ -35,18 +35,15 @@ Rectangle {
 
         ScrollBar.vertical: SScrollBarV {
             id: scrollBar
-            policy: flickable.contentHeight > flickable.height ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+            totalLength: flickable.contentHeight
+            showLength: flickable.height
         }
 
         MouseArea {
             anchors.fill: parent
             acceptedButtons: Qt.NoButton
             onWheel: {
-                if(wheel.angleDelta.y < 0) {
-                    scrollBar.increase()
-                } else {
-                    scrollBar.decrease()
-                }
+                scrollBar.doIncrement(wheel.angleDelta.y)
             }
         }
 
@@ -601,7 +598,8 @@ Rectangle {
                     
                     boundsBehavior: Flickable.StopAtBounds
                     ScrollBar.vertical: SScrollBarV {
-                        policy: datasetList.contentHeight > datasetList.height ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+                        totalLength: datasetList.contentHeight
+                        showLength: datasetList.height
                     }
 
                     delegate: Rectangle {
@@ -820,16 +818,16 @@ Rectangle {
                             interactive: false
                             boundsBehavior: Flickable.StopAtBounds
 
-                            property var scroll: imageList.contentHeight > imageList.height
-
                             ScrollBar.vertical: SScrollBarV {
                                 id: imageScrollBar
-                                stepSize: 1/Math.ceil(imageList.contentHeight/60)
-                                policy: imageList.scroll ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+
+                                totalLength: imageList.contentHeight
+                                showLength: imageList.height
+                                incrementLength: 60
                             }
 
                             Rectangle {
-                                visible: imageList.scroll
+                                visible: imageScrollBar.showing
                                 x: parent.width - 11
                                 width: 1
                                 height: parent.height
@@ -837,7 +835,7 @@ Rectangle {
                             }
 
                             Rectangle {
-                                visible: !imageList.scroll && imageList.model.length != 0
+                                visible: !imageScrollBar.showing && imageList.model.length != 0
                                 width: parent.width
                                 height: 1
                                 y: parent.contentHeight
@@ -848,11 +846,7 @@ Rectangle {
                                 anchors.fill: parent
                                 acceptedButtons: Qt.NoButton
                                 onWheel: {
-                                    if(wheel.angleDelta.y < 0) {
-                                        imageScrollBar.increase()
-                                    } else {
-                                        imageScrollBar.decrease()
-                                    }
+                                    imageScrollBar.doIncrement(imageScrollBar)
                                 }
                             }
 
@@ -870,7 +864,7 @@ Rectangle {
                             delegate: Rectangle {
                                 id: row
                                 color: index % 2 == 0 ? COMMON.bg1 : COMMON.bg0
-                                width: imageList.width - (imageList.scroll ? 10 : 0)
+                                width: imageList.width - (imageScrollBar.showing ? 10 : 0)
                                 height: 16
 
                                 property var selected: TRAINER.currentImage == modelData
@@ -999,7 +993,7 @@ Rectangle {
                             }
 
                             Rectangle {
-                                visible: prompt.scrollBar.policy == ScrollBar.AlwaysOn
+                                visible: prompt.scrollBar.showing
                                 x: parent.width - 11
                                 width: 1
                                 height: parent.height

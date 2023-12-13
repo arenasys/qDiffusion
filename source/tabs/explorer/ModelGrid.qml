@@ -30,11 +30,7 @@ Item {
             root.deselect(-1)
         }
         onWheel: {
-            if(wheel.angleDelta.y < 0) {
-                scrollBar.increase()
-            } else {
-                scrollBar.decrease()
-            }
+            scrollBar.doIncrement(wheel.angleDelta.y)
         }
     }
 
@@ -73,7 +69,6 @@ Item {
     GridView {
         id: modelsView
         property int padding: 10
-        property bool showScroll: modelsView.contentHeight > modelsView.height
         cellWidth: Math.max((modelsView.width - 15)/Math.max(Math.ceil((modelsView.width - 5)/root.cellSize), 1), 50)
         cellHeight: Math.floor(cellWidth*1.33)
         anchors.fill: parent
@@ -106,8 +101,9 @@ Item {
 
         ScrollBar.vertical: SScrollBarV {
             id: scrollBar
-            stepSize: 0.25/Math.ceil(modelsView.count / Math.round(modelsView.width/modelsView.cellWidth))
-            policy: modelsView.showScroll ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+            totalLength: modelsView.contentHeight
+            showLength: modelsView.height
+            increment: 0.25/Math.ceil(modelsView.count / Math.round(modelsView.width/modelsView.cellWidth))
         }
 
         delegate: ModelCard {

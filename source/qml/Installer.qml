@@ -80,7 +80,8 @@ FocusReleaser {
 
                         ScrollBar.vertical: SScrollBarV {
                             id: scrollBar
-                            policy: packageList.contentHeight > packageList.height ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+                            totalLength: packageList.contentHeight
+                            showLength: packageList.height
                         }
 
                         delegate: Rectangle {

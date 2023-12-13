@@ -72,8 +72,10 @@ Rectangle {
             anchors.top: control.top
             anchors.right: control.right
             anchors.bottom: control.bottom
-            policy: control.height >= control.contentHeight ? ScrollBar.AlwaysOff : ScrollBar.AlwaysOn
-            stepSize: 1/Math.ceil(textArea.contentHeight/textArea.font.pixelSize)
+
+            totalLength: control.contentHeight
+            showLength: control.height
+            incrementLength: textArea.font.pixelSize
         }
 
         TextArea {
@@ -203,11 +205,7 @@ Rectangle {
                         textArea.weightText(0.1)
                     }
                 } else {
-                    if(wheel.angleDelta.y < 0) {
-                        scrollBar.increase()
-                    } else {
-                        scrollBar.decrease()
-                    }
+                    scrollBar.doIncrement(wheel.angleDelta.y)
                 }
             }
         }

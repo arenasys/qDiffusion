@@ -141,19 +141,17 @@ Item {
                 id: paramScrollBar
                 padding: 0
                 barWidth: 2
-                stepSize: 1/(paramScroll.contentHeight/40)
+
                 policy: ScrollBar.AlwaysOff
+                totalLength: paramScroll.contentHeight
+                incrementLength: 40
             }
 
             MouseArea {
                 anchors.fill: parent
                 acceptedButtons: Qt.NoButton
                 onWheel: {
-                    if(wheel.angleDelta.y < 0) {
-                        paramScrollBar.increase()
-                    } else {
-                        paramScrollBar.decrease()
-                    }
+                    paramScrollBar.doIncrement(wheel.angleDelta.y)
                 }
             }
 
@@ -557,12 +555,12 @@ Item {
                                     padded: false
                                     label: ""
 
-                                    model: GUI.filterFavourites(root.binding.availableNetworks)
+                                    entries: GUI.filterFavourites(root.binding.availableNetworks)
 
                                     Connections {
                                         target: GUI
                                         function onFavUpdated() {
-                                            netChoice.model = GUI.filterFavourites(root.binding.availableNetworks)
+                                            netChoice.entries = GUI.filterFavourites(root.binding.availableNetworks)
                                         }
                                     }
 
@@ -606,7 +604,9 @@ Item {
 
                                 ScrollBar.vertical: SScrollBarV {
                                     id: scrollBar
-                                    policy: netList.contentHeight > netList.height ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+                                    totalLength: netList.contentHeight
+                                    showLength: netList.height
+                                    incrementLength: 25
                                 }
 
                                 delegate: Item {
@@ -622,7 +622,7 @@ Item {
 
                                     ParametersNetItem {
                                         anchors.fill: parent
-                                        anchors.rightMargin: scrollBar.policy == ScrollBar.AlwaysOn ? 8 : 0
+                                        anchors.rightMargin: scrollBar.active ? 8 : 0
                                         label: GUI.modelName(modelData)
                                         type: GUI.netType(modelData)
 

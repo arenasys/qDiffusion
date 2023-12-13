@@ -393,8 +393,10 @@ Item {
             id: suggestionsScrollBar
             padding: 0
             barWidth: 2
-            stepSize: 1/(BASIC.suggestions.results.length)
-            policy: suggestions.contentHeight > suggestions.height ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+
+            totalLength: suggestions.contentHeight
+            showLength: suggestions.height
+            incrementLength: 20
         }
 
         delegate: Rectangle {
@@ -446,11 +448,7 @@ Item {
             anchors.fill: parent
             acceptedButtons: Qt.NoButton
             onWheel: {
-                if(wheel.angleDelta.y < 0) {
-                    suggestionsScrollBar.increase()
-                } else {
-                    suggestionsScrollBar.decrease()
-                }
+                suggestionsScrollBar.doIncrement(wheel.angleDelta.y)
             }
         }
     }

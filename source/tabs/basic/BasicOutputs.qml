@@ -31,19 +31,16 @@ Item {
         }
         ScrollBar.horizontal: SScrollBarH { 
             id: scrollBar
-            stepSize: 1/(4*Math.ceil(outputsSql.length))
-            policy: listView.contentWidth > listView.width ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+            totalLength: listView.contentWidth
+            showLength: listView.width
+            increment: 1/(4*Math.ceil(outputsSql.length))
         }
 
         MouseArea {
             anchors.fill: parent
             acceptedButtons: Qt.NoButton
             onWheel: {
-                if(wheel.angleDelta.y < 0) {
-                    scrollBar.increase()
-                } else {
-                    scrollBar.decrease()
-                }
+                scrollBar.doIncrement(wheel.angleDelta.y)
             }
         }
 

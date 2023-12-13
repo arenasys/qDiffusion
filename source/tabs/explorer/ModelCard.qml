@@ -220,11 +220,7 @@ Item {
                 if(modelCard.selected) {
                     wheel.accepted = false
                 } else {
-                    if(wheel.angleDelta.y < 0) {
-                        scrollBar.increase()
-                    } else {
-                        scrollBar.decrease()
-                    }
+                    scrollBar.doIncrement(wheel.angleDelta.y)
                 }
             }
 

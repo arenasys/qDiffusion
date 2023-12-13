@@ -30,8 +30,9 @@ Item {
 
         ScrollBar.horizontal: SScrollBarH { 
             id: scrollBar
-            stepSize: 1/(4*Math.ceil(BASIC.inputs.length))
-            policy: inputListView.contentWidth > inputListView.width ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+            totalLength: inputListView.contentWidth
+            showLength: inputListView.width
+            increment: 1/(4*Math.ceil(BASIC.inputs.length))
         }
 
         MouseArea {
@@ -39,11 +40,7 @@ Item {
             acceptedButtons: Qt.NoButton
             z: -1
             onWheel: {
-                if(wheel.angleDelta.y < 0) {
-                    scrollBar.increase()
-                } else {
-                    scrollBar.decrease()
-                }
+                scrollBar.doIncrement(wheel.angleDelta.y)
             }
         }
 
@@ -203,19 +200,16 @@ Item {
 
                             ScrollBar.vertical: SScrollBarV {
                                 id: fileScrollBar
-                                stepSize: 1/Math.ceil(fileList.contentHeight/60)
-                                policy: fileList.contentHeight > fileList.height ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+                                totalLength: fileList.contentHeight
+                                showLength: fileList.height
+                                incrementLength: 60
                             }
 
                             MouseArea {
                                 anchors.fill: parent
                                 acceptedButtons: Qt.NoButton
                                 onWheel: {
-                                    if(wheel.angleDelta.y < 0) {
-                                        fileScrollBar.increase()
-                                    } else {
-                                        fileScrollBar.decrease()
-                                    }
+                                    fileScrollBar.doIncrement(wheel.angleDelta.y)
                                 }
                             }
 

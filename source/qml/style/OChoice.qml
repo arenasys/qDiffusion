@@ -35,6 +35,7 @@ Item {
     property var binding: root.bindMapCurrent != null && root.bindKeyCurrent != null && root.bindMapModel != null && root.bindKeyModel != null
 
     property var original
+    property var entries
 
     property alias popupHeight: control.popupHeight
 
@@ -164,11 +165,17 @@ Item {
         }
     }
 
+    onEntriesChanged: {
+        root.model = root.entries.slice();
+        root.original = root.entries.slice();
+    }
+
     Component.onCompleted: {
-        if (root.model) {
-            root.original = root.model.slice();
-        }
         if(root.binding) {
+            if (root.model) {
+                root.original = root.model.slice();
+            }
+
             var all_m = expandModel(root.bindMapModel.get(root.bindKeyModel));
             var m = searchModel(filterModel(all_m));
             var c = root.bindMapCurrent.get(root.bindKeyCurrent);
@@ -383,18 +390,16 @@ Item {
                     id: scrollBar
                     padding: 0
                     barWidth: 2
-                    stepSize: 1/Math.ceil(parent.implicitHeight/22)
-                    policy: parent.contentHeight > parent.height ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+
+                    totalLength: parent.contentHeight
+                    showLength: parent.height
+                    increment: 1/Math.ceil(parent.implicitHeight/22)
                 }
                 MouseArea {
                     anchors.fill: parent
                     acceptedButtons: Qt.NoButton
                     onWheel: {
-                        if(wheel.angleDelta.y < 0) {
-                            scrollBar.increase()
-                        } else {
-                            scrollBar.decrease()
-                        }
+                        scrollBar.doIncrement(wheel.angleDelta.y)
                     }
                 }
             }

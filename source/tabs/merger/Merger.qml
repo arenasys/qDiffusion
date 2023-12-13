@@ -72,18 +72,15 @@ Rectangle {
 
             ScrollBar.vertical: SScrollBarV {
                 id: scrollBar
-                policy: flickable.contentHeight > flickable.height ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+                totalLength: flickable.contentHeight
+                showLength: flickable.height
             }
 
             MouseArea {
                 anchors.fill: parent
                 acceptedButtons: Qt.NoButton
                 onWheel: {
-                    if(wheel.angleDelta.y < 0) {
-                        scrollBar.increase()
-                    } else {
-                        scrollBar.decrease()
-                    }
+                    scrollBar.doIncrement(wheel.angleDelta.y)
                 }
             }
 
@@ -164,7 +161,8 @@ Rectangle {
                     
                     boundsBehavior: Flickable.StopAtBounds
                     ScrollBar.vertical: SScrollBarV {
-                        policy: operationList.contentHeight > operationList.height ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+                        totalLength: operationList.contentHeight
+                        showLength: operationList.height
                     }
 
                     delegate: Rectangle {
@@ -1422,8 +1420,9 @@ Rectangle {
 
                 ScrollBar.horizontal: SScrollBarH { 
                     id: scrollBarResults
-                    stepSize: 1/(4*Math.ceil(outputsSql.length))
-                    policy: listView.contentWidth > listView.width ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+                    totalLength: listView.contentWidth
+                    showLength: listView.width
+                    increment: 1/(4*Math.ceil(outputsSql.length))
                 }
 
                 MouseArea {
@@ -1431,11 +1430,7 @@ Rectangle {
                     acceptedButtons: Qt.NoButton
                     z: -1
                     onWheel: {
-                        if(wheel.angleDelta.y < 0) {
-                            scrollBarResults.increase()
-                        } else {
-                            scrollBarResults.decrease()
-                        }
+                        scrollBarResults.doIncrement(wheel.angleDelta.y)
                     }
                 }
 

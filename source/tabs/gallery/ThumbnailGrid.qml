@@ -176,19 +176,17 @@ GridView {
 
     ScrollBar.vertical: SScrollBarV {
         id: scrollBar
-        stepSize: 1/Math.ceil(thumbView.count / Math.round(thumbView.width/thumbView.cellWidth))
-        policy: thumbView.contentHeight > thumbView.height ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+
+        totalLength: thumbView.contentHeight
+        showLength: thumbView.height
+        increment: 1/Math.ceil(thumbView.count / Math.round(thumbView.width/thumbView.cellWidth))
     }
 
     MouseArea {
         anchors.fill: parent
         acceptedButtons: Qt.NoButton
         onWheel: {
-            if(wheel.angleDelta.y < 0) {
-                scrollBar.increase()
-            } else {
-                scrollBar.decrease()
-            }
+            scrollBar.doIncrement(wheel.angleDelta.y)
         }
     }
 

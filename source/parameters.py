@@ -573,7 +573,7 @@ class Parameters(QObject):
 
         self.updated.emit()
 
-    def buildPrompts(self, batch_size=0, seed=-1):
+    def buildPrompts(self, batch_size=1, seed=-1):
         pos = self.parsePrompt(self._values._map['prompt'], batch_size, seed)
         neg = self.parsePrompt(self._values._map['negative_prompt'], batch_size, seed)
         return list(zip(pos, neg))

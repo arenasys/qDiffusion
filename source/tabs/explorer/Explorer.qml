@@ -37,7 +37,9 @@ Item {
 
         ScrollBar.vertical: SScrollBarV {
             id: scrollBar
-            policy: column.contentHeight > column.height ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+            totalLength: column.contentHeight
+            showLength: column.height
+            incrementLength: 40
         }
 
         Column {
@@ -74,11 +76,7 @@ Item {
         anchors.fill: column
         acceptedButtons: Qt.NoButton
         onWheel: {
-            if(wheel.angleDelta.y < 0) {
-                scrollBar.increase()
-            } else {
-                scrollBar.decrease()
-            }
+            scrollBar.doIncrement(wheel.angleDelta.y)
         }
     }
 
