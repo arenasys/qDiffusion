@@ -445,7 +445,7 @@ class Basic(QObject):
         if self._opened_area == "output":
             idx = self.outputIDToIndex(self._opened_index) - 1
             id = self.outputIndexToID(idx)
-            if id in self._outputs:
+            if id in self._outputs and self._outputs[id]._ready:
                 self._opened_index = id
                 self.openedUpdated.emit()
         

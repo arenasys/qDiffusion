@@ -1430,7 +1430,7 @@ Rectangle {
                     acceptedButtons: Qt.NoButton
                     z: -1
                     onWheel: {
-                        scrollBarResults.doIncrement(wheel.angleDelta.y)
+                        scrollBarResults.doIncrement(wheel.angleDelta.x != 0 ? wheel.angleDelta.x : wheel.angleDelta.y)
                     }
                 }
 

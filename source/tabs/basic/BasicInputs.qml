@@ -40,7 +40,7 @@ Item {
             acceptedButtons: Qt.NoButton
             z: -1
             onWheel: {
-                scrollBar.doIncrement(wheel.angleDelta.y)
+                scrollBar.doIncrement(wheel.angleDelta.x != 0 ? wheel.angleDelta.x : wheel.angleDelta.y)
             }
         }
 
