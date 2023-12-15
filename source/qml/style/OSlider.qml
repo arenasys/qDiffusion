@@ -112,6 +112,20 @@ Item {
         }
     }
 
+    function setValue(x, m) {
+        if(root.bounded) {
+            x = Math.min(x, root.maxValue)
+        }
+
+        if(root.minBounded) {
+            x = Math.max(x, root.minValue)
+        }
+
+        x = x - (x%m)
+
+        root.value = x
+    }
+
     Rectangle {
         id: control
         anchors.fill: parent
@@ -155,6 +169,26 @@ Item {
 
             onReleased: {
                 root.finished()
+            }
+
+            property var accum: 0
+            onWheel: {
+                var ctrl = wheel.modifiers & Qt.ControlModifier
+                var shft = wheel.modifiers & Qt.ShiftModifier
+                if(!ctrl) {
+                    wheel.accepted = false
+                    return
+                }
+                accum += wheel.angleDelta.x ? wheel.angleDelta.x : wheel.angleDelta.y   
+                if(Math.abs(accum) >= 120) {
+                    var x = shft ? root.incValue : root.snapValue
+                    if(accum > 0) {
+                        setValue(root.value + x, x)
+                    } else {
+                        setValue(root.value - x, x)
+                    }
+                    accum = 0   
+                }
             }
         }
 
@@ -370,11 +404,7 @@ Item {
                     anchors.fill: parent
                     preventStealing: true
                     onPressed: {
-                        if(root.bounded) {
-                            root.value = Math.min(root.value + root.incValue, root.maxValue)
-                        } else {
-                            root.value = root.value + root.incValue
-                        }
+                        setValue(root.value + root.incValue, root.incValue)
                     }
                     
                     Rectangle {
@@ -427,11 +457,7 @@ Item {
                     preventStealing: true
 
                     onPressed: {
-                        if(root.minBounded) {
-                            root.value = Math.max(root.value - root.incValue, root.minValue)
-                        } else {
-                            root.value = root.value - root.incValue
-                        }
+                        setValue(root.value - root.incValue, root.incValue)
                     }
 
                     Rectangle {
