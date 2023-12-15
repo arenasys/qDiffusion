@@ -815,12 +815,6 @@ class Parameters(QObject):
             if not closest_match and available:
                 closest_match = available[0]
             processed[k] = (closest_match, checked)
-
-        if "hr_factor" in processed:
-            checked = processed["hr_factor"][1] 
-            for k in ["steps", "sampler", "eta"]:
-                value = processed[k][0] if k in processed else self.values.get(k)
-                processed["hr_"+k] = (value, checked)
         
         for name in SETTABLE:
             value = None

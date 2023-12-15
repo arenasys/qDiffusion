@@ -306,7 +306,8 @@ Item {
                     text: root.tr("Sampler")
                     width: parent.width
                     isCollapsed: true
-
+                    property var sampler: ""
+                    property var schedule: ""
                     onExpanded: {
                         paramScroll.targetPosition(samplerColumn)
                     }
@@ -320,6 +321,10 @@ Item {
                         bindMap: root.binding.values
                         bindKeyCurrent: "sampler"
                         bindKeyModel: "samplers"
+
+                        onValueChanged: {
+                            samplerColumn.sampler = samplerInput.value
+                        }
                     }
 
                     OChoice {
@@ -349,6 +354,10 @@ Item {
                                     currentIndex = idx
                                 }
                             }
+                        }
+
+                        onValueChanged: {
+                            samplerColumn.schedule = scheduleInput.value == "Default" ? "" : (" " + scheduleInput.value)
                         }
 
                         function display(text) {
@@ -884,7 +893,7 @@ Item {
                         bindKey: "hr_steps"
 
                         disabled: hrFactorInput.value == 1.0
-                        overlay: hrFactorInput.value == 1.0 || root.binding.values.get("steps") == hrStepsInput.value
+                        overlay: hrFactorInput.value == 1.0 || stepsInput.value == hrStepsInput.value
                         defaultValue: root.binding.values.get("steps")
 
                         minValue: 1
@@ -901,7 +910,7 @@ Item {
                         width: parent.width
                         height: 30
                         disabled: hrFactorInput.value == 1.0
-                        overlay: hrFactorInput.value == 1.0 || root.binding.values.get("true_sampler") == hrSamplerInput.value
+                        overlay: hrFactorInput.value == 1.0 || samplerColumn.sampler + samplerColumn.schedule == hrSamplerInput.value
                         bindMap: root.binding.values
                         bindKeyCurrent: "hr_sampler"
                         bindKeyModel: "true_samplers"
@@ -1020,7 +1029,7 @@ Item {
                         bindKey: "hr_eta"
 
                         disabled: hrFactorInput.value == 1.0 || hrSamplerInput.overlay
-                        overlay: hrFactorInput.value == 1.0 || root.binding.values.get("eta") == hrEtaInput.value 
+                        overlay: hrFactorInput.value == 1.0 || etaInput.value == hrEtaInput.value 
                         defaultValue: root.binding.values.get("eta")
 
                         minValue: 0
