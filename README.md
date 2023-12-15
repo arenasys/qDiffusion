@@ -31,6 +31,7 @@ Notebooks for running a remote instance are available: [Colab](https://colab.res
 6. Done. See [Downloads](https://github.com/arenasys/qDiffusion/wiki/Guide#downloading) for how to get models onto the instance.
 	- Remake the instance with `Runtime->Disconnect and delete runtime`, close the tab, then start from Step 1.
 	- If issues persist after a remake it could be the cloudflare tunnel is down, check [Here](https://www.cloudflarestatus.com/).
+	- Runtime disconnects due to "disallowed code" can happen occasionally, often when merging. For now these don't appear to be targeted at qDiffusion specifically.
 
 ### Mobile
 [qDiffusion Web](https://github.com/arenasys/arenasys.github.io) is available for mobile users. Features are limited compared to the full GUI (txt2img only).
