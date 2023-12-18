@@ -132,7 +132,6 @@ Item {
                 itm.y += dy * s
 
                 bound()
-                
                 return
             }
 
@@ -142,13 +141,8 @@ Item {
             }
 
             var d = 0.1 * (wheel.angleDelta.y / 120)
-            if(d < 0) {
-                wheel.accepted = true
-                scale(wheel.x, wheel.y, d)
-            } else {
-                wheel.accepted = true
-                scale(wheel.x, wheel.y, d)
-            }
+            wheel.accepted = true
+            scale(wheel.x, wheel.y, d)
         }
     }
 

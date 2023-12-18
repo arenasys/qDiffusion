@@ -572,6 +572,13 @@ Rectangle {
         maxOffset: parent.width
         offset: 600
     }
+    Timer {
+        id: thumbnailTimer
+        interval: 100
+        onTriggered: {
+            view.thumbnailOnly = false
+        }
+    }
 
     Keys.onPressed: {
         event.accepted = true
@@ -602,7 +609,10 @@ Rectangle {
         }
         if (event.accepted) {
             if(prev != gallery.currentIndex) {
-                view.thumbnailOnly = event.isAutoRepeat
+                if(event.isAutoRepeat) {
+                    view.thumbnailOnly = true
+                    thumbnailTimer.restart()
+                }
             }
             return
         }
@@ -637,14 +647,6 @@ Rectangle {
         switch(event.key) {
             case Qt.Key_Delete:
                 deleteDialog.show(gallery.getSelectedFiles())
-                break;
-            case Qt.Key_Up:
-            case Qt.Key_Down:
-            case Qt.Key_Left:
-            case Qt.Key_Right:
-                if (!event.isAutoRepeat) {
-                    view.thumbnailOnly = false
-                }
                 break;
             default:
                 event.accepted = false

@@ -55,7 +55,7 @@ try:
 except:
     pass
 
-from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent, QMimeData, QByteArray, QBuffer, QIODevice, QUrl
+from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent, QMimeData, QByteArray, QBuffer, QIODevice, QUrl, QRect
 from PyQt5.QtQuick import QQuickItem, QQuickPaintedItem
 from PyQt5.QtGui import QColor, QImage, QSyntaxHighlighter, QColor
 from PyQt5.QtNetwork import QNetworkRequest, QNetworkReply, QNetworkAccessManager
@@ -113,7 +113,7 @@ class ImageDisplay(QQuickPaintedItem):
             if self._trueWidth != img.width() or self._trueHeight != img.height():
                 self._trueWidth = img.width()
                 self._trueHeight = img.height()
-                self._trueX, self._trueY = self.arrange(img)
+                self._trueX, self._trueY = self.arrange(img.width(), img.height())
                 self.sizeUpdated.emit()
         else:
             self._trueWidth = 0
@@ -164,30 +164,41 @@ class ImageDisplay(QQuickPaintedItem):
             return self._image.height()
         return 0
     
-    def arrange(self, img):
+    def arrange(self, img_width, img_height):
         x, y = 0, 0
         if self.centered:
-            x = int((self.width() - img.width())/2)
-            y = int((self.height() - img.height())//2)
+            x = int((self.width() - img_width)/2)
+            y = int((self.height() - img_height)//2)
         return x, y
 
     def paint(self, painter):
         if self._image and not self._image.isNull():
-            transform = Qt.SmoothTransformation
-            if not self.smooth():
-                transform = Qt.FastTransformation
+            sx = self.width()/self._image.width()
+            sy = self.height()/self._image.height()
+            if sx < sy:
+                iw = int(self.width())
+                ix = int(0)
+                ih = int(self._image.height() * sx)
+                iy = int((self.height() - ih)/2)
+            else:
+                iw = int(self._image.width() * sy)
+                ix = int((self.width() - iw)/2)
+                ih = int(self.height())
+                iy = int(0)
+            
+            x, y = self.arrange(iw, ih)
 
-            # FIX THIS CRAP
-            img = self._image.scaled(int(self.width()), int(self.height()), Qt.KeepAspectRatio, transform)
-            x, y = self.arrange(img)
-
-            if self._trueWidth != img.width() or self._trueHeight != img.height():
-                self._trueWidth = img.width()
-                self._trueHeight = img.height()
+            if self._trueWidth != iw or self._trueHeight != ih:
+                self._trueWidth = iw
+                self._trueHeight = ih
                 self._trueX = x
                 self._trueY = y
                 self.sizeUpdated.emit()
-            painter.drawImage(x,y,img)
+
+            dst = QRect(ix, iy, iw, ih)
+            src = QRect(0, 0, self._image.width(), self._image.height())
+
+            painter.drawImage(dst, self._image, src)
 
 class MimeData(QObject):
     def __init__(self, mimeData, parent=None):
