@@ -490,24 +490,15 @@ Item {
                     wheel.accepted = false
                     return
                 }
-                var o = 5
-                if(root.size < 20) {
-                    o = 1
+                var o = wheel.angleDelta.y / 120
+                if(root.size >= 20) {
+                    o *= 5
                 }
-                if(wheel.angleDelta.y > 0) {
-                    o = Math.min(canvas.brush.size+o, 500)
-                    if(root.painting) {
-                        sizeSlider.value = o
-                    } else {
-                        rings.size = o
-                    }
+                o = Math.max(Math.min(canvas.brush.size+o, 500), 1)
+                if(root.painting) {
+                    sizeSlider.value = o
                 } else {
-                    o = Math.max(canvas.brush.size-o, 1)
-                    if(root.painting) {
-                        sizeSlider.value = o
-                    } else {
-                        rings.size = o
-                    }
+                    rings.size = o
                 }
             }
         }

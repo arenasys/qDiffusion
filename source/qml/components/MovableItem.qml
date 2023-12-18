@@ -31,6 +31,7 @@ Item {
     }
 
     MouseArea {
+        id: mouseArea
         anchors.fill: parent
         acceptedButtons: Qt.MiddleButton
 
@@ -119,16 +120,34 @@ Item {
         }
 
         onWheel: {
+            var shft = wheel.modifiers & Qt.ShiftModifier
+            if(shft) {
+                var dx = wheel.angleDelta.x / 120
+                var dy = wheel.angleDelta.y / 120
+                var s = Math.max(itm.maxWidth, itm.maxHeight)/50
+                
+                itm.anchors.centerIn = undefined
+
+                itm.x += dx * s
+                itm.y += dy * s
+
+                bound()
+                
+                return
+            }
+
             var ctrl = wheel.modifiers & Qt.ControlModifier
             if(!ctrl && root.ctrlZoom) {
                 return
             }
-            if(wheel.angleDelta.y < 0) {
+
+            var d = 0.1 * (wheel.angleDelta.y / 120)
+            if(d < 0) {
                 wheel.accepted = true
-                scale(wheel.x, wheel.y, -0.1)
+                scale(wheel.x, wheel.y, d)
             } else {
                 wheel.accepted = true
-                scale(wheel.x, wheel.y, 0.1)
+                scale(wheel.x, wheel.y, d)
             }
         }
     }
