@@ -1,3 +1,10 @@
+#!/bin/bash
+
+if [ ! -d "./source" ] 
+then
+    cd ..
+fi
+
 if [ ! -d "./python" ] 
 then
     echo "DOWNLOADING PYTHON..."

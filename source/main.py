@@ -344,9 +344,9 @@ class Coordinator(QObject):
 
         needed += self.required_need
 
-        needed = [n for n in needed if n.startswith("wheel")] + [n for n in needed if not n.startswith("wheel")]
-        needed = [n for n in needed if n.startswith("pip")] + [n for n in needed if not n.startswith("pip")]
-        
+        if needed:
+            needed = ["pip", "wheel"] + needed
+
         return needed
 
     @pyqtSlot()

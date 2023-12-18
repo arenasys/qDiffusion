@@ -1,11 +1,11 @@
 ## Qt GUI for Stable diffusion
 --------
 Built from the ground up alongside [sd-inference-server](https://github.com/arenasys/sd-inference-server), the backend for this GUI.
-![example](https://github.com/arenasys/qDiffusion/raw/master/screenshot.png)
+![example](https://github.com/arenasys/qDiffusion/raw/master/source/screenshot.png)
 ## Getting started
 ### Install
 1. [Download](https://github.com/arenasys/qDiffusion/archive/refs/heads/master.zip) this repo as a zip and extract it.
-2. Run `qDiffusion.exe`, `start_win.bat` or `start_linux.sh`.
+2. Run `qDiffusion.exe` (or `bash ./source/start.sh` on Linux).
 	- First time users will need to wait for Python and PyQt5 to be downloaded.
 	- AMD Ubuntu users need to follow: [Install ROCm](https://github.com/arenasys/qDiffusion/wiki/Install#ubuntu-22).
 3. Select a mode. `Remote`, `Nvidia` and `AMD` are available.

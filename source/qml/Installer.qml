@@ -88,7 +88,7 @@ FocusReleaser {
 
                             color: (index % 2 == 0 ? COMMON.bg0 : COMMON.bg00)
                             width: packageList.width
-                            height: 20
+                            height: modelData == "pip" || modelData == "wheel" ? 0 : 20
 
                             Rectangle {
                                 color: "green"

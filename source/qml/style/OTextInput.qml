@@ -74,6 +74,10 @@ Item {
             id: mouseArea
             anchors.fill: labelText
             hoverEnabled: true
+
+            onPressed: {
+                valueText.forceActiveFocus()
+            }
         }
 
         SToolTip {
