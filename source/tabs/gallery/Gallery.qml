@@ -165,6 +165,23 @@ Rectangle {
                 color: COMMON.fg2
                 visible: !searchInput.text && !searchInput.activeFocus
             }
+
+            Keys.onPressed: {
+                switch(event.key) {
+                case Qt.Key_Escape:
+                    search.text = ""
+                    searchInput.text = ""
+                    break
+                case Qt.Key_Tab:
+                    gallery.focusCurrent()
+                    break;
+                }
+                event.accepted = true
+            }
+
+            Keys.onReleased: {
+                event.accepted = true
+            }
         }
 
         Rectangle {
@@ -596,12 +613,8 @@ Rectangle {
         case Qt.Key_Right:
             gallery.moveRight(event.modifiers)
             break;
-        case Qt.Key_Escape:
-            if(searchInput.activeFocus) {
-                search.text = ""
-                searchInput.text = ""
-                root.releaseFocus()
-            }
+        case Qt.Key_Tab:
+            searchInput.forceActiveFocus()
             break;
         default:
             event.accepted = false

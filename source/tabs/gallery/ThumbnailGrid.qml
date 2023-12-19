@@ -65,6 +65,13 @@ GridView {
         return selected
     }
 
+    function focusCurrent() {
+        if(thumbView.currentItem) {
+            thumbView.currentItem.forceActiveFocus()
+            thumbView.positionViewAtIndex(thumbView.currentIndex, GridView.Contain)
+        }
+    }
+
     function addToSelected(index) {
         var id = getFile(index)
         removeFromSelected(index)
