@@ -113,6 +113,10 @@ Item {
     }
 
     function setValue(x, m) {
+        if(root.disabled) {
+            return
+        }
+
         if(root.bounded) {
             x = Math.min(x, root.maxValue)
         }
@@ -184,8 +188,7 @@ Item {
                     wheel.accepted = false
                     return
                 }
-
-                accum += Math.sqrt(wheel.angleDelta.x*wheel.angleDelta.x + wheel.angleDelta.y*wheel.angleDelta.y) 
+                accum += wheel.angleDelta.x ? wheel.angleDelta.x : wheel.angleDelta.y   
                 if(Math.abs(accum) >= 120) {
                     var x = shft ? root.incValue : root.snapValue
                     if(accum > 0) {
