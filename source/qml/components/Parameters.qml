@@ -187,7 +187,7 @@ Item {
                     property var typ: ""
                     property var isHR: typ ==  "Txt2Img + HR"
                     property var couldHR: typ ==  "Txt2Img" || typ == "Txt2Img + HR"
-                    property var isImg: typ == "Img2Img" || typ == "Inpainting"
+                    property var isImg: typ == "Img2Img" || typ == "Inpainting" || typ == "Upscaling"
                     property var isInp: typ == "Inpainting"
 
                     input: Item {
