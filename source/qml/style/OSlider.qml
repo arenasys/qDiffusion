@@ -188,7 +188,7 @@ Item {
                     wheel.accepted = false
                     return
                 }
-                accum += wheel.angleDelta.x ? wheel.angleDelta.x : wheel.angleDelta.y   
+                accum += wheel.angleDelta.x ? wheel.angleDelta.x : -wheel.angleDelta.y   
                 if(Math.abs(accum) >= 120) {
                     var x = shft ? root.incValue : root.snapValue
                     if(accum > 0) {
