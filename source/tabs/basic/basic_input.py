@@ -85,6 +85,7 @@ class BasicInput(QObject):
         self._file = QImage()
 
         basic.parameters._values.updated.connect(self.updateImage)
+        self.updated.connect(basic.onImageUpdated)
 
     def updateImage(self):
         if self._image and not self._image.isNull():

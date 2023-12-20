@@ -35,6 +35,7 @@ class Basic(QObject):
     pastedImage = pyqtSignal(QImage)
     openedUpdated = pyqtSignal()
     startBuildModel = pyqtSignal()
+    typeUpdated = pyqtSignal()
     def __init__(self, parent=None):
         super().__init__(parent)
         self.gui = parent
@@ -718,3 +719,31 @@ class Basic(QObject):
     @pyqtProperty(misc.GridManager, notify=managersUpdated)
     def grid(self):
         return self._grid
+
+    @pyqtSlot(result=str)
+    def getRequestType(self):
+        t = None
+        for i in self._inputs:
+            r = i.effectiveRole()
+            if r == BasicInputRole.IMAGE:
+                t = "Img2Img"
+            if r == BasicInputRole.MASK and t == "Img2Img":
+                t = "Inpainting"
+            if r == BasicInputRole.SEGMENTATION and t == None:
+                t = "Segmenting"
+        if not t:
+            t = "Txt2Img"
+        
+        upsc = self._parameters._values.get("steps") == 0 or self._parameters._values.get("strength") == 0.0
+        if t in ["Img2Img", "Inpainting"] and upsc:
+            t = "Upscaling"
+
+        hr = self._parameters._values.get("hr_factor") > 1.0
+        if t in ["Txt2Img"] and hr:
+            t = "Txt2Img + HR"
+        
+        return t
+
+    @pyqtSlot()
+    def onImageUpdated(self):
+        self.typeUpdated.emit()

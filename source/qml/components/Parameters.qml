@@ -184,6 +184,67 @@ Item {
                     id: optColumn
                     text: root.tr("Options")
                     width: parent.width
+                    property var typ: ""
+                    property var isHR: typ ==  "Txt2Img + HR"
+                    property var couldHR: typ ==  "Txt2Img" || typ == "Txt2Img + HR"
+                    property var isImg: typ == "Img2Img" || typ == "Inpainting"
+                    property var isInp: typ == "Inpainting"
+
+                    input: Item {
+                        width: optColumn.width - 100
+                        height: 30
+                        clip: true
+                        SText {
+                            id: typLabel
+                            text: ""
+                            anchors.fill: parent
+                            color: COMMON.fg2
+                            pointSize: 9.2
+                            opacity: 0.7
+                            verticalAlignment: Text.AlignVCenter
+                            horizontalAlignment: Text.AlignRight
+                            elide: Text.ElideRight
+
+                            Timer {
+                                id: typCooldown
+                                interval: 100
+                                triggeredOnStart: true
+                                onTriggered: {
+                                    typLabel.text = BASIC.getRequestType()
+                                    optColumn.typ = typLabel.text
+                                }
+                            }
+
+                            function sync() {
+                                if(typCooldown.running) {
+                                    return
+                                }
+                                typCooldown.start()
+                            }
+
+                            Component.onCompleted: {
+                                sync()
+                            }
+
+                            Connections {
+                                target: BASIC.parameters.values
+                                function onUpdated() {
+                                    typLabel.sync()
+                                }
+                            }
+
+                            Connections {
+                                target: BASIC
+                                function onInputsChanged() {
+                                    typLabel.sync()
+                                }
+                                function onTypeUpdated() {
+                                    typLabel.sync()
+                                }
+                            }
+
+                        }
+                    }
 
                     onExpanded: {
                         paramScroll.targetPosition(optColumn)
@@ -677,6 +738,8 @@ Item {
                         bindMap: root.binding.values
                         bindKey: "strength"
 
+                        disabled: !optColumn.isImg
+
                         minValue: 0
                         maxValue: 1
                         precValue: 2
@@ -692,6 +755,8 @@ Item {
                         bindMap: root.binding.values
                         bindKeyCurrent: "img2img_upscaler"
                         bindKeyModel: "img2img_upscalers"
+
+                        disabled: !optColumn.isImg
 
                         popupHeight: root.height + 100
 
@@ -729,6 +794,8 @@ Item {
                         bindMap: root.binding.values
                         bindKey: "padding"
 
+                        disabled: !optColumn.isInp
+
                         minValue: -1
                         maxValue: 512
                         precValue: 0
@@ -747,6 +814,8 @@ Item {
                         bindMap: root.binding.values
                         bindKey: "mask_blur"
 
+                        disabled: !optColumn.isInp
+
                         minValue: 0
                         maxValue: 10
                         precValue: 0
@@ -762,6 +831,8 @@ Item {
 
                         bindMap: root.binding.values
                         bindKey: "mask_expand"
+
+                        disabled: !optColumn.isInp
 
                         minValue: 0
                         maxValue: 10
@@ -780,6 +851,8 @@ Item {
                         bindKeyCurrent: "mask_fill"
                         bindKeyModel: "mask_fill_modes"
 
+                        disabled: !optColumn.isInp
+
                         function display(text) {
                             return root.tr(text, "Options")
                         }
@@ -790,6 +863,7 @@ Item {
                     text: root.tr("Highres")
                     width: parent.width
                     isCollapsed: true
+                    property var isActive: hrFactorInput.value >= 1.0 && optColumn.isHR
 
                     function getHRSize() {
                         if(hrFactorInput.value == 1.0) {
@@ -822,11 +896,11 @@ Item {
 
                     OSlider {
                         id: hrFactorInput
-                        label: root.tr("HR Factor")
+                        label: optColumn.couldHR ? root.tr("HR Factor") : root.tr("Multiplier")
                         width: parent.width
                         height: 30
 
-                        overlay: hrFactorInput.value == 1.0
+                        overlay: hrFactorInput.value == 1.0 && optColumn.couldHR
 
                         bindMap: root.binding.values
                         bindKey: "hr_factor"
@@ -843,7 +917,8 @@ Item {
                         width: parent.width
                         height: 30
 
-                        disabled: hrFactorInput.value == 1.0
+                        disabled: !hrColumn.isActive
+                        overlay: !hrColumn.isActive
 
                         bindMap: root.binding.values
                         bindKey: "hr_strength"
@@ -859,7 +934,8 @@ Item {
                         width: parent.width
                         height: 30
 
-                        disabled: hrFactorInput.value == 1.0
+                        disabled: !hrColumn.isActive
+                        overlay: !hrColumn.isActive
 
                         bindMap: root.binding.values
                         bindKeyCurrent: "hr_upscaler"
@@ -892,8 +968,8 @@ Item {
                         bindMap: root.binding.values
                         bindKey: "hr_steps"
 
-                        disabled: hrFactorInput.value == 1.0
-                        overlay: hrFactorInput.value == 1.0 || stepsInput.value == hrStepsInput.value
+                        disabled: !hrColumn.isActive
+                        overlay: !hrColumn.isActive || stepsInput.value == hrStepsInput.value
                         defaultValue: root.binding.values.get("steps")
 
                         minValue: 1
@@ -909,8 +985,8 @@ Item {
                         label: root.tr("HR Sampler")
                         width: parent.width
                         height: 30
-                        disabled: hrFactorInput.value == 1.0
-                        overlay: hrFactorInput.value == 1.0 || samplerColumn.sampler + samplerColumn.schedule == hrSamplerInput.value
+                        disabled: !hrColumn.isActive
+                        overlay: !hrColumn.isActive || samplerColumn.sampler + samplerColumn.schedule == hrSamplerInput.value
                         bindMap: root.binding.values
                         bindKeyCurrent: "hr_sampler"
                         bindKeyModel: "true_samplers"
@@ -926,8 +1002,8 @@ Item {
                         bindMap: root.binding.values
                         bindKey: "hr_scale"
 
-                        disabled: hrFactorInput.value == 1.0
-                        overlay: hrFactorInput.value == 1.0 || scaleInput.value == hrScaleInput.value
+                        disabled: !hrColumn.isActive
+                        overlay: !hrColumn.isActive || scaleInput.value == hrScaleInput.value
                         defaultValue: root.binding.values.get("scale")
 
                         minValue: 1
@@ -944,8 +1020,8 @@ Item {
                         width: parent.width
                         height: 30
 
-                        disabled: hrFactorInput.value == 1.0
-                        overlay: hrFactorInput.value == 1.0 || unetInput.value == hrModelInput.value
+                        disabled: !hrColumn.isActive
+                        overlay: !hrColumn.isActive || unetInput.value == hrModelInput.value
 
                         bindMap: root.binding.values
                         bindKeyCurrent: "hr_model"
@@ -967,8 +1043,8 @@ Item {
                         width: parent.width
                         height: 30
 
-                        disabled: hrFactorInput.value == 1.0
-                        overlay: hrFactorInput.value == 1.0 || predictionInput.value == hrPredictionInput.value
+                        disabled: !hrColumn.isActive
+                        overlay: !hrColumn.isActive || predictionInput.value == hrPredictionInput.value
 
                         bindMap: root.binding.values
                         bindKeyCurrent: "hr_prediction_type"
@@ -986,8 +1062,8 @@ Item {
                         width: parent.width
                         height: 30
 
-                        disabled: hrFactorInput.value == 1.0
-                        overlay: hrFactorInput.value == 1.0 || cfgRescaleInput.value == hrCfgRescaleInput.value
+                        disabled: !hrColumn.isActive
+                        overlay: !hrColumn.isActive || cfgRescaleInput.value == hrCfgRescaleInput.value
 
                         bindMap: root.binding.values
                         bindKey: "hr_cfg_rescale"
@@ -1005,8 +1081,8 @@ Item {
                         width: parent.width
                         height: 30
 
-                        disabled: hrFactorInput.value == 1.0
-                        overlay: value == 0.0
+                        disabled: !hrColumn.isActive
+                        overlay: !hrColumn.isActive || value == 0.0
 
                         bindMap: root.binding.values
                         bindKey: "hr_tome_ratio"
@@ -1028,8 +1104,8 @@ Item {
                         bindMap: root.binding.values
                         bindKey: "hr_eta"
 
-                        disabled: hrFactorInput.value == 1.0 || hrSamplerInput.overlay
-                        overlay: hrFactorInput.value == 1.0 || etaInput.value == hrEtaInput.value 
+                        disabled: !hrColumn.isActive || hrSamplerInput.overlay
+                        overlay: !hrColumn.isActive || etaInput.value == hrEtaInput.value 
                         defaultValue: root.binding.values.get("eta")
 
                         minValue: 0
