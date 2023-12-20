@@ -121,7 +121,11 @@ Item {
             x = Math.max(x, root.minValue)
         }
 
-        x = x - (x%m)
+        if(m > 1) {
+            x = x - (x%m)
+        } else {
+            x = Math.round(x/m) * m
+        }
 
         root.value = x
     }
@@ -158,6 +162,7 @@ Item {
             }
 
             onPressed: {
+                root.forceActiveFocus()
                 mouseArea.update()
             }
 
@@ -298,6 +303,7 @@ Item {
                 onActiveFocusChanged: {
                     if(!activeFocus) {
                         valueInput.text =  Qt.binding(function() { return root.value.toFixed(root.precValue) })
+                        root.forceActiveFocus()
                     }
                 }
                 
@@ -371,7 +377,6 @@ Item {
                 width: 10
                 color: COMMON.bg4
 
-
                 Canvas {
                     anchors.fill: parent
                     renderStrategy: Canvas.Cooperative
@@ -403,10 +408,34 @@ Item {
                     visible: !root.disabled
                     anchors.fill: parent
                     preventStealing: true
-                    onPressed: {
+                    pressAndHoldInterval: 250
+
+                    function doIncrement() {
                         setValue(root.value + root.incValue, root.incValue)
                     }
+
+                    Timer {
+                        id: incRepeat
+                        interval: 100
+                        repeat: true
+                        onTriggered: {
+                            parent.doIncrement()
+                        }
+                    }
+
+                    onPressed: {
+                        root.forceActiveFocus()
+                        doIncrement()
+                    }
                     
+                    onPressAndHold: {
+                        incRepeat.restart()
+                    }
+
+                    onReleased: {
+                        incRepeat.stop()
+                    }
+
                     Rectangle {
                         anchors.fill: parent
                         color: "black"
@@ -455,9 +484,32 @@ Item {
                     visible: !root.disabled
                     anchors.fill: parent
                     preventStealing: true
+                    pressAndHoldInterval: 250
+
+                    function doDecrement() {
+                        setValue(root.value - root.incValue, root.incValue)
+                    }
+
+                    Timer {
+                        id: decRepeat
+                        interval: 100
+                        repeat: true
+                        onTriggered: {
+                            parent.doDecrement()
+                        }
+                    }
 
                     onPressed: {
-                        setValue(root.value - root.incValue, root.incValue)
+                        root.forceActiveFocus()
+                        doDecrement()
+                    }
+                    
+                    onPressAndHold: {
+                        decRepeat.restart()
+                    }
+
+                    onReleased: {
+                        decRepeat.stop()
                     }
 
                     Rectangle {
@@ -486,5 +538,26 @@ Item {
         anchors.fill: control
         visible: root.disabled
         color: "#c0101010"
+    }
+
+    Keys.onPressed: {
+        event.accepted = true
+        switch(event.key) {
+        case Qt.Key_Up:
+            setValue(root.value + root.snapValue, root.snapValue)
+            break;
+        case Qt.Key_Down:
+            setValue(root.value - root.snapValue, root.snapValue)
+            break;
+        case Qt.Key_Left:
+            setValue(root.value - root.incValue, root.incValue)
+            break;
+        case Qt.Key_Right:
+            setValue(root.value + root.incValue, root.incValue)
+            break;
+        default:
+            event.accepted = false
+            break;
+        }
     }
 }
