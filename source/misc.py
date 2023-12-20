@@ -173,33 +173,22 @@ class ImageDisplay(QQuickPaintedItem):
 
     def paint(self, painter):
         if self._image and not self._image.isNull():
-            sx = self.width()/self._image.width()
-            sy = self.height()/self._image.height()
-            if sx < sy:
-                iw = int(self.width())
-                ix = int(0)
-                ih = int(self._image.height() * sx)
-                iy = int((self.height() - ih)/2)
-            else:
-                iw = int(self._image.width() * sy)
-                ix = int((self.width() - iw)/2)
-                ih = int(self.height())
-                iy = int(0)
-            
-            x, y = self.arrange(iw, ih)
+            transform = Qt.SmoothTransformation
+            if not self.smooth():
+                transform = Qt.FastTransformation
 
-            if self._trueWidth != iw or self._trueHeight != ih:
-                self._trueWidth = iw
-                self._trueHeight = ih
+            img = self._image.scaled(int(self.width()), int(self.height()), Qt.KeepAspectRatio, transform)
+            x, y = self.arrange(img.width(), img.height())
+
+            if self._trueWidth != img.width() or self._trueHeight != img.height():
+                self._trueWidth = img.width()
+                self._trueHeight = img.height()
                 self._trueX = x
                 self._trueY = y
                 self.sizeUpdated.emit()
-
-            dst = QRect(ix, iy, iw, ih)
-            src = QRect(0, 0, self._image.width(), self._image.height())
-
-            painter.drawImage(dst, self._image, src)
-
+            
+            painter.drawImage(x,y,img)
+        
 class MimeData(QObject):
     def __init__(self, mimeData, parent=None):
         super().__init__(parent)
