@@ -13,9 +13,25 @@ import "../../components"
 Item {
     id: root
     clip: true
-    property var swap: GUI.config != null ? GUI.config.get("swap") : false
-    property var autocomplete: GUI.config != null ? GUI.config.get("autocomplete") != 0 : false
+    property var swap: false
+    property var autocomplete: false
 
+    Connections {
+        target: GUI.config
+        function onUpdated() {
+            var swp = GUI.config.get("swap")
+            var aut = GUI.config.get("autocomplete")
+
+            if(swp != root.swap) {
+                root.swap = swp
+            }
+
+            if(aut != root.autocomplete) {
+                root.autocomplete = aut
+            }
+        }
+    }
+    
     onSwapChanged: {
         leftDivider.offset = 210
         rightDivider.offset = 210
