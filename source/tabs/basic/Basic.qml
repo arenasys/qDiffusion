@@ -16,20 +16,28 @@ Item {
     property var swap: false
     property var autocomplete: false
 
+    function syncSwap() {
+        var swp = GUI.config.get("swap")
+        var aut = GUI.config.get("autocomplete")
+
+        if(swp != root.swap) {
+            root.swap = swp
+        }
+
+        if(aut != root.autocomplete) {
+            root.autocomplete = aut
+        }
+    }
+
     Connections {
         target: GUI.config
         function onUpdated() {
-            var swp = GUI.config.get("swap")
-            var aut = GUI.config.get("autocomplete")
-
-            if(swp != root.swap) {
-                root.swap = swp
-            }
-
-            if(aut != root.autocomplete) {
-                root.autocomplete = aut
-            }
+            syncSwap()
         }
+    }
+
+    Component.onCompleted: {
+        syncSwap()
     }
     
     onSwapChanged: {
