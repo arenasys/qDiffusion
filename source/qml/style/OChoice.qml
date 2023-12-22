@@ -13,6 +13,8 @@ Item {
     property var value: control.currentIndex == -1 ? overloadValue : (control.model.length == 0 ? "" : control.model[control.currentIndex])
     property alias currentIndex: control.currentIndex
 
+    property var placeholder: root.value == ""
+    property var placeholderValue: "None"
     property var emptyValue: ""
     property var overloadValue: ""
 
@@ -347,9 +349,9 @@ Item {
                 leftPadding: 5
                 rightPadding: 7
 
-                text: root.display(root.value)
+                text: root.placeholder ? root.placeholderValue : root.display(root.value)
                 pointSize: root.mini ? 7.7 : COMMON.pointValue
-                color: COMMON.fg0
+                color: root.placeholder ? COMMON.fg2 : COMMON.fg0
                 horizontalAlignment: Text.AlignRight
                 verticalAlignment: Text.AlignVCenter
                 elide: Text.ElideRight
@@ -429,7 +431,7 @@ Item {
                 root.tryEnter()
                 if(control.popup.opened) {
                     control.popup.close()
-                } else if (!root.disabled) {
+                } else if (!root.disabled && !root.placeholder) {
                     control.popup.open()
                 }
             }

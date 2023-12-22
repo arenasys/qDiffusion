@@ -469,6 +469,8 @@ Item {
                         overlay: modelColumn.componentMode
                         popupHeight: root.height + 100
 
+                        placeholderValue: "No models"
+
                         function display(text) {
                             return GUI.modelName(text)
                         }
@@ -514,6 +516,8 @@ Item {
                         overlay: !modelColumn.componentMode
                         popupHeight: root.height + 100
 
+                        placeholderValue: "No models"
+
                         function decoration(value) {
                             if(!modelColumn.models.includes(value)) {
                                 return root.tr("External")
@@ -542,6 +546,8 @@ Item {
                         overlay: !modelColumn.componentMode
                         popupHeight: root.height + 100
 
+                        placeholderValue: "No models"
+
                         function decoration(value) {
                             if(!modelColumn.models.includes(value)) {
                                 return root.tr("External")
@@ -565,6 +571,8 @@ Item {
 
                         overlay: !modelColumn.componentMode
                         popupHeight: root.height + 100
+
+                        placeholderValue: "No models"
 
                         function decoration(value) {
                             if(!modelColumn.models.includes(value)) {
@@ -624,6 +632,8 @@ Item {
                                     anchors.topMargin: -1
                                     padded: false
                                     label: ""
+
+                                    placeholderValue: "No networks"
 
                                     entries: GUI.filterFavourites(root.binding.availableNetworks)
 
@@ -1030,6 +1040,8 @@ Item {
                         tooltip: value
 
                         popupHeight: root.height + 100
+
+                        placeholderValue: "No models"
 
                         function display(text) {
                             return GUI.modelName(text)

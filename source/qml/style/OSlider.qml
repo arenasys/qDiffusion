@@ -110,6 +110,7 @@ Item {
         if(value != root.value && !root.disabled) {
             root.value = value
         }
+        root.selected()
     }
 
     function setValue(x, m) {
@@ -132,6 +133,7 @@ Item {
         }
 
         root.value = x
+        root.selected()
     }
 
     Rectangle {
@@ -162,7 +164,6 @@ Item {
                     pos = Math.min(width, pos)
                 }
                 root.update(pos/width)
-                root.selected()
             }
 
             onPressed: {
