@@ -1,9 +1,24 @@
 #!/bin/bash
 
-if [ ! -d "./source" ] 
-then
-    cd ..
-fi
+SCRIPT=$(realpath "$0")
+SCRIPT_DIR=$(realpath $(dirname "$0"))
+
+cd "$SCRIPT_DIR"
+
+echo "[Desktop Entry]
+Exec=$SCRIPT %u
+Name=qDiffusion
+Icon=$SCRIPT_DIR/launcher/icon.png
+MimeType=application/x-qdiffusion;x-scheme-handler/qdiffusion;
+Type=Application
+StartupNotify=false
+Terminal=false" > qDiffusion-handler.desktop
+xdg-desktop-menu install qDiffusion-handler.desktop
+xdg-mime default qDiffusion-handler.desktop x-scheme-handler/qdiffusion
+rm qDiffusion-handler.desktop
+chmod +x $SCRIPT
+
+cd ..
 
 if [ ! -d "./python" ] 
 then
@@ -14,4 +29,4 @@ then
     tar -xf "python.tar.gz"
     rm "python.tar.gz"
 fi
-./python/bin/python3 source/launch.py
+./python/bin/python3 source/launch.py "$@"

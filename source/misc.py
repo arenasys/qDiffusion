@@ -2,6 +2,9 @@ import re
 import os
 import ctypes
 import math
+import platform
+import subprocess
+IS_WIN = platform.system() == 'Windows'
 
 #NOTE: imported by launcher
 
@@ -55,7 +58,7 @@ try:
 except:
     pass
 
-from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent, QMimeData, QByteArray, QBuffer, QIODevice, QUrl, QRect
+from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent, QMimeData, QByteArray, QBuffer, QIODevice, QUrl, QSharedMemory, QThread
 from PyQt5.QtQuick import QQuickItem, QQuickPaintedItem
 from PyQt5.QtGui import QColor, QImage, QSyntaxHighlighter, QColor
 from PyQt5.QtNetwork import QNetworkRequest, QNetworkReply, QNetworkAccessManager
@@ -1387,6 +1390,86 @@ class GridManager(QObject):
         highlighter.setKeywords(keywords)
         suggestions.setSource("Keyword")
         highlighter.setMode("Keyword")
+
+class Signaller(QThread):
+    signal = pyqtSignal(str)
+    
+    def __init__(self):
+        super().__init__()
+        self.attach()
+
+    def attach(self):
+        i = 0
+        while True:
+            key = f"QDIFFUSION{i}"
+            self.mem = QSharedMemory()
+            self.mem.setNativeKey(key)
+            if self.mem.attach():
+                break
+            if self.mem.create(1024):
+                break
+            i += 1
+    
+    def status(self, value=None):
+        status = None
+        self.mem.lock()
+        try:
+            data = self.mem.data().asarray(1024)
+            if value != None:
+                data[-1] = value
+            status = data[-1]
+        except Exception as e:
+            print(e)
+            pass
+        self.mem.unlock()
+        return status
+    
+    def send(self, message):
+        self.mem.lock()
+        try:
+            data = self.mem.data().asarray(1024)
+            for i, c in enumerate(message):
+                data[i] = ord(c)
+        except Exception as e:
+            print(e)
+            pass
+        self.mem.unlock()
+        self.mem.detach()
+
+    def run(self):
+        self.status(1)
+        
+        while not self.isInterruptionRequested():
+            self.mem.lock()
+            try:
+                data = self.mem.data().asarray(1024)
+
+                message = []
+                for i in range(1024):
+                    if data[i] == 0:
+                        break
+                    message += [chr(data[i])]
+                message = "".join(message)
+
+                if message:
+                    self.signal.emit(message)
+                    for i in range(1024):
+                        data[i] = 0
+                
+                data[-1] = 1
+                del data
+            except Exception as e:
+                print(e)
+                pass
+            self.mem.unlock()
+            self.msleep(100)
+        
+        self.status(0)
+        self.mem.detach()
+
+    @pyqtSlot()
+    def stop(self):
+        self.requestInterruption()
 
 def registerTypes():
     qmlRegisterType(ImageDisplay, "gui", 1, 0, "ImageDisplay")

@@ -31,6 +31,24 @@ FocusReleaser {
         opacityAnimator.start()
     }
 
+    Timer {
+        id: raiseTimer
+        interval: 50
+        onTriggered: {
+            window.flags = Qt.Window
+            window.requestActivate()
+        }
+    }
+
+    Connections {
+        target: GUI
+        function onRaiseToTop() {
+            window.flags = Qt.Window | Qt.WindowStaysOnTopHint
+            raiseTimer.start()
+        }
+    }
+
+
     Rectangle {
         id: root
         anchors.fill: parent

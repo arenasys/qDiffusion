@@ -14,6 +14,7 @@ import importlib
 import pkg_resources
 import json
 import hashlib
+import argparse
 
 import platform
 IS_WIN = platform.system() == 'Windows'
@@ -427,8 +428,15 @@ class Coordinator(QObject):
                 return 0.82
         return 1.0
     
-def launch():
+def launch(url):
     import misc
+
+    if url:
+        sgnl = misc.Signaller()
+        if sgnl.status():
+            sgnl.send(url)
+            exit()
+
     if IS_WIN:
         misc.setAppID(APPID)
     
@@ -453,6 +461,7 @@ def launch():
 
     app.setOrganizationName("qDiffusion")
     app.setOrganizationDomain("qDiffusion")
+    app.endpoint = url
     
     engine = QQmlApplicationEngine()
     engine.quit.connect(app.quit)
@@ -519,7 +528,16 @@ def main():
         os.chdir('..')
 
     sys.excepthook = exceptHook
-    launch()
+
+    url = None
+    try:
+        parser = argparse.ArgumentParser(description='qDiffusion')
+        parser.add_argument("url", type=str, help="remote endpoint URL")
+        url = parser.parse_args().url
+    except:
+        pass
+    
+    launch(url)
 
 if __name__ == "__main__":
     main()

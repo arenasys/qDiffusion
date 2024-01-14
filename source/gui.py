@@ -69,6 +69,7 @@ class GUI(QObject):
     response = pyqtSignal(int, object)
     aboutToQuit = pyqtSignal()
     reset = pyqtSignal(int)
+    raiseToTop = pyqtSignal()
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -122,9 +123,15 @@ class GUI(QObject):
         self.backend = backend.Backend(self)
         self.backend.response.connect(self.onResponse)
         self.backend.updated.connect(self.backendUpdated)
-        self.backend.setEndpoint(self._config._values.get("endpoint"), self._config._values.get("password"))
+        if not parent.endpoint:
+            self.backend.setEndpoint(self._config._values.get("endpoint"), self._config._values.get("password"))
 
         self.watchModelDirectory()
+
+        self.signaller = misc.Signaller()
+        parent.aboutToQuit.connect(self.signaller.stop)
+        self.signaller.signal.connect(self.onSignal)
+        self.signaller.start()
 
         self._options = {}
         self._empty = {}
@@ -134,11 +141,15 @@ class GUI(QObject):
 
         self.watcher.finished.connect(self.onFolderChanged)
 
+        if parent.endpoint:
+            self.parseEndpoint(parent.endpoint)
+
     @pyqtSlot()
     def stop(self):
         self.aboutToQuit.emit()
         self.backend.wait()
         self.watcher.wait()
+        self.signaller.wait()
     
     def registerTabs(self, tabs):
         self.tabs = tabs
@@ -570,6 +581,25 @@ class GUI(QObject):
         self.backend.wait()
         self.backend.setEndpoint(endpoint, password)
         self.reset.emit(-1)
+
+    @pyqtSlot(str)
+    def onSignal(self, message):
+        self.parseEndpoint(message)
+    
+    def parseEndpoint(self, endpoint):
+        try:
+            parsed = urllib.parse.urlparse(endpoint)
+            query = urllib.parse.parse_qs(parsed.query)
+            endpoint, password = query["endpoint"][0], query["password"][0]
+        except:
+            return
+        
+        self.raiseToTop.emit()
+
+        self._config._values.set("endpoint", endpoint)
+        self._config._values.set("password", password)
+
+        self.restartBackend()
 
     @pyqtSlot()
     def backendUpdated(self):

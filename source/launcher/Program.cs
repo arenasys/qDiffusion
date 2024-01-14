@@ -11,6 +11,7 @@ using System.Collections;
 using System.Diagnostics;
 using System.Windows.Forms;
 using System.Drawing;
+using System.Linq;
 using Microsoft.Win32;
 
 namespace qDiffusion
@@ -283,19 +284,6 @@ namespace qDiffusion
             var app_user_model_id = "arenasys.qdiffusion." + MD5(exe);
             SetCurrentProcessExplicitAppUserModelID(app_user_model_id);
 
-            string endpoint = "";
-            string password = "";
-
-            if (args.Length == 1 && args[0].StartsWith("qdiffusion://"))
-            {
-                var p = args[0].Replace("qdiffusion://", "").Trim('/').Split(new char[] { '&' }, 2);
-                endpoint = Uri.UnescapeDataString(p[0].Split(new char[] { '=' }, 2)[1]);
-                if (p.Length > 1)
-                    password = Uri.UnescapeDataString(p[1].Split(new char[] { '=' }, 2)[1]);
-                LaunchError(endpoint + "\n" + password);
-                return;
-            }
-
             if (args.Length >= 2 && args[0] == "-e")
             {
                 LaunchError(args[1]);
@@ -397,15 +385,8 @@ namespace qDiffusion
 
             try
             {
-                if (!String.IsNullOrWhiteSpace(endpoint))
-                {
-                    Launch(python, "source\\main.py", "-e", endpoint, "-p", password);
-                }
-                else
-                {
-                    Launch(python, "source\\main.py");
-                }
-
+                string[] cmd = { python, "source\\main.py" };
+                Launch(cmd.Concat(args).ToArray());
             }
             catch (Exception ex)
             {

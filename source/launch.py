@@ -34,9 +34,9 @@ def get_env():
 
 def restart():
     if IS_WIN:
-        subprocess.Popen([VENV_DIR+"\\Scripts\\pythonw.exe", "source\\launch.py"], env=get_env(), creationflags=0x00000008|0x00000200)
+        subprocess.Popen([VENV_DIR+"\\Scripts\\pythonw.exe", "source\\launch.py"] + sys.argv[1:], env=get_env(), creationflags=0x00000008|0x00000200)
     else:
-        subprocess.Popen([VENV_DIR+"/bin/python", "source/launch.py"], env=get_env())
+        subprocess.Popen([VENV_DIR+"/bin/python", "source/launch.py"] + sys.argv[1:], env=get_env())
     exit()
 
 def install_venv():
@@ -76,8 +76,6 @@ if __name__ == "__main__":
         input()
         exit()
     
-    if len(sys.argv) > 1:
-        VENV_DIR = sys.argv[1]
     VENV_DIR = os.path.abspath(VENV_DIR)
 
     invalid = ''.join([c for c in VENV_DIR if ord(c) > 127])
