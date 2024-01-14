@@ -21,13 +21,17 @@ Information is available on the [Wiki](https://github.com/arenasys/qDiffusion/wi
 
 ### Remote
 Notebooks for running a remote instance are available: [Colab](https://colab.research.google.com/github/arenasys/qDiffusion/blob/master/remote_colab.ipynb), [Kaggle](https://www.kaggle.com/code/arenasys/qdiffusion)
+
+0. [Install](#install) qDiffusion, this runs locally on your machine and connects to the backend server.
+	- If using Mobile then skip this step.
 1. Open the [Colab](https://colab.research.google.com/github/arenasys/qDiffusion/blob/master/remote_colab.ipynb) notebook. Requires a Google account.
 2. Press the play button in the top left. Colab may take some time to configure a machine for you.
 3. Accept or reject the Google Drive permission popup.
 	- Accepting will mean models are saved/loaded from `qDiffusion/models` on your drive.
 	- Rejecting will mean models are local, you will need to download them again next time.
 4. Wait for the requirements to be downloaded and the server to start.
-5. Copy the Endpoint and Password to qDiffusion under `Settings->Remote`, press Connect.
+5. Click the `DESKTOP` link to start qDiffusion and connect.
+   	- Alternatively copy the Endpoint and Password to qDiffusion under `Settings->Remote`, press Connect.
 6. Done. See [Downloads](https://github.com/arenasys/qDiffusion/wiki/Guide#downloading) for how to get models onto the instance.
 	- Remaking the instance is done via `Runtime->Disconnect and delete runtime`, then close the tab and start from Step 1.
 	- If issues persist after a remake it could be the cloudflare tunnel is down, check [Here](https://www.cloudflarestatus.com/).
