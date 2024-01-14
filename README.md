@@ -29,8 +29,8 @@ Notebooks for running a remote instance are available: [Colab](https://colab.res
 3. Accept or reject the Google Drive permission popup.
 	- Accepting will mean models are saved/loaded from `qDiffusion/models` on your drive.
 	- Rejecting will mean models are local, you will need to download them again next time.
-4. Wait for the requirements to be downloaded and the server to start.
-5. Click the `DESKTOP` link to start qDiffusion and connect.
+4. Wait for the requirements to be downloaded and the server to start (scroll down).
+5. Click the `DESKTOP` link to start qDiffusion and/or connect.
    	- Alternatively copy the Endpoint and Password to qDiffusion under `Settings->Remote`, press Connect.
 6. Done. See [Downloads](https://github.com/arenasys/qDiffusion/wiki/Guide#downloading) for how to get models onto the instance.
 	- Remaking the instance is done via `Runtime->Disconnect and delete runtime`, then close the tab and start from Step 1.
