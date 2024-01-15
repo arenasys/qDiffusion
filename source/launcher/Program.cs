@@ -88,9 +88,17 @@ namespace qDiffusion
 
             key.Close();
         }
-
+ 
+        class SyncObject
+        {
+            public string Error { get; set; }
+        }
         private void HandleDownloadComplete(object sender, AsyncCompletedEventArgs args)
         {
+            if (args.Error != null)
+            {
+                (args.UserState as SyncObject).Error = args.Error.Message;
+            }
             lock (args.UserState)
             {
                 Monitor.Pulse(args.UserState);
@@ -102,19 +110,25 @@ namespace qDiffusion
             progress?.SetProgress(Math.Min(99, args.ProgressPercentage));
         }
 
-        private void Download(string url, string filename)
+        private bool Download(string url, string filename)
         {
             using (WebClient wc = new WebClient())
             {
                 wc.DownloadProgressChanged += HandleDownloadProgress;
                 wc.DownloadFileCompleted += HandleDownloadComplete;
 
-                var syncObject = new object();
+                var syncObject = new SyncObject();
                 lock (syncObject)
                 {
                     wc.DownloadFileAsync(new Uri(url), filename, syncObject);
                     Monitor.Wait(syncObject);
                 }
+                if (syncObject.Error != null)
+                {
+                    LaunchError(syncObject.Error);
+                    return false;
+                }
+                return true;
             }
         }
 
@@ -313,7 +327,11 @@ namespace qDiffusion
 
                 var python_file = "python-3.10.11.tar.gz";
                 var python_url = "https://github.com/arenasys/binaries/releases/download/v1/cpython-3.10.11+20230507-x86_64-pc-windows-msvc-shared-install_only.tar.gz";
-                Download(python_url, python_file);
+                if(!Download(python_url, python_file))
+                {
+                    progress?.DoClose();
+                    return;
+                }
 
                 progress?.SetLabel("Installing Python");
                 ExtractTarGz(python_file, ".");
@@ -345,6 +363,7 @@ namespace qDiffusion
                 catch (Exception ex)
                 {
                     LaunchError(ex.Message);
+                    progress?.DoClose();
                     return;
                 }
             }
@@ -372,7 +391,11 @@ namespace qDiffusion
 
                 var pyqt_file = "PyQt5-5.15.7-cp37-abi3-win_amd64.whl";
                 var pyqt_url = "https://github.com/arenasys/binaries/releases/download/v1/PyQt5-5.15.7-cp37-abi3-win_amd64.whl";
-                Download(pyqt_url, pyqt_file);
+                if (!Download(pyqt_url, pyqt_file))
+                {
+                    progress?.DoClose();
+                    return;
+                }
 
                 progress?.SetLabel("Installing PyQT5");
 
