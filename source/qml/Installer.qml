@@ -10,7 +10,13 @@ import "components"
 
 FocusReleaser {
     id: root
+    property var window
+    property var spinner
     anchors.fill: parent
+    
+    Component.onCompleted: {
+        spinner.visible = false
+    }
 
     function tr(str, file = "Installer.qml") {
         return TRANSLATOR.instance.translate(str, file)

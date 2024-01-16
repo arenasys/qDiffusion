@@ -29,6 +29,6 @@ Item {
         from: 0
         to: 360
         duration: root.duration
-        running: true
+        running: root.visible
     }
 }

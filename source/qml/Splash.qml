@@ -48,7 +48,7 @@ ApplicationWindow {
             if(component.status != Component.Ready) {
                 console.log("ERROR", component.errorString())
             } else {
-                installer = component.incubateObject(root)
+                installer = component.incubateObject(root, { window: root, spinner: spinner })
             }
         }
 
