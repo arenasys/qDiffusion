@@ -2,6 +2,8 @@
 --------
 Built from the ground up alongside [sd-inference-server](https://github.com/arenasys/sd-inference-server), the backend for this GUI.
 ![example](https://github.com/arenasys/qDiffusion/raw/master/source/screenshot.png)
+\*new\* Discord: [Arena Systems](https://discord.gg/WdjKqUGefU).
+
 ## Getting started
 ### Install
 1. [Download](https://github.com/arenasys/qDiffusion/archive/refs/heads/master.zip) this repo as a zip and extract it.
