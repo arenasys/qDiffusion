@@ -65,6 +65,7 @@ class GUI(QObject):
     favUpdated = pyqtSignal()
     configUpdated = pyqtSignal()
     downloadsUpdated = pyqtSignal()
+    windowUpdated = pyqtSignal()
     result = pyqtSignal(int, str)
     response = pyqtSignal(int, object)
     aboutToQuit = pyqtSignal()
@@ -76,6 +77,8 @@ class GUI(QObject):
         self.db = sql.Database(self)
         self.watcher = filesystem.Watcher()
         self.thumbnails = thumbnails.ThumbnailStorage((256,256),(640, 640),75, self)
+
+        self._window_active = True
         
         self.tabs = []
         
@@ -832,3 +835,14 @@ class GUI(QObject):
     @pyqtProperty(misc.DownloadManager, notify=downloadsUpdated)
     def network(self):
         return self._network
+    
+    @pyqtProperty(bool, notify=windowUpdated)
+    def windowActive(self):
+        return self._window_active
+    
+    @windowActive.setter
+    def windowActive(self, value):
+        if value != self._window_active:
+            self._window_active = value
+            self.parent().setCursorFlashTime(1000 if self._window_active else 0)
+            self.windowUpdated.emit()
