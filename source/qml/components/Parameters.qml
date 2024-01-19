@@ -1186,7 +1186,6 @@ Item {
 
                     OChoice {
                         id: predictionInput
-                        visible: root.advanced
                         label: root.tr("Prediction")
                         width: parent.width
                         height: 30
@@ -1202,12 +1201,10 @@ Item {
                     
                     OSlider {
                         id: cfgRescaleInput
-                        visible: root.advanced
+                        visible: root.advanced || predictionInput.value == "V"
                         label: root.tr("CFG Rescale")
                         width: parent.width
                         height: 30
-
-                        overlay: value == 0.0
 
                         bindMap: root.binding.values
                         bindKey: "cfg_rescale"
@@ -1239,6 +1236,7 @@ Item {
 
                     OSlider {
                         id: subseedStrInput
+                        visible: root.advanced
                         label: root.tr("Subseed strength")
                         width: parent.width
                         height: 30
@@ -1257,6 +1255,7 @@ Item {
 
                     OTextInput {
                         id: subseedInput
+                        visible: root.advanced
                         label: root.tr("Subseed")
                         width: parent.width
                         height: 30

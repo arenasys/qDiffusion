@@ -351,7 +351,7 @@ class Parameters(QObject):
         ]
 
         self._adv_only = [
-            "tome_ratio", "cfg_rescale", "prediction_type", "tiling_mode", "vae_precision", "precision",
+            "tome_ratio", "tiling_mode", "vae_precision", "precision", "subseed_strength", "subseed", 
             "hr_sampler", "hr_scale", "hr_model", "hr_prediction_type", "hr_cfg_rescale", "hr_tome_ratio", "hr_eta"
         ]
         self._default_values = {
@@ -694,6 +694,9 @@ class Parameters(QObject):
         for k in self._adv_only:
             if k in data and not self.gui.config.get("advanced"):
                 del data[k]
+
+        if not self.gui.config.get("advanced") and data["prediction_type"] != "V":
+            del data["cfg_rescale"]
 
         for k in ["tome_ratio", "cfg_rescale", "prediction_type", "tiling_mode", "vae_precision", "precision", "hr_tome_ratio", "hr_cfg_rescale", "hr_prediction_type"]:
             if k in data and data[k] in {0.0, "Default"}:
