@@ -532,7 +532,7 @@ def main():
     url = None
     try:
         parser = argparse.ArgumentParser(description='qDiffusion')
-        parser.add_argument("url", type=str, help="remote endpoint URL")
+        parser.add_argument("url", type=str, help="remote endpoint URL", required=False)
         url = parser.parse_args().url
     except:
         pass
