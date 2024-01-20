@@ -566,6 +566,7 @@ class Trainer(QObject):
 
     @pyqtSlot()
     def train(self):
+        self.resetCurrent()
 
         data = {k:v for k,v in self._parameters._map.items() if not k in self._read_only}
         data["folders"] = self._folders
@@ -613,9 +614,9 @@ class Trainer(QObject):
         remaining = data["remaining"]
         rate = data["rate"]
 
-        self._progress = (current+1) / total
+        self._progress = (current) / total
         self._stage_label = stage
-        self._progress_label = f"{current+1} / {total}"
+        self._progress_label = f"{current} / {total}"
         self._remaining_label = f"{format_timestamp(elapsed)} | {format_timestamp(remaining)}"
 
         if stage == "Training":
@@ -647,6 +648,10 @@ class Trainer(QObject):
     def onResponse(self, id, response):
         type = response.get("type", "")
         data = response.get("data", {})
+
+        if type == "training_status":
+            self._stage_label = data["message"]
+            self.statusChanged.emit()
 
         if type == "training_progress":
             self.updateProgress(data)
