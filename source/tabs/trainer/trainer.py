@@ -122,11 +122,12 @@ class Trainer(QObject):
 
         self._default = {
             "type": "LoRA",
-            "types": ["LoRA"],
+            "types": ["LoRA", "LoCon"],
             "name": "",
             "lora_rank": 32,
             "lora_alpha": 16,
-            "lora_convolutions": "Enabled",
+            "lora_conv_rank": 16,
+            "lora_conv_alpha": 8,
             "base_model": "",
             "clip_skip": 1,
             "steps": 5000,
@@ -139,6 +140,7 @@ class Trainer(QObject):
             "warmup": 0.1,
             "image_size": 512,
             "batch_size": 4,
+            "shuffle": "Enabled",
             "enabled_disabled": ["Enabled", "Disabled"]
         }
         self._read_only = ["types", "optimizers", "learning_schedules", "enabled_disabled"]
@@ -373,20 +375,23 @@ class Trainer(QObject):
         file = file.toLocalFile()
         config = {}
 
-        if file.endswith(".json"):
-            try:
-                with open(file, 'r', encoding="utf-8") as f:
-                    config = json.load(f)
-            except:
-                return
+        try:
+            if file.endswith(".json"):
+                try:
+                    with open(file, 'r', encoding="utf-8") as f:
+                        config = json.load(f)
+                except:
+                    return
+            
+            for k,v in config["parameters"].items():
+                if k == "base_model":
+                    v = self.closestModel(v)
+                self._parameters.set(k, v)
 
-        for k,v in config["parameters"].items():
-            if k == "base_model":
-                v = self.closestModel(v)
-            self._parameters.set(k, v)
-
-        for f in config["folders"]:
-            self.addFolder(f)
+            for f in config["folders"]:
+                self.addFolder(f)
+        except:
+            return
         
     def closestModel(self, name):
         models = self.gui._options.get("UNET", [])
@@ -571,12 +576,10 @@ class Trainer(QObject):
         data = {k:v for k,v in self._parameters._map.items() if not k in self._read_only}
         data["folders"] = self._folders
 
-        conv = data["lora_convolutions"] == "Enabled"
-        data["lora_conv_rank"] = data["lora_rank"] // 2 if conv else 0    
-        del data["lora_convolutions"]
-
         parameters = self.getGenerateParameters()
         data["device"] = parameters._values.get("device")
+
+        data["shuffle"] = data["shuffle"] == "Enabled"
 
         request = {"type":"train_lora", "data": data}
 

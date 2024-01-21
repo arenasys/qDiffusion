@@ -36,16 +36,21 @@ class InferenceProcessThread(threading.Thread):
         self.current = None
         self.cancelled = set()
 
-        sd_path = os.path.join("source", "sd-inference-server")
+        infer_path = os.path.join("source", "sd-inference-server")
 
-        if not os.path.exists(sd_path):
+        if not os.path.exists(infer_path):
             self.responses.put({"type":"status", "data":{"message":"Downloading"}})
-            git.git_clone(sd_path, git.INFER_URL)
+            git.git_clone(infer_path, git.INFER_URL)
+
+        train_path = os.path.join(infer_path, "training")
+        if not os.path.exists(train_path):
+            self.responses.put({"type":"status", "data":{"message":"Downloading"}})
+            git.git_clone(train_path, git.TRAIN_URL)
 
         if not os.path.exists(model_directory):
-            shutil.copytree(os.path.join(sd_path, "models"), model_directory)
+            shutil.copytree(os.path.join(infer_path, "models"), model_directory)
 
-        sys.path.insert(0, sd_path)
+        sys.path.insert(0, infer_path)
 
         self.responses.put({"type":"status", "data":{"message":"Initializing"}})
 

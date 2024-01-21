@@ -144,6 +144,7 @@ Rectangle {
                     width: parent.width - 20
 
                     OChoice {
+                        id: typeChoice
                         height: 30
                         width: parent.width
                         label: "Type"
@@ -226,14 +227,36 @@ Rectangle {
                         bindKey: "lora_alpha"
                     }
 
-                    OChoice {
-                        label: "Convolutions"
+                    OSlider {
+                        visible: typeChoice.value == "LoCon"
+                        label: "Conv Rank"
                         width: parent.width
-                        height: 30
+                        height: visible ? 30 : 0
+
+                        minValue: 8
+                        maxValue: 256
+                        precValue: 0
+                        incValue: 8
+                        snapValue: 8
 
                         bindMap: TRAINER.parameters
-                        bindKeyCurrent: "lora_convolutions"
-                        bindKeyModel: "enabled_disabled"
+                        bindKey: "lora_conv_rank"
+                    }
+
+                    OSlider {
+                        visible: typeChoice.value == "LoCon"
+                        label: "Conv Alpha"
+                        width: parent.width
+                        height: visible ? 30 : 0
+
+                        minValue: 1
+                        maxValue: 256
+                        precValue: 0
+                        incValue: 1
+                        snapValue: 8
+
+                        bindMap: TRAINER.parameters
+                        bindKey: "lora_conv_alpha"
                     }
                 }
 
@@ -369,6 +392,7 @@ Rectangle {
                     }
 
                     OChoice {
+                        id: scheduleChoice
                         label: "Schedule"
                         width: parent.width
                         height: 30
@@ -376,22 +400,6 @@ Rectangle {
                         bindMap: TRAINER.parameters
                         bindKeyCurrent: "learning_schedule"
                         bindKeyModel: "learning_schedules"
-                    }
-
-                    OSlider {
-                        label: "Restarts"
-                        width: parent.width
-                        height: 30
-
-                        minValue: 1
-                        maxValue: 8
-                        precValue: 0
-                        incValue: 1
-                        snapValue: 1
-                        bounded: false
-
-                        bindMap: TRAINER.parameters
-                        bindKey: "restarts"
                     }
 
                     OSlider {
@@ -407,6 +415,24 @@ Rectangle {
 
                         bindMap: TRAINER.parameters
                         bindKey: "warmup"
+                    }
+
+
+                    OSlider {
+                        visible: scheduleChoice.value == "Cosine"
+                        label: "Restarts"
+                        width: parent.width
+                        height: visible ? 30 : 0
+
+                        minValue: 1
+                        maxValue: 8
+                        precValue: 0
+                        incValue: 1
+                        snapValue: 1
+                        bounded: false
+
+                        bindMap: TRAINER.parameters
+                        bindKey: "restarts"
                     }
                 }
 
@@ -472,6 +498,49 @@ Rectangle {
 
                         bindMap: TRAINER.parameters
                         bindKey: "batch_size"
+                    }
+                }
+
+                Item {
+                    width: parent.width
+                    height: 2
+                }
+
+                Rectangle {
+                    color: COMMON.bg4
+                    width: parent.width
+                    height: 2
+                }
+
+                Rectangle {
+                    width: parent.width
+                    height: 30
+                    color: COMMON.bg2_5
+
+                    SText {
+                        text: "Caption"
+                        anchors.fill: parent
+                        verticalAlignment: Text.AlignVCenter
+                        leftPadding: 10
+                        topPadding: 1
+                        font.weight: Font.Medium
+                        pointSize: 10.5
+                        color: COMMON.fg1
+                    }
+                }
+
+                Column {
+                    x: 10
+                    width: parent.width - 20
+
+                    OChoice {
+                        label: "Shuffle"
+                        width: parent.width
+                        height: 30
+
+                        bindMap: TRAINER.parameters
+                        bindKeyCurrent: "shuffle"
+                        bindKeyModel: "enabled_disabled"
                     }
                 }
 
