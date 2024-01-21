@@ -323,6 +323,16 @@ Rectangle {
                         bindMap: TRAINER.parameters
                         bindKey: "clip_skip"
                     }
+
+                    OChoice {
+                        label: "Prediction"
+                        width: parent.width
+                        height: 30
+
+                        bindMap: TRAINER.parameters
+                        bindKeyCurrent: "prediction_type"
+                        bindKeyModel: "prediction_types"
+                    }
                 }
 
                 Item {
@@ -416,7 +426,6 @@ Rectangle {
                         bindMap: TRAINER.parameters
                         bindKey: "warmup"
                     }
-
 
                     OSlider {
                         visible: scheduleChoice.value == "Cosine"

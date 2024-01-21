@@ -141,9 +141,11 @@ class Trainer(QObject):
             "image_size": 512,
             "batch_size": 4,
             "shuffle": "Enabled",
+            "prediction_type": "Epsilon",
+            "prediction_types": ["Epsilon", "V"],
             "enabled_disabled": ["Enabled", "Disabled"]
         }
-        self._read_only = ["types", "optimizers", "learning_schedules", "enabled_disabled"]
+        self._read_only = ["types", "optimizers", "learning_schedules", "prediction_types", "enabled_disabled"]
         self._parameters = VariantMap(self, self._default.copy())
         self._parameters.updated.connect(self.parametersUpdated)
 
