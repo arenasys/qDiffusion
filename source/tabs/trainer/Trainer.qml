@@ -527,7 +527,7 @@ Rectangle {
                     color: COMMON.bg2_5
 
                     SText {
-                        text: "Caption"
+                        text: "Misc"
                         anchors.fill: parent
                         verticalAlignment: Text.AlignVCenter
                         leftPadding: 10
@@ -535,6 +535,21 @@ Rectangle {
                         font.weight: Font.Medium
                         pointSize: 10.5
                         color: COMMON.fg1
+                    }
+                }
+
+                Column {
+                    x: 10
+                    width: parent.width - 20
+
+                    OChoice {
+                        label: "Attention"
+                        width: parent.width
+                        height: 30
+
+                        bindMap: TRAINER.parameters
+                        bindKeyCurrent: "attention"
+                        bindKeyModel: "attentions"
                     }
                 }
 
