@@ -8,7 +8,7 @@ import "../components"
 
 Item {
     id: root
-    width: 200
+    width: Math.max(200, 100 + suggestions.width*7)
 
     property var target
     property var suggestions

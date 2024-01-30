@@ -856,12 +856,17 @@ class SuggestionManager(QObject):
         self._keywords = []
         
         self._results = []
+        self._width = 0
 
         self.gui.optionsUpdated.connect(self.update)
 
     @pyqtProperty(list, notify=updated)
     def results(self):
         return self._results
+    
+    @pyqtProperty(int, notify=updated)
+    def width(self):
+        return self._width
     
     @pyqtSlot()
     def setPromptSources(self):
@@ -985,6 +990,8 @@ class SuggestionManager(QObject):
                 self._results = sorted(staging.keys(), key=key)
                 if len(self._results) > 10:
                     self._results = self._results[:10]
+
+        self._width = max([len(r) for r in self._results]) if self._results else 0
 
         self.updated.emit()
 

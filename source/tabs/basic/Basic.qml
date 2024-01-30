@@ -291,7 +291,7 @@ Item {
         visible: typed && prompts.cursorX != null && prompts.cursorText != ""
         x: visible ? prompts.x + prompts.cursorX : 0
         y: visible ? prompts.y + prompts.cursorY : 0
-        width: 200
+        width: Math.max(200, Math.min(prompts.width/3, 100 + BASIC.suggestions.width*7))
         height: prompts.cursorHeight
 
         property var typed: false

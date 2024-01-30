@@ -479,14 +479,15 @@ class Parameters(QObject):
         if key == "sampler":
             sampler = self._values.get("sampler")
             schedules = ["Default", "Karras", "Exponential"]
+            default_scheduler = "Default"
 
             if sampler in {"DDIM", "PLMS"}:
                 schedules = ["Default"]
             elif "DPM" in sampler:
-                schedules = ["Karras", "Exponential"]
+                default_scheduler = "Karras"
             
             self._values.set("schedules", schedules)
-            self._values.set("schedule", schedules[0])
+            self._values.set("schedule", default_scheduler)
 
         true_sampler = self._values.get("sampler")
         schedule = self._values.get("schedule")

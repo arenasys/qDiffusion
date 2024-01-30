@@ -154,7 +154,7 @@ class Installer(QThread):
             pkg = p.split("=",1)[0]
             if pkg in {"torch", "torchvision"}:
                 args = ["pip", "install", "-U", pkg, "--index-url", "https://download.pytorch.org/whl/" + p.rsplit("+",1)[-1]]
-            args = [sys.executable, "-m"] + args
+            args = [sys.executable.replace("pythonw", "python"), "-m"] + args
 
             startupinfo = None
             if IS_WIN:
