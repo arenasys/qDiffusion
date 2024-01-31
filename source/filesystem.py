@@ -1,5 +1,6 @@
 import glob
 import os
+import threading
 
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject, QThreadPool, QRunnable, QFileSystemWatcher
 
@@ -16,13 +17,12 @@ class WatcherRunnableSignals(QObject):
         if folder == self.folder:
             self.stopping = True
 
-class WatcherRunnable(QRunnable):
+class WatcherRunnable(threading.Thread):
     def __init__(self, folder):
-        super(WatcherRunnable, self).__init__()
+        super().__init__()
         self.signals = WatcherRunnableSignals(folder)
         self.folder = folder
     
-    @pyqtSlot()
     def run(self):
         try:
             files = glob.glob(os.path.join(self.folder, "*.*"))
@@ -126,8 +126,7 @@ class Watcher(QObject):
 
         self.running[folder] = watcher
 
-        watcher.setAutoDelete(True)
-        self.pool.start(watcher)
+        watcher.start()
         self.started.emit(folder)
     
     @pyqtSlot(str)

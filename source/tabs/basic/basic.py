@@ -1,4 +1,4 @@
-from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, QObject, QSize, QUrl, QMimeData, QByteArray, QThreadPool, Qt, QRect, QRunnable, QMutex
+from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, QObject, QSize, QUrl, QMimeData, QByteArray
 from PyQt5.QtQml import qmlRegisterSingletonType
 from PyQt5.QtGui import QImage, QDrag, QColor, QPainter
 from PyQt5.QtWidgets import QApplication

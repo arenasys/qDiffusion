@@ -1,7 +1,8 @@
 import io
 import os
+import threading
 
-from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject, QMutex, QRunnable, QThreadPool, QUrl, QByteArray, QThread, QSize
+from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject, QMutex, QThreadPool, QUrl, QByteArray, QThread, QSize
 from PyQt5.QtSql import QSqlQuery
 from PyQt5.QtQuick import QQuickImageProvider, QQuickAsyncImageProvider, QQuickImageResponse, QQuickTextureFactory
 from PyQt5.QtGui import QImage
@@ -61,7 +62,7 @@ class ThumbnailStorage(QObject):
 class ThumbnailResponseRunnableSignals(QObject):
     done = pyqtSignal('QImage')
 
-class ThumbnailResponseRunnable(QRunnable):
+class ThumbnailResponseRunnable(threading.Thread):
     def __init__(self, file, size, quality):
         super().__init__()
         self.size = size
@@ -69,7 +70,7 @@ class ThumbnailResponseRunnable(QRunnable):
         self.file = file
         self.signals = ThumbnailResponseRunnableSignals()
         self.image = None
-
+    
     def run(self):
         try:
             blob = get_thumbnail(self.file, self.size, self.quality)
@@ -82,14 +83,14 @@ class ThumbnailResponseRunnable(QRunnable):
         self.signals.done.emit(self.image)
 
 class ThumbnailResponse(QQuickImageResponse):
-    def __init__(self, file, pool, size, quality):
+    def __init__(self, file, size, quality):
         super().__init__()
         file = QUrl.fromLocalFile(file).toLocalFile()
         blob = ThumbnailStorage.instance.get(file, size)
         if not blob:
             self.runnable = ThumbnailResponseRunnable(file, size, quality)
             self.runnable.signals.done.connect(self.onDone)
-            pool.start(self.runnable)
+            self.runnable.start()
         else:
             self.image = QImage.fromData(QByteArray(blob), "JPG")
             self.finished.emit()       
@@ -108,11 +109,10 @@ class AsyncThumbnailProvider(QQuickAsyncImageProvider):
         super(AsyncThumbnailProvider, self).__init__()
         self.size = size
         self.quality = quality
-        self.pool = QThreadPool.globalInstance()
 
     def requestImageResponse(self, path, size):
         file = QUrl.fromPercentEncoding(path.encode('utf-8'))
-        return ThumbnailResponse(file, self.pool, self.size, self.quality)
+        return ThumbnailResponse(file, self.size, self.quality)
 
 class SyncThumbnailProvider(QQuickImageProvider):
     def __init__(self, size, quality):

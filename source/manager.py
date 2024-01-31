@@ -7,8 +7,8 @@ import random
 import re
 import threading
 
-from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QSize, QThreadPool, QRect, QMutex, QRunnable, QRectF, QCoreApplication
-from PyQt5.QtGui import QImage, QPainter, QColor, QFont, QFontMetrics, QTextOption
+from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QSize, QRect, QRectF, QCoreApplication
+from PyQt5.QtGui import QImage, QPainter, QColor, QFont, QTextOption
 from PyQt5.QtQml import qmlRegisterUncreatableType
 
 import parameters
@@ -49,15 +49,14 @@ class OutputWriter(threading.Thread):
         self.img.save(self.tmp, format="PNG", pnginfo=self.metadata)
         os.replace(self.tmp, self.file)
 
-class BuilderRunnable(QRunnable):
+class BuilderRunnable(threading.Thread):
     def __init__(self, manager, inputs):
-        super(BuilderRunnable, self).__init__()
+        super().__init__()
         self.manager = manager
         self.inputs = inputs
         self.results = None
         self.done = False
     
-    @pyqtSlot()
     def run(self):
         self.results = self.manager.parseInputs(self.inputs)
         self.done = True
@@ -241,7 +240,7 @@ class RequestManager(QObject):
         self.parameters = parameters
 
         builder = BuilderRunnable(self, inputs)
-        QThreadPool.globalInstance().start(builder)
+        builder.start()
 
         while not builder.done:
             QCoreApplication.processEvents()
