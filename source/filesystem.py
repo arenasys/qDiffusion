@@ -22,6 +22,7 @@ class WatcherRunnable(threading.Thread):
         super().__init__()
         self.signals = WatcherRunnableSignals(folder)
         self.folder = folder
+        self.daemon = True
     
     def run(self):
         try:

@@ -56,6 +56,7 @@ class BuilderRunnable(threading.Thread):
         self.inputs = inputs
         self.results = None
         self.done = False
+        self.daemon = True
     
     def run(self):
         self.results = self.manager.parseInputs(self.inputs)

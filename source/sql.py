@@ -96,7 +96,7 @@ class Connection(QObject):
         self.notification.emit(table)
 
 class QueryRunnableSignals(QObject):
-    done = pyqtSignal(bool)
+    done = pyqtSignal(bool, str)
     def __init__(self):
         super().__init__()
     
@@ -126,9 +126,8 @@ class QueryRunnable(QThread):
 
         if self.stopping:
             return
-
-
-        self.signals.done.emit(partial and len(self.results) == limit)
+        
+        self.signals.done.emit(partial and len(self.results) == limit, self.query)
 
     def run(self):
         self.conn = Connection()
@@ -137,10 +136,6 @@ class QueryRunnable(QThread):
         if self.partial:
             limit = 64
             self.runQuery(self.query[:-1] + f" LIMIT {limit};", True, limit)
-
-            if not self.errored and len(self.results) == limit and not self.stopping:
-                time.sleep(10/1000)
-                self.runQuery(self.query, False)
         else:
             self.runQuery(self.query, False)
 
@@ -201,18 +196,25 @@ class Sql(QAbstractListModel):
             self.reset()
             return
         
-        if self.runnable:
-            self.runnable.stop()
-
         if self._debug:
             print("RUN")
-        
-        self.runnable = QueryRunnable(self.currentQuery, different)
+
+        self.runQuery(self.currentQuery, different)
+
+    def runQuery(self, query, partial):
+        if self.runnable:
+            self.runnable.stop()
+        self.runnable = QueryRunnable(query, partial)
         self.runnable.signals.done.connect(self.onDone)
         self.runnable.start()
 
-    @pyqtSlot(bool)
-    def onDone(self, partial):
+    @pyqtSlot(bool, str)
+    def onDone(self, partial, query):
+        if query != self.currentQuery:
+            print("STALE")
+            print(query, self.currentQuery)
+            return
+
         self.errored = self.runnable.errored
         if self.errored:
             self.reset()
@@ -224,10 +226,13 @@ class Sql(QAbstractListModel):
         newResults = self.runnable.results
 
         if self._debug:
-            print(len(self.results), len(newResults))
+            print(len(self.results), len(newResults), query)
 
         self.updateResults(newResults)
         self.roleNames()
+
+        if partial:
+            self.runQuery(self.currentQuery, False)
     
     def updateResults(self, newResults):
         def find(a, b):

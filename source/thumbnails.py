@@ -70,6 +70,7 @@ class ThumbnailResponseRunnable(threading.Thread):
         self.file = file
         self.signals = ThumbnailResponseRunnableSignals()
         self.image = None
+        self.daemon = True
     
     def run(self):
         try:
