@@ -846,3 +846,6 @@ class GUI(QObject):
             self._window_active = value
             self.parent().setCursorFlashTime(1000 if self._window_active else 0)
             self.windowUpdated.emit()
+
+    def debugMode(self):
+        return self._config._values.get("debug_mode")

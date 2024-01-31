@@ -207,17 +207,6 @@ Item {
             x: -2
             width: parent.width+2
             height: 30
-            label: root.tr("Debug Logging")
-            currentIndex: GUI.config.get("debug") ? 1 : 0 
-            entries: [root.tr("Disabled", "General"), root.tr("Enabled", "General")]
-            onCurrentIndexChanged: {
-                GUI.config.set("debug", currentIndex != 0)
-            }
-        }
-        OChoice {
-            x: -2
-            width: parent.width+2
-            height: 30
             label: root.tr("Advanced Parameters")
             currentIndex: GUI.config.get("advanced") ? 1 : 0 
             entries: [root.tr("Hide", "General"), root.tr("Show", "General")]
@@ -243,5 +232,34 @@ Item {
                 original = GUI.config.get("scaling") ? 1 : 0 
             }
         }
+        Item {
+            width: parent.width+2
+            height: 30
+        }
+        OChoice {
+            x: -2
+            width: parent.width+2
+            height: 30
+            label: root.tr("Debug Logging")
+            currentIndex: GUI.config.get("debug") ? 1 : 0 
+            entries: [root.tr("Disabled", "General"), root.tr("Enabled", "General")]
+            onCurrentIndexChanged: {
+                GUI.config.set("debug", currentIndex != 0)
+            }
+        }
+        OChoice {
+            x: -2
+            width: parent.width+2
+            height: 30
+            label: root.tr("Debug Mode")
+            property var idx: GUI.config.get("debug_mode")
+            currentIndex: idx ? idx : 0
+            entries: ["None", "Disable Saving", "Disable Gallery"]
+            onCurrentIndexChanged: {
+                GUI.config.set("debug_mode", currentIndex)
+            }
+        }
+
+
     }
 }

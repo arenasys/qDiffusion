@@ -216,7 +216,8 @@ class RequestManager(QObject):
                     opts = {
                         "scale": i._control_settings.get("strength"),
                         "annotator": i._control_settings.get("preprocessor"),
-                        "args": i.getControlArgs()
+                        "args": i.getControlArgs(),
+                        "guess": i.getControlGuess()
                     }
                     k = i
                     if model == "Inpaint" and i._linked:
@@ -489,9 +490,12 @@ class RequestManager(QObject):
                 meta = metadata[i] if metadata else None
 
                 folder = self.folders.get(id, "monitor")
-                writer = OutputWriter(result, meta, self.gui.outputDirectory(), folder, None)
-                file = writer.file
-                QThreadPool.globalInstance().start(writer)
+                if self.gui.debugMode() != 1:
+                    writer = OutputWriter(result, meta, self.gui.outputDirectory(), folder, None)
+                    file = writer.file
+                    QThreadPool.globalInstance().start(writer)
+                else:
+                    file = ""
 
                 last = i==0
 

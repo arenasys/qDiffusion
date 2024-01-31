@@ -359,7 +359,7 @@ class Parameters(QObject):
             "hr_factor": 1.0, "hr_strength":  0.7, "hr_sampler": "Euler a", "hr_steps": 25, "hr_eta": 1.0, "hr_scale": 7.0, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "mask_expand": 0, "subseed":-1, "subseed_strength": 0.0,
             "sampler": "Euler a", "samplers":[], "hr_upscaler":"Lanczos", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
             "model":"", "models":[], "UNET":"", "UNETs":[], "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[],
-            "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "schedule": "Default", "schedules": ["Default", "Karras", "Exponential"],
+            "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "schedule": "Linear", "schedules": ["Linear", "Karras", "Exponential"],
             "vram_mode": "Default", "vram_modes": ["Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"], "preview_mode": "Light",
             "preview_modes": ["Disabled", "Light", "Medium", "Full"], "preview_interval":1, "true_samplers": [], "true_sampler": "Euler a",
             "network_mode": "Static", "network_modes": ["Dynamic", "Static"], "mask_fill": "Original", "mask_fill_modes": ["Original", "Noise"],
@@ -478,11 +478,11 @@ class Parameters(QObject):
 
         if key == "sampler":
             sampler = self._values.get("sampler")
-            schedules = ["Default", "Karras", "Exponential"]
-            default_scheduler = "Default"
+            schedules = ["Linear", "Karras", "Exponential"]
+            default_scheduler = "Linear"
 
             if sampler in {"DDIM", "PLMS"}:
-                schedules = ["Default"]
+                schedules = ["Linear"]
             elif "DPM" in sampler:
                 default_scheduler = "Karras"
             
@@ -491,7 +491,7 @@ class Parameters(QObject):
 
         true_sampler = self._values.get("sampler")
         schedule = self._values.get("schedule")
-        if schedule and schedule != "Default":
+        if schedule and schedule != "Linear":
             true_sampler += " " + schedule
         self._values.set("true_sampler", true_sampler)
         
@@ -676,6 +676,7 @@ class Parameters(QObject):
                 data["tile_strength"] = opts["scale"]
                 data["tile_size"] = opts["args"][0]
                 data["tile_upscale"] = opts["args"][1]
+                data["tile_guess"] = opts["guess"]
             else:
                 data["cn_image"] = images
                 data["cn"] = models
@@ -769,7 +770,7 @@ class Parameters(QObject):
                     schedule = "Exponential"  
                 else:
                     sampler = p._value
-                    schedule = "Default"
+                    schedule = "Linear"
                 
                 entries = {
                     "sampler": (sampler, p._checked),
@@ -991,13 +992,13 @@ class Parameters(QObject):
             self._values.set("VAE", self._values.get("UNET"))
 
         if file in self._values.get("LoRAs"):
-            remove(fr"<@?lora:({name})(?::([-\d.]+))?(?::([-\d.]+))?>")
+            remove(fr"<@?lora:({re.escape(name)})(?::([-\d.]+))?(?::([-\d.]+))?>")
 
         if file in self._values.get("HNs"):
-            remove(fr"<@?hypernet:({name})(?::([-\d.]+))?(?::([-\d.]+))?>")
+            remove(fr"<@?hypernet:({re.escape(name)})(?::([-\d.]+))?(?::([-\d.]+))?>")
 
         if file in self._values.get("TIs"):
-            remove(fr"{name}")
+            remove(fr"{re.escape(name)}")
 
         if file in self._values.get("SRs"):
             self._values.set("hr_upscaler", "Latent (nearest)")
@@ -1005,7 +1006,7 @@ class Parameters(QObject):
 
         name = file.split(os.path.sep,1)[-1].rsplit('.',1)[0].replace(os.path.sep, "/")
         if file.startswith("WILDCARD") and name in self.gui.wildcards._wildcards:
-            remove(fr"__{name}__")
+            remove(fr"__{re.escape(name)}__")
 
     @pyqtSlot(str)
     def doToggle(self, file):

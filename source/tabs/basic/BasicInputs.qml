@@ -874,6 +874,17 @@ Item {
                         }
                         OChoice {
                             width: parent.width
+                            visible: modelData.role == 4
+                            height: visible ? 22 : 0
+                            label: root.tr("Guess")
+
+                            bindMap: modelData.controlSettings
+                            bindKeyCurrent: "guess"
+                            bindKeyModel: "bools"
+
+                        }
+                        OChoice {
+                            width: parent.width
                             visible: height != 0
                             height: modelData.role == 5 ? 22 : 0
                             label: root.tr("Model")

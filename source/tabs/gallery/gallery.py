@@ -36,6 +36,7 @@ class Populater(QObject):
 
         self.conn = None
         self.watcher = gui.watcher
+        self.disabled = gui.debugMode() == 2
         self.folders = set()
         self.working = set()
         self.fresh = set()
@@ -51,6 +52,9 @@ class Populater(QObject):
         self.conn.disableNotifications("images")
 
         self.prepareFolders()
+
+        if self.disabled:
+            return
 
         self.watcher.finished.connect(self.onFinished)
         self.watcher.folder_changed.connect(self.onResult)
@@ -69,7 +73,8 @@ class Populater(QObject):
             
             if idx == 0:
                 self.primary = folder
-                self.watcher.watchFolder(self.primary)
+                if not self.disabled:
+                    self.watcher.watchFolder(self.primary)
             else:
                 self.remaining += [folder]
 
@@ -89,7 +94,8 @@ class Populater(QObject):
 
     def resumeFolders(self):
         for subfolder in self.remaining:
-            self.watcher.watchFolder(subfolder)
+            if not self.disabled:
+                self.watcher.watchFolder(subfolder)
         self.primary = ""
         self.remaining = []
 
