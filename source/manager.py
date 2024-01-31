@@ -4,8 +4,8 @@ import datetime
 import io
 import PIL.Image
 import random
-import copy
 import re
+import threading
 
 from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QSize, QThreadPool, QRect, QMutex, QRunnable, QRectF, QCoreApplication
 from PyQt5.QtGui import QImage, QPainter, QColor, QFont, QFontMetrics, QTextOption
@@ -15,12 +15,9 @@ import parameters
 from misc import encodeImage, decodeImage
 from tabs.basic.basic_input import BasicInputRole
 
-class OutputWriter(QRunnable):
-    guard = QMutex()
+class OutputWriter(threading.Thread):
     def __init__(self, img, metadata, outputs, folder, filename):
-        super(OutputWriter, self).__init__()
-        self.setAutoDelete(True)
-
+        super().__init__()
         m = PIL.PngImagePlugin.PngInfo()
         if metadata:
             m.add_text("parameters", parameters.formatParameters(metadata))
@@ -28,7 +25,7 @@ class OutputWriter(QRunnable):
             if recipe:
                 m.add_text("recipe", recipe)
 
-        self.img = img
+        self.img = img.copy()
         self.metadata = m
 
         folder = os.path.join(outputs, folder)
@@ -41,8 +38,7 @@ class OutputWriter(QRunnable):
         self.tmp = os.path.join(folder, f"{filename}.tmp")
         self.file = os.path.join(folder, f"{filename}.png")
         open(self.tmp, 'a').close()
-
-    @pyqtSlot()
+        
     def run(self):
         if type(self.img) == QImage:
             self.img = encodeImage(self.img)
@@ -493,7 +489,7 @@ class RequestManager(QObject):
                 if self.gui.debugMode() != 1:
                     writer = OutputWriter(result, meta, self.gui.outputDirectory(), folder, None)
                     file = writer.file
-                    QThreadPool.globalInstance().start(writer)
+                    writer.start()
                 else:
                     file = ""
 
@@ -609,13 +605,13 @@ class RequestManager(QObject):
                 folder = self.folders.get(self.grid_id, "grid")
                 writer = OutputWriter(image, metadata[0], self.gui.outputDirectory(), folder, None)
                 file = writer.file
-                QThreadPool.globalInstance().start(writer)
+                writer.start()
 
             if len(self.grid_ids) == cx*cy:
                 folder = self.folders.get(self.grid_id, "grid")
                 writer = OutputWriter(self.grid_image, self.grid_metadata, self.gui.outputDirectory(), folder, None)
                 file = writer.file
-                QThreadPool.globalInstance().start(writer)
+                writer.start()
                 self.result.emit(out, self.grid_image, self.grid_metadata, file, True)
             else:
                 if self.requests:

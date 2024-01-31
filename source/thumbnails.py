@@ -87,9 +87,9 @@ class ThumbnailResponse(QQuickImageResponse):
         file = QUrl.fromLocalFile(file).toLocalFile()
         blob = ThumbnailStorage.instance.get(file, size)
         if not blob:
-            runnable = ThumbnailResponseRunnable(file, size, quality)
-            runnable.signals.done.connect(self.onDone)
-            pool.start(runnable)
+            self.runnable = ThumbnailResponseRunnable(file, size, quality)
+            self.runnable.signals.done.connect(self.onDone)
+            pool.start(self.runnable)
         else:
             self.image = QImage.fromData(QByteArray(blob), "JPG")
             self.finished.emit()       
