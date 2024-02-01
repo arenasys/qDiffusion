@@ -82,6 +82,9 @@ Rectangle {
             model: Sql {
                 id: foldersSql
                 query: "SELECT name, folder FROM folders ORDER BY idx;"
+                onResultsChanged: {
+                    folder.currentIndex = 0
+                }
             }
 
             onCurrentIndexChanged: {
@@ -239,6 +242,7 @@ Rectangle {
                     filesSql.refresh()
                     reset = true
                 }
+
                 onResultsChanged: {
                     if(reset) {
                         filesSql.refresh()

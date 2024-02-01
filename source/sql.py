@@ -2,6 +2,7 @@ import random
 import sys
 from typing import *
 import time
+import threading
 
 from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, Qt, QObject, QThread, QAbstractListModel, QByteArray, QModelIndex, QTimer, QVariant
 from PyQt5.QtSql import QSqlDatabase, QSqlQuery, QSqlDriver
@@ -49,7 +50,7 @@ class Database(QObject):
 
 class Connection(QObject):
     notification = pyqtSignal(str)
-    def __init__(self, parent):
+    def __init__(self, parent=None):
         super().__init__(parent)
         self.db = None
 
@@ -94,6 +95,41 @@ class Connection(QObject):
     def relayNotification(self, table):
         self.notification.emit(table)
 
+class QueryRunnableSignals(QObject):
+    done = pyqtSignal()
+    def __init__(self):
+        super().__init__()
+    
+class QueryRunnable(QThread):
+    def __init__(self, query):
+        super().__init__()
+        self.query = query
+        self.signals = QueryRunnableSignals()
+        self.errored = None
+        self.results = []
+
+    def runQuery(self, query):
+        q = self.conn.doQuery(query)
+        self.errored = q.lastError().isValid()
+        if self.errored:
+            self.signals.done.emit()
+            return
+        self.results = []
+        while q.next():
+            self.results += [q.record()]
+        q.finish()
+        self.signals.done.emit()
+
+    def run(self):
+        self.conn = Connection()
+        self.conn.connect()
+
+        limit = "64"
+        self.runQuery(self.query[:-1] + f" LIMIT {limit};")
+        if not self.errored and len(self.results) == limit:
+            time.sleep(50/1000)
+            self.runQuery(self.query)
+
 class Sql(QAbstractListModel):
     queryChanged = pyqtSignal()
     resultsChanged = pyqtSignal()
@@ -113,6 +149,8 @@ class Sql(QAbstractListModel):
         self.reloadTimer = QTimer(self)
         self.reloadTimer.setSingleShot(True)
         self.reloadTimer.timeout.connect(self.reload)
+
+        self.runnable = None
 
         self._debug = False
 
@@ -143,17 +181,19 @@ class Sql(QAbstractListModel):
         if not value:
             self.reset()
             return
+        
+        self.runnable = QueryRunnable(self.currentQuery)
+        self.runnable.signals.done.connect(self.onDone)
+        self.runnable.start()
 
-        q = self.conn.doQuery(self.currentQuery)
-        self.errored = q.lastError().isValid()
+    @pyqtSlot()
+    def onDone(self):
+        self.errored = self.runnable.errored
         if self.errored:
             self.reset()
             return
 
-        newResults = []
-        while q.next():
-            newResults += [q.record()]
-        q.finish()
+        newResults = self.runnable.results
 
         self.updateResults(newResults)
         self.roleNames()

@@ -37,27 +37,8 @@ Item {
         running: img.status !== Image.Ready
     }
 
-    Timer {
-        interval: 200
-        running: true
-        onTriggered: {
-            img.fullDelay = false
-        }
-    }
-
-    Timer {
-        interval: 50
-        running: true
-        onTriggered: {
-            img.cacheDelay = false
-        }
-    }
-
     Image {
         id: img
-        property var fullDelay: true
-        property var cacheDelay: true
-
         anchors.top: thumb.top
         anchors.left: thumb.left
         anchors.right: thumb.right
@@ -66,7 +47,7 @@ Item {
         anchors.leftMargin: thumb.padding
         anchors.topMargin: thumb.padding
 
-        source: GUI.isCached(thumb.source) ? (fullDelay ? "" : ("image://sync/" + thumb.source)) : (cacheDelay ? "" : ("image://async/" + thumb.source))
+        source: (GUI.isCached(thumb.source) ? "image://sync/" : "image://async/") + thumb.source
         fillMode: Image.PreserveAspectFit
         cache: false
     }
