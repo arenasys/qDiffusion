@@ -15,9 +15,14 @@ import parameters
 from misc import encodeImage, decodeImage
 from tabs.basic.basic_input import BasicInputRole
 
+class OutputWriterSignals(QObject):
+    done = pyqtSignal(str)
+
 class OutputWriter(threading.Thread):
-    def __init__(self, img, metadata, outputs, folder, filename):
+    def __init__(self, img, metadata, outputs, folder):
         super().__init__()
+        self.signals = OutputWriterSignals()
+
         m = PIL.PngImagePlugin.PngInfo()
         if metadata:
             m.add_text("parameters", parameters.formatParameters(metadata))
@@ -31,9 +36,8 @@ class OutputWriter(threading.Thread):
         folder = os.path.join(outputs, folder)
         os.makedirs(folder, exist_ok=True)
 
-        if not filename:
-            idx = parameters.getIndex(folder)
-            filename = f"{idx:08d}-" + datetime.datetime.now().strftime("%m%d%H%M")
+        idx = parameters.getIndex(folder)
+        filename = f"{idx:08d}-" + datetime.datetime.now().strftime("%m%d%H%M")
         
         self.tmp = os.path.join(folder, f"{filename}.tmp")
         self.file = os.path.join(folder, f"{filename}.png")
@@ -48,6 +52,7 @@ class OutputWriter(threading.Thread):
 
         self.img.save(self.tmp, format="PNG", pnginfo=self.metadata)
         os.replace(self.tmp, self.file)
+        self.signals.done.emit(self.file)
 
 class BuilderRunnable(threading.Thread):
     def __init__(self, manager, inputs):
@@ -83,6 +88,8 @@ class RequestManager(QObject):
 
         self.folders = {}
         self.filenames = {}
+
+        self.writers = {}
 
         self.monitoring = False
 
@@ -459,6 +466,18 @@ class RequestManager(QObject):
         else:
             self.normalResult(id, self.mapping[id], name)
 
+    def doSave(self, image, metadata, folder):
+        writer = OutputWriter(image, metadata, self.gui.outputDirectory(), folder)
+        writer.signals.done.connect(self.onSave)
+        self.writers[writer.file] = writer
+        writer.start()
+        return writer.file
+
+    @pyqtSlot(str)
+    def onSave(self, file):
+        if file in self.writers:
+            del self.writers[file]
+
     def normalResult(self, id, out, name):
         if name == "preview":
             previews = self.gui._results[id]["preview"]
@@ -487,9 +506,7 @@ class RequestManager(QObject):
 
                 folder = self.folders.get(id, "monitor")
                 if self.gui.debugMode() != 1:
-                    writer = OutputWriter(result, meta, self.gui.outputDirectory(), folder, None)
-                    file = writer.file
-                    writer.start()
+                    file = self.doSave(result, meta, folder)
                 else:
                     file = ""
 
@@ -603,15 +620,11 @@ class RequestManager(QObject):
 
             if self.grid_save_all:
                 folder = self.folders.get(self.grid_id, "grid")
-                writer = OutputWriter(image, metadata[0], self.gui.outputDirectory(), folder, None)
-                file = writer.file
-                writer.start()
+                file = self.doSave(image, metadata[0], folder)
 
             if len(self.grid_ids) == cx*cy:
                 folder = self.folders.get(self.grid_id, "grid")
-                writer = OutputWriter(self.grid_image, self.grid_metadata, self.gui.outputDirectory(), folder, None)
-                file = writer.file
-                writer.start()
+                file = self.doSave(self.grid_image, self.grid_metadata, folder)
                 self.result.emit(out, self.grid_image, self.grid_metadata, file, True)
             else:
                 if self.requests:

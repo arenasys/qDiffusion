@@ -441,7 +441,7 @@ def encodeImage(img):
     bf = QBuffer(ba)
     bf.open(QIODevice.WriteOnly)
     img.save(bf, "PNG")
-    return ba.data()
+    return bytes(ba.data())
 
 def decodeImage(data):
     img = QImage()

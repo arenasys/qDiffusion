@@ -211,8 +211,6 @@ class Sql(QAbstractListModel):
     @pyqtSlot(bool, str)
     def onDone(self, partial, query):
         if query != self.currentQuery:
-            print("STALE")
-            print(query, self.currentQuery)
             return
 
         self.errored = self.runnable.errored
