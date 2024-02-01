@@ -46,7 +46,7 @@ Item {
     }
 
     Timer {
-        interval: 50
+        interval: 10
         running: true
         onTriggered: {
             img.cacheDelay = false
@@ -66,7 +66,7 @@ Item {
         anchors.leftMargin: thumb.padding
         anchors.topMargin: thumb.padding
 
-        source: GUI.isCached(thumb.source) ? (fullDelay ? "" : ("image://sync/" + thumb.source)) : (cacheDelay ? "" : ("image://async/" + thumb.source))
+        source: GUI.isCached(thumb.source) ? (cacheDelay ? "" : ("image://sync/" + thumb.source)) : (fullDelay ? "" : ("image://async/" + thumb.source))
         fillMode: Image.PreserveAspectFit
         cache: false
     }
