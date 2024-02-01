@@ -346,8 +346,8 @@ class GUI(QObject):
         if type == "status" and self._statusMode != StatusMode.ABORTING:
             self._statusText = data["message"]
             self._statusInfo = ""
-            if self._statusText == "Initializing" or self._statusText == "Connecting":
-                if self._statusText == "Connecting":
+            if self._statusText in {"Initializing", "Connecting", "Reconnecting"}:
+                if self._statusText in {"Connecting", "Reconnecting"}:
                     self._remoteStatus = RemoteStatusMode.CONNECTING
                 self._statusMode = StatusMode.STARTING
                 self.watchModelDirectory()

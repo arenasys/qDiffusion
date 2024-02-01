@@ -8,6 +8,7 @@ import traceback
 import datetime
 import sys
 import math
+import time
 
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QThread
 from PyQt5.QtWidgets import QApplication
@@ -143,15 +144,37 @@ class RemoteInference(QThread):
             self.onResponse({"type": "status", "data": {"message": "Connected"}})
             self.requests.put({"type":"options"})
 
+    def reconnect(self):
+        start = time.time()
+        timeout = 60
+        self.client = None
+        while not self.client and not self.stopping:
+            try:
+                self.client = websockets.sync.client.connect(self.endpoint, open_timeout=2, max_size=None)
+            except Exception:
+                if time.time() - start > timeout:
+                    return
+        if self.stopping:
+            return
+        if self.client:
+            self.onResponse({"type": "status", "data": {"message": "Reconnected"}})
+
     def run(self):
         self.scheme = get_scheme(self.password)
         self.connect()
+        client_id = None
         while self.client and not self.stopping:
             try:
                 while True:
                     try:
                         data = self.client.recv(0)
                         response = decrypt(self.scheme, data)
+                        if response["type"] == "hello":
+                            if not client_id:
+                                client_id = response["data"]["id"]
+                            else:
+                                self.requests.put({"type": "reconnect", "data": {"id": client_id}})
+
                         self.onResponse(response)
                         QApplication.processEvents()
                     except TimeoutError:
@@ -177,9 +200,19 @@ class RemoteInference(QThread):
                     QApplication.processEvents()
                 except queue.Empty:
                     QThread.msleep(5)
-
             except websockets.exceptions.ConnectionClosedOK:
                 self.onResponse({"type": "remote_error", "data": {"message": "Connection closed"}})
+                break
+            except websockets.exceptions.ConnectionClosedError as e:
+                if not e.rcvd and not e.sent:
+                    self.onResponse({"type": "status", "data": {"message": "Reconnecting"}})
+                    self.reconnect()
+                    if self.client:
+                        continue
+                    else:
+                        self.onResponse({"type": "remote_error", "data": {"message": "Connection lost"}})
+                else:
+                    self.onResponse({"type": "remote_error", "data": {"message": "Connection aborted"}})
                 break
             except Exception as e:
                 if type(e) == InvalidTag or type(e) == IndexError:
