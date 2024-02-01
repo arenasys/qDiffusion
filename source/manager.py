@@ -54,6 +54,53 @@ class OutputWriter(threading.Thread):
         os.replace(self.tmp, self.file)
         self.signals.done.emit(self.file)
 
+
+def writeLog(line):
+    with open("saving.log", "a", encoding='utf-8') as log:
+        log.write(line)
+
+def writeImage(img, metadata, outputs, folder):
+    writeLog(f"START {datetime.datetime.now()}\n")
+
+    m = PIL.PngImagePlugin.PngInfo()
+    if metadata:
+        m.add_text("parameters", parameters.formatParameters(metadata))
+        recipe = parameters.formatRecipe(metadata)
+        if recipe:
+            m.add_text("recipe", recipe)
+
+    writeLog(f"METADATA\n")
+
+    folder = os.path.join(outputs, folder)
+    os.makedirs(folder, exist_ok=True)
+
+    idx = parameters.getIndex(folder)
+    filename = f"{idx:08d}-" + datetime.datetime.now().strftime("%m%d%H%M")
+    tmp = os.path.join(folder, f"{filename}.tmp")
+    file = os.path.join(folder, f"{filename}.png")
+
+    writeLog(f"FILE {file}\n")
+
+    if type(img) == QImage:
+        writeLog(f"ENCODE 1\n")
+        img = encodeImage(img)
+
+    if type(img) == bytes:
+        writeLog(f"ENCODE 2\n")
+        img = PIL.Image.open(io.BytesIO(img))
+
+    writeLog(f"SAVE\n")
+    
+    img.save(tmp, format="PNG", pnginfo=m)
+
+    writeLog(f"REPLACE\n")
+
+    os.replace(tmp, file)
+
+    writeLog("DONE\n")
+
+    return file
+
 class BuilderRunnable(threading.Thread):
     def __init__(self, manager, inputs):
         super().__init__()
@@ -467,11 +514,14 @@ class RequestManager(QObject):
             self.normalResult(id, self.mapping[id], name)
 
     def doSave(self, image, metadata, folder):
-        writer = OutputWriter(image, metadata, self.gui.outputDirectory(), folder)
-        writer.signals.done.connect(self.onSave)
-        self.writers[writer.file] = writer
-        writer.start()
-        return writer.file
+        if self.gui.debugMode() == 1:
+            return writeImage(image, metadata, self.gui.outputDirectory(), folder)
+        else:
+            writer = OutputWriter(image, metadata, self.gui.outputDirectory(), folder)
+            writer.signals.done.connect(self.onSave)
+            self.writers[writer.file] = writer
+            writer.start()
+            return writer.file
 
     @pyqtSlot(str)
     def onSave(self, file):
@@ -505,10 +555,7 @@ class RequestManager(QObject):
                 meta = metadata[i] if metadata else None
 
                 folder = self.folders.get(id, "monitor")
-                if self.gui.debugMode() != 1:
-                    file = self.doSave(result, meta, folder)
-                else:
-                    file = ""
+                file = self.doSave(result, meta, folder)
 
                 last = i==0
 
