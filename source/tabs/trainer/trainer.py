@@ -148,7 +148,7 @@ class Trainer(QObject):
             "enabled_disabled": ["Enabled", "Disabled"]
         }
         self._read_only = ["types", "optimizers", "learning_schedules", "prediction_types", "attentions", "enabled_disabled"]
-        self._parameters = VariantMap(self, self._default.copy())
+        self._parameters = VariantMap(self, self._default.copy(), strict=True)
         self._parameters.updated.connect(self.parametersUpdated)
 
         self.reset()
