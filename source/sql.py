@@ -96,20 +96,25 @@ class Connection(QObject):
         self.notification.emit(table)
 
 class QueryRunnableSignals(QObject):
-    done = pyqtSignal()
+    done = pyqtSignal(bool)
     def __init__(self):
         super().__init__()
     
 class QueryRunnable(QThread):
-    def __init__(self, query):
+    def __init__(self, query, partial):
         super().__init__()
         self.query = query
         self.signals = QueryRunnableSignals()
         self.errored = None
         self.results = []
+        self.partial = partial
+        self.stopping = False
 
-    def runQuery(self, query):
+    def runQuery(self, query, partial, limit=0):
         q = self.conn.doQuery(query)
+        if self.stopping:
+            return
+
         self.errored = q.lastError().isValid()
         if self.errored:
             self.signals.done.emit()
@@ -118,21 +123,34 @@ class QueryRunnable(QThread):
         while q.next():
             self.results += [q.record()]
         q.finish()
-        self.signals.done.emit()
+
+        if self.stopping:
+            return
+
+
+        self.signals.done.emit(partial and len(self.results) == limit)
 
     def run(self):
         self.conn = Connection()
         self.conn.connect()
 
-        limit = "64"
-        self.runQuery(self.query[:-1] + f" LIMIT {limit};")
-        if not self.errored and len(self.results) == limit:
-            time.sleep(50/1000)
-            self.runQuery(self.query)
+        if self.partial:
+            limit = 64
+            self.runQuery(self.query[:-1] + f" LIMIT {limit};", True, limit)
+
+            if not self.errored and len(self.results) == limit and not self.stopping:
+                time.sleep(10/1000)
+                self.runQuery(self.query, False)
+        else:
+            self.runQuery(self.query, False)
+
+    def stop(self):
+        self.stopping = True
 
 class Sql(QAbstractListModel):
     queryChanged = pyqtSignal()
     resultsChanged = pyqtSignal()
+    partialChanged = pyqtSignal()
     def __init__(self, parent):
         super().__init__(parent)
 
@@ -152,6 +170,7 @@ class Sql(QAbstractListModel):
 
         self.runnable = None
 
+        self._partial = False 
         self._debug = False
 
     @pyqtProperty(bool, notify=queryChanged)
@@ -182,18 +201,30 @@ class Sql(QAbstractListModel):
             self.reset()
             return
         
-        self.runnable = QueryRunnable(self.currentQuery)
+        if self.runnable:
+            self.runnable.stop()
+
+        if self._debug:
+            print("RUN")
+        
+        self.runnable = QueryRunnable(self.currentQuery, different)
         self.runnable.signals.done.connect(self.onDone)
         self.runnable.start()
 
-    @pyqtSlot()
-    def onDone(self):
+    @pyqtSlot(bool)
+    def onDone(self, partial):
         self.errored = self.runnable.errored
         if self.errored:
             self.reset()
             return
+        
+        self._partial = partial
+        self.partialChanged.emit()
 
         newResults = self.runnable.results
+
+        if self._debug:
+            print(len(self.results), len(newResults))
 
         self.updateResults(newResults)
         self.roleNames()
@@ -332,6 +363,10 @@ class Sql(QAbstractListModel):
     @pyqtSlot()
     def reload(self):
         self.setQuery(self.currentQuery)
+
+    @pyqtProperty(bool, notify=partialChanged)
+    def partial(self):
+        return self._partial
 
 def registerTypes():
     qmlRegisterType(Sql, "gui", 1, 0, "Sql")

@@ -18,6 +18,8 @@ GridView {
     property int fixedIndex: -1
     cellWidth: Math.max((thumbView.width-padding)/Math.max(Math.ceil(thumbView.width/cellSize), 1), 50)
     cellHeight: cellWidth
+
+    property alias scrollBar: scrollBar
     
     function setCellSize(size) {
         // force the layout to keep the top left item in view when resizing

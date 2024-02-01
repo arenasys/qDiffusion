@@ -204,6 +204,8 @@ Rectangle {
             anchors.bottom: parent.bottom
             clip: true
 
+            scrollBar.visible: !filesSql.partial
+
             SText {
                 anchors.centerIn: parent
                 visible: gallery.count == 0
@@ -214,6 +216,8 @@ Rectangle {
 
             model: Sql {
                 id: filesSql
+
+                //debug: true
 
                 query: {
                     if(root.asleep) {
@@ -244,10 +248,6 @@ Rectangle {
                 }
 
                 onResultsChanged: {
-                    if(reset) {
-                        filesSql.refresh()
-                        reset = false
-                    }
                     if(gallery.count != filesSql.length) {
                         console.log(gallery.count, filesSql.length)
                     }
@@ -355,8 +355,6 @@ Rectangle {
             }
         }
 
-    
-
         Rectangle {
             id: infoRight
             anchors.right: parent.right
@@ -382,7 +380,7 @@ Rectangle {
             topPadding: 6
             bottomPadding: 2
             pointSize: 9
-            text: root.tr("%1 images").arg(gallery.count)
+            text: filesSql.partial ? root.tr("Loading...") : root.tr("%1 images").arg(gallery.count)
         }
 
         Rectangle {
