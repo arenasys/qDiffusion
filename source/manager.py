@@ -15,13 +15,20 @@ import parameters
 from misc import encodeImage, decodeImage
 from tabs.basic.basic_input import BasicInputRole
 
+def writeLog(line):
+    with open("saving.log", "a", encoding='utf-8') as log:
+        log.write(line)
+
 class OutputWriterSignals(QObject):
     done = pyqtSignal(str)
 
 class OutputWriter(threading.Thread):
-    def __init__(self, img, metadata, outputs, folder):
+    def __init__(self, img, metadata, outputs, folder, log=False):
         super().__init__()
         self.signals = OutputWriterSignals()
+        self.log = log
+
+        if self.log: writeLog(f"START {datetime.datetime.now()}\n")
 
         m = PIL.PngImagePlugin.PngInfo()
         if metadata:
@@ -29,6 +36,8 @@ class OutputWriter(threading.Thread):
             recipe = parameters.formatRecipe(metadata)
             if recipe:
                 m.add_text("recipe", recipe)
+
+        if self.log: writeLog(f"METADATA\n")
 
         self.img = img.copy()
         self.metadata = m
@@ -41,25 +50,32 @@ class OutputWriter(threading.Thread):
         
         self.tmp = os.path.join(folder, f"{filename}.tmp")
         self.file = os.path.join(folder, f"{filename}.png")
+        
+        if self.log: writeLog(f"FILE {self.file}\n")
+
         open(self.tmp, 'a').close()
+
+        if self.log: writeLog(f"TMP\n")
         
     def run(self):
         if type(self.img) == QImage:
+            if self.log: writeLog(f"ENCODE 1\n")
             self.img = encodeImage(self.img)
 
         if type(self.img) == bytes:
+            if self.log: writeLog(f"ENCODE 2\n")
             self.img = PIL.Image.open(io.BytesIO(self.img))
 
+        if self.log: writeLog(f"SAVE\n")
+
         self.img.save(self.tmp, format="PNG", pnginfo=self.metadata)
+
+        if self.log: writeLog(f"REPLACE\n")
         os.replace(self.tmp, self.file)
         self.signals.done.emit(self.file)
 
-
-def writeLog(line):
-    with open("saving.log", "a", encoding='utf-8') as log:
-        log.write(line)
-
 def writeImage(img, metadata, outputs, folder):
+
     writeLog(f"START {datetime.datetime.now()}\n")
 
     m = PIL.PngImagePlugin.PngInfo()
@@ -517,7 +533,8 @@ class RequestManager(QObject):
         if self.gui.debugMode() == 1:
             return writeImage(image, metadata, self.gui.outputDirectory(), folder)
         else:
-            writer = OutputWriter(image, metadata, self.gui.outputDirectory(), folder)
+            log = self.gui.debugMode() == 2
+            writer = OutputWriter(image, metadata, self.gui.outputDirectory(), folder, log)
             writer.signals.done.connect(self.onSave)
             self.writers[writer.file] = writer
             writer.start()

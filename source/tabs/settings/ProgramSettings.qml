@@ -254,7 +254,7 @@ Item {
             label: root.tr("Debug Mode")
             property var idx: GUI.config.get("debug_mode")
             currentIndex: idx ? idx : 0
-            entries: ["None", "Blocking Saving"]
+            entries: ["None", "Blocking Saving", "Threaded Saving"]
             onCurrentIndexChanged: {
                 GUI.config.set("debug_mode", currentIndex)
             }
