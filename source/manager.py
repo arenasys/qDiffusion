@@ -417,8 +417,8 @@ class RequestManager(QObject):
     def buildStandardRequests(self, batches):
         requests = []
 
-        seed = int(self.parameters._values.get("seed"))
-        subseed = int(self.parameters._values.get("subseed"))
+        seed = int(self.parameters._values.get("seed") or -1)
+        subseed = int(self.parameters._values.get("subseed") or -1)
         if seed == -1:
             seed = random.randrange(2147483646)
         if subseed == -1:

@@ -204,6 +204,7 @@ class Sql(QAbstractListModel):
     def runQuery(self, query, partial):
         if self.runnable:
             self.runnable.stop()
+            self.runnable.wait()
         self.runnable = QueryRunnable(query, partial)
         self.runnable.signals.done.connect(self.onDone)
         self.runnable.start()
