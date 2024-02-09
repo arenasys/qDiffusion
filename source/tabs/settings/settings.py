@@ -71,9 +71,12 @@ class Settings(QObject):
         if not url:# or self.gui.remoteInfoStatus != "Connected":
             return
         request = {"type": type, "url":url}
-        token = self.gui.config.get("hf_token", "")
-        if token:
-            request["token"] = token
+        
+        for t in ["hf_token", "civitai_token"]:
+            token = self.gui.config.get(t, "")
+            if token:
+                request[t] = token
+        
         id = self.gui.makeRequest({"type":"download", "data":request})
         self.gui.network.create(url, id, True)
 
