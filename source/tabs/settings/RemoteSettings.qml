@@ -173,7 +173,7 @@ Item {
             OTextInput {
                 anchors.fill: parent
                 id: civitaiKeyInput
-                label: "CivitAI API Key"
+                label: "Civitai API Key"
                 placeholder: "None"
                 Component.onCompleted: {
                     var token = GUI.config.get("civitai_token")
