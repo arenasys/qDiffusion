@@ -114,7 +114,7 @@ Item {
             OTextInput {
                 anchors.leftMargin: -2
                 anchors.left: modelTypeInput.right
-                anchors.right: parent.right
+                anchors.right: keysButton.left
                 anchors.top: parent.top
                 id: modelUrlInput
                 height: 30
@@ -122,7 +122,70 @@ Item {
                 placeholder: "URL"
                 disabled: !root.show
             }
+            SIconButton {
+                id: keysButton
+                anchors.top: parent.top
+                anchors.topMargin: 2
+                anchors.right: parent.right
+                anchors.rightMargin: 2
+                width: height
+                height: parent.height-2
+                inset: 5
+                icon: "qrc:/icons/key.svg"
+                tooltip: root.tr(toggled ? "Hide API Keys" : "Show API Keys")
+                border.color: COMMON.bg4
+                border.width: 1
+
+                iconHoverColor: toggled ? COMMON.fg0 : COMMON.fg3
+
+                disabled: !root.show
+
+                property var toggled: false
+                onPressed: {
+                    toggled = !toggled
+                }
+            }
         }
+
+        Item {
+            visible: keysButton.toggled
+            width: parent.width
+            height: visible ? 30 : 0
+            OTextInput {
+                anchors.fill: parent
+                id: hfKeyInput
+                label: "Huggingface API Key"
+                placeholder: "None"
+                Component.onCompleted: {
+                    var token = GUI.config.get("hf_token")
+                    value = token ? token : ""
+                }
+                onValueChanged: {
+                    GUI.config.set("hf_token", value)
+                }
+            }
+        }
+
+        Item {
+            visible: keysButton.toggled
+            width: parent.width
+            height: visible ? 30 : 0
+            OTextInput {
+                anchors.fill: parent
+                id: civitaiKeyInput
+                label: "CivitAI API Key"
+                placeholder: "None"
+                Component.onCompleted: {
+                    var token = GUI.config.get("civitai_token")
+                    value = token ? token : ""
+                }
+                onValueChanged: {
+                    GUI.config.set("civitai_token", value)
+                }
+            }
+        }
+
+
         SButton {
             width: parent.width
             height: 30

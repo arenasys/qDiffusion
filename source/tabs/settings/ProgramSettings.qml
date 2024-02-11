@@ -59,7 +59,7 @@ Item {
             }
             SText {
                 text: root.tr("Restart required")
-                visible: (!SETTINGS.updating && SETTINGS.needRestart) || scalingChoice.needRestart
+                visible: (!SETTINGS.updating && SETTINGS.needRestart) || scalingChoice.needRestart || modeChoice.needRestart
                 anchors.fill: parent
                 verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignHCenter
@@ -201,6 +201,26 @@ Item {
                     anchors.leftMargin: 2
                     anchors.rightMargin: 2
                 }
+            }
+        }
+        OChoice {
+            id: modeChoice
+            x: -2
+            width: parent.width+2
+            height: 30
+            label: root.tr("Inference Mode")
+            property var needRestart: false
+            property var modes: ["nvidia", "amd", "remote"]
+            property var original: ""
+            currentIndex: modes.indexOf(GUI.config.get("mode"))
+            entries: ["Nvidia", "AMD", "Remote"]
+            onCurrentIndexChanged: {
+                var mode = modes[currentIndex]
+                GUI.config.set("mode", mode)
+                needRestart = original != "" ? mode != original : false
+            }
+            Component.onCompleted: {
+                original = GUI.config.get("mode")
             }
         }
         OChoice {
