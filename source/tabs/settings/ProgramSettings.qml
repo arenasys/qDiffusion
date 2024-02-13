@@ -273,8 +273,8 @@ Item {
             height: 30
             label: root.tr("Debug Mode")
             property var idx: GUI.config.get("debug_mode")
-            currentIndex: idx ? idx : 0
-            entries: ["None", "Blocking Saving", "Threaded Saving"]
+            currentIndex: idx ? Math.min(entries.length-1, idx) : 0
+            entries: ["None", "Delayed Fetch"]
             onCurrentIndexChanged: {
                 GUI.config.set("debug_mode", currentIndex)
             }

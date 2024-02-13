@@ -546,19 +546,19 @@ class RequestManager(QObject):
             del self.writers[file]
 
     def normalResult(self, id, out, name):
-        if name == "preview":
-            previews = self.gui._results[id]["preview"]
+        if name in {"preview", "temporary"}:
+            images = self.gui._results[id][name]
             out = self.mapping[id]
-            for i in range(len(previews)-1, -1, -1):
-                self.artifact.emit(out, previews[i], "preview")
+            for i in range(len(images)-1, -1, -1):
+                self.artifact.emit(out, images[i], name)
                 out += 1
-
+        
         if name == "result":
             if id in self.ids:
                 self.ids.remove(id)
             results = self.gui._results[id]["result"]
             metadata = self.gui._results[id].get("metadata", None)
-            artifacts = {k:v for k,v in self.gui._results[id].items() if not k in {"result", "metadata", "preview"}}
+            artifacts = {k:v for k,v in self.gui._results[id].items() if not k in {"result", "metadata", "preview", "temporary"}}
 
             out = self.mapping[id]
 

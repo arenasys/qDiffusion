@@ -139,6 +139,7 @@ class GUI(QObject):
         self._options = {}
         self._empty = {}
         self._results = {}
+        self._delayed = set()
 
         parent.aboutToQuit.connect(self.stop)
 
@@ -225,12 +226,18 @@ class GUI(QObject):
 
     @pyqtProperty('QString', notify=statusUpdated)
     def title(self):
+        name = NAME
+
+        if self.debugMode() != 0:
+            name += " [DEBUG]"
+
         if self._remoteStatus != RemoteStatusMode.INACTIVE:
             if self._hostEndpoint:
-                return NAME + ": Hosting"
+                name += ": Hosting"
             else:
-                return NAME + ": Remote"
-        return NAME
+                name += ": Remote"
+        
+        return name
 
     @pyqtSlot(str, result=bool)
     def isCached(self, file):
@@ -412,20 +419,31 @@ class GUI(QObject):
                 self._statusInfo = f"{response['data']['rate']:.2f}{response['data']['unit']}"
             self.statusUpdated.emit()
             if "previews" in data:
-                self.addResult(id, "preview", data["previews"])
+                self.addResult(id, "preview", data["previews"], "JPEG")
+        
+        if type == "temporary":
+            self.addResult(id, "temporary", data["images"], data["type"])
+            self._delayed.add(id)
+            self.setReady()
 
         if type == "result":
             self.addResult(id, "metadata", data["metadata"])
-            self.addResult(id, "result", data["images"])
-            self.setReady()
-            self._results = {}
+            self.addResult(id, "result", data["images"], data["type"])
 
+            if not id in self._delayed:
+                self.setReady()
+            else:
+                self._delayed.remove(id)
+            
+            if id in self._results:
+                del self._results[id]
+                
         if type == "annotate":
-            self.addResult(id, "result", data["images"])
+            self.addResult(id, "result", data["images"], data["type"])
             self.setReady()
 
         if type == "artifact":
-            self.addResult(id, data["name"], data["images"])
+            self.addResult(id, data["name"], data["images"], data["type"])
 
         if type == "host":
             self._hostEndpoint = data["endpoint"]
@@ -433,12 +451,12 @@ class GUI(QObject):
             self.statusUpdated.emit()
 
         if type == "segmentation":
-            self.addResult(id, "result", data["images"])
+            self.addResult(id, "result", data["images"], data["type"])
             self.setReady()
         
         self.response.emit(id, response)
 
-    def addResult(self, id, name, data):
+    def addResult(self, id, name, data, typ=None):
         if not id in self._results:
             self._results[id] = {}
         self._results[id][name] = []
@@ -446,10 +464,7 @@ class GUI(QObject):
             if type(d) == bytes or type(d) == bytearray:
                 img = QImage()
                 
-                typ = "png"
-                if name == "preview":
-                    typ = "jpg"
-
+                typ = {"PNG": "png", "JPEG": "jpg"}[typ]
                 img.loadFromData(d, typ)
                 self._results[id][name] += [img]
             else:

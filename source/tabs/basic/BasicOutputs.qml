@@ -158,7 +158,7 @@ Item {
 
                     SText {
                         id: sizeLabel
-                        text: itemImage.implicitWidth + "x" + itemImage.implicitHeight
+                        text: modelObj.ready ? itemImage.implicitWidth + "x" + itemImage.implicitHeight : (modelObj.fetching ? " . . . " : "")
                         anchors.top: parent.top
                         anchors.right: parent.right
                         leftPadding: 3

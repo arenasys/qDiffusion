@@ -18,10 +18,12 @@ class BasicOutput(QObject):
         self._parameters = ""
         self._dragging = False
         self._ready = False
+        self._fetching = False
 
     def setResult(self, image, metadata, file):
         self._image = image
         self._ready = True
+        self._fetching = False
         self._file = file
 
         if metadata:
@@ -31,6 +33,10 @@ class BasicOutput(QObject):
             self._image.setText("parameters", self._parameters)
 
         self.updated.emit()
+
+    def setTemporary(self, image):
+        self._fetching = True
+        self.setPreview(image)
 
     def setPreview(self, image):
         self._image = image
@@ -147,6 +153,10 @@ class BasicOutput(QObject):
         if self._image.isNull():
             return ""
         return f"{self._image.width()}x{self._image.height()}"
+    
+    @pyqtProperty(bool, notify=updated)
+    def fetching(self):
+        return self._fetching
 
     @pyqtProperty(str, notify=updated)
     def parameters(self):

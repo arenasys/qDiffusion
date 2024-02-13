@@ -128,6 +128,8 @@ class Basic(QObject):
         
         if name == "preview":
             self._outputs[id].setPreview(image)
+        elif name == "temporary":
+            self._outputs[id].setTemporary(image)
         else:
             self._outputs[id].addArtifact(name, image)
 

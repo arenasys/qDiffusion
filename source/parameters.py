@@ -706,6 +706,10 @@ class Parameters(QObject):
 
         data["autocast"] = data["autocast"] == "Enabled"
 
+        if request["type"] in {"txt2img", "img2img", "upscale"}:
+            if self.gui.debugMode() == 1:
+                data["delay_fetch"] = True
+
         if request["type"] == "upscale":
             for k in list(data.keys()):
                 if not k in {"img2img_upscaler", "width", "height", "image", "mask", "mask_blur", "padding", "device_name"}:

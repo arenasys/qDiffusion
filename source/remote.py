@@ -9,6 +9,7 @@ import datetime
 import sys
 import math
 import time
+import threading
 
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QThread
 from PyQt5.QtWidgets import QApplication
@@ -174,6 +175,8 @@ class RemoteInference(QThread):
                                 client_id = response["data"]["id"]
                             else:
                                 self.requests.put({"type": "reconnect", "data": {"id": client_id}})
+                        if response["type"] == "temporary":
+                            self.fetch(response["data"]["id"], response["id"])
 
                         self.onResponse(response)
                         QApplication.processEvents()
@@ -244,3 +247,30 @@ class RemoteInference(QThread):
     def onUploadDone(self, file):
         if file in self.uploads:
             del self.uploads[file]
+
+    def fetch(self, result_id, request_id):
+        def do_fetch(endpoint, password, result_id, request_id, callback):
+            scheme = get_scheme(password)
+            client = None
+            while True:
+                try:
+                    client = websockets.sync.client.connect(endpoint, open_timeout=2, max_size=None)
+                    break
+                except Exception:
+                    continue
+                
+            request = {"type": "fetch", "data": {"id": result_id}}
+            client.send(encrypt(scheme, request))
+
+            while True:
+                response = decrypt(scheme, client.recv())
+                if response["type"] == "result":
+                    print("FETCHED")
+                    response["id"] = request_id
+                    callback(response)
+                    break
+            
+            client.close()
+
+        thread = threading.Thread(target=do_fetch, args=([self.endpoint, self.password, result_id, request_id, self.onResponse]), daemon=True)
+        thread.start()
