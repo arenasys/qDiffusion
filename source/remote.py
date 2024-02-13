@@ -277,14 +277,12 @@ class RemoteInference(QThread):
                     
                 response = decrypt(scheme, data)
                 if response["type"] == "result":
-                    print("FETCHED")
-                    #break
-
                     response["id"] = request_id
                     images = []
+
+                    typ = {"PNG": "png", "JPEG": "jpg"}[response["data"]["type"]]
                     for data in response["data"]["images"]:
                         image = QImage()
-                        typ = {"PNG": "png", "JPEG": "jpg"}[response["data"]["type"]]
                         image.loadFromData(data, typ)
                         images += [image]
                     response["data"]["images"] = images
