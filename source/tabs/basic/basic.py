@@ -80,7 +80,6 @@ class Basic(QObject):
     @pyqtSlot()
     def generate(self, user=True):
         if user:
-            self._manager.cancelRequest()
             self.gui.clearCancelled()
         elif self.gui.isCancelled():
             return
