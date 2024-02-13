@@ -591,6 +591,8 @@ class RequestManager(QObject):
         available = self.gui._results[id]
         if "result" in available:
             images = available["result"]
+        elif "temporary" in available:
+            images = available["temporary"]
         elif "preview" in available:
             images = available["preview"]
         else:
@@ -691,7 +693,8 @@ class RequestManager(QObject):
             if len(self.grid_ids) == cx*cy:
                 folder = self.folders.get(self.grid_id, "grid")
                 file = self.doSave(self.grid_image, self.grid_metadata, folder)
-                self.result.emit(out, self.grid_image, self.grid_metadata, file, True)
+                self.result.emit(out, self.grid_image, self.grid_metadata, file)
+                self.finished.emit()
             else:
                 if self.requests:
                     self.makeRequest()

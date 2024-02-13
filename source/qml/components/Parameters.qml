@@ -81,6 +81,10 @@ Item {
             info: GUI.statusInfo
             remaining: root.remaining
 
+            onRemainingChanged: {
+                genButtonTimer.restart()
+            }
+
             onPressed: {
                 if(GUI.statusMode == 1) {
                     root.generate()
