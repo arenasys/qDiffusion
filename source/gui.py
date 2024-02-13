@@ -4,6 +4,7 @@ import datetime
 import json
 import bson
 import difflib
+import time
 import platform
 import urllib.parse
 IS_WIN = platform.system() == 'Windows'
@@ -90,6 +91,8 @@ class GUI(QObject):
         self._statusText = "Inactive"
         self._statusProgress = -1.0
         self._statusInfo = ""
+
+        self._cancelled = False
 
         self._errorStatus = ""
         self._errorText = ""
@@ -334,7 +337,14 @@ class GUI(QObject):
         self._statusMode = StatusMode.ABORTING
         self._statusInfo = "Aborting..."
         self._statusText = "Aborting"
+        self._cancelled = True
         self.statusUpdated.emit()
+
+    def isCancelled(self):
+        return self._cancelled
+    
+    def clearCancelled(self):
+        self._cancelled = False
 
     @pyqtSlot(object)
     def onResponse(self, response):
@@ -864,3 +874,8 @@ class GUI(QObject):
 
     def debugMode(self):
         return self._config._values.get("debug_mode")
+    
+    @pyqtSlot(int)
+    def setDebugMode(self, mode):
+        self._config._values.set("debug_mode", mode)
+        self.statusUpdated.emit()

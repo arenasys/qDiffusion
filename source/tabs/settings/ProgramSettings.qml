@@ -276,7 +276,7 @@ Item {
             currentIndex: idx ? Math.min(entries.length-1, idx) : 0
             entries: ["None", "Delayed Fetch"]
             onCurrentIndexChanged: {
-                GUI.config.set("debug_mode", currentIndex)
+                GUI.setDebugMode(currentIndex)
             }
         }
 

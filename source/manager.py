@@ -133,7 +133,8 @@ class BuilderRunnable(threading.Thread):
 class RequestManager(QObject):
     updated = pyqtSignal()
     artifact = pyqtSignal(int, QImage, str)
-    result = pyqtSignal(int, QImage, object, str, bool)
+    result = pyqtSignal(int, QImage, object, str)
+    finished = pyqtSignal()
 
     def __init__(self, parent=None, modifyRequest=None):
         super().__init__(parent)
@@ -574,9 +575,7 @@ class RequestManager(QObject):
                 folder = self.folders.get(id, "monitor")
                 file = self.doSave(result, meta, folder)
 
-                last = i==0
-
-                self.result.emit(out, result, meta, file, last)
+                self.result.emit(out, result, meta, file)
 
                 for k, v in artifacts.items():
                     vv = v[i%len(v)]
@@ -584,6 +583,9 @@ class RequestManager(QObject):
                         self.artifact.emit(out, vv, k)    
 
                 out += 1
+        
+        if (name == "result" and not id in self.gui._delayed) or name == "temporary":
+            self.finished.emit()
 
     def gridResult(self, id, out, name):
         available = self.gui._results[id]

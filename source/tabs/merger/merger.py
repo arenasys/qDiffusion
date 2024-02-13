@@ -324,6 +324,7 @@ class Merger(QObject):
 
         self._manager.result.connect(self.onResult)
         self._manager.artifact.connect(self.onArtifact)
+        self._manager.finished.connect(self.onFinished)
 
         self._parameters.updated.connect(self.parametersUpdated)
 
@@ -667,8 +668,8 @@ class Merger(QObject):
         q.bindValue(":id", id)
         self.conn.doQuery(q)
 
-    @pyqtSlot(int, QImage, object, str, bool)
-    def onResult(self, id, image, metadata, filename, last):
+    @pyqtSlot(int, QImage, object, str)
+    def onResult(self, id, image, metadata, filename):
         sticky = self.isSticky()
 
         if not id in self._outputs:
@@ -677,14 +678,7 @@ class Merger(QObject):
         self._outputs[id].setResult(image, metadata, filename)
 
         if sticky:
-            self.stick()
-
-        if last:
-            if self._forever or self._manager.requests:
-                self.generate(user=False)
-            else:
-                self._manager.count = 0
-                self.updated.emit()
+            self.stick()            
 
     @pyqtSlot(int, QImage, str)
     def onArtifact(self, id, image, name):
@@ -697,6 +691,14 @@ class Merger(QObject):
             self._outputs[id].addArtifact(name, image)
 
         self.updated.emit()
+
+    @pyqtSlot()
+    def onFinished(self):
+        if self._forever or self._manager.requests:
+            self.generate(user=False)
+        else:
+            self._manager.count = 0
+            self.updated.emit()
 
     @pyqtSlot(int)
     def handleReset(self, id):

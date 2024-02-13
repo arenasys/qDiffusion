@@ -13,6 +13,7 @@ import threading
 
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QThread
 from PyQt5.QtWidgets import QApplication
+from PyQt5.QtGui import QImage
 
 import secrets
 from cryptography.hazmat.primitives import hashes
@@ -254,23 +255,45 @@ class RemoteInference(QThread):
             client = None
             while True:
                 try:
-                    client = websockets.sync.client.connect(endpoint, open_timeout=2, max_size=None)
+                    client = websockets.sync.client.connect(endpoint, open_timeout=2, max_size=None, close_timeout=0)
                     break
                 except Exception:
                     continue
                 
             request = {"type": "fetch", "data": {"id": result_id}}
-            client.send(encrypt(scheme, request))
+            data = encrypt(scheme, request)
+            try:
+                client.send(data)
+            except Exception as e:
+                print(e)
+                pass
 
             while True:
-                response = decrypt(scheme, client.recv())
+                try:
+                    data = client.recv()
+                except Exception as e:
+                    print(e)
+                    pass
+                    
+                response = decrypt(scheme, data)
                 if response["type"] == "result":
                     print("FETCHED")
+                    #break
+
                     response["id"] = request_id
+                    images = []
+                    for data in response["data"]["images"]:
+                        image = QImage()
+                        typ = {"PNG": "png", "JPEG": "jpg"}[response["data"]["type"]]
+                        image.loadFromData(data, typ)
+                        images += [image]
+                    response["data"]["images"] = images
+
                     callback(response)
                     break
             
             client.close()
+            client.close_socket()
 
         thread = threading.Thread(target=do_fetch, args=([self.endpoint, self.password, result_id, request_id, self.onResponse]), daemon=True)
         thread.start()

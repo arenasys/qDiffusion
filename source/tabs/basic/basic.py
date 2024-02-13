@@ -73,6 +73,7 @@ class Basic(QObject):
 
         self._manager.result.connect(self.onResult)
         self._manager.artifact.connect(self.onArtifact)
+        self._manager.finished.connect(self.onFinished)
 
         qmlRegisterSingletonType(Basic, "gui", 1, 0, "BASIC", lambda qml, js: self)
 
@@ -80,6 +81,9 @@ class Basic(QObject):
     def generate(self, user=True):
         if user:
             self._manager.cancelRequest()
+            self.gui.clearCancelled()
+        elif self.gui.isCancelled():
+            return
         self.gui.setSending()
         if user or not self._manager.requests:
             self._manager.buildRequests(self._parameters, self._inputs)
@@ -97,8 +101,8 @@ class Basic(QObject):
         q.bindValue(":id", id)
         self.conn.doQuery(q)
 
-    @pyqtSlot(int, QImage, object, str, bool)
-    def onResult(self, id, image, metadata, filename, last):
+    @pyqtSlot(int, QImage, object, str)
+    def onResult(self, id, image, metadata, filename):
         sticky = self.isSticky()
 
         if not id in self._outputs:
@@ -108,13 +112,7 @@ class Basic(QObject):
 
         if sticky:
             self.stick()
-
-        if last:
-            if self._forever or self._manager.requests:
-                self.generate(user=False)
-            else:
-                self._manager.count = 0
-
+        
     @pyqtSlot(int, QImage, str)
     def onArtifact(self, id, image, name):
         if name == "Annotated":
@@ -132,6 +130,13 @@ class Basic(QObject):
             self._outputs[id].setTemporary(image)
         else:
             self._outputs[id].addArtifact(name, image)
+
+    @pyqtSlot()
+    def onFinished(self):
+        if self._forever or self._manager.requests:
+            self.generate(user=False)
+        else:
+            self._manager.count = 0
 
     @pyqtSlot(int, object)
     def handleResponse(self, id, response):
