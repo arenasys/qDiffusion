@@ -149,8 +149,7 @@ Item {
                     }
 
                     Rectangle {
-                        visible: sizeLabel.text != ""
-                        anchors.fill: sizeLabel
+                        anchors.fill: statusIcon.visible ? statusIcon : sizeLabel
                         color: "#e0101010"
                         border.width: 1
                         border.color: COMMON.bg3
@@ -158,7 +157,7 @@ Item {
 
                     SText {
                         id: sizeLabel
-                        text: modelObj.ready ? itemImage.implicitWidth + "x" + itemImage.implicitHeight : (modelObj.fetching ? " . . . " : "")
+                        text: modelObj.ready ? itemImage.implicitWidth + "x" + itemImage.implicitHeight : ""
                         anchors.top: parent.top
                         anchors.right: parent.right
                         leftPadding: 3
@@ -167,6 +166,39 @@ Item {
                         bottomPadding: 3
                         color: COMMON.fg1_5
                         pointSize: 9.2
+                    }
+
+                    SIcon {
+                        id: statusIcon
+                        iconColor: COMMON.fg2
+                        visible: !modelObj.ready
+                        anchors.top: parent.top
+                        anchors.right: parent.right
+                        icon: {
+                            if(modelObj.fetching) {
+                                return "qrc:/icons/circle_loading.svg"
+                            }
+                            if(!modelObj.ready) {
+                                if(GUI.statusProgress == -1) {
+                                    return "qrc:/icons/circle_8.svg"
+                                }
+
+                                return "qrc:/icons/circle_" + Math.floor(GUI.statusProgress * 8) + ".svg"
+                            }
+                            return ""
+                        }
+                        inset: 4
+                        height: 22
+                        width: 22
+                    }
+
+                    RotationAnimator {
+                        target: statusIcon
+                        loops: Animation.Infinite
+                        from: 0
+                        to: 360
+                        duration: 1000
+                        running: modelObj.fetching
                     }
 
                     Rectangle {
