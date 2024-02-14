@@ -110,7 +110,7 @@ class Basic(QObject):
         self._outputs[id].setResult(image, metadata, filename)
 
         if sticky:
-            self.stick()
+            self.stick(id)
         
     @pyqtSlot(int, QImage, str)
     def onArtifact(self, id, image, name):
@@ -463,9 +463,10 @@ class Basic(QObject):
                 self.openedUpdated.emit()
 
     @pyqtSlot()
-    def stick(self):
+    def stick(self, id=None):
         if self._opened_area == "output":
-            id = self.outputIndexToID(0)
+            if not id:
+                id = self.outputIndexToID(0)
             if id in self._outputs:
                 self._opened_index = id
                 self.openedUpdated.emit()
@@ -491,10 +492,16 @@ class Basic(QObject):
         if not self._opened_index in self._outputs:
             return True
         idx = self.outputIDToIndex(self._opened_index)
-        if idx == 0:
+        any_ready = False
+
+        for i in range(idx-1, -1, -1):
+            if self._outputs[self.outputIndexToID(i)].ready:
+                any_ready = True
+
+        if not any_ready:
             return True
-        if idx == 1 and not self._outputs[self.outputIndexToID(0)].ready:
-            return True
+
+        return False
         
     @pyqtSlot()
     def pasteClipboard(self):
