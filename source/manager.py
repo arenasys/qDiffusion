@@ -675,9 +675,9 @@ class RequestManager(QObject):
 
         painter = QPainter(self.grid_image)
 
-        id = self.grid_ids[-1]
+        idx = self.grid_ids.index(id)
         image = self.grid_images[id]
-        px, py = positions[len(self.grid_ids)-1]
+        px, py = positions[idx]
         painter.drawImage(QRect(px,py,w,h), image)
 
         painter.end()
@@ -690,16 +690,19 @@ class RequestManager(QObject):
                 folder = self.folders.get(self.grid_id, "grid")
                 file = self.doSave(image, metadata[0], folder)
 
-            if len(self.grid_ids) == cx*cy:
+            if idx+1 == cx*cy:
                 folder = self.folders.get(self.grid_id, "grid")
                 file = self.doSave(self.grid_image, self.grid_metadata, folder)
                 self.result.emit(out, self.grid_image, self.grid_metadata, file)
                 self.finished.emit()
-            else:
-                if self.requests:
-                    self.makeRequest()
+        elif name == "temporary" and idx+1 == cx*cy:
+            self.artifact.emit(out, self.grid_image, "temporary")
         else:
             self.artifact.emit(out, self.grid_image, "preview")
 
+        if len(self.grid_ids) != cx*cy:
+            if name == "temporary" or (name == "result" and not id in self.gui._delayed):
+                self.makeRequest()
+        
 def registerTypes():
     qmlRegisterUncreatableType(RequestManager, "gui", 1, 0, "RequestManager", "Not a QML type")
