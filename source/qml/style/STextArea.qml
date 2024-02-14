@@ -128,7 +128,7 @@ Rectangle {
 
             Keys.onPressed: {
                 event.accepted = true
-                if(event.modifiers & Qt.ControlModifier && event.modifiers & Qt.ShiftModifier ) {
+                if(event.modifiers & Qt.ControlModifier) {
                     switch(event.key) {
                     case Qt.Key_Up:
                         weightText(0.1)
@@ -198,7 +198,7 @@ Rectangle {
                 }
             }
             onWheel: {
-                if(wheel.modifiers & Qt.ControlModifier && wheel.modifiers & Qt.ShiftModifier) {
+                if(wheel.modifiers & Qt.ControlModifier) {
                     if(wheel.angleDelta.y < 0) {
                         textArea.weightText(-0.1)
                     } else {
