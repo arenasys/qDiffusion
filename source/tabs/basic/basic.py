@@ -80,6 +80,7 @@ class Basic(QObject):
     @pyqtSlot()
     def generate(self, user=True):
         if user:
+            self._manager.cancelRequest()
             self.gui.clearCancelled()
         elif self.gui.isCancelled():
             return
@@ -151,8 +152,11 @@ class Basic(QObject):
         
     @pyqtSlot(int)
     def handleReset(self, id):
+        self.clearUnfinished()
+
+    def clearUnfinished(self):
         for out in list(self._outputs.keys()):
-            if not self._outputs[out]._ready:
+            if not self._outputs[out]._ready and not self._outputs[out]._fetching:
                 if self._opened_index == out:
                     self.right()
                 self.deleteOutput(out)

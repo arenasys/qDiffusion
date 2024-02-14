@@ -171,21 +171,23 @@ Item {
                     SIcon {
                         id: statusIcon
                         iconColor: COMMON.fg2
-                        visible: !modelObj.ready
+                        visible: icon != ""
                         anchors.top: parent.top
                         anchors.right: parent.right
                         icon: {
                             if(modelObj.fetching) {
                                 return "qrc:/icons/circle_loading.svg"
                             }
-                            if(!modelObj.ready) {
-                                if(GUI.statusProgress == -1) {
-                                    return "qrc:/icons/circle_8.svg"
-                                }
-
-                                return "qrc:/icons/circle_" + Math.floor(GUI.statusProgress * 8) + ".svg"
+                            if(modelObj.ready) {
+                                return ""
                             }
-                            return ""
+                            if(GUI.statusMode != 2) {
+                                return "qrc:/icons/warning.svg"
+                            }
+                            if(GUI.statusProgress == -1) {
+                                return "qrc:/icons/circle_8.svg"
+                            }
+                            return "qrc:/icons/circle_" + Math.floor(GUI.statusProgress * 8) + ".svg"
                         }
                         inset: 4
                         height: 22

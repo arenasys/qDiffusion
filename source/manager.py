@@ -209,10 +209,13 @@ class RequestManager(QObject):
 
     def cancelRequest(self):
         self.setRequests([])
-        if self.ids:
-            self.gui.cancelRequest(self.ids.pop())
-            return True
-        return False
+
+        cancellable = [id for id in self.ids if not id in self.gui._delayed]
+        for id in cancellable:
+            self.gui.cancelRequest(id)
+            self.ids.remove(id)
+            
+        return len(cancellable) != 0
 
     def finalizeRequest(self, request):
         data = request["data"]
