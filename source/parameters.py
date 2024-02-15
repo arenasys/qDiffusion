@@ -347,7 +347,7 @@ class Parameters(QObject):
             "models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "SR", "LoRAs", "HNs", "LoRA", "HN", "TIs", "TI", "CN", "CNs", "hr_upscalers", "img2img_upscalers", 
             "attentions", "device", "devices", "batch_count", "prompt", "negative_prompt", "vram_usages", "artifact_modes", "preview_modes", "schedules",
             "CN_modes", "CN_preprocessors", "vram_modes", "true_samplers", "schedule", "network_modes", "model", "output_folder", "mask_fill_modes", "autocast_modes",
-            "prediction_types", "tiling_modes", "precisions"
+            "prediction_types", "tiling_modes", "precisions", "fetching_modes"
         ]
 
         self._adv_only = [
@@ -368,7 +368,7 @@ class Parameters(QObject):
             "CN_modes": ["Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD", "Instruct", "Shuffle", "Inpaint", "Scribble", "Normal", "Tile", "QR"],#, "Segmentation"]
             "CN_preprocessors": ["None", "Invert", "Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD", "Shuffle", "Scribble", "Normal"],
             "prediction_type": "Default", "prediction_types": ["Default", "Epsilon", "V"], "tiling_mode": "Disabled", "tiling_modes": ["Disabled", "Enabled"],
-            "precisions": ["FP16", "FP32"], "vae_precision": "FP16", "precision": "FP16"
+            "precisions": ["FP16", "FP32"], "vae_precision": "FP16", "precision": "FP16", "fetching_mode": "Dont Wait", "fetching_modes": ["Wait", "Dont Wait"]
         }
 
         if source:
@@ -558,7 +558,8 @@ class Parameters(QObject):
             ("attention", "attention", "attentions"),
             ("precision", "precision", "precisions"),
             ("vae_precision", "vae_precision", "precisions"),
-            ("vae_tiling", "tiling_mode", "tiling_modes")
+            ("vae_tiling", "tiling_mode", "tiling_modes"),
+            ("fetching", "fetching_mode", "fetching_modes")
         ]
 
         remote = self.gui.config.get("mode", "").lower() == "remote"
@@ -689,6 +690,11 @@ class Parameters(QObject):
             data["keep_artifacts"] = True
         del data["artifact_mode"]
 
+        if request["type"] in {"txt2img", "img2img", "upscale"} and self.gui.isRemote:
+            if data["fetching_mode"] == "Dont Wait":
+                data["delay_fetch"] = True
+        del data["fetching_mode"]
+
         if data["preview_mode"] != "Disabled":
             data["show_preview"] = data["preview_mode"]
         del data["preview_mode"]
@@ -705,10 +711,6 @@ class Parameters(QObject):
                 del data[k]
 
         data["autocast"] = data["autocast"] == "Enabled"
-
-        if request["type"] in {"txt2img", "img2img", "upscale"}:
-            if self.gui.debugMode() == 1:
-                data["delay_fetch"] = True
 
         if request["type"] == "upscale":
             for k in list(data.keys()):

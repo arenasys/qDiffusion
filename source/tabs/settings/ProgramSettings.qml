@@ -274,9 +274,14 @@ Item {
             label: root.tr("Debug Mode")
             property var idx: GUI.config.get("debug_mode")
             currentIndex: idx ? Math.min(entries.length-1, idx) : 0
-            entries: ["None", "Delayed Fetch"]
+            entries: ["None"]
             onCurrentIndexChanged: {
                 GUI.setDebugMode(currentIndex)
+            }
+            Component.onCompleted: {
+                if(idx >= entries.length) {
+                    GUI.setDebugMode(0)
+                }
             }
         }
 

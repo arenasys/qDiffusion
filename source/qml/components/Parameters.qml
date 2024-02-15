@@ -1323,6 +1323,25 @@ Item {
                     }
 
                     OChoice {
+                        visible: GUI.isRemote
+                        label: root.tr("Fetching")
+                        width: parent.width
+                        height: visible ? 30 : 0
+
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "fetching_mode"
+                        bindKeyModel: "fetching_modes"
+
+                        onSelected: {
+                            GUI.config.set("fetching", value)
+                        }
+
+                        function display(text) {
+                            return root.tr(text, "Options")
+                        }
+                    }
+
+                    OChoice {
                         label: root.tr("Artifacts")
                         width: parent.width
                         height: 30
