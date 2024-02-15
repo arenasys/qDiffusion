@@ -342,7 +342,7 @@ Item {
             id: canvas
             anchors.fill: item
             smooth: sourceSize.width*1.1 < width && sourceSize.height*1.1 < height ? false : true
-            
+
             brush.color: root.color
             brush.size: root.size
             brush.hardness: root.hardness
@@ -416,18 +416,18 @@ Item {
             visible: root.editing && !root.artifact && mousePosition != Qt.point(0,0)
             anchors.fill: item
             property var mousePosition: Qt.point(0,0)
+            property var currentPosition: mouseArea.resizingBrush ? mouseArea.resizeStart : mousePosition
             
             property var size: 100
-            property var displaySize: root.size*(canvas.width/canvas.sourceSize.width)
-
+            property var displaySize: (mouseArea.resizingBrush ? mouseArea.getBrushRadius()*2 : root.size)*(canvas.width/canvas.sourceSize.width)
 
             Rectangle {
                 id: ringBlack
                 radius: width/2
                 width: parent.displaySize
                 height: width
-                x: (parent.mousePosition.x*item.width)-width/2
-                y: (parent.mousePosition.y*item.height)-height/2
+                x: (parent.currentPosition.x*item.width)-width/2
+                y: (parent.currentPosition.y*item.height)-height/2
                 color: "transparent"
                 border.width: 1
                 border.color: "black"
@@ -437,8 +437,8 @@ Item {
                 radius: width/2
                 width: parent.displaySize + 1
                 height: width
-                x: (parent.mousePosition.x*item.width)-width/2
-                y: (parent.mousePosition.y*item.height)-height/2
+                x: (parent.currentPosition.x*item.width)-width/2
+                y: (parent.currentPosition.y*item.height)-height/2
                 color: "transparent"
                 border.width: 1
                 border.color: "white"
@@ -451,13 +451,25 @@ Item {
             anchors.fill: parent
             hoverEnabled: true
 
+            property var resizingBrush: false
+            property var resizeStart
+
             acceptedButtons: Qt.LeftButton | Qt.RightButton
 
             function getPosition(mouse) {
                 return Qt.point(mouse.x, mouse.y)
             }
 
+            function getBrushRadius() {
+                var distX = (resizeStart.x-rings.mousePosition.x)*canvas.sourceSize.width;
+                var distY = (resizeStart.y-rings.mousePosition.y)*canvas.sourceSize.height;
+                return Math.sqrt(distX*distX + distY * distY)
+            }
+
             onPressed: {
+                if(resizingBrush) {
+                    return
+                }
                 if (mouse.button === Qt.LeftButton) {
                     canvas.brush.modeIndex = 0
                 } else if (mouse.button === Qt.RightButton) {
@@ -468,6 +480,9 @@ Item {
             }
 
             onReleased: {
+                if(resizingBrush) {
+                    return
+                }
                 if (!(mouse.modifiers & Qt.ControlModifier)) {
                     canvas.mouseReleased(getPosition(mouse), mouse.modifiers)
                 }
@@ -475,6 +490,9 @@ Item {
 
             onPositionChanged: {
                 rings.mousePosition = Qt.point((mouseX - item.x)/item.width, (mouseY - item.y)/item.height)
+                if(resizingBrush) {
+                    return
+                }
 
                 if(mouse.buttons && !(mouse.modifiers & Qt.ControlModifier)) {
                     canvas.mouseDragged(getPosition(mouse), mouse.modifiers)
@@ -499,6 +517,19 @@ Item {
                     sizeSlider.value = o
                 } else {
                     rings.size = o
+                }
+            }
+
+            onResizingBrushChanged: {
+                if(resizingBrush) {
+                    resizeStart = Qt.point(rings.mousePosition.x, rings.mousePosition.y)
+                } else {
+                    var o = Math.max(Math.min(getBrushRadius()*2, 500), 1)
+                    if(root.painting) {
+                        sizeSlider.value = o
+                    } else {
+                        rings.size = o
+                    }
                 }
             }
         }
@@ -909,7 +940,7 @@ Item {
                 }
                 break;
             case Qt.Key_Alt:
-                movable.reset()
+                mouseArea.resizingBrush = true
                 break;
             default:
                 event.accepted = false
@@ -923,11 +954,19 @@ Item {
     }
 
     Keys.onReleased: {
+        switch(event.key) {
+        case Qt.Key_Alt:
+            mouseArea.resizingBrush = false
+            break;
+        default:
+            break;
+        }
         if(event.key >= Qt.Key_0 && event.key <= Qt.Key_9) {
             var index = points.label.indexOf(event.key - Qt.Key_0)
             if (index > -1) {
                 points.label.splice(index, 1)
             }
         }
+
     }
 }
