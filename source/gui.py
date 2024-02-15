@@ -873,7 +873,7 @@ class GUI(QObject):
             self.windowUpdated.emit()
 
     def debugMode(self):
-        return self._config._values.get("debug_mode")
+        return self._config._values.get("debug_mode", 0)
     
     @pyqtSlot(int)
     def setDebugMode(self, mode):
