@@ -36,6 +36,8 @@ class CanvasBrush(QObject):
         return self._size * self._spacing
 
     def getColor(self, radius):
+        is_max = self._hardness >= 0.99
+
         hardness = min(self._hardness, 0.99)
         scaledHardness = (hardness + 0.2)/1.2
         alpha = 1.0
@@ -46,6 +48,9 @@ class CanvasBrush(QObject):
             else:
                 h = 1/(1-scaledHardness) - 1
                 alpha = 1-(((math.cos((radius+1)*math.pi)+1)/2))**h
+
+        if is_max and alpha > 0.90:
+            alpha = 1.0
 
         color = QColor(self._color)
         color.setAlphaF(alpha)
