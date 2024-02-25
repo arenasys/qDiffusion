@@ -434,30 +434,6 @@ Item {
             target: root.target != null && root.posing ? root.target : null
             poses: root.target != null && root.posing ? root.target.poses : []
 
-            function addPose(position, aspect) {
-                root.target.addPose(position, aspect)
-            }
-
-            function cleanPoses() {
-                root.target.cleanPoses()
-            }
-
-            function undo() {
-                root.target.undoPose()
-            }
-
-            function redo() {
-                root.target.redoPose()
-            }
-
-            function clearRedo() {
-                root.target.clearRedoPose()
-            }
-
-            function draw() {
-                root.target.drawPose()
-            }
-
             function close() {
                 root.close()
             }

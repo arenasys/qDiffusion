@@ -379,8 +379,8 @@ class Pose(QObject):
                 p += [(n._point.x(), n._point.y())]
         print(p)
 
-    def makeAtPosition(position, aspect):
-        w, h = 0.3/aspect, 0.7
+    def makeAtPosition(position, size):
+        w, h = int(0.3 * size.x()), int(0.7 * size.y())
         x, y = position.x() - (w*0.5), position.y() - (h*0.2)
 
         nodes = []

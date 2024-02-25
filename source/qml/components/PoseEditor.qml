@@ -55,31 +55,31 @@ Item {
         return Qt.rect(tl.x, tl.y, br.x-tl.x, br.y-tl.y)
     }
 
-    function draw() {
-
-    }
-
-    function close() {
-
+    function addPose(position) {
+        root.target.addPose(position)
     }
 
     function cleanPoses() {
-
-    }
-
-    function addPose(position, aspect) {
-
+        root.target.cleanPoses()
     }
 
     function undo() {
-
+        root.target.undoPose()
     }
 
     function redo() {
-
+        root.target.redoPose()
     }
 
     function clearRedo() {
+        root.target.clearRedoPose()
+    }
+
+    function draw() {
+        root.target.drawPose()
+    }
+
+    function close() {
 
     }
 
@@ -698,7 +698,7 @@ Item {
                     text: "New Pose"
                     shortcut: "Ctrl+N"
                     onPressed: {
-                        root.addPose(contextMenu.position, area.width/area.height)
+                        root.addPose(contextMenu.position)
                     }
                 }
                 

@@ -312,6 +312,10 @@ class BasicInput(QObject):
     def poses(self):
         return self._poses
     
+
+    def getPoseCrop(self):
+        return self._originalCropInfo or QRectF(0, 0, self._original.width(), self._original.height())
+    
     def getRawPose(self):
         return [p.encode() for p in self._poses]
     
@@ -349,7 +353,7 @@ class BasicInput(QObject):
         return scaled
     
     def unscalePose(self, pose):
-        crop = self._originalCropInfo or QRectF(0, 0, self._original.width(), self._original.height())
+        crop = self.getPoseCrop()
 
         cx, cy = int(crop.left()), int(crop.top())
         cw, ch = int(crop.width()), int(crop.height())
@@ -387,9 +391,12 @@ class BasicInput(QObject):
         self._poseUndo += [last]
         self.setRawPose(last)
 
-    @pyqtSlot(QPointF, float)
-    def addPose(self, position, aspect):
-        self._poses += [Pose(self, Pose.makeAtPosition(position, aspect))]
+    @pyqtSlot(QPointF)
+    def addPose(self, position):
+        crop = self.getPoseCrop()
+        size = QPointF(crop.width(), crop.height())
+
+        self._poses += [Pose(self, Pose.makeAtPosition(position, size))]
         self.posesUpdated.emit()
         self.drawPose()
 
@@ -410,7 +417,7 @@ class BasicInput(QObject):
         
         size = QSize(self.linkedWidth, self.linkedHeight)
         original = self._original
-        crop = self._originalCropInfo or QRectF(0, 0, original.width(), original.height())
+        crop = self.getPoseCrop()
 
         self._image = Pose.drawPoses(self.getPose(), size, original, crop)
         self.resetDisplay()
