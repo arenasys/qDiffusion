@@ -680,7 +680,7 @@ class Merger(QObject):
         if sticky:
             self.stick()            
 
-    @pyqtSlot(int, QImage, str)
+    @pyqtSlot(int, object, str)
     def onArtifact(self, id, image, name):
         if not id in self._outputs:
             self.createOutput(id, image)

@@ -1,5 +1,5 @@
 from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, QObject, QSize, QUrl, QMimeData, QByteArray
-from PyQt5.QtQml import qmlRegisterSingletonType
+from PyQt5.QtQml import qmlRegisterSingletonType, qmlRegisterUncreatableType
 from PyQt5.QtGui import QImage, QDrag, QCursor
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtSql import QSqlQuery
@@ -18,6 +18,7 @@ import os
 # this file is imported at the root
 from tabs.basic.basic_input import BasicInput, BasicInputRole, MIME_BASIC_INPUT
 from tabs.basic.basic_output import BasicOutput
+from tabs.basic.basic_pose import Pose, PoseNode, PoseEdge
 
 import misc
 import manager
@@ -76,6 +77,9 @@ class Basic(QObject):
         self._manager.finished.connect(self.onFinished)
 
         qmlRegisterSingletonType(Basic, "gui", 1, 0, "BASIC", lambda qml, js: self)
+        qmlRegisterUncreatableType(Pose, "gui", 1, 0, "Pose", "Not a QML type")
+        qmlRegisterUncreatableType(PoseNode, "gui", 1, 0, "PoseNode", "Not a QML type")
+        qmlRegisterUncreatableType(PoseEdge, "gui", 1, 0, "PoseEdge", "Not a QML type")
 
     @pyqtSlot()
     def generate(self, user=True):
@@ -113,23 +117,29 @@ class Basic(QObject):
         if sticky:
             self.stick(id)
         
-    @pyqtSlot(int, QImage, str)
-    def onArtifact(self, id, image, name):
-        if name == "Annotated":
+    @pyqtSlot(int, object, str)
+    def onArtifact(self, id, data, name):
+        if name == "annotated":
+            match = [i for i in self._inputs if i._id == id]
+            if match and not match[0].isPose:
+                match[0].setArtifacts({"Annotated":data})
+            return
+        
+        if name == "pose":
             match = [i for i in self._inputs if i._id == id]
             if match:
-                match[0].setArtifacts({"Annotated":image})
+                match[0].setPose(data)
             return
 
         if not id in self._outputs:
-            self.createOutput(id, image)
+            self.createOutput(id, data)
         
         if name == "preview":
-            self._outputs[id].setPreview(image)
+            self._outputs[id].setPreview(data)
         elif name == "temporary":
-            self._outputs[id].setTemporary(image)
+            self._outputs[id].setTemporary(data)
         else:
-            self._outputs[id].addArtifact(name, image)
+            self._outputs[id].addArtifact(name, data)
 
     @pyqtSlot()
     def onFinished(self):
@@ -704,7 +714,11 @@ class Basic(QObject):
         annotator = input._control_settings.get("preprocessor")
         args = input.getControlArgs()
 
-        request = self._parameters.buildAnnotateRequest(annotator, args, encodeImage(input._image))
+        img = input.image
+        if input.isPose:
+            img = input.originalCrop
+
+        request = self._parameters.buildAnnotateRequest(annotator, args, encodeImage(img))
         self._manager.makeAnnotationRequest(request, input._id)
 
     @pyqtSlot()

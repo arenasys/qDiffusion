@@ -449,6 +449,8 @@ class GUI(QObject):
                 del self._results[id]
                 
         if type == "annotate":
+            if "pose" in data:
+                self.addResult(id, "pose", data["pose"])
             self.addResult(id, "result", data["images"], data["type"])
             self.setReady()
 

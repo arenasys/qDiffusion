@@ -64,7 +64,7 @@ SMenuBar {
         }
         SMenuItem {
             text: root.tr("Reload")
-            shortcut: "Ctrl+R"
+            shortcut: "Ctrl+B"
             global: true
             onPressed: {
                 SETTINGS.restart()
@@ -74,7 +74,7 @@ SMenuBar {
         SMenuSeparator {}
         SMenuItem {
             text: root.tr("Quit")
-            shortcut: "Ctrl+Q"
+            shortcut: "Ctrl+Shift+Q"
             global: true
             onPressed: {
                 GUI.quit()

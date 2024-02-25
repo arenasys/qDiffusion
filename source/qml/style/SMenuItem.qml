@@ -8,6 +8,8 @@ MenuItem {
     id: menuItem
     implicitWidth: 150
     implicitHeight: menuItemSize
+
+    property var contentWidth: visible ? label.contentWidth + shortcutLabel.contentWidth + 20 : 0
     
     property var pointSize: 10.6
     property var color: COMMON.fg1
@@ -96,6 +98,7 @@ MenuItem {
         }
         
         SText {
+            id: shortcutLabel
             height: parent.height
             anchors.right: parent.right
             width: parent.width - label.width

@@ -14,6 +14,7 @@ Item {
     property var editing: masking || painting
     property var segmenting: false
     property var tiling: false
+    property var posing: false
     property var file: null
     property var image: null
     visible: false
@@ -80,14 +81,16 @@ Item {
 
         if (BASIC.openedArea == "input" && (target.folder == undefined || target.folder == "")) {
             root.masking = target.isMask
-            root.painting = !target.isMask && target.isCanvas
+            root.painting = !target.isMask && target.isCanvas && !target.isPose
             root.segmenting = (target.role == 5)
             root.tiling = target.isTile
+            root.posing = target.isPose
         } else {
             root.masking = false
             root.painting = false
             root.segmenting = false
             root.tiling = false
+            root.posing = false
         }
 
         var reset = false
@@ -115,6 +118,13 @@ Item {
             movable.itemWidth = Qt.binding(function () { return root.target.linked ? root.target.linkedWidth : root.target.width; })
             movable.itemHeight = Qt.binding(function () { return root.target.linked ? root.target.linkedHeight : root.target.height; })
             root.file = null
+        } else if (root.posing) {
+            canvas.visible = false
+            root.image = Qt.binding(function () { return root.target.originalCrop; })
+            reset = movable.itemWidth != root.target.width || movable.itemHeight != root.target.height
+            movable.itemWidth = root.target.width
+            movable.itemHeight = root.target.height
+            root.file = root.target.file
         } else {
             canvas.visible = false
             root.image = Qt.binding(function () { return root.target.displayFull; })
@@ -408,6 +418,48 @@ Item {
                     width: show ? Math.floor(modelData.width*factor) : 0
                     height: show ? Math.floor(modelData.height*factor) : 0
                 }
+            }
+        }
+
+        PoseEditor {
+            id: poseEditor
+            visible: root.posing
+            anchors.fill: parent
+
+            area.x: item.x
+            area.y: item.y
+            area.width: item.width
+            area.height: item.height
+
+            target: root.target != null && root.posing ? root.target : null
+            poses: root.target != null && root.posing ? root.target.poses : []
+
+            function addPose(position, aspect) {
+                root.target.addPose(position, aspect)
+            }
+
+            function cleanPoses() {
+                root.target.cleanPoses()
+            }
+
+            function undo() {
+                root.target.undoPose()
+            }
+
+            function redo() {
+                root.target.redoPose()
+            }
+
+            function clearRedo() {
+                root.target.clearRedoPose()
+            }
+
+            function draw() {
+                root.target.drawPose()
+            }
+
+            function close() {
+                root.close()
             }
         }
 
@@ -879,8 +931,15 @@ Item {
             }
         }
     }
+
+    Keys.forwardTo: root.posing ? [poseEditor] : []
     
     Keys.onPressed: {
+        if(root.posing) {
+            event.accepted = false
+            return
+        }
+        
         event.accepted = true
         if(event.modifiers & Qt.ControlModifier) {
             switch(event.key) {

@@ -758,7 +758,7 @@ Item {
                     SIconButton {
                         visible: !modelData.hasSource && modelData.canPaint
                         id: paintButton
-                        icon: "qrc:/icons/paint.svg"
+                        icon: modelData.isPose ? "qrc:/icons/person.svg" : "qrc:/icons/paint.svg"
                         onPressed: {
                             itemFrame.forceActiveFocus()
                             modelData.setImageCanvas()

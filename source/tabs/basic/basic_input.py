@@ -1,5 +1,5 @@
-from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, QObject, QSize, QUrl, QMimeData, QByteArray, Qt, QRect
-from PyQt5.QtGui import QImage, QDrag, QVector3D, QColor
+from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, QObject, QSize, QUrl, QMimeData, QByteArray, Qt, QRect, QRectF, QPointF, QSizeF
+from PyQt5.QtGui import QImage, QDrag, QVector3D, QColor, QPainter, QBrush, QPen, QPolygonF
 from PyQt5.QtWidgets import QApplication
 from enum import Enum
 
@@ -9,6 +9,8 @@ from canvas.shared import QImagetoPIL, AlphatoQImage
 import math
 import os
 import glob
+
+from tabs.basic.basic_pose import Pose
 
 MIME_BASIC_INPUT = "application/x-qd-basic-input"
 
@@ -26,11 +28,13 @@ class BasicInput(QObject):
     linkedUpdated = pyqtSignal()
     extentUpdated = pyqtSignal()
     folderUpdated = pyqtSignal()
+    posesUpdated = pyqtSignal()
     def __init__(self, basic, image=QImage(), role=BasicInputRole.IMAGE):
         global INPUT_ID
         super().__init__(basic)
         self.basic = basic
         self._originalCrop = None
+        self._originalCropInfo = None
         self._original = image.copy()
         self._image = image
         self._role = role
@@ -85,10 +89,19 @@ class BasicInput(QObject):
         self._originalFile = QImage()
         self._file = QImage()
 
+        #Posing
+        self._poses = []
+        self._poseAnnotateInfo = None
+        self._poseUndo = []
+        self._poseRedo = []
+
         basic.parameters._values.updated.connect(self.updateImage)
         self.updated.connect(basic.onImageUpdated)
 
     def updateImage(self):
+        self._originalCrop = None
+        self._originalCropInfo = None
+        
         if self._image and not self._image.isNull():
             if self._linked and self._linked.image and not self._linked.image.isNull():
                 bg = self._linked.image
@@ -97,7 +110,6 @@ class BasicInput(QObject):
             else:
                 if (self._role == BasicInputRole.IMAGE and self.basic.hasMask(self)) or self._role == BasicInputRole.SEGMENTATION:
                     self._image = self._original
-                    self._originalCrop = None
                 else:
                     w,h = self.basic.parameters.values.get("width"),  self.basic.parameters.values.get("height")
                     self.resizeImage(QSize(int(w),int(h)))
@@ -122,7 +134,7 @@ class BasicInput(QObject):
         if not self.isCanvas or self.isMask:
             ox, oy, s = 0, 0, 1
 
-        self._originalCrop = cropImage(self._original, out_z, ox, oy, s)
+        self._originalCrop, self._originalCropInfo = cropImage(self._original, out_z, ox, oy, s, info=True)
         self._image = self._originalCrop.scaled(out_z, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
         self._image.convertTo(self._originalCrop.format())
 
@@ -132,6 +144,9 @@ class BasicInput(QObject):
 
             self._base = cropImage(self._base, out_z).scaled(out_z, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
             self._base.convertTo(self._originalCrop.format())
+
+        if self.isPose:
+            self.drawPose()
 
     @pyqtSlot(QUrl)
     def saveImage(self, file):
@@ -246,6 +261,10 @@ class BasicInput(QObject):
     @pyqtProperty(QImage, notify=updated)
     def original(self):
         return self._original
+    
+    @pyqtProperty(QImage, notify=updated)
+    def originalCrop(self):
+        return self._originalCrop or self._original
 
     @pyqtProperty(int, notify=updated)
     def originalWidth(self):
@@ -285,6 +304,131 @@ class BasicInput(QObject):
     def isTile(self):
         return self._role == BasicInputRole.CONTROL and self._control_mode == "Tile"
     
+    @pyqtProperty(bool, notify=updated)
+    def isPose(self):
+        return self._role == BasicInputRole.CONTROL and self._control_mode == "Pose"
+    
+    @pyqtProperty(list, notify=posesUpdated)
+    def poses(self):
+        return self._poses
+    
+    def getRawPose(self):
+        return [p.encode() for p in self._poses]
+    
+    def getPose(self):
+        return self.unscalePose(self.getRawPose())
+
+    def setRawPose(self, pose):
+        self._poses = [
+            Pose(self, p) for p in pose
+        ]
+        self.posesUpdated.emit()
+        self.drawPose()
+
+    def setPose(self, pose):
+        self.setRawPose(self.scalePose(pose))
+
+    def cachePose(self):
+        current = self.getRawPose()
+
+        if not self._poseUndo or self._poseUndo[-1] != current:
+            self._poseUndo += [current]
+    
+    def scalePose(self, pose):
+        i = self._poseAnnotateInfo
+        x, y, w, h = i.x(), i.y(), i.width(), i.height()
+
+        scaled = []
+        for p in pose:
+            nodes  = []
+            for n in p:
+                if n:
+                    n = [(n[0]*w) + x, (n[1]*h) + y]
+                nodes += [n]
+            scaled += [nodes]
+        return scaled
+    
+    def unscalePose(self, pose):
+        crop = self._originalCropInfo or QRectF(0, 0, self._original.width(), self._original.height())
+
+        cx, cy = int(crop.left()), int(crop.top())
+        cw, ch = int(crop.width()), int(crop.height())
+
+        scaled = []
+        for p in pose:
+            nodes  = []
+            for n in p:
+                if n:
+                    n = [(n[0]-cx)/cw, (n[1]-cy)/ch]
+                nodes += [n]
+            scaled += [nodes]
+        return scaled
+    
+    @pyqtSlot()
+    def clearRedoPose(self):
+        self._poseRedo = []
+
+    @pyqtSlot()
+    def undoPose(self):
+        if len(self._poseUndo) < 2:
+            return
+        
+        current = self._poseUndo.pop()
+        last = self._poseUndo.pop()
+        self.setRawPose(last)
+        self._poseRedo += [current]
+
+    @pyqtSlot()
+    def redoPose(self):
+        if len(self._poseRedo) < 1:
+            return
+        
+        last = self._poseRedo.pop()
+        self._poseUndo += [last]
+        self.setRawPose(last)
+
+    @pyqtSlot(QPointF, float)
+    def addPose(self, position, aspect):
+        self._poses += [Pose(self, Pose.makeAtPosition(position, aspect))]
+        self.posesUpdated.emit()
+        self.drawPose()
+
+    @pyqtSlot()
+    def cleanPoses(self):
+        empty = []
+        for pose in self._poses:
+            if pose.isEmpty():
+                empty += [pose]
+
+        self._poses = [p for p in self._poses if not p in empty]
+        self.posesUpdated.emit()
+        self.drawPose()
+    
+    @pyqtSlot()
+    def drawPose(self):
+        self.cachePose()
+        
+        size = QSize(self.linkedWidth, self.linkedHeight)
+        original = self._original
+        crop = self._originalCropInfo or QRectF(0, 0, original.width(), original.height())
+
+        self._image = Pose.drawPoses(self.getPose(), size, original, crop)
+        self.resetDisplay()
+
+    @pyqtProperty(QPointF, notify=updated)
+    def poseSize(self):
+        if not self._original:
+            return QPointF(self.width, self.height)
+        return QPointF(self._original.width(), self._original.height())
+    
+    @pyqtProperty(QRectF, notify=updated)
+    def poseCrop(self):
+        if not self._original:
+            return QRectF(0, 0, self.width, self.height)
+        if not self._originalCrop:
+            return QRectF(0, 0, self._original.width(), self._original.height())
+        return self._originalCropInfo
+
     @pyqtProperty(bool, notify=updated)
     def canPaint(self):
         return self._role in {BasicInputRole.IMAGE, BasicInputRole.MASK, BasicInputRole.SUBPROMPT} or (self._role == BasicInputRole.CONTROL and not self._control_mode in {"Tile", "QR"})
@@ -459,6 +603,9 @@ class BasicInput(QObject):
     
     @pyqtSlot()
     def annotate(self):
+        if self.isPose:
+            self._poseAnnotateInfo = self._originalCropInfo
+
         self.basic.annotate(self)
 
     def getControlArgs(self):
@@ -469,6 +616,8 @@ class BasicInput(QObject):
             args += [self._control_settings.get("slider_b")]
         if self._control_settings.get("bool_label"):
             args += [self._control_settings.get("bool") == "True"]
+        if self.isPose:
+            args += [self.getPose()]
         return args
     
     def getControlGuess(self):
@@ -630,7 +779,6 @@ class BasicInput(QObject):
 
     @pyqtSlot()
     def resetDisplay(self):
-        self._display = None
         self.updated.emit()
 
     @pyqtSlot()
@@ -665,7 +813,10 @@ class BasicInput(QObject):
         if not w or not w:
             w,h = self.basic.parameters.values.get("width"),  self.basic.parameters.values.get("height")
         self._image = QImage(QSize(int(w),int(h)), QImage.Format_ARGB32_Premultiplied)
-        self._image.fill(0)
+        if self.isPose:
+            self._image.fill(QColor("black"))
+        else:
+            self._image.fill(0)
         self._original = self._image.copy()
         self.updateImage()
         self.resetAuxiliary(canvas=True)

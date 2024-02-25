@@ -59,7 +59,7 @@ try:
 except:
     pass
 
-from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent, QMimeData, QByteArray, QBuffer, QIODevice, QUrl, QSharedMemory, QThread
+from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent, QMimeData, QByteArray, QBuffer, QIODevice, QRect, QRectF, QPoint, QUrl, QThread, QSharedMemory
 from PyQt5.QtQuick import QQuickItem, QQuickPaintedItem
 from PyQt5.QtGui import QColor, QImage, QSyntaxHighlighter, QColor
 from PyQt5.QtNetwork import QNetworkRequest, QNetworkReply, QNetworkAccessManager
@@ -448,7 +448,7 @@ def decodeImage(data):
     img.loadFromData(data, "png")
     return img
 
-def cropImage(img, size, offset_x = 0, offset_y = 0, scale = 1):
+def cropImage(img, size, offset_x = 0, offset_y = 0, scale = 1, info=False):
     in_z = img.size()
         
     ar = size.width()/size.height()
@@ -456,7 +456,8 @@ def cropImage(img, size, offset_x = 0, offset_y = 0, scale = 1):
     rh = in_z.height()/size.height()
     rw = in_z.width()/size.width()
 
-    w, h = in_z.width(), in_z.height()
+    in_w, in_h = in_z.width(), in_z.height()
+    w, h = in_w, in_h
 
     if size.width() * rh > in_z.width():
         h = math.ceil(w / ar)
@@ -471,7 +472,10 @@ def cropImage(img, size, offset_x = 0, offset_y = 0, scale = 1):
     dx = int((in_z.width()-w)*ox)
     dy = int((in_z.height()-h)*oy)
 
-    return img.copy(dx, dy, w, h)
+    if info:
+        return img.copy(dx, dy, w, h), QRectF(dx, dy, w, h)
+    else:
+        return img.copy(dx, dy, w, h)
 
 def showFilesInExplorer(folder, files):
     ctypes.windll.ole32.CoInitialize(None)

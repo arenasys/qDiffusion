@@ -132,7 +132,7 @@ class BuilderRunnable(threading.Thread):
 
 class RequestManager(QObject):
     updated = pyqtSignal()
-    artifact = pyqtSignal(int, QImage, str)
+    artifact = pyqtSignal(int, object, str)
     result = pyqtSignal(int, QImage, object, str)
     finished = pyqtSignal()
 
@@ -567,7 +567,7 @@ class RequestManager(QObject):
             out = self.mapping[id]
 
             if id in self.annotations:
-                self.artifact.emit(self.annotations[id], results[0], "Annotated")
+                self.artifact.emit(self.annotations[id], results[0], "annotated")
                 del self.annotations[id]
                 return
 
@@ -587,6 +587,11 @@ class RequestManager(QObject):
 
                 out += 1
         
+        if name == "pose":
+            if id in self.annotations:
+                pose = self.gui._results[id]["pose"]
+                self.artifact.emit(self.annotations[id], pose, "pose")
+
         if (name == "result" and not id in self.gui._delayed) or name == "temporary":
             self.finished.emit()
 
