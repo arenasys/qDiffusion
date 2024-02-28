@@ -185,6 +185,7 @@ Item {
     }
 
     Rectangle {
+        visible: !root.posing
         anchors.fill: parent
         color: "#b0000000"
     }
@@ -549,6 +550,9 @@ Item {
             }
 
             onResizingBrushChanged: {
+                if(!visible) {
+                    return
+                }
                 if(resizingBrush) {
                     resizeStart = Qt.point(rings.mousePosition.x, rings.mousePosition.y)
                 } else {

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   height="16"
+   width="16"
+   version="1.1"
+   viewBox="0 0 16 16"
+   data-name="Layer 2"
+   id="Layer_2"
+   sodipodi:docname="rotate.svg"
+   inkscape:version="1.3.2 (091e20ef0f, 2023-11-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <sodipodi:namedview
+     id="namedview5315"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="16"
+     inkscape:cx="14.6875"
+     inkscape:cy="8.59375"
+     inkscape:window-width="1920"
+     inkscape:window-height="1011"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="Layer_2" />
+  <metadata
+     id="metadata25">
+    <rdf:RDF>
+      <cc:Work>
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+        <dc:creator>
+          <cc:Agent>
+            <dc:title>Andrei Rudenko</dc:title>
+          </cc:Agent>
+        </dc:creator>
+        <dc:date>2021</dc:date>
+        <cc:license
+           rdf:resource="http://creativecommons.org/licenses/by-sa/4.0/" />
+      </cc:Work>
+      <cc:License
+         rdf:about="http://creativecommons.org/licenses/by-sa/4.0/">
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Reproduction" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Distribution" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Notice" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Attribution" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#ShareAlike" />
+      </cc:License>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs4">
+    <style
+       id="style2">.cls-1,.cls-2{fill:#cacaca}.cls-2{fill-rule:evenodd}</style>
+  </defs>
+  <circle
+     style="fill:#000000;stroke-width:11.2088"
+     id="path1-3"
+     cx="8"
+     cy="8"
+     r="1.5" />
+  <path
+     id="path1-3-6"
+     style="fill:#000000;stroke-width:29.89"
+     d="M 3.5307733,11.275607 A 5.5,5.5 0 0 1 4.6664002,3.580781 5.5,5.5 0 0 1 11.655767,3.9533688 l 0.0024,-0.00663 c 0.259621,0.2220292 0.497573,0.4775795 0.706223,0.767343 0.137039,0.1903608 0.513602,0.691447 0.513602,0.691447 L 14.058598,4.5285589 13.53669,7.5730513 10.469659,7.1943983 11.665973,6.3057848 11.099962,5.543782 l -0.0016,0.00116 A 4,4 0 0 0 5.5608365,4.7849337 4,4 0 0 0 4.734926,10.381171 a 4,4 0 0 0 5.596237,0.82591 4,4 0 0 0 1.394983,-1.9509858 l 1.466785,0.3435117 A 5.5,5.5 0 0 1 11.2256,12.411234 5.5,5.5 0 0 1 3.5307733,11.275607 Z" />
+</svg>

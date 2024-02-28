@@ -8,6 +8,34 @@ NAMES = [
     "Left Knee", "Left Ankle", "Right Eye", "Left Eye", "Right Ear", "Left Ear"
 ]
 
+RELATIVE = {
+    "Neck": "Neck",
+    "Nose": "Neck",
+    "Right Shoulder": "Neck",
+    "Right Elbow": "Right Shoulder",
+    "Right Wrist": "Right Elbow",
+    "Left Shoulder": "Neck",
+    "Left Elbow": "Left Shoulder",
+    "Left Wrist": "Left Elbow",
+    "Right Hip": "Neck",
+    "Right Knee": "Right Hip",
+    "Right Ankle": "Right Knee",
+    "Left Hip": "Neck",
+    "Left Knee": "Left Hip",
+    "Left Ankle": "Left Knee",
+    "Right Eye": "Nose",
+    "Left Eye": "Nose",
+    "Right Ear": "Right Eye",
+    "Left Ear": "Left Eye"
+}
+
+RELATIVE_ORDER = [
+    "Neck",
+    "Nose", "Right Shoulder", "Left Shoulder", "Right Hip", "Left Hip",
+    "Left Eye", "Right Eye", "Right Elbow", "Left Elbow", "Right Knee", "Left Knee",
+    "Left Ear", "Right Ear", "Right Wrist", "Left Wrist", "Right Ankle", "Left Ankle"
+]
+
 LIMBS = [
     [2, 3], [2, 6], [3, 4], [4, 5], [6, 7], [7, 8], [2, 9], [9, 10], \
     [10, 11], [2, 12], [12, 13], [13, 14], [2, 1], [1, 15], [15, 17], \
@@ -26,6 +54,10 @@ DEFAULT = [
     [0.7, 0.78], [0.7, 1.0], [0.4, 0.0], [0.6, 0.0], [0.3, 0.05], [0.7, 0.05]
 ]
 
+def rotatePoint(point, angle):
+    x, y, s, c = point.x(), point.y(), math.sin(angle), math.cos(angle)
+    return QPointF(x*c - y*s, x*s + y*c)
+
 class PoseNode(QObject):
     updated = pyqtSignal()
     def __init__(self, parent, point, index):
@@ -41,10 +73,20 @@ class PoseNode(QObject):
         self._scale = QPointF()
         self._rotation = 0
 
+        self._relative = None
+        self._angle = 0
+        self._length = 0
+        self._angle_offset = 0
+        self._length_offset = 0
+
         self._index = index
     
     @pyqtProperty(QPointF, notify=updated)
     def point(self):
+        if self.isNull:
+            return self._point
+        if self._relative:
+            return self._relative.point + rotatePoint(QPointF(self._length + self._length_offset, 0), self.angle())
         if self._origin.isNull():
             return self.appliedOffset()
         elif not self._scale.isNull():
@@ -74,6 +116,33 @@ class PoseNode(QObject):
     def appliedOffset(self):
         return self._point + self._offset
     
+    @pyqtSlot(QPointF, bool, bool)
+    def setRelativeOffset(self, offset, allowAngle, allowLength):
+        if not self._relative:
+            self.setOffset(offset)
+            return
+        
+        p = offset + self._relative.point + rotatePoint(QPointF(self._length, 0), self._relative.angle() + self._angle)
+
+        a, l = self.computePolar(p)
+
+        self._angle_offset = a - self._angle if allowAngle else 0
+        self._length_offset = l - self._length if allowLength else 0
+
+        self.updated.emit()
+
+    @pyqtSlot()
+    def applyRelativeOffset(self):
+        if not self._relative:
+            self.applyOffset()
+            return
+        
+        self._angle = self._angle + self._angle_offset
+        self._length = self._length + self._length_offset
+        self._angle_offset = 0
+        self._length_offset = 0
+        self.updated.emit()
+
     @pyqtSlot(QPointF, QPointF)
     def setScale(self, origin, scale):
         self._origin = origin
@@ -105,16 +174,47 @@ class PoseNode(QObject):
         )
 
     def appliedRotation(self):
-        rc = math.cos(self._rotation)
-        rs = math.sin(self._rotation)
+        return rotatePoint(self._point - self._origin, self._rotation) + self._origin
+    
+    @pyqtSlot()
+    def clearOffsets(self):
+        self._offset = QPointF()
+        self._origin = QPointF()
+        self._scale = QPointF()
+        self._rotation = 0
+        self._angle_offset = 0
+        self._length_offset = 0
+        self.updated.emit()
 
-        px, py = self._point.x(), self._point.y()
-        ox, oy = self._origin.x(), self._origin.y()
+    def computePolar(self, p=None):
+        if self._relative:
+            if not p:
+                p = self._point
+            d = rotatePoint(p - self._relative.point, -self._relative.angle())
+        else:
+            d = self._point
+        
+        angle = math.atan2(d.y(),d.x())
+        length = (d.x()**2 + d.y()**2)**0.5
 
-        return QPointF(
-            ((px-ox)*rc - (py-oy)*rs) + ox, 
-            ((py-oy)*rc + (px-ox)*rs) + oy
-        )
+        return angle, length
+    
+    def setRelative(self, node):
+        if self._relative:
+            self._relative.updated.disconnect(self.onRelativeUpdated)
+        self._relative = node
+        if self._relative:
+            self._relative.updated.connect(self.onRelativeUpdated)
+
+    @pyqtSlot()
+    def onRelativeUpdated(self):
+        self.updated.emit()
+
+    def angle(self):
+        if self._relative:
+            return self._relative.angle() + self._angle + self._angle_offset
+        else:
+            return self._angle + self._angle_offset
 
     @pyqtProperty(bool, notify=updated)
     def isNull(self):
@@ -199,9 +299,10 @@ class PoseEdge(QObject):
         return self.parent().bound
 
 class Pose(QObject):
+    relativeUpdated = pyqtSignal()
     boundUpdated = pyqtSignal()
     updated = pyqtSignal()
-    def __init__(self, parent=None, points=[]):
+    def __init__(self, parent=None, points=[], relative=False):
         super().__init__(parent)
         self._nodes = [PoseNode(self, p, i) for i, p in enumerate(points)]
         self._edges = []
@@ -211,12 +312,16 @@ class Pose(QObject):
             b = self._nodes[limb[1]]
             self._edges += [PoseEdge(self, a, b, i)]
 
+        self._relative = False
+        if relative:
+            self.relative = relative
+
     @pyqtProperty(list, notify=updated)
     def nodes(self):
         return self._nodes
     
     def encode(self):
-        return [None if n.isNull else (n._point.x(), n._point.y()) for n in self._nodes]
+        return [None if n.isNull else (n.point.x(), n.point.y()) for n in self._nodes]
 
     def isEmpty(self):
         return all([n.isNull for n in self._nodes])
@@ -251,6 +356,9 @@ class Pose(QObject):
         position = closest._point + delta
 
         node._point = position
+        if self._relative:
+            self.computeRelative()
+
         node.updated.emit()
 
     def guessBound(self, aspect=1):
@@ -316,18 +424,25 @@ class Pose(QObject):
         poly = QPolygonF([n.point for n in self.nodes if not n.isNull])
         return poly.boundingRect()
 
-    def drawPoses(poses, size, original, crop):
+    def drawPoses(poses, size, original, crop, display=True):
         w, h = int(size.width()), int(size.height())
         cx, cy = int(crop.left()), int(crop.top())
         cw, ch = int(crop.width()), int(crop.height())
-        z = max(w,h)/100
+
+        if display:
+            z = max(w,h)/100
+        else:
+            z = 4
 
         image = original.copy(cx, cy, cw, ch)
         image = image.scaled(w, h, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
 
         painter = QPainter(image)
         painter.setPen(Qt.NoPen)
-        painter.setBrush(QBrush(QColor(0,0,0,200)))
+        if display:
+            painter.setBrush(QBrush(QColor(0,0,0,200)))
+        else:
+            painter.setBrush(QBrush(QColor(0,0,0)))
         painter.drawRect(QRect(0, 0, w, h))
 
         for pose in poses:
@@ -370,6 +485,47 @@ class Pose(QObject):
         painter.end()
         return image
     
+    def computeRelative(self):
+        if not self._relative:
+            points = [n.point for n in self._nodes]
+            for i, n in enumerate(self._nodes):
+                n._point = points[i]
+                n.setRelative(None)
+                n.updated.emit()
+        else:
+            for src_name in RELATIVE_ORDER:
+                tgt_name = RELATIVE[src_name]
+
+                src = self._nodes[NAMES.index(src_name)]
+                tgt = self._nodes[NAMES.index(tgt_name)]
+
+                src.setRelative(None if src == tgt else tgt)
+                src._angle, src._length = src.computePolar()
+                src.updated.emit()
+
+        self.relativeUpdated.emit()
+
+    @pyqtProperty(bool, notify=relativeUpdated)
+    def relative(self):
+        return self._relative
+    
+    @relative.setter
+    def relative(self, relative):
+        if(relative == self._relative):
+            return
+        self._relative = relative
+        self.computeRelative()
+
+    @pyqtSlot(PoseNode, float)
+    def addRelativeAngle(self, node, offset):
+        if node._relative == None:
+            node._angle += offset
+            node.updated.emit()
+        else:
+            for child in [n for n in self._nodes if n._relative == node]:
+                child._angle += offset
+                child.updated.emit()
+
     def printPose(self):
         p = []
         for n in self._nodes:

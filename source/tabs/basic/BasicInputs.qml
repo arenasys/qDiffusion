@@ -912,7 +912,7 @@ Item {
 
                 FileDialog {
                     id: inputFileDialog
-                    nameFilters: [root.tr("Image files") + " (*.png *.jpg *.jpeg)"]
+                    nameFilters: [root.tr("Image files") + " (*.png *.jpg *.jpeg *.webp *.gif)"]
 
                     onAccepted: {
                         modelData.setImageFile(inputFileDialog.file)

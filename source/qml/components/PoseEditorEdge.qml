@@ -20,6 +20,10 @@ Item {
     width: Math.max(length, 8)
     height: Math.max(length, 8)
 
+    onAngleChanged: {
+        canvas.requestPaint()
+    }
+
     Canvas {
         id: canvas
         visible: parent.visible

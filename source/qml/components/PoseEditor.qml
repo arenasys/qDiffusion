@@ -1,5 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
+import Qt.labs.platform 1.1
 
 import gui 1.0
 
@@ -9,6 +10,12 @@ Item {
     id: root
     property var target
     property var poses
+    property var relative: target != null ? target.relativePosing : false
+
+    onRelativeChanged: {
+        root.doClear(true)
+    }
+
     property alias area: shownArea
 
     property var selected: []
@@ -17,6 +24,14 @@ Item {
 
     property var selectionArea: null
     property var boundArea: null
+
+    function close() {
+
+    }
+
+    function tr(str, file = "PoseEditor.qml") {
+        return TRANSLATOR.instance.translate(str, file)
+    }
 
     function syncSelection() {
         root.selected = root.selected.filter(function(item, pos) {
@@ -54,38 +69,24 @@ Item {
         var br = Qt.point(Math.max(a.x,b.x), Math.max(a.y,b.y))
         return Qt.rect(tl.x, tl.y, br.x-tl.x, br.y-tl.y)
     }
+    
+    function doClear(selection) {
+        mouseArea.clear()
 
-    function addPose(position) {
-        root.target.addPose(position)
-    }
+        for(var i = 0; i < root.selected.length; i++) {
+            root.selected[i].clearOffsets()
+        }
 
-    function cleanPoses() {
-        root.target.cleanPoses()
-    }
-
-    function undo() {
-        root.target.undoPose()
-    }
-
-    function redo() {
-        root.target.redoPose()
-    }
-
-    function clearRedo() {
-        root.target.clearRedoPose()
-    }
-
-    function draw() {
-        root.target.drawPose()
-    }
-
-    function close() {
-
+        if(selection) {
+            root.selected = []
+        }
+        root.selectionArea = null
+        syncBound()
     }
 
     function doDraw() {
-        root.clearRedo()
-        root.draw()
+        root.target.clearRedoPose()
+        root.target.drawPose()
     }
 
     function doDelete() {
@@ -93,10 +94,14 @@ Item {
             root.selected[i].delete()
         }
         syncSelection()
-        root.cleanPoses()
+        root.target.cleanPoses()
     }
 
     function doSelectAll() {
+        if(root.relative) {
+            return
+        }
+
         var selection = []
 
         for(var i = 0; i < poses.length; i++) {
@@ -189,6 +194,18 @@ Item {
                 var find = findNode()
                 var node = find[0]
 
+                if(root.relative) {
+                    if(node != null) {
+                        if(!root.selected.includes(node)) {
+                            root.selected = [node]
+                        }
+                        moveStart = getPosition()
+                    } else {
+                        root.selected = []
+                    }
+                    return
+                }
+
                 if(root.boundArea != null && isContainedBy(boundBox)) {
                     if((ctrl && node == null) || !ctrl) {
                         moveStart = getPosition()
@@ -270,8 +287,12 @@ Item {
                 var draw = false
 
                 if(moveStart != null) {
-                    for(var i = 0; i < root.selected.length; i++) {
-                        root.selected[i].applyOffset()
+                    if(root.relative) {
+                        root.selected[0].applyRelativeOffset()
+                    } else {
+                        for(var i = 0; i < root.selected.length; i++) {
+                            root.selected[i].applyOffset()
+                        }
                     }
                     moveStart = null
                     draw = true
@@ -305,15 +326,26 @@ Item {
         }
 
         onPositionChanged: {
-            var ctrl = mouse.modifiers & Qt.ControlModifier 
+            var ctrl = mouse.modifiers & Qt.ControlModifier
+            var shift = mouse.modifiers & Qt.ShiftModifier 
 
             if(moveStart) {
-                var end = getPosition()
-                var offset = Qt.point(end.x - moveStart.x, end.y - moveStart.y)
-                for(var i = 0; i < root.selected.length; i++) {
-                    root.selected[i].setOffset(offset)
+                if(root.relative) {
+                    var end = getPosition()
+                    var offset = Qt.point(end.x - moveStart.x, end.y - moveStart.y)
+
+                    var allowAngle = ctrl || shift ? ctrl : true
+                    var allowLength = ctrl || shift ? shift : false
+
+                    root.selected[0].setRelativeOffset(offset, allowAngle, allowLength)
+                } else {
+                    var end = getPosition()
+                    var offset = Qt.point(end.x - moveStart.x, end.y - moveStart.y)
+                    for(var i = 0; i < root.selected.length; i++) {
+                        root.selected[i].setOffset(offset)
+                    }
+                    syncBound()
                 }
-                syncBound()
                 return
             }
 
@@ -352,9 +384,9 @@ Item {
                     var b = Qt.point(original.width, original.height)
 
                     var f = (a.x*b.x + a.y*b.y)/(b.x*b.x + b.y*b.y)
-                    var proj = Qt.point(f*b.x, f*b.y)
+                    var projection = Qt.point(f*b.x, f*b.y)
 
-                    scale = Qt.point(proj.x/original.width, proj.y/original.height)
+                    scale = Qt.point(projection.x/original.width, projection.y/original.height)
                 }
 
                 for(var i = 0; i < root.selected.length; i++) {
@@ -390,6 +422,31 @@ Item {
             delay.start()
         }
 
+        onWheel: {
+            if(relative && wheel.modifiers & Qt.ControlModifier) {
+                var find = findNode()
+                var node = find[0]
+                var pose = find[1]
+
+                if(!node) {
+                    return
+                }
+
+                var s = 9
+                if(wheel.modifiers & Qt.ShiftModifier) {
+                    s = 36
+                }
+
+                var d = wheel.angleDelta.y / 120
+                var o = -d * (Math.PI/s)
+                pose.addRelativeAngle(node, o)
+                root.doDraw()
+
+            } else {
+                wheel.accepted = false
+            }
+        }
+
         function findNode() {
             var position = getPosition()
             var offsetX = 8/area.scale.x
@@ -422,16 +479,96 @@ Item {
 
             return [closest, closestPose]
         }
+
+        function active() {
+            return moveStart != null || selectStart != null || scaleStart != null || rotateStart != null
+        }
+
+        function clear() {
+            mouseArea.moveStart = null
+            mouseArea.selectStart = null
+            mouseArea.scaleOffset = null
+            mouseArea.scaleOrigin = null
+            mouseArea.scaleStart = null
+            mouseArea.rotateOrigin = null
+            mouseArea.rotateStart = null
+        }
+    }
+
+    Rectangle {
+        id: bg
+        x: shownArea.x
+        y: shownArea.y
+        width: shownArea.width
+        height: shownArea.height
+        color: "black"
+        opacity: 0.8
+    }
+
+    Item {
+        anchors.fill: parent
+        Item {
+            x: shownArea.x + area.x
+            y: shownArea.y + area.y
+            width: area.width
+            height: area.height
+            Repeater {
+                model: poses
+                Item {
+                    id: entry
+                    anchors.fill: parent
+                    property var pose: modelData
+                    property var nodes: pose.nodes
+                    
+                    Repeater {
+                        model: pose.edges
+                        PoseEditorEdge {
+                            scale: area.scale
+                            edge: modelData
+                        }
+                    }
+                }
+            }
+        }
+        Rectangle {
+            x: 0
+            y: 0
+            width: parent.width
+            height: bg.y
+            color: "black"
+            opacity: 0.8
+        }
+        Rectangle {
+            x: 0
+            y: bg.y+bg.height
+            width: parent.width
+            height: parent.height-y
+            color: "black"
+            opacity: 0.8
+        }
+        Rectangle {
+            x: 0
+            y: bg.y
+            width: bg.x
+            height: bg.height
+            color: "black"
+            opacity: 0.8
+        }
+        Rectangle {
+            x: bg.x+bg.width
+            y: bg.y
+            width: parent.width-x
+            height: bg.height
+            color: "black"
+            opacity: 0.8
+        }
+
+        layer.enabled: true
+        opacity: 0.6
     }
 
     Item {
         id: shownArea
-
-        Rectangle {
-            anchors.fill: parent
-            color: "black"
-            opacity: 0.8
-        }
 
         Item {
             id: area
@@ -444,29 +581,6 @@ Item {
             y: -crop.y * factor.y
             width: size.x * factor.x
             height: size.y * factor.y
-
-            Item {
-                anchors.fill: parent
-                Repeater {
-                    model: poses
-                    Item {
-                        id: entry
-                        anchors.fill: parent
-                        property var pose: modelData
-                        property var nodes: pose.nodes
-                        
-                        Repeater {
-                            model: pose.edges
-                            PoseEditorEdge {
-                                scale: area.scale
-                                edge: modelData
-                            }
-                        }
-                    }
-                }
-                layer.enabled: true
-                opacity: 0.6
-            }
 
             Item {
                 anchors.fill: parent
@@ -698,7 +812,7 @@ Item {
                     text: "New Pose"
                     shortcut: "Ctrl+N"
                     onPressed: {
-                        root.addPose(contextMenu.position)
+                        root.target.addPose(contextMenu.position, root.relative)
                     }
                 }
                 
@@ -826,6 +940,59 @@ Item {
         }
     }
 
+
+    FileDialog {
+        id: poseSaveDialog
+        title: root.tr("Save pose", "General")
+        nameFilters: [root.tr("Image files") + " (*.png)"]
+        fileMode: FileDialog.SaveFile
+        defaultSuffix: "png"
+        onAccepted: {
+            root.target.savePose(poseSaveDialog.file)
+        }
+    }
+
+    Rectangle {
+        id: poseBar
+        width: 40
+        height: (width-2)*2
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.left: parent.left
+        anchors.leftMargin: -2
+        color: COMMON.bg2
+        border.color: COMMON.bg4
+        border.width: 2
+
+        Column {
+            anchors.fill: parent
+            anchors.margins: 2
+
+            SIconButton {
+                width: parent.width
+                height: width
+                inset: 4
+                icon: root.relative ? "qrc:/icons/rotate.svg" : "qrc:/icons/translate.svg"
+                tooltip: root.relative ? "Switch to Translation mode (Alt)" : "Switch to Rotation mode (Alt)"
+                color: "transparent"
+                onPressed: {
+                    target.relativePosing = !target.relativePosing
+                }
+            }
+
+            SIconButton {
+                width: parent.width
+                height: width
+                inset: 12
+                icon: "qrc:/icons/save.svg"
+                tooltip: "Export pose image"
+                color: "transparent"
+                onPressed: {
+                    poseSaveDialog.open()
+                }
+            }
+        }
+    }
+
     Keys.onPressed: {
         event.accepted = true
         if(event.modifiers & Qt.ControlModifier) {
@@ -837,10 +1004,10 @@ Item {
                 root.doRepair()
                 break;
             case Qt.Key_Z:
-                root.undo()
+                root.target.undoPose()
                 break;
             case Qt.Key_Y:
-                root.redo()
+                root.target.redoPose()
                 break;
             default:
                 event.accepted = false
@@ -849,7 +1016,15 @@ Item {
         } else {
             switch(event.key) {
             case Qt.Key_Escape:
-                root.close()
+                if(mouseArea.active()) {
+                    root.doClear(false)
+                } else {
+                    root.doClear(true)
+                    root.close()
+                }
+                break;
+            case Qt.Key_Alt:
+                target.relativePosing = !target.relativePosing
                 break;
             case Qt.Key_Delete:
                 root.doDelete()

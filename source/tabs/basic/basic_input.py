@@ -29,6 +29,7 @@ class BasicInput(QObject):
     extentUpdated = pyqtSignal()
     folderUpdated = pyqtSignal()
     posesUpdated = pyqtSignal()
+    relativePosingUpdated = pyqtSignal()
     def __init__(self, basic, image=QImage(), role=BasicInputRole.IMAGE):
         global INPUT_ID
         super().__init__(basic)
@@ -94,6 +95,7 @@ class BasicInput(QObject):
         self._poseAnnotateInfo = None
         self._poseUndo = []
         self._poseRedo = []
+        self._poseRelative = False
 
         basic.parameters._values.updated.connect(self.updateImage)
         self.updated.connect(basic.onImageUpdated)
@@ -312,6 +314,18 @@ class BasicInput(QObject):
     def poses(self):
         return self._poses
     
+    @pyqtProperty(bool, notify=relativePosingUpdated)
+    def relativePosing(self):
+        return self._poseRelative
+    
+    @relativePosing.setter
+    def relativePosing(self, relative):
+        if relative == self._poseRelative:
+            return
+        self._poseRelative = relative
+        for p in self._poses:
+            p.relative = relative
+        self.relativePosingUpdated.emit()
 
     def getPoseCrop(self):
         return self._originalCropInfo or QRectF(0, 0, self._original.width(), self._original.height())
@@ -324,7 +338,7 @@ class BasicInput(QObject):
 
     def setRawPose(self, pose):
         self._poses = [
-            Pose(self, p) for p in pose
+            Pose(self, p, self._poseRelative) for p in pose
         ]
         self.posesUpdated.emit()
         self.drawPose()
@@ -396,7 +410,8 @@ class BasicInput(QObject):
         crop = self.getPoseCrop()
         size = QPointF(crop.width(), crop.height())
 
-        self._poses += [Pose(self, Pose.makeAtPosition(position, size))]
+        pose = Pose(self, Pose.makeAtPosition(position, size), self._poseRelative)
+        self._poses += [pose]
         self.posesUpdated.emit()
         self.drawPose()
 
@@ -421,6 +436,21 @@ class BasicInput(QObject):
 
         self._image = Pose.drawPoses(self.getPose(), size, original, crop)
         self.resetDisplay()
+
+    @pyqtSlot(QUrl)
+    def savePose(self, file):
+        file = file.toLocalFile()
+        if not "." in file.rsplit(os.path.sep,1)[-1]:
+            file = file + ".png"
+        try:
+            size = QSize(self.linkedWidth, self.linkedHeight)
+            original = self._original
+            crop = self.getPoseCrop()
+
+            image = Pose.drawPoses(self.getPose(), size, original, crop, display=False)
+            image.save(file)
+        except Exception:
+            pass
 
     @pyqtProperty(QPointF, notify=updated)
     def poseSize(self):
