@@ -126,6 +126,9 @@ class GUI(QObject):
         self._favourites = None
         self.syncFavourites()
 
+        self._defaults = None
+        self.syncDefaults()
+
         self.backend = backend.Backend(self)
         self.backend.response.connect(self.onResponse)
         self.backend.updated.connect(self.backendUpdated)
@@ -807,6 +810,34 @@ class GUI(QObject):
                 data = list(self._favourites)
                 try:
                     with open("fav.json", 'w', encoding="utf-8") as f:
+                        json.dump(data, f, indent=4)
+                except Exception:
+                    pass
+
+    def getDefaults(self, model):
+        return self._defaults.get(model, {})
+
+    def setDefaults(self, model, params):
+        self._defaults[model] = params
+        self.syncDefaults() 
+
+    def syncDefaults(self):
+        if self._defaults == None:
+            data = {}
+            try:
+                with open("defaults.json", 'r', encoding="utf-8") as f:
+                    data = json.load(f)
+            except Exception:
+                pass
+            self._defaults = data
+        else:
+            if self._defaults == {}:
+                if os.path.exists("defaults.json"):
+                    os.remove("defaults.json")
+            else:
+                data = dict(self._defaults)
+                try:
+                    with open("defaults.json", 'w', encoding="utf-8") as f:
                         json.dump(data, f, indent=4)
                 except Exception:
                     pass

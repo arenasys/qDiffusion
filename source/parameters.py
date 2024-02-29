@@ -347,7 +347,7 @@ class Parameters(QObject):
             "models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "SR", "LoRAs", "HNs", "LoRA", "HN", "TIs", "TI", "CN", "CNs", "hr_upscalers", "img2img_upscalers", 
             "attentions", "device", "devices", "batch_count", "prompt", "negative_prompt", "vram_usages", "artifact_modes", "preview_modes", "schedules",
             "CN_modes", "CN_preprocessors", "vram_modes", "true_samplers", "schedule", "network_modes", "model", "output_folder", "mask_fill_modes", "autocast_modes",
-            "prediction_types", "tiling_modes", "precisions", "fetching_modes"
+            "prediction_types", "tiling_modes", "precisions", "fetching_modes", "model_modes", "Refiners"
         ]
 
         self._adv_only = [
@@ -368,7 +368,8 @@ class Parameters(QObject):
             "CN_modes": ["Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD", "Instruct", "Shuffle", "Inpaint", "Scribble", "Normal", "Tile", "QR"],#, "Segmentation"]
             "CN_preprocessors": ["None", "Invert", "Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD", "Shuffle", "Scribble", "Normal"],
             "prediction_type": "Default", "prediction_types": ["Default", "Epsilon", "V"], "tiling_mode": "Disabled", "tiling_modes": ["Disabled", "Enabled"],
-            "precisions": ["FP16", "FP32"], "vae_precision": "FP16", "precision": "FP16", "fetching_mode": "Dont Wait", "fetching_modes": ["Wait", "Dont Wait"]
+            "precisions": ["FP16", "FP32"], "vae_precision": "FP16", "precision": "FP16", "fetching_mode": "Dont Wait", "fetching_modes": ["Wait", "Dont Wait"],
+            "model_mode": "Standard", "model_modes": ["Standard"], "Refiner": "", "Refiners": []
         }
 
         if source:
@@ -472,7 +473,7 @@ class Parameters(QObject):
     @pyqtSlot(str)
     def onUpdated(self, key):
         self.getActive()
-
+        
         if key != "sampler" and key != "schedule":
             return
 
@@ -532,6 +533,15 @@ class Parameters(QObject):
         clips = self._values.get("CLIPs")
         clips = [c for c in clips if not c in models] + [c for c in clips if c in models]
         self._values.set("CLIPs", clips)
+
+        refiners = [c for c in unets if "refiner" in c.lower()]
+        refiner = self._values.get("Refiner")
+        self._values.set("Refiners", refiners)
+        if not refiners:
+            refiner = None
+        elif not refiner in refiners:
+            refiner = refiners[0]
+        self._values.set("Refiner", refiner)
 
         if models and (not self._values.get("model") or not self._values.get("model") in models):
             model = self.gui.filterFavourites(models)[0]
@@ -716,6 +726,9 @@ class Parameters(QObject):
             for k in list(data.keys()):
                 if not k in {"img2img_upscaler", "width", "height", "image", "mask", "mask_blur", "padding", "device_name"}:
                     del data[k]
+
+        if "Refiner" in data and data["model_mode"] != "Refiner":
+            del data["Refiner"]
         
         data = {k.lower():v for k,v in data.items()}
 

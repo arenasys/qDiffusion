@@ -778,3 +778,35 @@ class Basic(QObject):
     @pyqtSlot()
     def onImageUpdated(self):
         self.typeUpdated.emit()
+
+    @pyqtSlot()
+    def applyDefaults(self):
+        model = self._parameters._values.get("model")
+        model_name = self.gui.modelName(model)
+
+        defaults = self.gui.getDefaults(model_name)
+        fallback = {
+            "model_mode": "Standard",
+            "prediction_type": "Default",
+            "cfg_rescale": 0.0,
+            "clip_skip": 1
+        }
+        for k, v in fallback.items():
+            if not k in defaults:
+                defaults[k] = v
+
+        for k, v in defaults.items():
+            kk = k + "s"
+            if kk in self._parameters._values._map:
+                if not v in self._parameters._values.get(kk):
+                    continue
+            self._parameters._values.set(k, v)
+
+    @pyqtSlot()
+    def saveDefaults(self):
+        model = self._parameters._values.get("model")
+        model_name = self.gui.modelName(model)
+        defaults = {}
+        for k in ["model_mode", "prediction_type", "cfg_rescale", "clip_skip"]:
+            defaults[k] = self._parameters._values.get(k)
+        self.gui.setDefaults(model_name, defaults)

@@ -396,7 +396,7 @@ Item {
                         id: scheduleInput
                         label: root.tr("Schedule")
                         width: parent.width
-                        height: 25
+                        height: 30
                         
                         bindMap: root.binding.values
                         bindKeyCurrent: "schedule"
@@ -434,7 +434,8 @@ Item {
                         id: etaInput
                         label: root.tr("Eta")
                         width: parent.width
-                        height: 25
+                        visible: root.advanced
+                        height: visible ? 30 : 0
                         
                         bindMap: root.binding.values
                         bindKey: "eta"
@@ -498,6 +499,7 @@ Item {
                             root.binding.values.set("VAE", value)
                             root.binding.values.set("UNET", value)
                             root.binding.values.set("CLIP", value)
+                            BASIC.applyDefaults()
                         }
 
                         onContextMenu: {
@@ -508,10 +510,87 @@ Item {
                     property var models: root.binding.values.get("models")
 
                     OChoice {
+                        id: modeInput
+                        visible: false
+                        label: root.tr("Mode")
+                        width: parent.width
+                        height: visible ? 30 : 0
+                        
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "model_mode"
+                        bindKeyModel: "model_modes"
+                        
+                        popupHeight: root.height + 100
+
+                        onSelected: {
+                            BASIC.saveDefaults()
+                        }
+                    }
+
+                    OChoice {
+                        id: predictionInput
+                        label: root.tr("Prediction")
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "prediction_type"
+                        bindKeyModel: "prediction_types"
+
+                        function display(text) {
+                            return root.tr(text, "Options")
+                        }
+                        
+                        onSelected: {
+                            BASIC.saveDefaults()
+                        }
+                    }
+      
+                    OSlider {
+                        id: cfgRescaleInput
+                        visible: root.advanced || predictionInput.value == "V"
+                        label: root.tr("CFG Rescale")
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKey: "cfg_rescale"
+
+                        minValue: 0
+                        maxValue: 1
+                        precValue: 2
+                        incValue: 0.01
+                        snapValue: 0.05
+
+                        onFinished: {
+                            BASIC.saveDefaults()
+                        }
+                    }
+
+                    OSlider {
+                        label: root.tr("CLIP Skip")
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKey: "clip_skip"
+
+                        minValue: 1
+                        maxValue: 12
+                        precValue: 0
+                        incValue: 1
+                        snapValue: 1
+
+                        onFinished: {
+                            BASIC.saveDefaults()
+                        }
+                    }
+
+                    OChoice {
                         id: unetInput
                         label: root.tr("UNET")
                         width: parent.width
-                        height: 25
+                        height: 30
                         
                         bindMap: root.binding.values
                         bindKeyCurrent: "UNET"
@@ -541,7 +620,7 @@ Item {
                         id: vaeInput
                         label: root.tr("VAE")
                         width: parent.width
-                        height: 25
+                        height: 30
 
                         bindMap: root.binding.values
                         bindKeyCurrent: "VAE"
@@ -567,7 +646,7 @@ Item {
                         id: clipInput
                         label: root.tr("CLIP")
                         width: parent.width
-                        height: 25
+                        height: 30
 
                         bindMap: root.binding.values
                         bindKeyCurrent: "CLIP"
@@ -587,6 +666,29 @@ Item {
 
                         function display(text) {
                             return GUI.modelName(text)
+                        }
+                    }
+                    OChoice {
+                        id: refinerInput
+                        visible: modeInput.value == "Refiner"
+                        label: root.tr("Refiner")
+                        width: parent.width
+                        height: visible ? 30 : 0
+                        
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "Refiner"
+                        bindKeyModel: "Refiners"
+
+                        popupHeight: root.height + 100
+
+                        placeholderValue: "No models"
+
+                        function display(text) {
+                            return GUI.modelName(text)
+                        }
+
+                        onSelected: {
+                            BASIC.saveDefaults()
                         }
                     }
                 }
@@ -722,7 +824,7 @@ Item {
                         label: root.tr("Mode")
                         width: parent.width
                         bottomPadded: true
-                        height: 23
+                        height: 30
 
                         bindMap: root.binding.values
                         bindKeyCurrent: "network_mode"
@@ -1142,21 +1244,6 @@ Item {
                     }
 
                     OSlider {
-                        label: root.tr("CLIP Skip")
-                        width: parent.width
-                        height: 30
-
-                        bindMap: root.binding.values
-                        bindKey: "clip_skip"
-
-                        minValue: 1
-                        maxValue: 12
-                        precValue: 0
-                        incValue: 1
-                        snapValue: 1
-                    }
-
-                    OSlider {
                         label: root.tr("Batch Count")
                         width: parent.width
                         height: 30
@@ -1186,38 +1273,6 @@ Item {
                         incValue: 1
                         snapValue: 1
                         bounded: false
-                    }
-
-                    OChoice {
-                        id: predictionInput
-                        label: root.tr("Prediction")
-                        width: parent.width
-                        height: 30
-
-                        bindMap: root.binding.values
-                        bindKeyCurrent: "prediction_type"
-                        bindKeyModel: "prediction_types"
-
-                        function display(text) {
-                            return root.tr(text, "Options")
-                        }
-                    }
-                    
-                    OSlider {
-                        id: cfgRescaleInput
-                        visible: root.advanced || predictionInput.value == "V"
-                        label: root.tr("CFG Rescale")
-                        width: parent.width
-                        height: 30
-
-                        bindMap: root.binding.values
-                        bindKey: "cfg_rescale"
-
-                        minValue: 0
-                        maxValue: 1
-                        precValue: 2
-                        incValue: 0.01
-                        snapValue: 0.05
                     }
 
                     OSlider {
