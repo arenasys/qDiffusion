@@ -405,7 +405,7 @@ Item {
                         property var last: null
 
                         onSelected: {
-                            if(value != "Default") {
+                            if(value != "Linear") {
                                 last = value
                             } else {
                                 last = null
@@ -422,7 +422,7 @@ Item {
                         }
 
                         onValueChanged: {
-                            samplerColumn.schedule = scheduleInput.value == "Default" ? "" : (" " + scheduleInput.value)
+                            samplerColumn.schedule = scheduleInput.value == "Linear" ? "" : (" " + scheduleInput.value)
                         }
 
                         function display(text) {
@@ -1152,85 +1152,6 @@ Item {
                         function display(text) {
                             return GUI.modelName(text)
                         }
-                    }
-
-                    OChoice {
-                        id: hrPredictionInput
-                        visible: root.advanced
-                        label: root.tr("HR Prediction")
-                        width: parent.width
-                        height: 30
-
-                        disabled: !hrColumn.isActive
-                        overlay: !hrColumn.isActive || predictionInput.value == hrPredictionInput.value
-
-                        bindMap: root.binding.values
-                        bindKeyCurrent: "hr_prediction_type"
-                        bindKeyModel: "prediction_types"
-
-                        function display(text) {
-                            return root.tr(text, "Options")
-                        }
-                    }
-
-                    OSlider {
-                        id: hrCfgRescaleInput
-                        visible: root.advanced
-                        label: root.tr("HR CFG Rescale")
-                        width: parent.width
-                        height: 30
-
-                        disabled: !hrColumn.isActive
-                        overlay: !hrColumn.isActive || cfgRescaleInput.value == hrCfgRescaleInput.value
-
-                        bindMap: root.binding.values
-                        bindKey: "hr_cfg_rescale"
-
-                        minValue: 0
-                        maxValue: 1
-                        precValue: 2
-                        incValue: 0.01
-                        snapValue: 0.05
-                    }
-
-                    OSlider {
-                        visible: root.advanced
-                        label: root.tr("HR ToMe Ratio")
-                        width: parent.width
-                        height: 30
-
-                        disabled: !hrColumn.isActive
-                        overlay: !hrColumn.isActive || value == 0.0
-
-                        bindMap: root.binding.values
-                        bindKey: "hr_tome_ratio"
-
-                        minValue: 0
-                        maxValue: 1
-                        precValue: 2
-                        incValue: 0.01
-                        snapValue: 0.05
-                    }
-
-                    OSlider {
-                        visible: !samplerColumn.isCollapsed && root.advanced
-                        id: hrEtaInput
-                        label: root.tr("HR Eta")
-                        width: parent.width
-                        height: 25
-                        
-                        bindMap: root.binding.values
-                        bindKey: "hr_eta"
-
-                        disabled: !hrColumn.isActive || hrSamplerInput.overlay
-                        overlay: !hrColumn.isActive || etaInput.value == hrEtaInput.value 
-                        defaultValue: root.binding.values.get("eta")
-
-                        minValue: 0
-                        maxValue: 1
-                        precValue: 2
-                        incValue: 0.01
-                        snapValue: 0.05
                     }
                 }
                 OColumn {

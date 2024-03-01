@@ -37,7 +37,6 @@ LABELS = [
     ("hr_upscaler", "Hires upscaler"),
     ("hr_sampler", "Hires sampler"),
     ("hr_steps", "Hires steps"),
-    ("hr_eta", "Hires sampler eta"),
     ("hr_scale", "Hires CFG scale"),
     ("hr_model", "Hires Model"),
     ("hr_cfg_rescale", "Hires CFG rescale"),
@@ -48,9 +47,9 @@ LABELS = [
 ]
 
 SETTABLE = [
-    "prompt", "negative_prompt", "steps", "sampler", "schedule", "scale", "seed", "width", "height",
+    "size", "prompt", "negative_prompt", "steps", "sampler", "schedule", "scale", "seed", "width", "height",
     "model", "UNET", "VAE", "CLIP", "model", "subseed", "subseed_strength", "strength", "eta", "clip_skip", "img2img_upscaler",
-    "hr_factor", "hr_strength", "hr_upscaler", "hr_sampler", "hr_steps", "hr_eta", "hr_scale", "hr_model", "hr_cfg_rescale", "hr_prediction_type",
+    "hr_factor", "hr_strength", "hr_upscaler", "hr_sampler", "hr_steps", "hr_scale", "hr_model",
     "cfg_rescale", "prediction_type"
 ]
 
@@ -314,7 +313,7 @@ class ParametersParser(QObject):
         for n, v in self._json.items():
             l = None
             for name, label in LABELS:
-                if name == n:
+                if name == n and name in SETTABLE:
                     l = label
                     break
             else:
@@ -352,24 +351,23 @@ class Parameters(QObject):
 
         self._adv_only = [
             "tome_ratio", "tiling_mode", "vae_precision", "precision", "subseed_strength", "subseed", 
-            "hr_sampler", "hr_scale", "hr_model", "hr_prediction_type", "hr_cfg_rescale", "hr_tome_ratio", "hr_eta"
+            "hr_sampler", "hr_scale"
         ]
         self._default_values = {
             "prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7.0, "strength": 0.75, "seed": -1, "eta": 1.0,
-            "hr_factor": 1.0, "hr_strength":  0.7, "hr_sampler": "Euler a", "hr_steps": 25, "hr_eta": 1.0, "hr_scale": 7.0, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "mask_expand": 0, "subseed":-1, "subseed_strength": 0.0,
+            "hr_factor": 1.0, "hr_strength":  0.7, "hr_sampler": "Euler a", "hr_steps": 25, "hr_scale": 7.0, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "mask_expand": 0, "subseed":-1, "subseed_strength": 0.0,
             "sampler": "Euler a", "samplers":[], "hr_upscaler":"Lanczos", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
             "model":"", "models":[], "UNET":"", "UNETs":[], "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[],
             "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "schedule": "Linear", "schedules": ["Linear", "Karras", "Exponential"],
             "vram_mode": "Default", "vram_modes": ["Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"], "preview_mode": "Light",
             "preview_modes": ["Disabled", "Light", "Medium", "Full"], "preview_interval":1, "true_samplers": [], "true_sampler": "Euler a",
             "network_mode": "Static", "network_modes": ["Dynamic", "Static"], "mask_fill": "Original", "mask_fill_modes": ["Original", "Noise"],
-            "tome_ratio": 0.0, "hr_tome_ratio": 0.0, "hr_model": "", "hr_cfg_rescale": 0.0, "hr_prediction_type": "Default",
-            "cfg_rescale": 0.0, "output_folder": "", "autocast": "Disabled", "autocast_modes": ["Disabled", "Enabled"],
+            "tome_ratio": 0.0, "hr_model": "", "cfg_rescale": 0.0, "output_folder": "", "autocast": "Disabled", "autocast_modes": ["Disabled", "Enabled"],
             "CN_modes": ["Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD", "Instruct", "Shuffle", "Inpaint", "Scribble", "Normal", "Tile", "QR"],#, "Segmentation"]
             "CN_preprocessors": ["None", "Invert", "Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD", "Shuffle", "Scribble", "Normal"],
             "prediction_type": "Default", "prediction_types": ["Default", "Epsilon", "V"], "tiling_mode": "Disabled", "tiling_modes": ["Disabled", "Enabled"],
             "precisions": ["FP16", "FP32"], "vae_precision": "FP16", "precision": "FP16", "fetching_mode": "Dont Wait", "fetching_modes": ["Wait", "Dont Wait"],
-            "model_mode": "Standard", "model_modes": ["Standard"], "Refiner": "", "Refiners": []
+            "model_mode": "Standard", "model_modes": ["Standard", "Refiner"], "Refiner": "", "Refiners": []
         }
 
         if source:
@@ -458,8 +456,7 @@ class Parameters(QObject):
     @pyqtSlot(str, 'QVariant', 'QVariant')
     def mapsUpdating(self, key, prev, curr):
         changed = False
-        pairs = [("true_sampler", "hr_sampler"), ("eta", "hr_eta"), ("steps", "hr_steps"), ("scale", "hr_scale"), ("UNET", "hr_model"),
-                 ("cfg_rescale", "hr_cfg_rescale"), ("prediction_type", "hr_prediction_type")]
+        pairs = [("true_sampler", "hr_sampler"), ("steps", "hr_steps"), ("scale", "hr_scale"), ("UNET", "hr_model")]
         for src, dst in pairs:
             if key == src:
                 val = self._values.get(dst)
@@ -473,7 +470,7 @@ class Parameters(QObject):
     @pyqtSlot(str)
     def onUpdated(self, key):
         self.getActive()
-        
+
         if key != "sampler" and key != "schedule":
             return
 
@@ -644,18 +641,18 @@ class Parameters(QObject):
         else:
             if data["hr_steps"] == data["steps"]:
                 del data["hr_steps"]
-            if data["hr_eta"] == data["eta"]:
-                del data["hr_eta"]
             if data["hr_sampler"] == data["sampler"]:
                 del data["hr_sampler"]
             if data["hr_scale"] == data["scale"]:
                 del data["hr_scale"]
-            if data["hr_cfg_rescale"] == data["cfg_rescale"]:
-                del data["hr_cfg_rescale"]
-            if data["hr_prediction_type"] == data["prediction_type"]:
-                del data["hr_prediction_type"]
             if data["hr_model"] == data["UNET"]:
                 del data["hr_model"]
+            else:
+                hr_model_name = self.gui.modelName(data["hr_model"])
+                defaults = self.gui.getDefaults(hr_model_name)
+                for k,v in defaults.items():
+                    kk = "hr_" + k
+                    data[kk] = v
         
         if not request["type"] in {"img2img", "upscale"}:
             del data["img2img_upscaler"]
@@ -716,7 +713,7 @@ class Parameters(QObject):
         if not self.gui.config.get("advanced") and data["prediction_type"] != "V":
             del data["cfg_rescale"]
 
-        for k in ["tome_ratio", "cfg_rescale", "prediction_type", "tiling_mode", "vae_precision", "precision", "hr_tome_ratio", "hr_cfg_rescale", "hr_prediction_type"]:
+        for k in ["tome_ratio", "cfg_rescale", "prediction_type", "tiling_mode", "vae_precision", "precision"]:
             if k in data and data[k] in {0.0, "Default"}:
                 del data[k]
 
