@@ -1465,6 +1465,10 @@ Item {
 
                         bindMap: root.binding.values
                         bindKey: "output_folder"
+
+                        onFinished: {
+                            GUI.config.set("output_folder", value)
+                        }
                     }
                 }
             }

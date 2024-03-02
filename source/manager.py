@@ -175,6 +175,10 @@ class RequestManager(QObject):
     def setRequests(self, requests):
         if self.parameters:
             folder = self.parameters._values.get("output_folder")
+            
+            folder = folder.replace("%date%", datetime.datetime.now().strftime("%d-%m-%y"))
+            folder = folder.replace("%model%", self.gui.modelName(self.parameters._values.get("UNET")))
+
             for i in range(len(requests)):
                 if folder and not "folder" in requests[i]:
                     requests[i]["folder"] = folder

@@ -18,6 +18,8 @@ Item {
     property var overlay: disabled
     property alias active: valueText.activeFocus
 
+    signal finished()
+
     property variant bindMap: null
     property var bindKey: null
 
@@ -129,6 +131,7 @@ Item {
                     } else {
                         control.value = text
                     }
+                    control.finished()
                 }
 
                 onActiveFocusChanged: {

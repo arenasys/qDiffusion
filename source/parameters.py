@@ -566,7 +566,8 @@ class Parameters(QObject):
             ("precision", "precision", "precisions"),
             ("vae_precision", "vae_precision", "precisions"),
             ("vae_tiling", "tiling_mode", "tiling_modes"),
-            ("fetching", "fetching_mode", "fetching_modes")
+            ("fetching", "fetching_mode", "fetching_modes"),
+            ("output_folder", "output_folder", None)
         ]
 
         remote = self.gui.config.get("mode", "").lower() == "remote"
