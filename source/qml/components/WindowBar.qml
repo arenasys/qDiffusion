@@ -64,7 +64,7 @@ SMenuBar {
         }
         SMenuItem {
             text: root.tr("Reload")
-            shortcut: "Ctrl+B"
+            shortcut: "Ctrl+R"
             global: true
             onPressed: {
                 SETTINGS.restart()

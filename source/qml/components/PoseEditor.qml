@@ -1000,7 +1000,7 @@ Item {
             case Qt.Key_A:
                 root.doSelectAll()
                 break;
-            case Qt.Key_R:
+            case Qt.Key_F:
                 root.doRepair()
                 break;
             case Qt.Key_Z:
