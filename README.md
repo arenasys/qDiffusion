@@ -22,7 +22,7 @@ Built from the ground up alongside [sd-inference-server](https://github.com/aren
 Information is available on the [Wiki](https://github.com/arenasys/qDiffusion/wiki/Guide).
 
 ### Remote
-Notebooks for running a remote instance are available: [Colab](https://colab.research.google.com/github/arenasys/qDiffusion/blob/master/remote_colab.ipynb), [Kaggle](https://www.kaggle.com/code/arenasys/qdiffusion)
+Notebooks for running a remote instance are available: [Colab](https://colab.research.google.com/github/arenasys/qDiffusion/blob/master/remote_colab.ipynb), [Kaggle](https://www.kaggle.com/code/arenasys/qdiffusion), [SageMaker](https://studiolab.sagemaker.aws/import/github/arenasys/qDiffusion/blob/master/remote_sagemaker.ipynb)
 
 0. [Install](#install) qDiffusion, this runs locally on your machine and connects to the backend server.
 	- If using Mobile then skip this step.
