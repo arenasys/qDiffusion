@@ -27,6 +27,8 @@ LABELS = [
     ("UNET", "UNET"),
     ("VAE", "VAE"),
     ("CLIP", "CLIP"),
+    ("mode", "Mode"),
+    ("inputs", "Inputs"),
     ("subseed", "Variation seed"),
     ("subseed_strength", "Variation seed strength"),
     ("strength", "Denoising strength"),
@@ -61,6 +63,12 @@ def formatParameters(json):
     if "prompt" in json:
         formatted = json["prompt"] + "\n"
         formatted += "Negative prompt: " + json["negative_prompt"] + "\n"
+
+    if "mode" in json:
+        json["mode"] = json["mode"].replace("txt2img", "Txt2Img").replace("img2img", "Img2Img").capitalize()
+
+    if "inputs" in json:
+        json["inputs"] = " + ".join([i.replace("controlnet", "ControlNet").capitalize() for i in json["inputs"]])
 
     json["size"] = f"{json['width']}x{json['height']}"
 
