@@ -376,7 +376,7 @@ class GUI(QObject):
                     self._remoteStatus = RemoteStatusMode.CONNECTED
                 self._statusText = "Ready"
                 self._statusMode = StatusMode.IDLE
-            else:
+            elif data.get("reset", True):
                 self._statusProgress = -1.0
                 self._statusMode = StatusMode.WORKING
             self.statusUpdated.emit()
