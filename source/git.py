@@ -28,8 +28,11 @@ def git_last(path):
         commit = repo[repo.head.target]
         message = commit.raw_message.decode('utf-8').strip()
         delta = time.time() - commit.commit_time
-    except:
-        return None, None
+    except Exception as e:
+        if type(e) == pygit2.GitError and str(e).startswith("Repository not found"):
+            return None, None
+        else:
+            raise e
     
     spans = [
         ('year', 60*60*24*365),
