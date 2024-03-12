@@ -262,7 +262,10 @@ class MergeOperation(QObject):
             recipe["alpha"] = [self._block_weights.get(label) for label in self.getBlockWeightLabels()]
 
         if model_type == "Checkpoint":
-            recipe["vae_source"] = ["Model A", "Model B", "Model C"].index(self._parameters.get("vae_source"))
+            vae_source = ["Model A", "Model B", "Model C"].index(self._parameters.get("vae_source"))
+            if recipe["operation"] == "Insert LoRA":
+                vae_source = 0
+            recipe["vae_source"] = vae_source
         else:
             rank = int(self._parameters.get("rank"))
             recipe["rank"] = rank
