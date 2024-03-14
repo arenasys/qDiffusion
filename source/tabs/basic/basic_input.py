@@ -308,7 +308,7 @@ class BasicInput(QObject):
     
     @pyqtProperty(bool, notify=updated)
     def isPose(self):
-        return self._role == BasicInputRole.CONTROL and self._control_mode == "Pose"
+        return self._role == BasicInputRole.CONTROL and self._control_mode == "Pose" and self._control_settings.get("preprocessor") == "Pose"
     
     @pyqtProperty(list, notify=posesUpdated)
     def poses(self):
