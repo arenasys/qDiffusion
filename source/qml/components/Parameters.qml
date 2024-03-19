@@ -194,6 +194,32 @@ Item {
                     property var isImg: typ == "Img2Img" || typ == "Inpainting" || typ == "Upscaling"
                     property var isInp: typ == "Inpainting"
 
+                    property var maxSize: 1024
+                    function updateMaxSize() {
+                        var mx = Math.max(widthInput.value, heightInput.value)
+                        var n = maxSize
+                        if(mx < 1024) {
+                            n = 1024
+                        } else if(mx >= 2048) {
+                            n = 4096
+                        } else if(mx >= 1024) {
+                            n = 2048
+                        }
+                        if(n != maxSize) {
+                            maxSize = n
+                            sizePulser.restart()
+                        }
+                    }
+
+                    SAnimation {
+                        id: sizePulser
+                        minValue: 0.0
+                        maxValue: 0.15
+                        duration: 500
+                        rate: 25
+                        pulse: true
+                    }
+
                     input: Item {
                         width: optColumn.width - 100
                         height: 30
@@ -264,14 +290,21 @@ Item {
                         bindKey: "width"
 
                         minValue: 64
-                        maxValue: 1024
+                        maxValue: optColumn.maxSize
                         precValue: 0
                         incValue: 8
                         snapValue: 64
                         bounded: false
 
+                        indicatorHighlight.opacity: sizePulser.value
+                        indicatorHighlight.visible: sizePulser.running
+
                         onFinished: {
                             root.sizeFinished()
+                        }
+
+                        onEditted: {
+                            optColumn.updateMaxSize()
                         }
 
                         AdvancedDropArea {
@@ -292,16 +325,23 @@ Item {
                         bindKey: "height"
 
                         minValue: 64
-                        maxValue: 1024
+                        maxValue: optColumn.maxSize
                         precValue: 0
                         incValue: 8
                         snapValue: 64
                         bounded: false
 
+                        indicatorHighlight.opacity: sizePulser.value
+                        indicatorHighlight.visible: sizePulser.running
+
                         onFinished: {
                             root.sizeFinished()
                         }
 
+                        onEditted: {
+                            optColumn.updateMaxSize()
+                        }
+                        
                         AdvancedDropArea {
                             anchors.fill: parent
 

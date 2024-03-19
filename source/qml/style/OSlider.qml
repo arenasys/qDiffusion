@@ -22,6 +22,7 @@ Item {
     property var disabled: false
     property var overlay: root.disabled
     property alias active: valueInput.activeFocus
+    property alias indicatorHighlight: indicatorHighlight
 
     property var validator: RegExpValidator {
         regExp: /|[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)/
@@ -50,6 +51,7 @@ Item {
 
     signal selected()
     signal finished()
+    signal editted()
 
     function label_display(text) {
         return text
@@ -134,6 +136,7 @@ Item {
 
         root.value = x
         root.selected()
+        root.editted()
     }
 
     Rectangle {
@@ -179,6 +182,7 @@ Item {
 
             onReleased: {
                 root.finished()
+                root.editted()
             }
 
             property var accum: 0
@@ -232,6 +236,14 @@ Item {
                 color: COMMON.bg4
                 width: Math.min((mouseArea.width) * (root.value - root.minValue)/(root.maxValue-root.minValue), control.width)
                 clip: true
+
+                Rectangle {
+                    id: indicatorHighlight
+                    anchors.fill: parent
+                    color: "black"
+                    visible: opacity != 0.0
+                    opacity: 0.0
+                }
 
                 SText {
                     text: root.label
@@ -293,6 +305,7 @@ Item {
                 text: root.value.toFixed(root.precValue)
                 validator: root.validator
                 onEditingFinished: {
+                    var old_value = root.value
                     if(text == "") {
                         root.value = parseFloat(root.defaultValue)
                         text = root.defaultValue
@@ -303,6 +316,9 @@ Item {
                         if(value <= top && value >= bottom) {
                             root.value = value
                         }
+                    }
+                    if(old_value != root.value) {
+                        root.editted()
                     }
                 }
                 onActiveFocusChanged: {
