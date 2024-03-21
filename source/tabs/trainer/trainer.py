@@ -638,8 +638,7 @@ class Trainer(QObject):
                 self._epoch_marks = [x*epoch_length for x in range(math.ceil(total/epoch))]
 
             self._loss += losses
-            if self.gui.debugMode() == 0:
-                self._loss_plot = self.computePlot([(x, y) for x, y in enumerate(self._loss)], 50)
+            self._loss_plot = self.computePlot([(x, y) for x, y in enumerate(self._loss)], 50)
 
             if not self._lr_control:
                 self.setLearningRateCurrent(-1)
@@ -662,7 +661,8 @@ class Trainer(QObject):
             self.statusChanged.emit()
 
         if type == "training_progress":
-            self.updateProgress(data)
+            if self.gui.debugMode() == 0: 
+                self.updateProgress(data)
 
         if type == "training_upload":
             if self.uploader:
