@@ -626,7 +626,7 @@ class Trainer(QObject):
         self._progress_label = f"{current} / {total}"
         self._remaining_label = f"{format_timestamp(elapsed)} | {format_timestamp(remaining)}"
 
-        if stage == "Training":
+        if stage == "Training" and self.gui.debugMode() == 0: 
             epoch = data["epoch"]
             losses = data["losses"]
             if not self._loss:
@@ -661,8 +661,7 @@ class Trainer(QObject):
             self.statusChanged.emit()
 
         if type == "training_progress":
-            if self.gui.debugMode() == 0: 
-                self.updateProgress(data)
+            self.updateProgress(data)
 
         if type == "training_upload":
             if self.uploader:
