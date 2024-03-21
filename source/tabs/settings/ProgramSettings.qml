@@ -274,7 +274,7 @@ Item {
             label: root.tr("Debug Mode")
             property var idx: GUI.config.get("debug_mode")
             currentIndex: idx ? Math.min(entries.length-1, idx) : 0
-            entries: ["None"]
+            entries: ["None", "Disable loss graph"]
             onCurrentIndexChanged: {
                 GUI.setDebugMode(currentIndex)
             }

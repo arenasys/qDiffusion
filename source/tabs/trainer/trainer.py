@@ -638,7 +638,8 @@ class Trainer(QObject):
                 self._epoch_marks = [x*epoch_length for x in range(math.ceil(total/epoch))]
 
             self._loss += losses
-            self._loss_plot = self.computePlot([(x, y) for x, y in enumerate(self._loss)], 50)
+            if self.gui.debugMode() == 0:
+                self._loss_plot = self.computePlot([(x, y) for x, y in enumerate(self._loss)], 50)
 
             if not self._lr_control:
                 self.setLearningRateCurrent(-1)
