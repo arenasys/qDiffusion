@@ -161,15 +161,25 @@ class RemoteInference(QThread):
         if self.client:
             self.onResponse({"type": "status", "data": {"message": "Reconnected"}})
 
+    def terminate(self, errored=True):
+        self.client.protocol.send_frame = lambda x: None
+        self.client.socket.close()
+        self.client = None
+        if errored:
+            raise websockets.exceptions.ConnectionClosedError(None, None)
+
     def run(self):
         self.scheme = get_scheme(self.password)
         self.connect()
         client_id = None
+
+        waiting = 0
         while self.client and not self.stopping:
             try:
                 while True:
                     try:
                         data = self.client.recv(0)
+                        waiting = 0
                         response = decrypt(self.scheme, data)
                         if response["type"] == "hello":
                             if not client_id:
@@ -186,6 +196,7 @@ class RemoteInference(QThread):
                 
                 try:
                     request = self.requests.get(False)
+                    waiting = 0
 
                     if request["type"] == "upload":
                         file = request["data"]["file"]
@@ -204,6 +215,13 @@ class RemoteInference(QThread):
                     QApplication.processEvents()
                 except queue.Empty:
                     QThread.msleep(5)
+                    waiting += 5
+                    if waiting >= 2000:
+                        waiting = 0
+                        pong = self.client.ping()
+                        if not pong.wait(10):
+                            self.terminate()
+
             except websockets.exceptions.ConnectionClosedOK:
                 self.onResponse({"type": "remote_error", "data": {"message": "Connection closed"}})
                 break
@@ -228,7 +246,7 @@ class RemoteInference(QThread):
 
         if self.client:
             self.client.close()
-            self.client = None
+            self.terminate(errored=False)
 
     @pyqtSlot()
     def stop(self):
