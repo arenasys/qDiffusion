@@ -1,10 +1,8 @@
-import io
 import os
 import re
 import random
-import datetime
+import copy
 import json
-from typing import cast
 
 import PIL.Image
 import PIL.PngImagePlugin
@@ -59,16 +57,18 @@ NETWORKS = {"LoRA":"lora","HN":"hypernet"}
 NETWORKS_INV = {"lora":"LoRA","hypernet":"HN"}
 
 def formatParameters(json):
+    json = copy.deepcopy(json)
+
     formatted = ""
     if "prompt" in json:
         formatted = json["prompt"] + "\n"
         formatted += "Negative prompt: " + json["negative_prompt"] + "\n"
 
     if "mode" in json:
-        json["mode"] = json["mode"].replace("txt2img", "Txt2Img").replace("img2img", "Img2Img").capitalize()
+        json["mode"] = json["mode"].capitalize().replace("Txt2img", "Txt2Img").replace("Img2img", "Img2Img")
 
     if "inputs" in json:
-        json["inputs"] = " + ".join([i.replace("controlnet", "ControlNet").capitalize() for i in json["inputs"]])
+        json["inputs"] = " + ".join([i.capitalize().replace("Controlnet", "ControlNet") for i in json["inputs"]])
 
     json["size"] = f"{json['width']}x{json['height']}"
 

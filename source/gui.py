@@ -92,6 +92,8 @@ class GUI(QObject):
         self._statusProgress = -1.0
         self._statusInfo = ""
 
+        self._reconnectState = None
+
         self._cancelled = False
 
         self._errorStatus = ""
@@ -364,9 +366,14 @@ class GUI(QObject):
             return
 
         if type == "status" and self._statusMode != StatusMode.ABORTING:
+            lastState = (self._statusMode, self._statusText, self._statusProgress)
+
             self._statusText = data["message"]
             self._statusInfo = ""
             if self._statusText in {"Initializing", "Connecting", "Reconnecting"}:
+                if self._statusText == "Reconnecting":
+                    self._reconnectState = lastState
+
                 if self._statusText in {"Connecting", "Reconnecting"}:
                     self._remoteStatus = RemoteStatusMode.CONNECTING
                 self._statusMode = StatusMode.STARTING
@@ -376,6 +383,11 @@ class GUI(QObject):
                     self._remoteStatus = RemoteStatusMode.CONNECTED
                 self._statusText = "Ready"
                 self._statusMode = StatusMode.IDLE
+            elif self._statusText == "Reconnected":
+                mode, text, progress = self._reconnectState
+                self._statusMode = mode
+                self._statusText = text
+                self._statusProgress = progress
             elif data.get("reset", True):
                 self._statusProgress = -1.0
                 self._statusMode = StatusMode.WORKING

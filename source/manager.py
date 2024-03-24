@@ -6,6 +6,7 @@ import PIL.Image
 import random
 import re
 import threading
+import enum
 
 from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QSize, QRect, QRectF, QCoreApplication
 from PyQt5.QtGui import QImage, QPainter, QColor, QFont, QTextOption
@@ -13,7 +14,13 @@ from PyQt5.QtQml import qmlRegisterUncreatableType
 
 import parameters
 from misc import encodeImage, decodeImage
-from tabs.basic.basic_input import BasicInputRole
+
+class InputRole(enum.Enum):
+    IMAGE = 1
+    MASK = 2
+    SUBPROMPT = 3
+    CONTROL = 4
+    SEGMENTATION = 5
 
 def writeLog(line):
     with open("saving.log", "a", encoding='utf-8') as log:
@@ -23,99 +30,43 @@ class OutputWriterSignals(QObject):
     done = pyqtSignal(str)
 
 class OutputWriter(threading.Thread):
-    def __init__(self, img, metadata, outputs, folder, log=False):
+    def __init__(self, img, metadata, folder, file=None):
         super().__init__()
         self.signals = OutputWriterSignals()
-        self.log = log
-
-        if self.log: writeLog(f"START {datetime.datetime.now()}\n")
 
         m = PIL.PngImagePlugin.PngInfo()
         if metadata:
-            m.add_text("parameters", parameters.formatParameters(metadata))
-            recipe = parameters.formatRecipe(metadata)
-            if recipe:
-                m.add_text("recipe", recipe)
-
-        if self.log: writeLog(f"METADATA\n")
+            for key, value in metadata.items():
+                m.add_text(key, value)
 
         self.img = img.copy()
         self.metadata = m
 
-        folder = os.path.join(outputs, folder)
         os.makedirs(folder, exist_ok=True)
 
-        idx = parameters.getIndex(folder)
-        filename = f"{idx:08d}-" + datetime.datetime.now().strftime("%m%d%H%M")
+        if not file:
+            idx = parameters.getIndex(folder)
+            filename = f"{idx:08d}-" + datetime.datetime.now().strftime("%m%d%H%M")
+            
+            self.tmp = os.path.join(folder, f"{filename}.tmp")
+            self.file = os.path.join(folder, f"{filename}.png")
+        else:
+            self.tmp = file + ".tmp"
+            self.file = file
         
-        self.tmp = os.path.join(folder, f"{filename}.tmp")
-        self.file = os.path.join(folder, f"{filename}.png")
-        
-        if self.log: writeLog(f"FILE {self.file}\n")
-
         open(self.tmp, 'a').close()
 
-        if self.log: writeLog(f"TMP\n")
-        
     def run(self):
         if type(self.img) == QImage:
-            if self.log: writeLog(f"ENCODE 1\n")
             self.img = encodeImage(self.img)
 
         if type(self.img) == bytes:
-            if self.log: writeLog(f"ENCODE 2\n")
             self.img = PIL.Image.open(io.BytesIO(self.img))
-
-        if self.log: writeLog(f"SAVE\n")
 
         self.img.save(self.tmp, format="PNG", pnginfo=self.metadata)
 
-        if self.log: writeLog(f"REPLACE\n")
         os.replace(self.tmp, self.file)
         self.signals.done.emit(self.file)
-
-def writeImage(img, metadata, outputs, folder):
-
-    writeLog(f"START {datetime.datetime.now()}\n")
-
-    m = PIL.PngImagePlugin.PngInfo()
-    if metadata:
-        m.add_text("parameters", parameters.formatParameters(metadata))
-        recipe = parameters.formatRecipe(metadata)
-        if recipe:
-            m.add_text("recipe", recipe)
-
-    writeLog(f"METADATA\n")
-
-    folder = os.path.join(outputs, folder)
-    os.makedirs(folder, exist_ok=True)
-
-    idx = parameters.getIndex(folder)
-    filename = f"{idx:08d}-" + datetime.datetime.now().strftime("%m%d%H%M")
-    tmp = os.path.join(folder, f"{filename}.tmp")
-    file = os.path.join(folder, f"{filename}.png")
-
-    writeLog(f"FILE {file}\n")
-
-    if type(img) == QImage:
-        writeLog(f"ENCODE 1\n")
-        img = encodeImage(img)
-
-    if type(img) == bytes:
-        writeLog(f"ENCODE 2\n")
-        img = PIL.Image.open(io.BytesIO(img))
-
-    writeLog(f"SAVE\n")
-    
-    img.save(tmp, format="PNG", pnginfo=m)
-
-    writeLog(f"REPLACE\n")
-
-    os.replace(tmp, file)
-
-    writeLog("DONE\n")
-
-    return file
 
 class BuilderRunnable(threading.Thread):
     def __init__(self, manager, inputs):
@@ -259,7 +210,7 @@ class RequestManager(QObject):
         if inputs:
             for i in inputs:
                 data = []
-                if i._role == BasicInputRole.IMAGE:
+                if i._role == InputRole.IMAGE:
                     if i._image and not i._image.isNull():
                         data += [encodeImage(i._originalCrop or i._original)]
                     if i._files:
@@ -267,7 +218,7 @@ class RequestManager(QObject):
                             data += [i.getFilePath(f)]
                     if data:
                         found[i] = data
-                if i._role == BasicInputRole.MASK or (i._role == BasicInputRole.CONTROL and i._control_mode == "Inpaint"):
+                if i._role == InputRole.MASK or (i._role == InputRole.CONTROL and i._control_mode == "Inpaint"):
                     if i._linked:
                         links[i] = i._linked
                         if i._image and not i._image.isNull():
@@ -278,14 +229,14 @@ class RequestManager(QObject):
                         if data:
                             found[i] = data
                             data = []
-                if i._role == BasicInputRole.SUBPROMPT:
+                if i._role == InputRole.SUBPROMPT:
                     if i._linked:
                         links[i] = i._linked
                     if i._image and not i._image.isNull():
                         data += [[encodeImage(a) for a in i.getAreas()]]
                     if data:
                         found[i] = data
-                if i._role == BasicInputRole.CONTROL:
+                if i._role == InputRole.CONTROL:
                     model = i._control_settings.get("mode")
                     opts = {
                         "scale": i._control_settings.get("strength"),
@@ -303,7 +254,7 @@ class RequestManager(QObject):
                             data += [(model, opts, k.getFilePath(f))]
                     if data:
                         controls[i] = data
-                if i._role == BasicInputRole.SEGMENTATION:
+                if i._role == InputRole.SEGMENTATION:
                     opts = i.getSegmentationArgs()
                     if i._image and not i._image.isNull():
                         data += [(encodeImage(i._originalCrop or i._original), opts)]
@@ -368,11 +319,11 @@ class RequestManager(QObject):
                 img, msk, are = None, None, []
                 for j in linked:
                     data = found[j][z % len(found[j])]
-                    if j._role == BasicInputRole.IMAGE:
+                    if j._role == InputRole.IMAGE:
                         img = data
-                    if j._role == BasicInputRole.MASK or (j._role == BasicInputRole.CONTROL and j._control_mode == "Inpaint"):
+                    if j._role == InputRole.MASK or (j._role == InputRole.CONTROL and j._control_mode == "Inpaint"):
                         msk = data
-                    if j._role == BasicInputRole.SUBPROMPT:
+                    if j._role == InputRole.SUBPROMPT:
                         are = data
                 if msk and not img:
                     continue
@@ -538,15 +489,15 @@ class RequestManager(QObject):
             self.normalResult(id, self.mapping[id], name)
 
     def doSave(self, image, metadata, folder):
-        if self.gui.debugMode() == 1:
-            return writeImage(image, metadata, self.gui.outputDirectory(), folder)
-        else:
-            log = self.gui.debugMode() == 2
-            writer = OutputWriter(image, metadata, self.gui.outputDirectory(), folder, log)
-            writer.signals.done.connect(self.onSave)
-            self.writers[writer.file] = writer
-            writer.start()
-            return writer.file
+        formatted = {"parameters": parameters.formatParameters(metadata)}
+        if recipe := parameters.formatRecipe(metadata):
+            formatted["recipe"] = recipe
+
+        writer = OutputWriter(image, formatted, os.path.join(self.gui.outputDirectory(), folder))
+        writer.signals.done.connect(self.onSave)
+        self.writers[writer.file] = writer
+        writer.start()
+        return writer.file
 
     @pyqtSlot(str)
     def onSave(self, file):

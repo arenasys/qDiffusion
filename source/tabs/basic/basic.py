@@ -16,16 +16,14 @@ import datetime
 import os
 
 # this file is imported at the root
-from tabs.basic.basic_input import BasicInput, BasicInputRole, MIME_BASIC_INPUT
+from tabs.basic.basic_input import BasicInput, MIME_BASIC_INPUT
 from tabs.basic.basic_output import BasicOutput
 from tabs.basic.basic_pose import Pose, PoseNode, PoseEdge
 
 import misc
 import manager
+from manager import InputRole
 import parameters
-
-import PIL.Image
-import PIL.PngImagePlugin
 
 MIME_BASIC_DIVIDER = "application/x-qd-basic-divider"
 
@@ -201,27 +199,27 @@ class Basic(QObject):
 
     @pyqtSlot()
     def addImage(self):
-        self._inputs += [BasicInput(self, QImage(), BasicInputRole.IMAGE)]
+        self._inputs += [BasicInput(self, QImage(), InputRole.IMAGE)]
         self.updated.emit()
 
     @pyqtSlot()
     def addMask(self):
-        self._inputs += [BasicInput(self, QImage(), BasicInputRole.MASK)]
+        self._inputs += [BasicInput(self, QImage(), InputRole.MASK)]
         self.updated.emit()
 
     @pyqtSlot()
     def addSegment(self):
-        self._inputs += [BasicInput(self, QImage(), BasicInputRole.SEGMENTATION)]
+        self._inputs += [BasicInput(self, QImage(), InputRole.SEGMENTATION)]
         self.updated.emit()
 
     @pyqtSlot()
     def addSubprompt(self):
-        self._inputs += [BasicInput(self, QImage(), BasicInputRole.SUBPROMPT)]
+        self._inputs += [BasicInput(self, QImage(), InputRole.SUBPROMPT)]
         self.updated.emit()
 
     @pyqtSlot(str)
     def addControl(self, mode):
-        i = BasicInput(self, QImage(), BasicInputRole.CONTROL)
+        i = BasicInput(self, QImage(), InputRole.CONTROL)
         i._control_settings.set("mode", mode)
         self._inputs += [i]
         self.updated.emit()
@@ -234,11 +232,11 @@ class Basic(QObject):
                 curr.setLinked(None)
         for i in range(len(self._inputs)):
             curr = self._inputs[i]
-            if i == 0 or curr._role in {BasicInputRole.IMAGE, BasicInputRole.SEGMENTATION}:
+            if i == 0 or curr._role in {InputRole.IMAGE, InputRole.SEGMENTATION}:
                 curr.setLinked(None)
                 continue
             prev = self._inputs[i-1]
-            if prev._role == BasicInputRole.IMAGE:
+            if prev._role == InputRole.IMAGE:
                 curr.setLinked(prev)
                 continue
             if prev._linked:
@@ -247,7 +245,7 @@ class Basic(QObject):
                     continue
                 linked_roles = set([p.effectiveRole() for p in linked])
                 curr_role = curr.effectiveRole()
-                if not curr_role in linked_roles or curr_role == BasicInputRole.CONTROL:
+                if not curr_role in linked_roles or curr_role == InputRole.CONTROL:
                     curr.setLinked(prev._linked)
                     continue
             curr.setLinked(None)
@@ -278,7 +276,7 @@ class Basic(QObject):
     @pyqtSlot(str)
     def importImage(self, file):
         source = QImage(file)
-        self._inputs.append(BasicInput(self, source, BasicInputRole.IMAGE))
+        self._inputs.append(BasicInput(self, source, InputRole.IMAGE))
         self.updated.emit()
 
     @pyqtSlot(MimeData, int)
@@ -297,11 +295,11 @@ class Basic(QObject):
                 if url.isLocalFile():
                     path = url.toLocalFile()
                     if os.path.isdir(path):
-                        input = BasicInput(self, QImage(), BasicInputRole.IMAGE)
+                        input = BasicInput(self, QImage(), InputRole.IMAGE)
                         input.setFolder(url)
                         self._inputs.insert(index, input)
                     else:
-                        self._inputs.insert(index, BasicInput(self, QImage(path), BasicInputRole.IMAGE))
+                        self._inputs.insert(index, BasicInput(self, QImage(path), InputRole.IMAGE))
                     done = True
                 elif url.scheme() == "http" or url.scheme() == "https":
                     if url.fileName().rsplit(".")[-1] in {"png", "jpg", "jpeg", "webp", "gif"}:
@@ -309,7 +307,7 @@ class Basic(QObject):
             
             source = mimeData.imageData()
             if not done and source and not source.isNull():
-                self._inputs.insert(index, BasicInput(self, source, BasicInputRole.IMAGE))
+                self._inputs.insert(index, BasicInput(self, source, InputRole.IMAGE))
                 
         self.updated.emit()
 
@@ -580,7 +578,7 @@ class Basic(QObject):
                 if self._reply_index == -1:
                     self._reply_index = len(self._inputs)
                 if len(self._inputs) <= self._reply_index:
-                    self._inputs.insert(self._reply_index, BasicInput(self, image, BasicInputRole.IMAGE))
+                    self._inputs.insert(self._reply_index, BasicInput(self, image, InputRole.IMAGE))
                 else:
                     self._inputs[self._reply_index].setImageData(image)
         self.updated.emit()
@@ -652,17 +650,17 @@ class Basic(QObject):
     @pyqtSlot(CanvasWrapper, BasicInput)
     def setupCanvas(self, wrapper, target):
         canvas = wrapper.canvas
-        if target._role in {BasicInputRole.IMAGE, BasicInputRole.CONTROL}:
+        if target._role in {InputRole.IMAGE, InputRole.CONTROL}:
             if target._paint.isNull():
                 canvas.setupPainting(target._original)
             else:
                 canvas.setupPainting(target._base, target._paint)
             return
-        if target._role == BasicInputRole.MASK:
+        if target._role == InputRole.MASK:
             canvas.setupMask(target.image, QSize(target.linkedWidth, target.linkedHeight))
             return
-        if target._role == BasicInputRole.SUBPROMPT:
-            if target._linked and target._linked._role == BasicInputRole.IMAGE:
+        if target._role == InputRole.SUBPROMPT:
+            if target._linked and target._linked._role == InputRole.IMAGE:
                 z = target.linkedImage.size()
             else:
                 w,h = self.parameters.values.get("width"),  self.parameters.values.get("height")
@@ -676,15 +674,15 @@ class Basic(QObject):
         if target == None:
             return
         canvas = wrapper.canvas
-        if target._role in {BasicInputRole.IMAGE, BasicInputRole.CONTROL}:
+        if target._role in {InputRole.IMAGE, InputRole.CONTROL}:
             image = canvas.getDisplay()
             base, paint = canvas.getImages()
             target.setPaintedData(image, base, paint)
             return
-        if target._role == BasicInputRole.MASK:
+        if target._role == InputRole.MASK:
             target.setImageData(canvas.getImage())
             return
-        if target._role == BasicInputRole.SUBPROMPT:
+        if target._role == InputRole.SUBPROMPT:
             layers = canvas.getImages()
             if len(layers) <= len(target._areas):
                 target._areas[:len(layers)] = layers
@@ -756,11 +754,11 @@ class Basic(QObject):
         t = None
         for i in self._inputs:
             r = i.effectiveRole()
-            if r == BasicInputRole.IMAGE:
+            if r == InputRole.IMAGE:
                 t = "Img2Img"
-            if r == BasicInputRole.MASK and t == "Img2Img":
+            if r == InputRole.MASK and t == "Img2Img":
                 t = "Inpainting"
-            if r == BasicInputRole.SEGMENTATION and t == None:
+            if r == InputRole.SEGMENTATION and t == None:
                 t = "Segmenting"
         if not t:
             t = "Txt2Img"

@@ -9,17 +9,12 @@ from canvas.shared import QImagetoPIL, AlphatoQImage
 import math
 import os
 import glob
+import json
 
 from tabs.basic.basic_pose import Pose
+from manager import OutputWriter, InputRole
 
 MIME_BASIC_INPUT = "application/x-qd-basic-input"
-
-class BasicInputRole(Enum):
-    IMAGE = 1
-    MASK = 2
-    SUBPROMPT = 3
-    CONTROL = 4
-    SEGMENTATION = 5
 
 INPUT_ID = 1
 
@@ -30,7 +25,7 @@ class BasicInput(QObject):
     folderUpdated = pyqtSignal()
     posesUpdated = pyqtSignal()
     relativePosingUpdated = pyqtSignal()
-    def __init__(self, basic, image=QImage(), role=BasicInputRole.IMAGE):
+    def __init__(self, basic, image=QImage(), role=InputRole.IMAGE):
         global INPUT_ID
         super().__init__(basic)
         self.basic = basic
@@ -100,21 +95,24 @@ class BasicInput(QObject):
         basic.parameters._values.updated.connect(self.updateImage)
         self.updated.connect(basic.onImageUpdated)
 
+    def parameterSize(self):
+        w,h = self.basic.parameters.values.get("width"),  self.basic.parameters.values.get("height")
+        return QSize(int(w),int(h))
+
     def updateImage(self):
         self._originalCrop = None
         self._originalCropInfo = None
-        
+
         if self._image and not self._image.isNull():
             if self._linked and self._linked.image and not self._linked.image.isNull():
                 bg = self._linked.image
                 self.resizeImage(bg.size())
                 self.linkedUpdated.emit()
             else:
-                if (self._role == BasicInputRole.IMAGE and self.basic.hasMask(self)) or self._role == BasicInputRole.SEGMENTATION:
+                if (self._role == InputRole.IMAGE and self.basic.hasMask(self)) or self._role == InputRole.SEGMENTATION:
                     self._image = self._original
                 else:
-                    w,h = self.basic.parameters.values.get("width"),  self.basic.parameters.values.get("height")
-                    self.resizeImage(QSize(int(w),int(h)))
+                    self.resizeImage(self.parameterSize())
         
         if self._currentFile:
             self.getFile()
@@ -152,6 +150,9 @@ class BasicInput(QObject):
 
     @pyqtSlot(QUrl)
     def saveImage(self, file):
+        if self.isPose:
+            return self.savePose(file)
+
         file = file.toLocalFile()
         if not "." in file.rsplit(os.path.sep,1)[-1]:
             file = file + ".png"
@@ -188,11 +189,11 @@ class BasicInput(QObject):
 
     @role.setter
     def role(self, role):
-        self._role = BasicInputRole(role)
+        self._role = InputRole(role)
         self._warning = ""
-        if self._role != BasicInputRole.CONTROL:
+        if self._role != InputRole.CONTROL:
             self._control_settings.set("mode", "")
-        if self._role == BasicInputRole.SEGMENTATION:
+        if self._role == InputRole.SEGMENTATION:
             self.resetSegmentation()
         self.updateImage()
         self.parent().updated.emit()
@@ -304,11 +305,11 @@ class BasicInput(QObject):
     
     @pyqtProperty(bool, notify=updated)
     def isTile(self):
-        return self._role == BasicInputRole.CONTROL and self._control_mode == "Tile"
+        return self._role == InputRole.CONTROL and self._control_mode == "Tile"
     
     @pyqtProperty(bool, notify=updated)
     def isPose(self):
-        return self._role == BasicInputRole.CONTROL and self._control_mode == "Pose" and self._control_settings.get("preprocessor") == "Pose"
+        return self._role == InputRole.CONTROL and self._control_mode == "Pose" and self._control_settings.get("preprocessor") == "Pose"
     
     @pyqtProperty(list, notify=posesUpdated)
     def poses(self):
@@ -428,6 +429,9 @@ class BasicInput(QObject):
     
     @pyqtSlot()
     def drawPose(self):
+        if not self._original or self._original.isNull():
+            return
+        
         self.cachePose()
         
         size = QSize(self.linkedWidth, self.linkedHeight)
@@ -447,10 +451,31 @@ class BasicInput(QObject):
             original = self._original
             crop = self.getPoseCrop()
 
-            image = Pose.drawPoses(self.getPose(), size, original, crop, display=False)
-            image.save(file)
+            pose = self.getPose()
+            image = Pose.drawPoses(pose, size, original, crop, display=False)
+            metadata = {"pose": json.dumps(pose)}
+            folder = os.path.dirname(file)
+
+            self._writer = OutputWriter(image, metadata, folder, file)
+            self._writer.start()
         except Exception:
             pass
+
+    def resetPose(self):
+        if not self.isPose:
+            return
+
+        if self._image:
+            if "pose" in self._image.textKeys():
+                pose = json.loads(self._image.text("pose"))
+                self._image.fill(QColor("black"))
+                self._original.fill(QColor("black"))
+            else:
+                pose = []
+
+            self._poseAnnotateInfo = QRectF(0, 0, self._image.width(), self._image.height())
+
+            self.setPose(pose)
 
     @pyqtProperty(QPointF, notify=updated)
     def poseSize(self):
@@ -468,39 +493,39 @@ class BasicInput(QObject):
 
     @pyqtProperty(bool, notify=updated)
     def canPaint(self):
-        return self._role in {BasicInputRole.IMAGE, BasicInputRole.MASK, BasicInputRole.SUBPROMPT} or (self._role == BasicInputRole.CONTROL and not self._control_mode in {"Tile", "QR"})
+        return self._role in {InputRole.IMAGE, InputRole.MASK, InputRole.SUBPROMPT} or (self._role == InputRole.CONTROL and not self._control_mode in {"Tile", "QR"})
     
     @pyqtProperty(bool, notify=updated)
     def canLoad(self):
-        return self._role in {BasicInputRole.IMAGE, BasicInputRole.MASK, BasicInputRole.SEGMENTATION} or (self._role == BasicInputRole.CONTROL and self._control_mode != "Tile")
+        return self._role in {InputRole.IMAGE, InputRole.MASK, InputRole.SEGMENTATION} or (self._role == InputRole.CONTROL and self._control_mode != "Tile")
     
     @pyqtProperty(bool, notify=updated)
     def isMask(self):
-        return self._role in {BasicInputRole.MASK, BasicInputRole.SUBPROMPT} or (self._role == BasicInputRole.CONTROL and self._control_mode == "Inpaint")
+        return self._role in {InputRole.MASK, InputRole.SUBPROMPT} or (self._role == InputRole.CONTROL and self._control_mode == "Inpaint")
     
     @pyqtProperty(bool, notify=updated)
     def isOverlay(self):
-        return self._role in {BasicInputRole.MASK, BasicInputRole.SUBPROMPT} or (self._role == BasicInputRole.CONTROL and self._control_mode in {"Inpaint", "Tile"})
+        return self._role in {InputRole.MASK, InputRole.SUBPROMPT} or (self._role == InputRole.CONTROL and self._control_mode in {"Inpaint", "Tile"})
 
     @pyqtProperty(bool, notify=updated)
     def isCanvas(self):
-        return self._role in {BasicInputRole.IMAGE} or (self._role == BasicInputRole.CONTROL and self._control_mode != "Tile")
+        return self._role in {InputRole.IMAGE} or (self._role == InputRole.CONTROL and self._control_mode != "Tile")
 
     @pyqtProperty(bool, notify=updated)
     def hasSettings(self):
-        return self._role in {BasicInputRole.CONTROL, BasicInputRole.SEGMENTATION}
+        return self._role in {InputRole.CONTROL, InputRole.SEGMENTATION}
     
     @pyqtProperty(bool, notify=updated)
     def canAnnotate(self):
-        return self._role in {BasicInputRole.CONTROL} and not self._control_mode in {"Inpaint", "Tile"}
+        return self._role in {InputRole.CONTROL} and not self._control_mode in {"Inpaint", "Tile"}
     
     @pyqtProperty(bool, notify=updated)
     def showingArtifact(self):
         return self._display != None
     
     def effectiveRole(self):
-        if self._role == BasicInputRole.CONTROL and self._control_mode == "Inpaint":
-            return BasicInputRole.MASK
+        if self._role == InputRole.CONTROL and self._control_mode == "Inpaint":
+            return InputRole.MASK
         return self._role
 
     @pyqtProperty(bool, notify=linkedUpdated)
@@ -589,6 +614,12 @@ class BasicInput(QObject):
             self.updated.emit()
             self.extentUpdated.emit()
             self.parent().updated.emit()
+
+            if self.isPose:
+                self._image = self._original
+                self.resetPose()
+                self.updateImage()
+
         if key == "preprocessor":
             self.setArtifacts({})
 
@@ -706,7 +737,7 @@ class BasicInput(QObject):
         self.updated.emit()
     
     def warnSegmentation(self):
-        if not self._role == BasicInputRole.SEGMENTATION:
+        if not self._role == InputRole.SEGMENTATION:
             return
         if len(self._segmentation_points) == 0 :
             self._warning = "Segmentation needs points"
@@ -826,6 +857,7 @@ class BasicInput(QObject):
         self.resetAnnotation()
         self.resetSegmentation()
         self.resetPaint()
+        self.resetPose()
 
     def getAreas(self):
         out = []
@@ -839,8 +871,8 @@ class BasicInput(QObject):
     def setImageFile(self, path):
         self._image = QImage(path.toLocalFile())
         self._original = self._image.copy()
-        self.updateImage()
         self.resetAuxiliary()
+        self.updateImage()
 
     @pyqtSlot()
     def setImageCanvas(self):
@@ -855,8 +887,8 @@ class BasicInput(QObject):
         else:
             self._image.fill(0)
         self._original = self._image.copy()
-        self.updateImage()
         self.resetAuxiliary(canvas=True)
+        self.updateImage()
 
     @pyqtSlot(MimeData, int)
     def setImageDrop(self, mimeData, index):
@@ -896,16 +928,16 @@ class BasicInput(QObject):
 
         if found:
             self._original = self._image.copy()
-            self.updateImage()
             self.resetAuxiliary()
+            self.updateImage()
 
     @pyqtSlot(QImage)
     def setImageData(self, data):
         self._image = data
 
         self._original = self._image.copy()
-        self.updateImage()
         self.resetAuxiliary()
+        self.updateImage()
 
     @pyqtSlot(QImage, QImage, QImage)
     def setPaintedData(self, image, base, paint):
