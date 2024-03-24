@@ -161,7 +161,7 @@ class RemoteInference(QThread):
         if self.client:
             self.onResponse({"type": "status", "data": {"message": "Reconnected"}})
 
-    def terminate(self, errored=True):
+    def terminateConnection(self, errored=True):
         self.client.protocol.send_frame = lambda x: None
         self.client.socket.close()
         self.client = None
@@ -220,7 +220,7 @@ class RemoteInference(QThread):
                         waiting = 0
                         pong = self.client.ping()
                         if not pong.wait(10):
-                            self.terminate()
+                            self.terminateConnection()
 
             except websockets.exceptions.ConnectionClosedOK:
                 self.onResponse({"type": "remote_error", "data": {"message": "Connection closed"}})
@@ -246,7 +246,7 @@ class RemoteInference(QThread):
 
         if self.client:
             self.client.close()
-            self.terminate(errored=False)
+            self.terminateConnection(errored=False)
 
     @pyqtSlot()
     def stop(self):
