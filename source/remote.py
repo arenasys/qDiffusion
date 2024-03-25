@@ -219,8 +219,8 @@ class RemoteInference(QThread):
                     if waiting >= 2000:
                         waiting = 0
                         pong = self.client.ping()
-                        if not pong.wait(10):
-                            self.terminateConnection()
+                        #if not pong.wait(10):
+                        #    self.terminateConnection()
 
             except websockets.exceptions.ConnectionClosedOK:
                 self.onResponse({"type": "remote_error", "data": {"message": "Connection closed"}})
