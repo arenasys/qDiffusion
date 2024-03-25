@@ -99,13 +99,42 @@ Rectangle {
 
             color: "transparent"
             border.width: 2
-            border.color: [COMMON.accent(0.2), COMMON.accent(0.4), COMMON.accent(0.6), "#a0000000", "#a0000000", COMMON.accent(0.0)][GUI.statusMode]
-
+            border.color: {
+                if(statusLabel.visible) {
+                    return [COMMON.accent(0.2), COMMON.accent(0.4), COMMON.accent(0.6), "#a0000000", "#a0000000", COMMON.accent(0.0)][GUI.statusMode]
+                }
+                if (latencyLabel.visible) {
+                    if(latencyLabel.latency >= 10000) {
+                        return "#a0000000"
+                    } else {
+                        return COMMON.accent(0.8)
+                    }
+                }
+            }
             SText {
+                id: statusLabel
+                visible: !latencyLabel.visible
                 anchors.fill: parent
                 verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignHCenter
                 text: root.tr(GUI.statusText, "Status")
+                font.bold: true
+            }
+
+            MouseArea {
+                id: mouseArea
+                anchors.fill: parent
+                hoverEnabled: true
+            }
+
+            SText {
+                id: latencyLabel
+                property var latency: Math.floor(GUI.remoteLatency*1000)
+                visible: (latencyLabel.latency >= 10000 || mouseArea.containsMouse) && GUI.remoteLatency != 0 && GUI.isRemote
+                anchors.fill: parent
+                verticalAlignment: Text.AlignVCenter
+                horizontalAlignment: Text.AlignHCenter
+                text: latency < 10000 ? latency + " ms" : "Dropping"
                 font.bold: true
             }
         }

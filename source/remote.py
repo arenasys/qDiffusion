@@ -105,6 +105,43 @@ class RemoteInferenceUpload(QThread):
     def stop(self):
         self.stopping = True
 
+class RemoteHeartbeat(QThread):
+    latency = pyqtSignal(float)
+    def __init__(self, client):
+        super().__init__()
+        self.client = client
+        self.last = time.time()
+        self.latencies = []
+        self.ping_interval = 1
+        self.wait_interval = 10
+    
+    def run(self):
+        try:
+            while True:
+                start = time.time()
+                pong = self.client.ping()
+                result = pong.wait(self.wait_interval)
+                duration = time.time()-start
+
+                if result:
+                    self.last = time.time()
+                    self.latencies += [duration]
+                    if len(self.latencies) > 10:
+                        self.latencies.pop(0)
+                    latency = sum(self.latencies)/len(self.latencies)
+                    self.latency.emit(latency)
+                else:
+                    timeout = time.time()-self.last
+                    self.latency.emit(timeout)
+                
+                if duration < self.ping_interval:
+                    time.sleep(self.ping_interval - duration)
+                
+        except Exception as e:
+            print("HEART", e)
+        
+        self.latency.emit(0)
+
 class RemoteInference(QThread):
     kill = pyqtSignal()
     response = pyqtSignal(object)
@@ -146,6 +183,10 @@ class RemoteInference(QThread):
             self.onResponse({"type": "status", "data": {"message": "Connected"}})
             self.requests.put({"type":"options"})
 
+        self.heartbeat = RemoteHeartbeat(self.client)
+        self.heartbeat.latency.connect(self.onLatency)
+        self.heartbeat.start()
+
     def reconnect(self):
         start = time.time()
         timeout = 60
@@ -167,19 +208,17 @@ class RemoteInference(QThread):
         self.client = None
         if errored:
             raise websockets.exceptions.ConnectionClosedError(None, None)
-
+    
     def run(self):
         self.scheme = get_scheme(self.password)
         self.connect()
         client_id = None
 
-        waiting = 0
         while self.client and not self.stopping:
             try:
                 while True:
                     try:
                         data = self.client.recv(0)
-                        waiting = 0
                         response = decrypt(self.scheme, data)
                         if response["type"] == "hello":
                             if not client_id:
@@ -196,7 +235,6 @@ class RemoteInference(QThread):
                 
                 try:
                     request = self.requests.get(False)
-                    waiting = 0
 
                     if request["type"] == "upload":
                         file = request["data"]["file"]
@@ -215,13 +253,6 @@ class RemoteInference(QThread):
                     QApplication.processEvents()
                 except queue.Empty:
                     QThread.msleep(5)
-                    waiting += 5
-                    if waiting >= 2000:
-                        waiting = 0
-                        pong = self.client.ping()
-                        #if not pong.wait(10):
-                        #    self.terminateConnection()
-
             except websockets.exceptions.ConnectionClosedOK:
                 self.onResponse({"type": "remote_error", "data": {"message": "Connection closed"}})
                 break
@@ -266,6 +297,10 @@ class RemoteInference(QThread):
     def onUploadDone(self, file):
         if file in self.uploads:
             del self.uploads[file]
+
+    @pyqtSlot(float)
+    def onLatency(self, seconds):
+        self.onResponse({"type": "remote_latency", "data": {"seconds": seconds}})
 
     def fetch(self, result_id, request_id):
         def do_fetch(endpoint, password, result_id, request_id, callback):

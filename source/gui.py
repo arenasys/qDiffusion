@@ -116,6 +116,7 @@ class GUI(QObject):
         })
         self._config.updated.connect(self.onConfigUpdated)
         self._remoteStatus = RemoteStatusMode.INACTIVE
+        self._remoteLatency = 0
 
         self._modelFolders = []
 
@@ -432,7 +433,11 @@ class GUI(QObject):
             self.reset.emit(id)
             self.backend.stop()
             self.backend.wait()
-            
+
+        if type == "remote_latency":
+            self._remoteLatency = data["seconds"]
+            self.statusUpdated.emit()
+
         if type == "aborted":
             self.reset.emit(id)
             self.setReady()
@@ -575,6 +580,10 @@ class GUI(QObject):
     def remoteStatus(self):
         return self._remoteStatus.value
     
+    @pyqtProperty(float, notify=statusUpdated)
+    def remoteLatency(self):
+        return self._remoteLatency
+
     @pyqtProperty(bool, notify=statusUpdated)
     def isRemote(self):
         return self.backend.mode == "Remote" or self.config.get("mode") == "remote"
@@ -612,6 +621,7 @@ class GUI(QObject):
             self._remoteStatus = RemoteStatusMode.CONNECTING
         else:
             self._remoteStatus = RemoteStatusMode.INACTIVE
+        self._remoteLatency = 0
 
         self._statusMode = StatusMode.STARTING
         self._statusProgress = -1
