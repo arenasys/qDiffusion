@@ -53,9 +53,6 @@ SETTABLE = [
     "cfg_rescale", "prediction_type"
 ]
 
-NETWORKS = {"LoRA":"lora","HN":"hypernet"}
-NETWORKS_INV = {"lora":"LoRA","hypernet":"HN"}
-
 def formatParameters(json):
     json = copy.deepcopy(json)
 
@@ -351,10 +348,10 @@ class Parameters(QObject):
             self.gui.optionsUpdated.connect(self.optionsUpdated)
 
         self._client_only = [
-            "models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "SR", "LoRAs", "HNs", "LoRA", "HN", "TIs", "TI", "CN", "CNs", "hr_upscalers", "img2img_upscalers", 
+            "models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "SR", "LoRAs", "LoRA", "TIs", "TI", "CN", "CNs", "hr_upscalers", "img2img_upscalers", 
             "attentions", "device", "devices", "batch_count", "prompt", "negative_prompt", "vram_usages", "artifact_modes", "preview_modes", "schedules",
             "CN_modes", "CN_preprocessors", "vram_modes", "true_samplers", "schedule", "network_modes", "model", "output_folder", "mask_fill_modes", "autocast_modes",
-            "prediction_types", "tiling_modes", "precisions", "fetching_modes", "model_modes", "Refiners"
+            "prediction_types", "tiling_modes", "precisions", "fetching_modes", "model_modes", "Refiners", "model_types"
         ]
 
         self._adv_only = [
@@ -365,7 +362,7 @@ class Parameters(QObject):
             "prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7.0, "strength": 0.75, "seed": -1, "eta": 1.0,
             "hr_factor": 1.0, "hr_strength":  0.7, "hr_sampler": "Euler a", "hr_steps": 25, "hr_scale": 7.0, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "mask_expand": 0, "subseed":-1, "subseed_strength": 0.0,
             "sampler": "Euler a", "samplers":[], "hr_upscaler":"Lanczos", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
-            "model":"", "models":[], "UNET":"", "UNETs":[], "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "HN":[], "HNs":[], "SR":[], "SRs":[], "TI":"", "TIs":[],
+            "model":"", "models":[], "UNET":"", "UNETs":[], "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "SR":[], "SRs":[], "TI":"", "TIs":[],
             "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "schedule": "Linear", "schedules": ["Linear", "Karras", "Exponential"],
             "vram_mode": "Default", "vram_modes": ["Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"], "preview_mode": "Light",
             "preview_modes": ["Disabled", "Light", "Medium", "Full"], "preview_interval":1, "true_samplers": [], "true_sampler": "Euler a",
@@ -375,7 +372,7 @@ class Parameters(QObject):
             "CN_preprocessors": ["None", "Invert", "Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD", "Shuffle", "Scribble", "Normal"],
             "prediction_type": "Default", "prediction_types": ["Default", "Epsilon", "V"], "tiling_mode": "Disabled", "tiling_modes": ["Disabled", "Enabled"],
             "precisions": ["FP16", "FP32"], "vae_precision": "FP16", "precision": "FP16", "fetching_mode": "Dont Wait", "fetching_modes": ["Wait", "Dont Wait"],
-            "model_mode": "Standard", "model_modes": ["Standard", "Refiner"], "Refiner": "", "Refiners": []
+            "model_mode": "Standard", "model_modes": ["Standard", "Refiner"], "Refiner": "", "Refiners": [], "model_types": {}
         }
 
         if source:
@@ -401,7 +398,7 @@ class Parameters(QObject):
         positive = self._values.get("prompt")
         negative = self._values.get("negative_prompt")
 
-        netre = r"<@?(lora|hypernet):([^:>]+)(?::([-\d.]+))?(?::([-\d.]+))?>"
+        netre = r"<@?(lora):([^:>]+)(?::([-\d.]+))?(?::([-\d.]+))?>"
 
         nets = re.findall(netre, positive) + re.findall(netre, negative)
         self._activeNetworks = []
@@ -431,26 +428,15 @@ class Parameters(QObject):
         if net in self._activeNetworks:
             return
         
-        name = self.gui.modelName(net)
-        type = self.gui.netType(net)
-        if type:
-            type = {"LoRA":"lora", "HN":"hypernet"}[type]
-        else:
-            return
-        
-        self._values.set("prompt", self._values.get("prompt") + f"<{type}:{name}:1.0>")   
+        name = self.gui.modelName(net)        
+        self._values.set("prompt", self._values.get("prompt") + f"<lora:{name}:1.0>")   
 
     @pyqtSlot(int)
     def deleteNetwork(self, index):
         net = self._activeNetworks[index]
         name = self.gui.modelName(net)
-        type = self.gui.netType(net)
-        if type:
-            type = {"LoRA":"lora", "HN":"hypernet"}[type]
-        else:
-            return
 
-        netre = fr"(?:\s)?<@?({type}):({name})(?::([-\d.]+))?(?::([-\d.]+))?>"
+        netre = fr"(?:\s)?<@?(lora):({name})(?::([-\d.]+))?(?::([-\d.]+))?>"
         positive = re.sub(netre,'',self._values.get("prompt"))
         negative = re.sub(netre,'',self._values.get("negative_prompt"))
 
@@ -511,7 +497,7 @@ class Parameters(QObject):
             kk = k + "s"
             if kk in self._values._map:
                 opts = self.gui._options[k]
-                if k in {"UNET", "CLIP", "VAE", "SR", "LoRA", "HN", "TI"}:
+                if k in {"UNET", "CLIP", "VAE", "SR", "LoRA", "TI"}:
                     opts = sorted(opts, key=lambda m: self.gui.modelName(m.lower()))
                 self._values.set(kk, opts)
                 if (not self._values.get(k) or not self._values.get(k) in self.gui._options[k]) and self.gui._options[k]:                   
@@ -526,6 +512,8 @@ class Parameters(QObject):
             if k in self.gui._options["CLIP"] and k in self.gui._options["VAE"]:
                 models += [k]
         self._values.set("models", models)
+
+        self._values.set("model_types", self.gui._options.get("model_types", {}))
 
         unets = self._values.get("UNETs")
         unets = [u for u in unets if not u in models] + [u for u in unets if u in models]
@@ -555,7 +543,7 @@ class Parameters(QObject):
             self._values.set("VAE", model)
             self._values.set("CLIP", model)
 
-        self._availableNetworks = self._values.get("LoRAs") + self._values.get("HNs")
+        self._availableNetworks = self._values.get("LoRAs")
         self._activeNetworks = [n for n in self._activeNetworks if n in self._availableNetworks]
 
         if self._values.get("img2img_upscaler") not in self._values.get("img2img_upscalers"):
@@ -936,12 +924,7 @@ class Parameters(QObject):
             for lora in self._values.get("LoRAs"):
                 if lora_match[0] == lora.rsplit(os.path.sep,1)[-1].rsplit(".",1)[0]:
                     self._active += [lora]
-
-        for hn_match in re.findall(r"<@?hypernet:([^:>]+)([^>]+)?>", prompt):
-            for hn in self._values.get("HNs"):
-                if hn_match[0] == hn.rsplit(os.path.sep,1)[-1].rsplit(".",1)[0]:
-                    self._active += [hn]
-
+        
         for w_match in re.findall(r"@?__([^\s]+?)__(?!___)", prompt):
             if w_match in self.gui.wildcards._wildcards:
                 file = self.gui.wildcards._sources[w_match]
@@ -984,9 +967,6 @@ class Parameters(QObject):
         if file in self._values.get("LoRAs"):
             append(f"<lora:{name}>")
 
-        if file in self._values.get("HNs"):
-            append(f"<hypernet:{name}>")
-
         if file in self._values.get("TIs"):
             if "neg" in file.rsplit(os.path.sep, 1)[0].lower():
                 append(name, "negative_prompt")
@@ -1018,9 +998,6 @@ class Parameters(QObject):
 
         if file in self._values.get("LoRAs"):
             remove(fr"<@?lora:({re.escape(name)})(?::([-\d.]+))?(?::([-\d.]+))?>")
-
-        if file in self._values.get("HNs"):
-            remove(fr"<@?hypernet:({re.escape(name)})(?::([-\d.]+))?(?::([-\d.]+))?>")
 
         if file in self._values.get("TIs"):
             remove(fr"{re.escape(name)}")

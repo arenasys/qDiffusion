@@ -35,8 +35,7 @@ MODEL_FOLDERS = {
     "component": ["SD", "Stable-diffusion", "VAE"],
     "upscaler": ["SR", "ESRGAN", "RealESRGAN"], 
     "embedding": ["TI", "embeddings", os.path.join("..", "embeddings")], 
-    "lora": ["LoRA"], 
-    "hypernet": ["HN", "hypernetworks"],
+    "lora": ["LoRA"],
     "wildcard": ["WILDCARD"],
     "controlnet": ["CN"]
 }
@@ -706,7 +705,7 @@ class GUI(QObject):
     
     @pyqtSlot()
     def watchModelDirectory(self):
-        folders = ["SD", "LoRA", "HN", "SR", "TI", "Stable-diffusion", "ESRGAN", "RealESRGAN", "Lora", "hypernetworks", os.path.join("..", "embeddings"), "WILDCARD"]
+        folders = ["SD", "LoRA", "SR", "TI", "Stable-diffusion", "ESRGAN", "RealESRGAN", "Lora", os.path.join("..", "embeddings"), "WILDCARD"]
         folders = [os.path.abspath(os.path.join(self.modelDirectory(), f)) for f in folders]
         folders = [f for f in folders if os.path.exists(f)]
         for folder in folders:
@@ -742,12 +741,8 @@ class GUI(QObject):
     
     @pyqtSlot(str, result=str)
     def netType(self, name):
-        folder = name.rsplit(os.path.sep,1)[0].rsplit(os.path.sep,1)[0]
-        if folder in {"LoRA"}:
-            return "LoRA"
-        elif folder in {"HN", "hypernetworks"}:
-            return "HN"
-        return None
+        model_types = self._options["model_types"]
+        return model_types.get(name, "Unknown")
     
     @pyqtSlot(str)
     def visitFolder(self, folder):

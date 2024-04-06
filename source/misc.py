@@ -360,8 +360,6 @@ class SyntaxHighlighter(QSyntaxHighlighter):
         emb = QColor("#ffd893")
         lora_bg = QColor("#f9c7ff")
         lora = QColor("#d693ff")
-        hn_bg = QColor("#c7fff6")
-        hn = QColor("#93d6ff")
         err_bg = QColor("#ffc4c4")
         err = QColor("#ff9393")
         wild_bg = QColor("#c7ffd2")
@@ -377,14 +375,10 @@ class SyntaxHighlighter(QSyntaxHighlighter):
         if "LoRA" in self.gui._options:
             loras = set([self.gui.modelName(n) for n in self.gui._options["LoRA"]])
 
-        hns = set()
-        if "HN" in self.gui._options:
-            hns = set([self.gui.modelName(n) for n in self.gui._options["HN"]])
-
         wilds = set(self.gui.wildcards._wildcards.keys())
 
         for em in embeddings:
-            for s, e  in [m.span() for m in re.finditer(em.lower(), text.lower())]:
+            for s, e  in [m.span() for m in re.finditer(re.escape(em.lower()), text.lower())]:
                 self.setFormat(s, e-s, emb)
         
         for s, e, ms, me in [(*m.span(0), *m.span(1)) for m in re.finditer("<@?lora:([^:>]+)([^>]+)?>", text.lower())]:
@@ -394,19 +388,6 @@ class SyntaxHighlighter(QSyntaxHighlighter):
                 self.setFormat(ms, me-ms, lora)
                 if text[s+1] == "@":
                     self.setFormat(s+1,1,lora)
-            else:
-                self.setFormat(s, e-s, err_bg)
-                self.setFormat(ms, me-ms, err)
-                if text[s+1] == "@":
-                    self.setFormat(s+1,1,err)
-        
-        for s, e, ms, me in [(*m.span(0), *m.span(1))  for m in re.finditer("<@?hypernet:([^:>]+)([^>]+)?>", text.lower())]:
-            m = text[ms:me]
-            if m in hns:
-                self.setFormat(s, e-s, hn_bg)
-                self.setFormat(ms, me-ms, hn)
-                if text[s+1] == "@":
-                    self.setFormat(s+1,1,hn)
             else:
                 self.setFormat(s, e-s, err_bg)
                 self.setFormat(ms, me-ms, err)
@@ -840,7 +821,7 @@ class DownloadManager(QObject):
         self.updated.emit()
 
 SUGGESTION_BLOCK_REGEX = lambda spaces: r'(?=\n|,|(?<!lora|rnet):|\||\[|\]|\(|\)'+ ('|\s)' if spaces else r')')
-SUGGESTION_SOURCES = ["Model", "UNET", "VAE", "CLIP", "LoRA", "HN", "TI", "Wild", "Vocab", "Keyword"]
+SUGGESTION_SOURCES = ["Model", "UNET", "VAE", "CLIP", "LoRA", "TI", "Wild", "Vocab", "Keyword"]
 
 class SuggestionManager(QObject):
     updated = pyqtSignal()
@@ -875,7 +856,7 @@ class SuggestionManager(QObject):
     @pyqtSlot()
     def setPromptSources(self):
         self._sources = {k: False for k in SUGGESTION_SOURCES}
-        for k in {"LoRA", "HN", "TI", "Wild", "Vocab"}:
+        for k in {"LoRA", "TI", "Wild", "Vocab"}:
             self._sources[k] = True
         self.update()
     
@@ -1013,8 +994,6 @@ class SuggestionManager(QObject):
             detail = self._model_details[text]
             if detail == "LoRA":
                 return f"<lora:{text}>"
-            if detail == "HN":
-                return f"<hypernet:{text}>"
             if detail == "Wild":
                 return f"__{text}__"
         return text
@@ -1033,7 +1012,6 @@ class SuggestionManager(QObject):
             return {
                 "TI": QColor("#ffd893"),
                 "LoRA": QColor("#f9c7ff"),
-                "HN": QColor("#c7fff6"),
                 "Wild": QColor("#c7ffd2")
             }.get(self._model_details[text], QColor("#cccccc"))
         return QColor("#cccccc")
@@ -1056,7 +1034,7 @@ class SuggestionManager(QObject):
     @pyqtSlot()
     def updateCollection(self):
         self._models = []
-        for t in {"UNET", "VAE", "CLIP", "LoRA", "TI", "HN"}:
+        for t in {"UNET", "VAE", "CLIP", "LoRA", "TI"}:
             if self._sources[t] and t in self.gui._options:
                 self._models += [(self.gui.modelName(n), t) for n in self.gui._options[t]]
 

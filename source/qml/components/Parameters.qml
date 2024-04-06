@@ -829,7 +829,7 @@ Item {
                                 boundsBehavior: Flickable.StopAtBounds
 
                                 ScrollBar.vertical: SScrollBarV {
-                                    id: scrollBar
+                                    id: netScrollBar
                                     totalLength: netList.contentHeight
                                     showLength: netList.height
                                     incrementLength: 25
@@ -848,7 +848,7 @@ Item {
 
                                     ParametersNetItem {
                                         anchors.fill: parent
-                                        anchors.rightMargin: scrollBar.active ? 8 : 0
+                                        anchors.rightMargin: netScrollBar.showing ? 8 : 0
                                         label: GUI.modelName(modelData)
                                         type: GUI.netType(modelData)
 

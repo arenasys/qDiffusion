@@ -450,7 +450,7 @@ Item {
             SContextMenuSeparator {}
 
             SContextMenuItem {
-                visible: sql_type != "wildcard" && sql_type != "hypernet"
+                visible: sql_type != "wildcard"
                 height: visible ? 20 : 0
                 text: root.tr("Prune")
                 onPressed: {

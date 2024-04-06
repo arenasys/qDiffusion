@@ -19,7 +19,6 @@ LABELS =  {
     "checkpoint": "Checkpoints",
     "component": "Components",
     "lora": "LoRAs",
-    "hypernet": "Hypernets",
     "embedding": "Embeddings",
     "upscaler": "Upscalers",
     "wildcard": "Wildcards"
@@ -177,6 +176,7 @@ class Populater(QObject):
             return
         
         o = self.gui._options
+        tp = self.gui._options.get("model_types", {})
         checkpoints = [a for a in o["UNET"] if a in o["VAE"] and a in o["CLIP"]]
         for idx, name in enumerate(checkpoints):
             self.setModel(name, "checkpoint", "", "checkpoint", idx)
@@ -188,12 +188,11 @@ class Populater(QObject):
         self.finishCategory("component", len(components))
 
         for idx, name in enumerate(o["LoRA"]):
-            self.setModel(name, "lora", "", "lora", idx)
+            category = tp.get(name, "?")
+
+
+            self.setModel(name, "lora", category, "lora", idx)
         self.finishCategory("lora", len(o["LoRA"]))
-        
-        for idx, name in enumerate(o["HN"]):
-            self.setModel(name, "hypernet", "", "hypernet", idx)
-        self.finishCategory("hypernet", len(o["HN"]))
 
         for idx, name in enumerate(o["TI"]):
             self.setModel(name, "embedding", "", "embedding", idx)
@@ -232,10 +231,6 @@ class Populater(QObject):
 
         for name in o["LoRA"]:
             self.setModel(name, "favourite", "LoRA", "lora", idx, False)
-            idx += 1
-        
-        for name in o["HN"]:
-            self.setModel(name, "favourite", "Hypenet", "hypernet", idx, False)
             idx += 1
 
         for name in o["TI"]:
