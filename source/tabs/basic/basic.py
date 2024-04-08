@@ -239,6 +239,9 @@ class Basic(QObject):
             if prev._role == InputRole.IMAGE:
                 curr.setLinked(prev)
                 continue
+            if prev._role == InputRole.CONTROL and curr._role == InputRole.CONTROL:
+                curr.setLinked(prev)
+                continue
             if prev._linked:
                 linked = [p for p in self._inputs if p._linked == prev._linked and p != curr]
                 if any([p.isTile for p in linked]):
