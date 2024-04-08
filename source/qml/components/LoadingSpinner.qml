@@ -3,6 +3,8 @@ import QtQuick.Controls 2.15
 
 import gui 1.0
 
+import "../style"
+
 Item {
     id: root
     property var size: Math.max(root.width, root.height) / 4
@@ -20,15 +22,17 @@ Item {
         sourceSize: Qt.size(width, height)
         anchors.centerIn: parent
         smooth: true
-        antialiasing: true   
+        antialiasing: true
+        rotation: rotationAnimation.value 
     }
 
-    RotationAnimator {
-        target: spinner
-        loops: Animation.Infinite
-        from: 0
-        to: 360
-        duration: root.duration
+    SAnimation {
+        id: rotationAnimation
         running: root.visible
+        duration: root.duration
+        minValue: 0
+        maxValue: 360
+        loop: true
+        fps: 30
     }
 }

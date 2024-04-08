@@ -12,10 +12,6 @@ Item {
     property var color: COMMON.bg4
     property var count: 3
 
-    onDurationChanged: {
-        offsetAnimation.fromCurrent()
-    }
-
     function wrap(x) {
         if(root.width <= 0) {
             return x
@@ -57,7 +53,7 @@ Item {
     Rectangle {
         visible: root.working && root.progress < 0.0
         id: working
-        property var percent: 0
+        property var percent: offsetAnimation.value
         property var offset: percent * root.width
         x: offset-25
         y: -parent.height / 2
@@ -69,31 +65,14 @@ Item {
         opacity: 0.35
         antialiasing: true
 
-        RotationAnimation on percent {
+        SAnimation {
             id: offsetAnimation
-
-            function fromStart() {
-                from = 0
-                to = 1
-                duration = Math.max(100, root.duration)
-                start()
-            }
-
-            function fromCurrent() {
-                stop()
-                from = working.percent
-                to = 1
-                duration = Math.max(100, root.duration)*(1-from)
-                start()
-            }
-
-            Component.onCompleted: {
-                fromStart()
-            }
-
-            onFinished: {
-                fromStart()
-            }
+            running: working.visible
+            minValue: 0
+            maxValue: 1
+            duration: Math.max(100, root.duration)
+            fps: 30
+            loop: true
         }
     }
 
@@ -114,11 +93,4 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
         }
     }
-
-    /*Rectangle {
-        visible: root.progress >= 0.0
-        x: (root.width * root.progress) 
-        height: parent.height
-        width: 1
-    }*/
 }

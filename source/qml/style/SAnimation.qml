@@ -8,10 +8,12 @@ Item {
     property var minValue: 0.0
     property var maxValue: 1.0
     property var duration: 1000
-    property var rate: 100
+    property var fps: 30
 
     property var loop: false
     property var pulse: false
+
+    property var rate: Math.floor(1000/fps)
 
     function restart() {
         value = minValue
@@ -46,12 +48,12 @@ Item {
                     while(v > root.maxValue) {
                         v -= s
                     }
-                    root.value = v
                 } else {
-                    root.value = root.maxValue
+                    v = root.maxValue
                     root.running = false
                 }
             }
+            root.value = v
         }
     }
 

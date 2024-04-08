@@ -74,7 +74,6 @@ Rectangle {
                         duration: 1500
                         clip: true
                         barWidth: (width / 4)
-                        opacity: modelData.progress == 0.0 ? 1.0 : 0.7
                     }
                     
                     MouseArea {

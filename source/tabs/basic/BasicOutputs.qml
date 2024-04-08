@@ -192,15 +192,17 @@ Item {
                         inset: 4
                         height: 22
                         width: 22
+                        rotation: rotationAnimation.value
                     }
 
-                    RotationAnimator {
-                        target: statusIcon
-                        loops: Animation.Infinite
-                        from: 0
-                        to: 360
-                        duration: 1000
+                    SAnimation {
+                        id: rotationAnimation
                         running: modelObj.fetching
+                        duration: 1000
+                        minValue: 0
+                        maxValue: 360
+                        loop: true
+                        fps: 30
                     }
 
                     Rectangle {

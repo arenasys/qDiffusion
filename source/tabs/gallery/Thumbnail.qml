@@ -77,6 +77,7 @@ Item {
         color: "transparent"
         border.color: "black"
         border.width: thumb.border
+        visible: img.status == Image.Ready
     }
 
     Rectangle {
@@ -85,6 +86,7 @@ Item {
         color: "transparent"
         border.color: "white"
         border.width: thumb.border/2
+        visible: img.status == Image.Ready
     }
 
     Rectangle {

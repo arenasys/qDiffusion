@@ -216,7 +216,7 @@ Item {
                         minValue: 0.0
                         maxValue: 0.15
                         duration: 500
-                        rate: 25
+                        fps: 30
                         pulse: true
                     }
 
