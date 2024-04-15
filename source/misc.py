@@ -528,7 +528,7 @@ def weightText(text, inc, start, end):
     post = {'>':-1, ')':-1, ']':-1}
     inv = {'<':'>', '(':')', '[':']'}
     
-    if text[start-1] in pre and (text[end] == inv[text[start-1]] or text[end] == ':'):
+    if text[start-1] in pre and end < len(text) and (text[end] == inv[text[start-1]] or text[end] == ':'):
         end = start       
 
     if start == end:
