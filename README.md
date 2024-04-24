@@ -36,7 +36,7 @@ Notebooks for running a remote instance are available: [Colab](https://colab.res
    	- Alternatively copy the Endpoint and Password to qDiffusion under `Settings->Remote`, press Connect.
 6. Done. See [Downloads](https://github.com/arenasys/qDiffusion/wiki/Guide#downloading) for how to get models onto the instance.
 	- Remaking the instance is done via `Runtime->Disconnect and delete runtime`, then close the tab and start from Step 1.
-	- If issues persist after a remake it could be the cloudflare tunnel is down, check [Here](https://www.cloudflarestatus.com/).
+	- HTTP 530 means the cloudflare tunnel is not working. Wait for an update, or check [Here](https://www.cloudflarestatus.com/).
 	- Runtime disconnects due to "disallowed code" can happen occasionally, often when merging. For now these don't appear to be targeted at qDiffusion specifically.
 
 ### Mobile
