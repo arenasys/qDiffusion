@@ -24,6 +24,10 @@ Item {
     property alias active: valueInput.activeFocus
     property alias indicatorHighlight: indicatorHighlight
 
+    property var padded: true
+    property var bottomPadded: false
+    property var rightPadding: padded
+
     property var validator: RegExpValidator {
         regExp: /|[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)/
     }
@@ -142,8 +146,10 @@ Item {
     Rectangle {
         id: control
         anchors.fill: parent
-        anchors.margins: 2
-        anchors.bottomMargin: 0
+        anchors.margins: root.padded ? 2 : 0
+        anchors.topMargin: root.padded ? (root.bottomPadded ? 0 : 2) : 0
+        anchors.bottomMargin: root.padded ? (root.bottomPadded ? 2 : 0) : 0
+        anchors.rightMargin: root.rightPadding ? 2 : 0
 
         color: COMMON.bg2_5
 

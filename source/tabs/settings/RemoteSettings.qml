@@ -17,7 +17,7 @@ Item {
     }
 
     function map(type) {
-        return {"Checkpoint":"SD", "LoRA":"LoRA", "Embedding":"TI", "Upscaler":"SR"}[type]
+        return {"Checkpoint":"SD", "LoRA":"LoRA", "Embedding":"TI", "Upscaler":"SR", "Detailer":"Detailer"}[type]
     }
 
     property var show: GUI.isRemote && GUI.remoteStatus == 2
@@ -108,7 +108,7 @@ Item {
                 width: 140
                 height: 30
                 label: root.tr("Type")
-                entries: ["Checkpoint", "LoRA", "Embedding", "Upscaler"]//["SD", "LoRA", "TI", "SR"]
+                entries: ["Checkpoint", "LoRA", "Embedding", "Upscaler", "Detailer"]//["SD", "LoRA", "TI", "SR"]
                 disabled: !root.show
             }
             OTextInput {
@@ -213,7 +213,7 @@ Item {
                 width: 140
                 height: 30
                 label: root.tr("Type")
-                entries: ["Checkpoint", "LoRA", "Embedding", "Upscaler"]
+                entries: ["Checkpoint", "LoRA", "Embedding", "Upscaler", "Detailer"]
                 disabled: !root.show
             }
             OTextInput {

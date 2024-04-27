@@ -21,7 +21,7 @@ SMenuBar {
             title: root.tr("Import")
             clipShadow: true
             Repeater {
-                property var tmp: ["Checkpoint", "Component", "LoRA", "Embedding", "Upscaler"]
+                property var tmp: ["Checkpoint", "Component", "LoRA", "Embedding", "Upscaler", "Detailer"]
                 model: tmp
                 SMenuItem {
                     text: root.tr(modelData)
@@ -42,7 +42,7 @@ SMenuBar {
                     if(GUI.isRemote) {
                         GUI.currentTab = "Settings"
                         SETTINGS.currentTab = "Remote"
-                        var modeIndex = ["checkpoint","component","lora","embedding","upscaler","controlnet"].indexOf(mode)
+                        var modeIndex = ["checkpoint","component","lora","embedding","upscaler","detailer"].indexOf(mode)
                         modeIndex = Math.max(modeIndex - 1, 0)
                         SETTINGS.setUpload(file, modeIndex)
                     } else {
@@ -211,7 +211,7 @@ SMenuBar {
         SMenuSeparator {}
         SMenu {
             title: root.tr("Get Model")
-            width: 100
+            width: 110
             SMenuItem {
                 text: root.tr("SD-v1")
                 onPressed: {
@@ -228,6 +228,12 @@ SMenuBar {
                 text: root.tr("SDXL")
                 onPressed: {
                     SETTINGS.download("SD", "https://huggingface.co/datasets/arenasys/qDiffusion/blob/main/SDXL.safetensors")
+                }
+            }
+            SMenuItem {
+                text: root.tr("Face detailer")
+                onPressed: {
+                    SETTINGS.download("Detailer", "https://huggingface.co/Bingsu/adetailer/resolve/main/face_yolov8s.pt")
                 }
             }
         }

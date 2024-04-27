@@ -771,9 +771,13 @@ class Basic(QObject):
             t = "Upscaling"
 
         hr = self._parameters._values.get("hr_factor") > 1.0
-        if t in ["Txt2Img"] and hr:
-            t = "Txt2Img + HR"
-        
+
+        is_txt2img = t == "Txt2Img"
+        if is_txt2img and hr:
+            t += " + HR"
+        if is_txt2img and self._parameters._activeDetailers:
+            t += " + Detail"
+
         return t
 
     @pyqtSlot()

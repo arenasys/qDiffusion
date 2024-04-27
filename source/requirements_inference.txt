@@ -16,3 +16,4 @@ toml==0.10.2
 voluptuous==0.13.1
 accelerate==0.27.2
 lycoris-lora==2.3.0.dev4
+ultralytics==8.2.3

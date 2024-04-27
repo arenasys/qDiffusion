@@ -351,7 +351,7 @@ class Parameters(QObject):
             "models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "SR", "LoRAs", "LoRA", "TIs", "TI", "CN", "CNs", "hr_upscalers", "img2img_upscalers", 
             "attentions", "device", "devices", "batch_count", "prompt", "negative_prompt", "vram_usages", "artifact_modes", "preview_modes", "schedules",
             "CN_modes", "CN_preprocessors", "vram_modes", "true_samplers", "schedule", "network_modes", "model", "output_folder", "mask_fill_modes", "autocast_modes",
-            "prediction_types", "tiling_modes", "precisions", "fetching_modes", "model_modes", "Refiners", "model_types"
+            "prediction_types", "tiling_modes", "precisions", "fetching_modes", "model_modes", "Refiners", "model_types", "Detailers", "Detailer"
         ]
 
         self._adv_only = [
@@ -359,7 +359,7 @@ class Parameters(QObject):
             "hr_sampler", "hr_scale"
         ]
         self._default_values = {
-            "prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7.0, "strength": 0.75, "seed": -1, "eta": 1.0,
+            "prompt":"", "negative_prompt":"", "width": 512, "height": 512, "steps": 25, "scale": 7.0, "strength": 0.5, "seed": -1, "eta": 1.0,
             "hr_factor": 1.0, "hr_strength":  0.7, "hr_sampler": "Euler a", "hr_steps": 25, "hr_scale": 7.0, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "mask_expand": 0, "subseed":-1, "subseed_strength": 0.0,
             "sampler": "Euler a", "samplers":[], "hr_upscaler":"Lanczos", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
             "model":"", "models":[], "UNET":"", "UNETs":[], "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "SR":[], "SRs":[], "TI":"", "TIs":[],
@@ -372,7 +372,7 @@ class Parameters(QObject):
             "CN_preprocessors": ["None", "Invert", "Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD", "Shuffle", "Scribble", "Normal"],
             "prediction_type": "Default", "prediction_types": ["Default", "Epsilon", "V"], "tiling_mode": "Disabled", "tiling_modes": ["Disabled", "Enabled"],
             "precisions": ["FP16", "FP32"], "vae_precision": "FP16", "precision": "FP16", "fetching_mode": "Dont Wait", "fetching_modes": ["Wait", "Dont Wait"],
-            "model_mode": "Standard", "model_modes": ["Standard", "Refiner"], "Refiner": "", "Refiners": [], "model_types": {}
+            "model_mode": "Standard", "model_modes": ["Standard", "Refiner"], "Refiner": "", "Refiners": [], "model_types": {}, "Detailers": [], "Detailer": "", "detailer_resolution": 512
         }
 
         if source:
@@ -383,6 +383,7 @@ class Parameters(QObject):
         self._values.updated.connect(self.onUpdated)
         self._availableNetworks = []
         self._activeNetworks = []
+        self._activeDetailers = []
         self._active = []
 
     def resolution(self):
@@ -418,6 +419,10 @@ class Parameters(QObject):
         return self._activeNetworks
     
     @pyqtProperty(list, notify=updated)
+    def activeDetailers(self):
+        return self._activeDetailers
+    
+    @pyqtProperty(list, notify=updated)
     def active(self):
         return self._active
     
@@ -442,6 +447,16 @@ class Parameters(QObject):
 
         self._values.set("prompt", positive)
         self._values.set("negative_prompt", negative)
+
+    @pyqtSlot(str)
+    def addDetailer(self, detailer):
+        self.doActivate(detailer)
+        self.getActive()
+
+    @pyqtSlot(int)
+    def deleteDetailer(self, index):
+        self.doDeactivate(self._activeDetailers[index])
+        self.getActive()
     
     @pyqtProperty(VariantMap, notify=updated)
     def values(self):
@@ -600,11 +615,13 @@ class Parameters(QObject):
         data["sampler"] = data["true_sampler"]
         del data["true_sampler"]
 
+        is_inpainting = False
         if (data["steps"] == 0 or data["strength"] == 0.0) and images:
             request["type"] = "upscale"
             data["image"] = images
             if any(masks):
                 data["mask"] = masks
+                is_inpainting = True
         elif images:
             request["type"] = "img2img"
             data["image"] = images
@@ -612,6 +629,12 @@ class Parameters(QObject):
                 data["mask"] = masks
         else:
             request["type"] = "txt2img"
+        
+        if request["type"] == "txt2img" and self._activeDetailers:
+            data["detailers"] = self._activeDetailers
+            is_inpainting = True
+        elif "detailer_resolution" in data:
+            del data["detailer_resolution"]
 
         if request["type"] != "txt2img" and self.gui.config.get("always_hr_resolution", True):
             factor = data['hr_factor']
@@ -625,7 +648,7 @@ class Parameters(QObject):
                     areas[a] = areas[a][:s]
             data["area"] = areas
 
-        if not "mask" in data and not "area" in data:
+        if not is_inpainting and not "area" in data:
             del data["mask_blur"]
             del data["mask_expand"]
         if not "mask" in data:
@@ -651,14 +674,17 @@ class Parameters(QObject):
                     kk = "hr_" + k
                     data[kk] = v
         
-        if not request["type"] in {"img2img", "upscale"}:
+        if not request["type"] in {"img2img", "upscale"} and not is_inpainting:
             del data["img2img_upscaler"]
         
         if data["eta"] == 1.0:
             del data["eta"]
 
         if data["padding"] == -1:
-            del data["padding"]
+            if "detailers" in data:
+                data["padding"] = 32
+            else:
+                del data["padding"]
         
         if data["subseed_strength"] == 0.0:
             del data["subseed"]
@@ -687,7 +713,7 @@ class Parameters(QObject):
                 data["cn"] = models
                 data["cn_opts"] = opts
 
-        if request["type"] != "img2img" and "strength" in data:
+        if request["type"] != "img2img" and not is_inpainting and "strength" in data:
             del data["strength"]
 
         if data["artifact_mode"] == "Enabled":
@@ -946,6 +972,8 @@ class Parameters(QObject):
         if img in sr:
             self._active += [img]
 
+        self._active += self._activeDetailers
+
         if set(self._active) != last:
             self.updated.emit()
 
@@ -981,6 +1009,9 @@ class Parameters(QObject):
         if file.startswith("WILDCARD") and name in self.gui.wildcards._wildcards:
             append(f"__{name}__")
         
+        if file in self._values.get("Detailers") and not file in self._activeDetailers:
+            self._activeDetailers += [file]
+        
     @pyqtSlot(str)
     def doDeactivate(self, file):
         def remove(m):
@@ -1010,12 +1041,17 @@ class Parameters(QObject):
         if file.startswith("WILDCARD") and name in self.gui.wildcards._wildcards:
             remove(fr"__{re.escape(name)}__")
 
+        if file in self._activeDetailers:
+            self._activeDetailers.remove(file)
+
     @pyqtSlot(str)
     def doToggle(self, file):
         if file in self._active:
             self.doDeactivate(file)
         else:
             self.doActivate(file)
+        
+        self.getActive()
 
     def copy(self):
         out = Parameters(None, self)

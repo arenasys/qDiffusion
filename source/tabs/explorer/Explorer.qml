@@ -51,7 +51,7 @@ Item {
             }
 
             Repeater {
-                model: ["checkpoint", "component", "lora", "embedding", "upscaler", "wildcard"]
+                model: ["checkpoint", "component", "lora", "embedding", "upscaler", "detailer", "wildcard"]
 
                 Column {
                     width: 150

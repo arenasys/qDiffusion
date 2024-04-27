@@ -21,7 +21,8 @@ LABELS =  {
     "lora": "LoRAs",
     "embedding": "Embeddings",
     "upscaler": "Upscalers",
-    "wildcard": "Wildcards"
+    "wildcard": "Wildcards",
+    "detailer": "Detailers",
 }
 MODES = {v:k for k,v in LABELS.items()}
 
@@ -202,6 +203,10 @@ class Populater(QObject):
             self.setModel(name, "upscaler", "", "upscaler", idx)
         self.finishCategory("upscaler", len(o["SR"]))
 
+        for idx, name in enumerate(o["Detailer"]):
+            self.setModel(name, "detailer", "", "detailer", idx)
+        self.finishCategory("detailer", len(o["Detailer"]))
+
     def favouritesUpdated(self):
         f = self.gui._favourites
         idx = 0
@@ -239,6 +244,10 @@ class Populater(QObject):
 
         for name in o["SR"]:
             self.setModel(name, "favourite", "Upscaler", "upscaler", idx, False)
+            idx += 1
+
+        for name in o["Detailer"]:
+            self.setModel(name, "favourite", "Detailer", "detailer", idx, False)
             idx += 1
 
         self.finishCategory("favourite", idx)

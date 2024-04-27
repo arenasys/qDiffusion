@@ -37,7 +37,8 @@ MODEL_FOLDERS = {
     "embedding": ["TI", "embeddings", os.path.join("..", "embeddings")], 
     "lora": ["LoRA"],
     "wildcard": ["WILDCARD"],
-    "controlnet": ["CN"]
+    "controlnet": ["CN"],
+    "detailer": ["Detailer"]
 }
 
 class StatusMode(Enum):

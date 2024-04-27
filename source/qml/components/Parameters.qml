@@ -189,10 +189,10 @@ Item {
                     text: root.tr("Options")
                     width: parent.width
                     property var typ: ""
-                    property var isHR: typ ==  "Txt2Img + HR"
-                    property var couldHR: typ ==  "Txt2Img" || typ == "Txt2Img + HR"
-                    property var isImg: typ == "Img2Img" || typ == "Inpainting" || typ == "Upscaling"
-                    property var isInp: typ == "Inpainting"
+                    property var isHR: typ ==  "Txt2Img + HR";
+                    property var couldHR: typ.startsWith("Txt2Img");
+                    property var isImg: typ == "Img2Img" || typ == "Inpainting" || typ == "Upscaling" || typ.endsWith("Detail");
+                    property var isInp: typ == "Inpainting" || typ.endsWith("Detail");
 
                     property var maxSize: 1024
                     function updateMaxSize() {
@@ -258,6 +258,13 @@ Item {
 
                             Connections {
                                 target: BASIC.parameters.values
+                                function onUpdated() {
+                                    typLabel.sync()
+                                }
+                            }
+
+                            Connections {
+                                target: BASIC.parameters
                                 function onUpdated() {
                                     typLabel.sync()
                                 }
@@ -1014,6 +1021,141 @@ Item {
                         }
                     }
                 }
+
+                OColumn {
+                    id: detailerColumn
+                    text: root.tr("Detailer")
+                    width: parent.width
+                    padding: false
+                    isCollapsed: true
+
+                    Item {
+                        width: parent.width
+                        height: Math.min(200, 32+(detailerList.contentHeight == 0 ? 0 : detailerList.contentHeight+3))
+
+                        Rectangle {
+                            anchors.fill: parent
+                            anchors.margins: 2
+                            color: "transparent"
+                            border.color: COMMON.bg4
+                            border.width: 1
+
+                            Item {
+                                anchors.top: parent.top
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.margins: 1
+                                id: detailerAdd
+                                height: 27
+
+                                Rectangle {
+                                    anchors.fill: parent
+                                    color: COMMON.bg2
+                                }
+
+                                OChoice {
+                                    id: detailerChoice
+                                    anchors.top: parent.top
+                                    anchors.bottom: parent.bottom
+                                    anchors.left: addDetailerButton.right
+                                    anchors.right: parent.right
+                                    anchors.margins: 0
+                                    anchors.topMargin: -1
+                                    padded: false
+                                    label: ""
+
+                                    placeholderValue: "No detailers"
+
+                                    bindMap: root.binding.values
+                                    bindKeyCurrent: "Detailer"
+                                    bindKeyModel: "Detailers"
+
+                                    function display(text) {
+                                        return GUI.modelName(text)
+                                    }
+                                }
+
+                                SIconButton {
+                                    id: addDetailerButton
+                                    anchors.top: parent.top
+                                    anchors.bottom: parent.bottom
+                                    anchors.left: parent.left
+                                    width: height
+                                    icon: "qrc:/icons/plus.svg"
+                                    color: COMMON.bg4
+                                    iconColor: COMMON.bg6
+
+                                    onPressed: {
+                                        root.binding.addDetailer(detailerChoice.value)
+                                    }
+                                }
+                            }
+
+                            ListView {
+                                id: detailerList
+                                anchors.top: detailerAdd.bottom
+                                anchors.bottom: parent.bottom
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.margins:1
+                                anchors.topMargin: 0
+                                clip: true
+                                model: root.binding.activeDetailers
+
+                                boundsBehavior: Flickable.StopAtBounds
+
+                                ScrollBar.vertical: SScrollBarV {
+                                    id: detailerScrollBar
+                                    totalLength: detailerList.contentHeight
+                                    showLength: detailerList.height
+                                    incrementLength: 25
+                                }
+
+                                delegate: Item {
+                                    width: detailerList.width
+                                    height: 25
+
+                                    property var selected: false
+
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        color: selected ? COMMON.bg2 : Qt.darker(COMMON.bg2, 1.25) 
+                                    }
+
+                                    ParametersNetItem {
+                                        anchors.fill: parent
+                                        anchors.rightMargin: detailerScrollBar.showing ? 8 : 0
+                                        label: GUI.modelName(modelData)
+                                        type: ""
+
+                                        onDeactivate: {
+                                            root.binding.deleteDetailer(index)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    OSlider {
+                        id: detailerResInput
+                        bottomPadded: true
+                        label: root.tr("Resolution")
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKey: "detailer_resolution"
+
+                        minValue: 64
+                        maxValue: 1024
+                        precValue: 0
+                        incValue: 8
+                        snapValue: 64
+                        bounded: false
+                    }
+                }
+
                 OColumn {
                     id: hrColumn
                     text: root.tr("Highres")
