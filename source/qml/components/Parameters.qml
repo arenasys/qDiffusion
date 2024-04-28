@@ -1122,37 +1122,22 @@ Item {
                                         color: selected ? COMMON.bg2 : Qt.darker(COMMON.bg2, 1.25) 
                                     }
 
-                                    ParametersNetItem {
+                                    ParametersDetailerItem {
                                         anchors.fill: parent
                                         anchors.rightMargin: detailerScrollBar.showing ? 8 : 0
                                         label: GUI.modelName(modelData)
-                                        type: ""
 
                                         onDeactivate: {
                                             root.binding.deleteDetailer(index)
+                                        }
+
+                                        onSettings: {
+                                            BASIC.detailers.openSettings(modelData)
                                         }
                                     }
                                 }
                             }
                         }
-                    }
-
-                    OSlider {
-                        id: detailerResInput
-                        bottomPadded: true
-                        label: root.tr("Resolution")
-                        width: parent.width
-                        height: 30
-
-                        bindMap: root.binding.values
-                        bindKey: "detailer_resolution"
-
-                        minValue: 64
-                        maxValue: 1024
-                        precValue: 0
-                        incValue: 8
-                        snapValue: 64
-                        bounded: false
                     }
                 }
 

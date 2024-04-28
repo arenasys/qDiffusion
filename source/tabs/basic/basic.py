@@ -42,6 +42,7 @@ class Basic(QObject):
         self.name = "Generate"
         self._parameters = parameters.Parameters(parent)
         self._manager = manager.RequestManager(self.gui)
+        self._detailers = manager.DetailerManager(self.gui)
         self._grid = misc.GridManager(self._parameters, self._manager, self)
 
         self._inputs = []
@@ -744,6 +745,10 @@ class Basic(QObject):
     def suggestions(self):
         return self._suggestions
     
+    @pyqtProperty(manager.DetailerManager, notify=managersUpdated)
+    def detailers(self):
+        return self._detailers
+
     @pyqtProperty(manager.RequestManager, notify=managersUpdated)
     def manager(self):
         return self._manager

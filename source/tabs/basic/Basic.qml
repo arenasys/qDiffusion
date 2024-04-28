@@ -714,5 +714,23 @@ Item {
         }
     }
 
+    DetailerDialog {
+        id: detailerDialog
+        standardButtons: Dialog.Ok
+        modal: true
+        dim: true
+
+        onAccepted: {
+            BASIC.detailers.saveSettings()
+        }
+
+        Connections {
+            target: BASIC.detailers
+            function onOpeningSettings() {
+                detailerDialog.open()
+            }
+        }
+    }
+
     Keys.forwardTo: [areas, full]
 }

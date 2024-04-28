@@ -666,6 +666,63 @@ class RequestManager(QObject):
         if len(self.grid_ids) != cx*cy:
             if name == "temporary" or (name == "result" and not id in self.gui._delayed):
                 self.makeRequest()
-        
+
+class DetailerManager(QObject):
+    updated = pyqtSignal()
+    valuesChanged = pyqtSignal()
+    openingSettings = pyqtSignal()
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.gui = parent
+        self._current = ""
+        self._client_only = [
+            "box_modes"
+        ]
+        self._default_values = {
+            "resolution": 512, "strength": 0.5, "padding": 64, "mask_blur": 4, "mask_expand": 0, "threshold": 0.5,
+            "box_mode": "Rectangle", "box_modes": ["Rectangle", "Ellipse"]
+        }
+        self._values = parameters.VariantMap(self, self._default_values.copy(), strict=True)
+
+    @pyqtSlot(str)
+    def openSettings(self, detailer):
+        self._current = detailer
+
+        settings = self.getSettings(self._current)
+        for k, v in settings.items():
+            self._values.set(k, v)
+
+        self.updated.emit()
+        self.openingSettings.emit()
+
+    @pyqtSlot()
+    def saveSettings(self):
+        name = self.settingsName(self._current)
+        saved = {k:v for k,v in self._values._map.items() if not k in self._client_only and not v == self._default_values[k]}
+        self.gui.setDefaults(name, saved)
+
+    def getSettings(self, detailer):
+        name = self.settingsName(detailer)
+        settings = self.gui.getDefaults(name)
+        for k, v in self._default_values.items():
+            if k in self._client_only:
+                continue
+            if not k in settings:
+                settings[k] = v
+        return settings
+
+    def settingsName(self, detailer):
+        return f"DETAILER-{self.gui.modelName(detailer)}"
+
+    @pyqtProperty(str, notify=updated)
+    def currentName(self):
+        return self.gui.modelName(self._current)
+
+    @pyqtProperty(parameters.VariantMap, notify=valuesChanged)
+    def values(self):
+        return self._values
+
 def registerTypes():
     qmlRegisterUncreatableType(RequestManager, "gui", 1, 0, "RequestManager", "Not a QML type")
+    qmlRegisterUncreatableType(DetailerManager, "gui", 1, 0, "DetailerManager", "Not a QML type")

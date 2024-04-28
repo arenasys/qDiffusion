@@ -372,7 +372,7 @@ class Parameters(QObject):
             "CN_preprocessors": ["None", "Invert", "Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD", "Shuffle", "Scribble", "Normal"],
             "prediction_type": "Default", "prediction_types": ["Default", "Epsilon", "V"], "tiling_mode": "Disabled", "tiling_modes": ["Disabled", "Enabled"],
             "precisions": ["FP16", "FP32"], "vae_precision": "FP16", "precision": "FP16", "fetching_mode": "Dont Wait", "fetching_modes": ["Wait", "Dont Wait"],
-            "model_mode": "Standard", "model_modes": ["Standard", "Refiner"], "Refiner": "", "Refiners": [], "model_types": {}, "Detailers": [], "Detailer": "", "detailer_resolution": 512
+            "model_mode": "Standard", "model_modes": ["Standard", "Refiner"], "Refiner": "", "Refiners": [], "model_types": {}, "Detailers": [], "Detailer": ""
         }
 
         if source:
@@ -615,13 +615,11 @@ class Parameters(QObject):
         data["sampler"] = data["true_sampler"]
         del data["true_sampler"]
 
-        is_inpainting = False
         if (data["steps"] == 0 or data["strength"] == 0.0) and images:
             request["type"] = "upscale"
             data["image"] = images
             if any(masks):
                 data["mask"] = masks
-                is_inpainting = True
         elif images:
             request["type"] = "img2img"
             data["image"] = images
@@ -632,9 +630,10 @@ class Parameters(QObject):
         
         if request["type"] == "txt2img" and self._activeDetailers:
             data["detailers"] = self._activeDetailers
-            is_inpainting = True
-        elif "detailer_resolution" in data:
-            del data["detailer_resolution"]
+            basic = [t for t in self.gui.tabs if t.name == "Generate"][0]
+            data["detailer_parameters"] = [
+                basic.detailers.getSettings(d) for d in self._activeDetailers
+            ]
 
         if request["type"] != "txt2img" and self.gui.config.get("always_hr_resolution", True):
             factor = data['hr_factor']
@@ -648,7 +647,7 @@ class Parameters(QObject):
                     areas[a] = areas[a][:s]
             data["area"] = areas
 
-        if not is_inpainting and not "area" in data:
+        if not request["type"] == "img2img" and not "area" in data:
             del data["mask_blur"]
             del data["mask_expand"]
         if not "mask" in data:
@@ -674,7 +673,7 @@ class Parameters(QObject):
                     kk = "hr_" + k
                     data[kk] = v
         
-        if not request["type"] in {"img2img", "upscale"} and not is_inpainting:
+        if not request["type"] in {"img2img", "upscale"}:
             del data["img2img_upscaler"]
         
         if data["eta"] == 1.0:
@@ -713,7 +712,7 @@ class Parameters(QObject):
                 data["cn"] = models
                 data["cn_opts"] = opts
 
-        if request["type"] != "img2img" and not is_inpainting and "strength" in data:
+        if request["type"] != "img2img" and "strength" in data:
             del data["strength"]
 
         if data["artifact_mode"] == "Enabled":
