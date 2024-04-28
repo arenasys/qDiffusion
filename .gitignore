@@ -11,4 +11,5 @@ outputs
 source/sd-inference-server
 config.json
 fav.json
+defaults.json
 python

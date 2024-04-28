@@ -121,82 +121,6 @@ Item {
         anchors.bottom: promptDivider.top
     }
 
-    BasicFull {
-        id: full
-        anchors.fill: areas
-
-        onContextMenu: {
-            if(BASIC.openedArea == "output" && full.target.ready) {
-                fullContextMenu.popup()
-            }
-        }
-
-        SContextMenu {
-            id: fullContextMenu
-
-            SContextMenuItem {
-                text: root.tr("Show Parameters")
-                checkable: true
-                checked: fullParams.show
-                onCheckedChanged: {
-                    if(checked != fullParams.show) {
-                        fullParams.show = checked
-                        checked = Qt.binding(function() { return fullParams.show })
-                    }
-                }
-            }
-
-            property var output: full.target != null && full.target.file != ""
-
-            SContextMenuSeparator {
-                visible: fullContextMenu.output
-            }
-
-            SContextMenuItem {
-                id: outputContext
-                visible: fullContextMenu.output
-                text: root.tr("Open", "General")
-                onTriggered: {
-                    GALLERY.doOpenFiles([full.file])
-                }
-            }
-
-            SContextMenuItem {
-                text: root.tr("Visit", "General")
-                visible: fullContextMenu.output
-                onTriggered: {
-                    GALLERY.doVisitFiles([full.file])
-                }
-            }
-
-            SContextMenuSeparator {
-                visible: fullContextMenu.output
-            }
-
-            Sql {
-                id: destinationsSql
-                query: "SELECT name, folder FROM folders WHERE UPPER(name) != UPPER('" + full.file + "');"
-            }
-
-            SContextMenu {
-                id: fullCopyToMenu
-                title: root.tr("Copy to", "General")
-                Instantiator {
-                    model: destinationsSql
-                    SContextMenuItem {
-                        visible: fullContextMenu.output
-                        text: sql_name
-                        onTriggered: {
-                            GALLERY.doCopy(sql_folder, [full.file])
-                        }
-                    }
-                    onObjectAdded: fullCopyToMenu.insertItem(index, object)
-                    onObjectRemoved: fullCopyToMenu.removeItem(object)
-                }
-            }
-        }
-    }
-
     Rectangle {
         id: settings
         color: COMMON.bg0
@@ -477,73 +401,6 @@ Item {
         }
     }
 
-    Rectangle {
-        id: fullParams
-        anchors.fill: prompts
-        visible: full.visible && parameters != "" && show
-        color: COMMON.bg0
-        property var parameters: full.target != null ? (full.target.parameters != undefined ? full.target.parameters : "") : ""
-        property var show: true
-
-        Rectangle {
-            anchors.fill: parent
-            anchors.margins: 5
-            border.width: 1
-            border.color: COMMON.bg4
-            color: "transparent"
-
-            Rectangle {
-                id: headerParams
-                anchors.top: parent.top
-                anchors.left: parent.left
-                anchors.right: parent.right
-                height: 25
-                border.width: 1
-                border.color: COMMON.bg4
-                color: COMMON.bg3
-                SText {
-                    anchors.fill: parent
-                    text: root.tr("Parameters")
-                    color: COMMON.fg1_5
-                    leftPadding: 5
-                    verticalAlignment: Text.AlignVCenter
-                }
-
-                SIconButton {
-                    visible: fullParams.visible
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-                    anchors.right: parent.right
-                    anchors.margins: 1
-                    height: 23
-                    width: 23
-                    tooltip: root.tr("Hide Parameters")
-                    icon: "qrc:/icons/eye.svg"
-                    onPressed: {
-                        fullParams.show = false
-                    }
-                }
-            }
-
-            STextArea {
-                color: COMMON.bg1
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.top: headerParams.bottom
-                anchors.bottom: parent.bottom
-                anchors.margins: 1
-
-                readOnly: true
-
-                text: fullParams.parameters
-
-                Component.onCompleted: {
-                    GUI.setHighlighting(area.textDocument)
-                }
-            }
-        }
-    }
-
     AdvancedDropArea {
         id: leftDrop
         visible: !root.swap
@@ -641,6 +498,220 @@ Item {
         onActivated: BASIC.cancel()
     }
 
+    Item {
+        id: dialogContainer
+        anchors.fill: parent
+        layer.enabled: full.visible
+
+        GridDialog {
+            id: gridDialog
+            width: Math.max(500, parent.width/3)
+
+            source: BASIC.grid
+            options: BASIC.grid.gridTypes()
+
+            Connections {
+                target: GUI.config
+                function onUpdated() {
+                    gridDialog.options = BASIC.grid.gridTypes()
+                }
+            }
+
+            function generateGrid() {
+                BASIC.grid.generateGrid(x_type, x_value, x_match, y_type, y_value, y_match)
+            }
+
+            onAccepted: {
+                generateGrid()
+            }
+
+            onApplied: {
+                generateGrid()
+            }
+
+            Connections {
+                target: BASIC.grid
+                function onOpeningGrid() {
+                    gridDialog.open()
+                }
+            }
+        }
+
+        Connections {
+            target: BASIC.detailers
+            function onOpeningSettings(detailer) {
+                var component = Qt.createComponent("qrc:/components/DetailerDialog.qml")
+                if(component.status != Component.Ready) {
+                    console.log("ERROR", component.errorString())
+                } else {
+                    component.incubateObject(dialogContainer, { detailer: detailer })
+                }
+            }
+        }
+    }
+
+    BasicFull {
+        id: full
+        anchors.fill: areas
+
+        onContextMenu: {
+            if(BASIC.openedArea == "output" && full.target.ready) {
+                fullContextMenu.popup()
+            }
+        }
+
+        SContextMenu {
+            id: fullContextMenu
+
+            SContextMenuItem {
+                text: root.tr("Show Parameters")
+                checkable: true
+                checked: fullParams.show
+                onCheckedChanged: {
+                    if(checked != fullParams.show) {
+                        fullParams.show = checked
+                        checked = Qt.binding(function() { return fullParams.show })
+                    }
+                }
+            }
+
+            property var output: full.target != null && full.target.file != ""
+
+            SContextMenuSeparator {
+                visible: fullContextMenu.output
+            }
+
+            SContextMenuItem {
+                id: outputContext
+                visible: fullContextMenu.output
+                text: root.tr("Open", "General")
+                onTriggered: {
+                    GALLERY.doOpenFiles([full.file])
+                }
+            }
+
+            SContextMenuItem {
+                text: root.tr("Visit", "General")
+                visible: fullContextMenu.output
+                onTriggered: {
+                    GALLERY.doVisitFiles([full.file])
+                }
+            }
+
+            SContextMenuSeparator {
+                visible: fullContextMenu.output
+            }
+
+            Sql {
+                id: destinationsSql
+                query: "SELECT name, folder FROM folders WHERE UPPER(name) != UPPER('" + full.file + "');"
+            }
+
+            SContextMenu {
+                id: fullCopyToMenu
+                title: root.tr("Copy to", "General")
+                Instantiator {
+                    model: destinationsSql
+                    SContextMenuItem {
+                        visible: fullContextMenu.output
+                        text: sql_name
+                        onTriggered: {
+                            GALLERY.doCopy(sql_folder, [full.file])
+                        }
+                    }
+                    onObjectAdded: fullCopyToMenu.insertItem(index, object)
+                    onObjectRemoved: fullCopyToMenu.removeItem(object)
+                }
+            }
+        }
+    }
+
+    Rectangle {
+        id: fullParams
+        anchors.fill: prompts
+        visible: full.visible && parameters != "" && show && false
+        color: COMMON.bg0
+        property var parameters: full.target != null ? (full.target.parameters != undefined ? full.target.parameters : "") : ""
+        property var show: true
+
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: 5
+            border.width: 1
+            border.color: COMMON.bg4
+            color: "transparent"
+
+            Rectangle {
+                id: headerParams
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                height: 25
+                border.width: 1
+                border.color: COMMON.bg4
+                color: COMMON.bg3
+                SText {
+                    anchors.fill: parent
+                    text: root.tr("Parameters")
+                    color: COMMON.fg1_5
+                    leftPadding: 5
+                    verticalAlignment: Text.AlignVCenter
+                }
+
+                SIconButton {
+                    visible: fullParams.visible
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.right: parent.right
+                    anchors.margins: 1
+                    height: 23
+                    width: 23
+                    tooltip: root.tr("Hide Parameters")
+                    icon: "qrc:/icons/eye.svg"
+                    onPressed: {
+                        fullParams.show = false
+                    }
+                }
+            }
+
+            STextArea {
+                color: COMMON.bg1
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: headerParams.bottom
+                anchors.bottom: parent.bottom
+                anchors.margins: 1
+
+                readOnly: true
+
+                text: fullParams.parameters
+
+                Component.onCompleted: {
+                    GUI.setHighlighting(area.textDocument)
+                }
+            }
+        }
+    }
+
+    Rectangle {
+        visible: full.visible
+        color: COMMON.bg4
+        height: 5
+        anchors.top: full.bottom
+        anchors.left: parent.left
+        anchors.right: full.right
+    }
+
+    Rectangle {
+        visible: full.visible
+        color: COMMON.bg4
+        width: 5
+        anchors.bottomMargin: -5
+        anchors.top: full.top
+        anchors.bottom: fullParams.visible ? fullParams.bottom : full.bottom
+        anchors.left: full.right
+    }
+
     Keys.onPressed: {
         event.accepted = true
         if(event.modifiers & Qt.ControlModifier) {
@@ -680,54 +751,6 @@ Item {
             target: BASIC
             function onPastedText(text) {
                 importDialog.parser.formatted = text
-            }
-        }
-    }
-
-    GridDialog {
-        id: gridDialog
-        title: root.tr("Grid")
-        standardButtons: Dialog.Ok | Dialog.Cancel
-        width: Math.max(500, parent.width/3)
-        modal: true
-        dim: true
-
-        source: BASIC.grid
-        options: BASIC.grid.gridTypes()
-
-        Connections {
-            target: GUI.config
-            function onUpdated() {
-                gridDialog.options = BASIC.grid.gridTypes()
-            }
-        }
-
-        onAccepted: {
-            BASIC.grid.generateGrid(x_type, x_value, x_match, y_type, y_value, y_match)
-        }
-
-        Connections {
-            target: BASIC.grid
-            function onOpeningGrid() {
-                gridDialog.open()
-            }
-        }
-    }
-
-    DetailerDialog {
-        id: detailerDialog
-        standardButtons: Dialog.Ok
-        modal: true
-        dim: true
-
-        onAccepted: {
-            BASIC.detailers.saveSettings()
-        }
-
-        Connections {
-            target: BASIC.detailers
-            function onOpeningSettings() {
-                detailerDialog.open()
             }
         }
     }

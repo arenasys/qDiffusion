@@ -669,13 +669,13 @@ class RequestManager(QObject):
 
 class DetailerManager(QObject):
     updated = pyqtSignal()
-    valuesChanged = pyqtSignal()
-    openingSettings = pyqtSignal()
+    settingsChanged = pyqtSignal()
+    openingSettings = pyqtSignal(str)
+    closingSettings = pyqtSignal(str)
 
     def __init__(self, parent):
         super().__init__(parent)
         self.gui = parent
-        self._current = ""
         self._client_only = [
             "box_modes"
         ]
@@ -683,45 +683,58 @@ class DetailerManager(QObject):
             "resolution": 512, "strength": 0.5, "padding": 64, "mask_blur": 4, "mask_expand": 0, "threshold": 0.5,
             "box_mode": "Rectangle", "box_modes": ["Rectangle", "Ellipse"]
         }
-        self._values = parameters.VariantMap(self, self._default_values.copy(), strict=True)
+        self._settings = {}
+
+    def makeSettings(self, detailer):
+        settings = self.getSettings(detailer)
+        for k, v in self._default_values.items():
+            if not k in settings:
+                settings[k] = v
+
+        self._settings[detailer] = parameters.VariantMap(self, settings, strict=True)
 
     @pyqtSlot(str)
     def openSettings(self, detailer):
-        self._current = detailer
+        if detailer in self._settings:
+            return
+        self.makeSettings(detailer)
+        self.openingSettings.emit(detailer)
 
-        settings = self.getSettings(self._current)
-        for k, v in settings.items():
-            self._values.set(k, v)
+    @pyqtSlot(str)
+    def closeSettings(self, detailer):
+        if not detailer in self._settings:
+            return
+        self.saveSettings(detailer)
+        del self._settings[detailer]
+        self.closingSettings.emit(detailer)
 
-        self.updated.emit()
-        self.openingSettings.emit()
+    @pyqtSlot(str, result=parameters.VariantMap)
+    def settings(self, detailer):
+        return self._settings[detailer]
 
-    @pyqtSlot()
-    def saveSettings(self):
-        name = self.settingsName(self._current)
-        saved = {k:v for k,v in self._values._map.items() if not k in self._client_only and not v == self._default_values[k]}
+    @pyqtSlot(str)
+    def saveSettings(self, detailer):
+        values = self._settings[detailer]._map
+        saved = {k:v for k,v in values.items() if not k in self._client_only and not v == self._default_values[k]}
+        name = self.settingsName(detailer)
         self.gui.setDefaults(name, saved)
 
     def getSettings(self, detailer):
-        name = self.settingsName(detailer)
-        settings = self.gui.getDefaults(name)
+        if detailer in self._settings:
+            settings = self._settings[detailer]._map.copy()
+        else:
+            name = self.settingsName(detailer)
+            settings = self.gui.getDefaults(name)
+
         for k, v in self._default_values.items():
-            if k in self._client_only:
-                continue
             if not k in settings:
                 settings[k] = v
+
+        settings = {k:v for k,v in settings.items() if not k in self._client_only}
         return settings
 
     def settingsName(self, detailer):
         return f"DETAILER-{self.gui.modelName(detailer)}"
-
-    @pyqtProperty(str, notify=updated)
-    def currentName(self):
-        return self.gui.modelName(self._current)
-
-    @pyqtProperty(parameters.VariantMap, notify=valuesChanged)
-    def values(self):
-        return self._values
 
 def registerTypes():
     qmlRegisterUncreatableType(RequestManager, "gui", 1, 0, "RequestManager", "Not a QML type")

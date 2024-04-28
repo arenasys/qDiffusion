@@ -7,128 +7,73 @@ import gui 1.0
 import "../style"
 import "../components"
 
-Dialog {
+
+SMovableDialog {
     id: dialog
-    anchors.centerIn: parent
-    title: root.tr("Detailer")
+    
+    property var detailer
+    property var settings: BASIC.detailers.settings(detailer)
+
+    Component.onCompleted: {
+        dialog.setAnchored(true)
+        dialog.open()
+    }
+
+    function doSave() {
+        BASIC.detailers.saveSettings(detailer)
+    }
+
+    function doFinish() {
+        BASIC.detailers.closeSettings(detailer)
+        dialog.destroy()
+    }
+
+    onAccepted: {
+        doFinish()
+    }
+    
+    onRejected: {
+        doFinish()
+    }
+
+    Connections {
+        target: BASIC.detailers
+        function onClosingSettings(detailer) {
+            if(detailer === dialog.detailer) {
+                dialog.doFinish()
+            }
+        }
+    }
+
+    Timer {
+        id: saveTimer
+        interval: 500
+        running: false
+        onTriggered: {
+            dialog.doSave()
+        }
+    }
+
+    function save() {
+        saveTimer.restart()
+    }
+
+    title: dialog.tr("Detailer")
     width: 220
-    dim: true
-    height: 292
-    padding: 5
-    closePolicy: Popup.NoAutoClose
+    usualHeight: 257
+    standardButtons: dialog.anchored ? Dialog.Ok : 0
 
     function tr(str, file = "DetailerDialog.qml") {
         return TRANSLATOR.instance.translate(str, file)
     }
 
-    onOpened: {
-        enterItem.forceActiveFocus()
-    }
-
-    Item {
-        id: enterItem
-        Keys.onPressed: {
-            event.accepted = true
-            switch(event.key) {
-            case Qt.Key_Enter:
-            case Qt.Key_Return:
-                dialog.accept()
-                break;
-            default:
-                event.accepted = false
-                break;
-            }
-        }
-    }
-
-    background: Item {
-        RectangularGlow {
-            anchors.fill: bg
-            glowRadius: 5
-            opacity: 0.75
-            spread: 0.2
-            color: "black"
-            cornerRadius: 10
-        }
-
-        Rectangle {
-            id: bg
-            anchors.fill: parent
-            anchors.margins: -1
-            color: COMMON.bg1
-            border.width: 1
-            border.color: COMMON.bg4
-        }
-
-        Rectangle {
-            anchors.fill: parent
-            anchors.margins: -2
-            color: "transparent"
-            border.width: 1
-            border.color: COMMON.bg0
-        }
-    }
-
-    header: Item {
-        implicitHeight: 20
-        SText {
-            color: COMMON.fg2
-            anchors.fill: parent
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-            text: dialog.title
-            pointSize: 9
-            font.bold: true
-        }
-    }
-
-    spacing: 0
-    verticalPadding: 0
-
-    footer: Rectangle {
-        implicitWidth: parent.width
-        implicitHeight: 35
-        color: COMMON.bg1
-        DialogButtonBox {
-            anchors.centerIn: parent
-            standardButtons: dialog.standardButtons
-            alignment: Qt.AlignHCenter
-            spacing: 5
-
-            background: Item {
-                implicitHeight: 25
-            }
-
-            delegate: Button {
-                id: control
-                implicitHeight: 25
-
-                contentItem: SText {
-                    id: contentText
-                    color: COMMON.fg1
-                    text: control.text
-                    pointSize: 9
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-
-                background: Rectangle {
-                    radius: 0
-                    color: control.down ? COMMON.bg5 : COMMON.bg4
-                    border.color: COMMON.bg6
-                }
-            }
-
-            onAccepted: dialog.accept()
-            onRejected: dialog.reject()
-        }
-    }
 
     contentItem: Rectangle {
         id: content
         color: COMMON.bg0
         border.width: 1
         border.color: COMMON.bg5
+        anchors.fill: parent
 
         Column {
             anchors.fill: parent
@@ -155,7 +100,7 @@ Dialog {
 
                 SText {
                     id: nameText
-                    text: BASIC.detailers.currentName
+                    text: GUI.modelName(dialog.detailer)
                     anchors.centerIn: parent
                     pointSize: 9.8
                     color: COMMON.fg1_5
@@ -169,11 +114,11 @@ Dialog {
 
             OSlider {
                 id: resInput
-                label: root.tr("Resolution")
+                label: dialog.tr("Resolution")
                 width: parent.width
                 height: 30
 
-                bindMap: BASIC.detailers.values
+                bindMap: dialog.settings
                 bindKey: "resolution"
 
                 minValue: 64
@@ -182,15 +127,19 @@ Dialog {
                 incValue: 8
                 snapValue: 64
                 bounded: false
+
+                onValueChanged: {
+                    dialog.save()
+                }
             }
 
             OSlider {
                 id: strengthInput
-                label: root.tr("Strength")
+                label: dialog.tr("Strength")
                 width: parent.width
                 height: 30
                 
-                bindMap: BASIC.detailers.values
+                bindMap: dialog.settings
                 bindKey: "strength"
 
                 minValue: 0
@@ -198,15 +147,19 @@ Dialog {
                 precValue: 2
                 incValue: 0.01
                 snapValue: 0.05
+
+                onValueChanged: {
+                    dialog.save()
+                }
             }
 
             OSlider {
                 id: paddingInput
-                label: root.tr("Padding")
+                label: dialog.tr("Padding")
                 width: parent.width
                 height: 30
 
-                bindMap: BASIC.detailers.values
+                bindMap: dialog.settings
                 bindKey: "padding"
 
                 minValue: 0
@@ -215,14 +168,18 @@ Dialog {
                 incValue: 8
                 snapValue: 16
                 bounded: false
+
+                onValueChanged: {
+                    dialog.save()
+                }
             }
 
             OSlider {
-                label: root.tr("Mask Blur")
+                label: dialog.tr("Mask Blur")
                 width: parent.width
                 height: 30
 
-                bindMap: BASIC.detailers.values
+                bindMap: dialog.settings
                 bindKey: "mask_blur"
 
                 minValue: 0
@@ -231,14 +188,18 @@ Dialog {
                 incValue: 1
                 snapValue: 1
                 bounded: false
+
+                onValueChanged: {
+                    dialog.save()
+                }
             }
 
             OSlider {
-                label: root.tr("Mask Expand")
+                label: dialog.tr("Mask Expand")
                 width: parent.width
                 height: 30
 
-                bindMap: BASIC.detailers.values
+                bindMap: dialog.settings
                 bindKey: "mask_expand"
 
                 minValue: 0
@@ -247,16 +208,20 @@ Dialog {
                 incValue: 1
                 snapValue: 1
                 bounded: false
+
+                onValueChanged: {
+                    dialog.save()
+                }
             }
 
 
             OSlider {
                 id: thresholdInput
-                label: root.tr("Threshold")
+                label: dialog.tr("Threshold")
                 width: parent.width
                 height: 30
                 
-                bindMap: BASIC.detailers.values
+                bindMap: dialog.settings
                 bindKey: "threshold"
 
                 minValue: 0
@@ -264,19 +229,27 @@ Dialog {
                 precValue: 2
                 incValue: 0.01
                 snapValue: 0.05
+
+                onValueChanged: {
+                    dialog.save()
+                }
             }
             
             OChoice {
                 id: modeInput
-                label: root.tr("Box mode")
+                label: dialog.tr("Box mode")
                 width: parent.width
                 height: 30
                 
-                bindMap: BASIC.detailers.values
+                bindMap: dialog.settings
                 bindKeyCurrent: "box_mode"
                 bindKeyModel: "box_modes"
                 
-                popupHeight: root.height + 100
+                popupHeight: dialog.height + 100
+
+                onValueChanged: {
+                    dialog.save()
+                }
             }
         }
     }

@@ -38,6 +38,8 @@ QtObject {
     readonly property var keys_generate:    ["Ctrl+`"]
     readonly property var keys_cancel:      ["Ctrl+Backspace","Ctrl+Escape","Alt+`"]
 
+    property var overlay: null
+
     function accent(hue) {
         return Qt.hsva(hue, 0.65, 0.55, 1.0)
     }

@@ -180,4 +180,30 @@ FocusReleaser {
         }
         Keys.forwardTo: [stackLayout.children[stackLayout.currentIndex]]
     }
+
+    Item {
+        visible: overlay.children.length > 0
+        anchors.fill: parent
+
+        Rectangle {
+            color: COMMON.bg0
+            opacity: 0.5
+            anchors.fill: parent
+        }
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.AllButtons
+            hoverEnabled: true
+        }
+
+        Item {
+            id: overlay
+            width: parent.width
+            height: stackLayout.height
+            anchors.bottom: parent.bottom
+            Component.onCompleted: {
+                COMMON.overlay = overlay
+            }
+        }       
+    }
 }

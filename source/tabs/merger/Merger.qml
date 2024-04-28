@@ -1705,10 +1705,7 @@ Rectangle {
     GridDialog {
         id: gridDialog
         title: root.tr("Grid")
-        standardButtons: Dialog.Ok | Dialog.Cancel
         width: Math.max(500, parent.width/3)
-        modal: true
-        dim: true
 
         source: MERGER.grid
         options: MERGER.grid.gridTypes()
@@ -1720,8 +1717,16 @@ Rectangle {
             }
         }
 
-        onAccepted: {
+        function generateGrid() {
             MERGER.grid.generateGrid(x_type, x_value, x_match, y_type, y_value, y_match)
+        }
+
+        onAccepted: {
+            generateGrid()
+        }
+
+        onApplied: {
+            generateGrid()
         }
 
         Connections {

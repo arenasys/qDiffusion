@@ -1128,6 +1128,7 @@ Item {
                                         label: GUI.modelName(modelData)
 
                                         onDeactivate: {
+                                            BASIC.detailers.closeSettings(modelData)
                                             root.binding.deleteDetailer(index)
                                         }
 

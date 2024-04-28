@@ -7,15 +7,13 @@ import gui 1.0
 import "../style"
 import "../components"
 
-Dialog {
+SMovableDialog {
     id: dialog
-    anchors.centerIn: parent
+    title: dialog.tr("Grid")
     width: 400
-    dim: true
-    height: 222
-    padding: 5
-    closePolicy: Popup.NoAutoClose
-
+    usualHeight: 180
+    standardButtons: dialog.anchored ? (Dialog.Ok | Dialog.Cancel) : Dialog.Apply
+    
     property var source
     property var options
     
@@ -34,134 +32,36 @@ Dialog {
     }
 
     onOpened: {
-        enterItem.forceActiveFocus()
+        dialog.setAnchored(true)
     }
 
-    Item {
-        id: enterItem
-        Keys.onPressed: {
-            event.accepted = true
-            switch(event.key) {
-            case Qt.Key_Enter:
-            case Qt.Key_Return:
-                dialog.accept()
-                break;
-            default:
-                event.accepted = false
-                break;
-            }
-        }
-    }
+    titleItem: SIconButton {
+        color: "transparent"
+        icon: "qrc:/icons/settings.svg"
+        anchors.top: parent.top
+        anchors.right: parent.right
+        height: 20
+        width: 20
+        inset: 6
 
-    background: Item {
-        RectangularGlow {
-            anchors.fill: bg
-            glowRadius: 5
-            opacity: 0.75
-            spread: 0.2
-            color: "black"
-            cornerRadius: 10
-        }
-
-        Rectangle {
-            id: bg
-            anchors.fill: parent
-            anchors.margins: -1
-            color: COMMON.bg1
-            border.width: 1
-            border.color: COMMON.bg4
-        }
-
-        Rectangle {
-            anchors.fill: parent
-            anchors.margins: -2
-            color: "transparent"
-            border.width: 1
-            border.color: COMMON.bg0
-        }
-    }
-
-    header: Item {
-        implicitHeight: 20
-        SText {
-            color: COMMON.fg2
-            anchors.fill: parent
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-            text: dialog.title
-            pointSize: 9
-            font.bold: true
-        }
-        SIconButton {
-            color: "transparent"
-            icon: "qrc:/icons/settings.svg"
-            anchors.top: parent.top
-            anchors.right: parent.right
-            height: 20
-            width: 20
-            inset: 6
-
-            SContextMenu {
-                id: contextMenu
-                width: 100
-                SContextMenuItem {
-                    text: dialog.tr("Save all")
-                    checked: dialog.save_all
-                    checkable: true
-                    onCheckedChanged: {
-                        if(dialog.save_all != checked) {
-                            dialog.save_all = checked
-                            GUI.config.set("grid_save_all", checked)
-                        }
+        SContextMenu {
+            id: contextMenu
+            width: 100
+            SContextMenuItem {
+                text: dialog.tr("Save all")
+                checked: dialog.save_all
+                checkable: true
+                onCheckedChanged: {
+                    if(dialog.save_all != checked) {
+                        dialog.save_all = checked
+                        GUI.config.set("grid_save_all", checked)
                     }
                 }
             }
-
-            onPressed: {
-                contextMenu.popup(0,height)
-            }
         }
-    }
 
-    spacing: 0
-    verticalPadding: 0
-
-    footer: Rectangle {
-        implicitWidth: parent.width
-        implicitHeight: 35
-        color: COMMON.bg1
-        DialogButtonBox {
-            anchors.centerIn: parent
-            standardButtons: dialog.standardButtons
-            alignment: Qt.AlignHCenter
-            spacing: 5
-
-            background: Item {
-                implicitHeight: 25
-            }
-
-            delegate: Button {
-                id: control
-                implicitHeight: 25
-
-                contentItem: SText {
-                    id: contentText
-                    color: COMMON.fg1
-                    text: control.text
-                    pointSize: 9
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-
-                background: Rectangle {
-                    radius: 0
-                    color: control.down ? COMMON.bg5 : COMMON.bg4
-                    border.color: COMMON.bg6
-                }
-            }
-
-            onAccepted: dialog.accept()
-            onRejected: dialog.reject()
+        onPressed: {
+            contextMenu.popup(0,height)
         }
     }
 
@@ -170,6 +70,7 @@ Dialog {
         color: COMMON.bg00
         border.width: 1
         border.color: COMMON.bg5
+        anchors.fill: parent
 
         Column {
             anchors.centerIn: parent
