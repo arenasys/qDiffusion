@@ -43,14 +43,15 @@ LABELS = [
     ("hr_prediction_type", "Hires Prediction type"),
     ("img2img_upscaler", "Upscaler"),
     ("cfg_rescale", "CFG rescale"),
-    ("prediction_type", "Prediction type")
+    ("prediction_type", "Prediction type"),
+    ("detailers", "Detailers")
 ]
 
 SETTABLE = [
     "size", "prompt", "negative_prompt", "steps", "sampler", "schedule", "scale", "seed", "width", "height",
     "model", "UNET", "VAE", "CLIP", "model", "subseed", "subseed_strength", "strength", "eta", "clip_skip", "img2img_upscaler",
     "hr_factor", "hr_strength", "hr_upscaler", "hr_sampler", "hr_steps", "hr_scale", "hr_model",
-    "cfg_rescale", "prediction_type"
+    "cfg_rescale", "prediction_type", "detailers"
 ]
 
 def formatParameters(json):
@@ -872,11 +873,29 @@ class Parameters(QObject):
                     value = self.values.get("sampler")
                 elif name == "hr_scale":
                     value = self.values.get("scale")
+                elif name == "detailers":
+                    for d in self._activeDetailers:
+                        self.doDeactivate(d)
+
                 elif name in self._default_values:
                     value = self._default_values.get(name)
 
+
             if value == None:
                 continue
+
+            if name == "detailers":
+                available = self._values._map["Detailers"]
+                value = [v.strip() for v in value.split(",")]
+                value = [self.gui.closestModel(v, available) for v in value]
+                value = [v for v in value if v]
+                if not value:
+                    continue
+
+                for d in [d for d in self._activeDetailers if not d in value]:
+                    self.doDeactivate(d)
+                for d in [d for d in value if not d in self._activeDetailers]:
+                    self.doActivate(d)
 
             try:
                 value = type(self.values.get(name))(value)
