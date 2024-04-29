@@ -39,6 +39,7 @@ Rectangle {
         anchors.fill: parent
         anchors.topMargin: -root.overflow
         anchors.bottomMargin: -root.overflow
+        cursorShape: Qt.SizeVerCursor
 
         hoverEnabled: true
         property var startPosition: Qt.point(0,0)

@@ -1705,7 +1705,7 @@ Rectangle {
     GridDialog {
         id: gridDialog
         title: root.tr("Grid")
-        width: Math.max(500, parent.width/3)
+        minWidth: 500
 
         source: MERGER.grid
         options: MERGER.grid.gridTypes()

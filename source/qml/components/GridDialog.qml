@@ -10,8 +10,7 @@ import "../components"
 SMovableDialog {
     id: dialog
     title: dialog.tr("Grid")
-    width: 400
-    usualHeight: 180
+    minHeight: 180
     standardButtons: dialog.anchored ? (Dialog.Ok | Dialog.Cancel) : Dialog.Apply
     
     property var source
@@ -79,7 +78,7 @@ SMovableDialog {
             
             GridRow {
                 id: x_row
-                height: 64
+                height: (parent.height/2) - 0
                 width: parent.width
                 label: "X"
                 source: dialog.source
@@ -89,7 +88,7 @@ SMovableDialog {
 
             GridRow {
                 id: y_row
-                height: 64
+                height: (parent.height/2) - 0
                 width: parent.width
                 label: "Y"
                 source: dialog.source

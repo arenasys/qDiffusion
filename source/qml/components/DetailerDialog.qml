@@ -59,14 +59,13 @@ SMovableDialog {
     }
 
     title: dialog.tr("Detailer")
-    width: 220
-    usualHeight: 257
+    minWidth: 220
+    minHeight: 257
     standardButtons: dialog.anchored ? Dialog.Ok : 0
 
     function tr(str, file = "DetailerDialog.qml") {
         return TRANSLATOR.instance.translate(str, file)
     }
-
 
     contentItem: Rectangle {
         id: content

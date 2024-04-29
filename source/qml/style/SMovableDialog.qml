@@ -40,6 +40,7 @@ Item {
 
     property alias contentItem: content.data
     property alias titleItem: titleExtra.data
+    property alias backgroundItem: backgroundExtra.data
 
     property var anchored: true
     property var centered: true
@@ -49,7 +50,13 @@ Item {
     property var offsetX: 0
     property var offsetY: 0
 
-    property var usualHeight: 0
+    property var minWidth: 0
+    property var minHeight: 0
+    property var usualWidth: minWidth
+    property var usualHeight: minHeight
+
+    width: usualWidth
+    height: usualHeight + footer.height
 
     property var fakeHeight: usualHeight + 35
     property var fakeWidth: width
@@ -108,8 +115,7 @@ Item {
 
     property var standardButtons: Dialog.Ok
 
-    property var title: root.tr("Detailer")
-    height: usualHeight + footer.height
+    property var title: root.tr("Dialog")
 
     function tr(str, file = "SMovableDialog.qml") {
         return TRANSLATOR.instance.translate(str, file)
@@ -167,6 +173,11 @@ Item {
         MouseArea {
             anchors.fill: parent
         }
+
+        Item {
+            id: backgroundExtra
+            anchors.fill: parent
+        }
     }
 
     Item {
@@ -191,6 +202,7 @@ Item {
             anchors.right: closeButton.left
             anchors.top: parent.top
             anchors.bottom: parent.bottom
+            cursorShape: Qt.SizeAllCursor
 
             property var offset: Qt.point(0, 0)
 
@@ -305,6 +317,54 @@ Item {
             onApplied: dialog.apply()
             onAccepted: dialog.accept()
             onRejected: dialog.reject()
+        }
+    }
+
+    Item {
+        visible: !dialog.anchored
+        anchors.fill: parent
+        clip: true
+
+        Rectangle {
+            id: expandMarker
+            color: COMMON.bg4
+            width: 10
+            height: 10
+            rotation: 45
+            x: dialog.inverseX ? -5 : parent.width - 5
+            y: parent.height - 5
+        }
+    }
+
+    MouseArea {
+        visible: !dialog.anchored
+        id: expandArea
+        
+        x: expandMarker.x
+        y: expandMarker.y
+        width: 10
+        height: 10
+
+        cursorShape: dialog.inverseX ? Qt.SizeBDiagCursor : Qt.SizeFDiagCursor
+
+        property var startSize: Qt.point(0, 0)
+        property var startPos: Qt.point(0, 0)
+
+        function getPosition() {
+            return expandArea.mapToItem(dialog.parent, mouseX, mouseY)
+        }
+
+        onPressed: {
+            startSize = Qt.point(dialog.usualWidth, dialog.usualHeight)
+            startPos = getPosition()
+        }
+
+        onPositionChanged: {
+            var pos = getPosition()
+            var delta = Qt.point(pos.x - startPos.x, pos.y - startPos.y)
+
+            dialog.usualWidth = Math.max(dialog.minWidth, startSize.x + (dialog.inverseX ? -delta.x : delta.x))
+            dialog.usualHeight = Math.max(dialog.minHeight, startSize.y + delta.y)
         }
     }
 }

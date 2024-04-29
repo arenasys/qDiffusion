@@ -505,7 +505,7 @@ Item {
 
         GridDialog {
             id: gridDialog
-            width: Math.max(500, parent.width/3)
+            minWidth: 500
 
             source: BASIC.grid
             options: BASIC.grid.gridTypes()
