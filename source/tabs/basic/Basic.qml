@@ -629,7 +629,7 @@ Item {
     Rectangle {
         id: fullParams
         anchors.fill: prompts
-        visible: full.visible && parameters != "" && show && false
+        visible: full.visible && parameters != "" && show
         color: COMMON.bg0
         property var parameters: full.target != null ? (full.target.parameters != undefined ? full.target.parameters : "") : ""
         property var show: true
