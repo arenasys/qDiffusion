@@ -694,22 +694,21 @@ Item {
     }
 
     Rectangle {
-        visible: full.visible
+        visible: full.visible && promptDivider.visible
         color: COMMON.bg4
-        height: 5
-        anchors.top: full.bottom
-        anchors.left: parent.left
-        anchors.right: full.right
+        anchors.fill: promptDivider
     }
 
     Rectangle {
-        visible: full.visible
+        visible: full.visible && rightDivider.visible
         color: COMMON.bg4
-        width: 5
-        anchors.bottomMargin: -5
-        anchors.top: full.top
-        anchors.bottom: fullParams.visible ? fullParams.bottom : full.bottom
-        anchors.left: full.right
+        anchors.fill: rightDivider
+    }
+
+    Rectangle {
+        visible: full.visible && leftDivider.visible
+        color: COMMON.bg4
+        anchors.fill: leftDivider
     }
 
     Keys.onPressed: {
