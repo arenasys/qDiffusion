@@ -6,10 +6,10 @@ import os
 
 class BasicOutput(QObject):
     updated = pyqtSignal()
-    def __init__(self, parent=None, image=QImage()):
-        super().__init__(parent)
-        self.basic = parent
-        self._image = image
+    def __init__(self, basic, image):
+        super().__init__()
+        self.basic = basic
+        self._image = image or QImage()
         self._metadata = None
         self._artifacts = {}
         self._artifactNames = []

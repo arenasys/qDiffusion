@@ -92,11 +92,14 @@ Item {
 
                 ImageDisplay {
                     id: itemImage
-                    visible: !modelObj.empty
+                    visible: modelObj != null ? !modelObj.empty : false
                     anchors.fill: parent
-                    image: modelObj.display
+                    image: modelObj != null ? modelObj.display : itemImage.clear()
                     centered: true
                     smooth: implicitWidth > trueWidth && implicitHeight > trueHeight
+                    Component.onDestruction: {
+                        itemImage.image = itemImage.clear()
+                    }
                 }
                 
                 Item {
@@ -116,7 +119,7 @@ Item {
 
                     SText {
                         id: nameLabel
-                        text: modelObj.displayName
+                        text: modelObj != null ? modelObj.displayName : ""
                         anchors.top: parent.top
                         anchors.left: parent.left
                         leftPadding: 3
@@ -137,7 +140,7 @@ Item {
 
                     SText {
                         id: indexLabel
-                        text: modelObj.displayIndex
+                        text: modelObj != null ? modelObj.displayIndex : ""
                         anchors.bottom: parent.bottom
                         anchors.right: parent.right
                         leftPadding: 3
@@ -157,7 +160,7 @@ Item {
 
                     SText {
                         id: sizeLabel
-                        text: modelObj.ready ? itemImage.implicitWidth + "x" + itemImage.implicitHeight : ""
+                        text: modelObj != null && modelObj.ready ? itemImage.implicitWidth + "x" + itemImage.implicitHeight : ""
                         anchors.top: parent.top
                         anchors.right: parent.right
                         leftPadding: 3
@@ -175,6 +178,9 @@ Item {
                         anchors.top: parent.top
                         anchors.right: parent.right
                         icon: {
+                            if(modelObj == null) {
+                                return ""
+                            }
                             if(modelObj.fetching) {
                                 return "qrc:/icons/circle_loading.svg"
                             }
@@ -197,7 +203,7 @@ Item {
 
                     SAnimation {
                         id: rotationAnimation
-                        running: modelObj.fetching
+                        running: modelObj != null ? modelObj.fetching : false
                         duration: 1000
                         minValue: 0
                         maxValue: 360
@@ -287,7 +293,7 @@ Item {
 
                         Sql {
                             id: destinationsSql
-                            query: "SELECT name, folder FROM folders WHERE UPPER(name) != UPPER('" + modelObj.mode + "');"
+                            query: "SELECT name, folder FROM folders WHERE UPPER(name) != UPPER('" + (modelObj != null ? modelObj.mode : "") + "');"
                         }
 
                         SContextMenu {
