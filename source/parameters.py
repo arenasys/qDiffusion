@@ -896,6 +896,7 @@ class Parameters(QObject):
                     self.doDeactivate(d)
                 for d in [d for d in value if not d in self._activeDetailers]:
                     self.doActivate(d)
+                continue
 
             try:
                 value = type(self.values.get(name))(value)
