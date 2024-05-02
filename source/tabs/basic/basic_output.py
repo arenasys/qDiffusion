@@ -20,6 +20,9 @@ class BasicOutput(QObject):
         self._ready = False
         self._fetching = False
 
+    def __del__(self):
+        print("BasicOutput deleted")
+
     def setResult(self, image, metadata, file):
         self._image = image
         self._ready = True

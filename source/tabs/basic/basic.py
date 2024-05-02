@@ -365,6 +365,7 @@ class Basic(QObject):
     def deleteOutput(self, id):
         if not id in self._outputs:
             return
+        self._outputs[id].deleteLater()
         del self._outputs[id]
         q = QSqlQuery(self.conn.db)
         q.prepare("DELETE FROM outputs WHERE id = :id;")
@@ -375,6 +376,7 @@ class Basic(QObject):
     def deleteOutputAfter(self, id):
         for i in list(self._outputs.keys()):
             if i < id:
+                self._outputs[i].deleteLater()
                 del self._outputs[i]
         q = QSqlQuery(self.conn.db)
         q.prepare("DELETE FROM outputs WHERE id < :idx;")
