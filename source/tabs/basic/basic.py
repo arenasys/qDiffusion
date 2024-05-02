@@ -366,7 +366,6 @@ class Basic(QObject):
         if not id in self._outputs:
             return
         del self._outputs[id]
-        #self.updated.emit()
         q = QSqlQuery(self.conn.db)
         q.prepare("DELETE FROM outputs WHERE id = :id;")
         q.bindValue(":id", id)
@@ -377,12 +376,10 @@ class Basic(QObject):
         for i in list(self._outputs.keys()):
             if i < id:
                 del self._outputs[i]
-        
         q = QSqlQuery(self.conn.db)
         q.prepare("DELETE FROM outputs WHERE id < :idx;")
         q.bindValue(":idx", id)
         self.conn.doQuery(q)
-        #self.updated.emit()
 
     @pyqtProperty(int, notify=openedUpdated)
     def openedIndex(self):

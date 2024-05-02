@@ -7,7 +7,7 @@ import os
 class BasicOutput(QObject):
     updated = pyqtSignal()
     def __init__(self, basic, image):
-        super().__init__()
+        super().__init__(basic)
         self.basic = basic
         self._image = image or QImage()
         self._metadata = None

@@ -127,7 +127,7 @@ Item {
             root.file = root.target.file
         } else {
             canvas.visible = false
-            root.image = Qt.binding(function () { return root.target.displayFull; })
+            root.image = Qt.binding(function () { return root.target != null ? root.target.displayFull : null })
             reset = movable.itemWidth != root.target.width || movable.itemHeight != root.target.height
             movable.itemWidth = root.target.width
             movable.itemHeight = root.target.height
