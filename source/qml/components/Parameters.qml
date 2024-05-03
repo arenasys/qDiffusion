@@ -189,7 +189,7 @@ Item {
                     text: root.tr("Options")
                     width: parent.width
                     property var typ: ""
-                    property var isHR: typ ==  "Txt2Img + HR";
+                    property var isHR: typ.startsWith("Txt2Img + HR");
                     property var couldHR: typ.startsWith("Txt2Img");
                     property var isImg: typ == "Img2Img" || typ == "Inpainting" || typ == "Upscaling" || typ.endsWith("Detail");
                     property var isInp: typ == "Inpainting" || typ.endsWith("Detail");
