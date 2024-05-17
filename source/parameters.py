@@ -737,8 +737,10 @@ class Parameters(QObject):
             del data["cfg_rescale"]
 
         for k in ["tome_ratio", "cfg_rescale", "prediction_type", "tiling_mode", "vae_precision", "precision"]:
-            if k in data and data[k] in {0.0, "Default"}:
-                del data[k]
+            for p in ["", "hr_"]:
+                kk = p + k
+                if kk in data and data[kk] in {0.0, "Default"}:
+                    del data[kk]
 
         data["autocast"] = data["autocast"] == "Enabled"
 
