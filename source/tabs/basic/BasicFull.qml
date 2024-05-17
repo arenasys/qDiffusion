@@ -234,7 +234,7 @@ Item {
             }
             id: bg
             anchors.fill: item
-            smooth: implicitWidth*1.25 < width && implicitHeight*1.25 < height ? false : true
+            smooth: implicitWidth < width && implicitHeight < height ? false : true
         }
 
         Item {

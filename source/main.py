@@ -353,7 +353,9 @@ class Coordinator(QObject):
 
     @pyqtSlot()
     def load(self):
-        self.app.setWindowIcon(QIcon("source/qml/icons/placeholder.svg"))
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        icon = os.path.join(root, "source", "qml", "icons", "placeholder.svg")
+        self.app.setWindowIcon(QIcon(icon))
         self.builder.start()
 
     @pyqtSlot()
