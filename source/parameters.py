@@ -566,7 +566,7 @@ class Parameters(QObject):
             self._values.set("img2img_upscaler", "Lanczos")
 
         if self._values.get("hr_upscaler") not in self._values.get("hr_upscalers"):
-            self._values.set("hr_upscaler", "Latent (nearest)")
+            self._values.set("hr_upscaler", "Lanczos")
 
         config = [
             ("device", "device", "devices"),

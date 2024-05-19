@@ -212,6 +212,12 @@ class Coordinator(QObject):
 
         self._mode = 0
         self.in_venv = "VIRTUAL_ENV" in os.environ
+
+        self.venv_cache = os.path.join(os.environ["VIRTUAL_ENV"], "cache")
+        if self.in_venv:
+            if "PIP_CONFIG_FILE" in os.environ and not "PIP_CACHE_DIR" in os.environ:
+                os.environ["PIP_CACHE_DIR"] = self.venv_cache
+
         self.override = False
 
         self.enforce = True
@@ -293,6 +299,11 @@ class Coordinator(QObject):
         cfg['mode'] = self._modes[self._mode]
         with open("config.json", "w", encoding="utf-8") as f:
             json.dump(cfg, f, indent=4)
+    
+    def clearCache(self):
+        # if the cache is ours then clear it
+        if os.environ["PIP_CACHE_DIR"] == self.venv_cache:
+            shutil.rmtree(self.venv_cache, ignore_errors=True)
 
     @pyqtProperty(bool, notify=updated)
     def enforceVersions(self):
@@ -409,6 +420,7 @@ class Coordinator(QObject):
     @pyqtSlot()
     def doneInstalling(self):
         self.writeMode()
+        self.clearCache()
 
         self._installing = ""
         self.installer = None
