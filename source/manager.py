@@ -681,7 +681,7 @@ class DetailerManager(QObject):
         ]
         self._default_values = {
             "resolution": 512, "strength": 0.5, "padding": 64, "mask_blur": 4, "mask_expand": 0, "threshold": 0.5,
-            "box_mode": "Rectangle", "box_modes": ["Rectangle", "Ellipse"], "prompt": ""
+            "box_mode": "Rectangle", "box_modes": ["Rectangle", "Ellipse"], "prompt": "PROMPT"
         }
         self._settings = {}
         self._suggestions = SuggestionManager(self.gui)
