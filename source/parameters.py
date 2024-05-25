@@ -105,7 +105,10 @@ def parseParameters(formatted):
     p = params.split(":")
     for i in range(1, len(p)):
         label = p[i-1].rsplit(",", 1)[-1].strip()
-        value = p[i].rsplit(",", 1)[0].strip()
+        if i == len(p)-1:
+            value = p[i].strip()
+        else:
+            value = p[i].rsplit(",", 1)[0].strip()
         name = None
         for n, l in LABELS:
             if l == label:
@@ -950,7 +953,7 @@ class Parameters(QObject):
         return prompts
     
     def parseSubprompts(self, p):
-        return [s.replace('\n','').replace('\r', '').strip() for s in re.split("\sAND\s", p + " ")]
+        return [s.replace('\n','').replace('\r', '').strip() for s in re.split(r"\sAND\s", p + " ")]
     
     @pyqtProperty(list, notify=updated)
     def subprompts(self):

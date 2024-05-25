@@ -213,8 +213,9 @@ class Coordinator(QObject):
         self._mode = 0
         self.in_venv = "VIRTUAL_ENV" in os.environ
 
-        self.venv_cache = os.path.join(os.environ["VIRTUAL_ENV"], "cache")
+        self.venv_cache = None
         if self.in_venv:
+            self.venv_cache = os.path.join(os.environ["VIRTUAL_ENV"], "cache")
             if "PIP_CONFIG_FILE" in os.environ and not "PIP_CACHE_DIR" in os.environ:
                 os.environ["PIP_CACHE_DIR"] = self.venv_cache
 

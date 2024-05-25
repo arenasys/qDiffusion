@@ -13,6 +13,7 @@ SMovableDialog {
     
     property var detailer
     property var settings: BASIC.detailers.settings(detailer)
+    property var suggestions: BASIC.detailers.suggestions
 
     Component.onCompleted: {
         dialog.setAnchored(true)
@@ -67,6 +68,8 @@ SMovableDialog {
         return TRANSLATOR.instance.translate(str, file)
     }
 
+    property var showingPrompt: dialog.width > 340 
+
     contentItem: Rectangle {
         id: content
         color: COMMON.bg0
@@ -74,42 +77,59 @@ SMovableDialog {
         border.color: COMMON.bg5
         anchors.fill: parent
 
-        Column {
-            anchors.fill: parent
+        Item {
+            id: header
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
             anchors.leftMargin: 5
             anchors.rightMargin: 5
-
-            Item {
-                width: parent.width
-                height: 3
+            anchors.topMargin: 3
+            height: 20
+            
+            Rectangle {
+                anchors.centerIn: parent
+                width: nameText.width + 10
+                height: parent.height
+                color: COMMON.bg2
+                border.width: 1
+                border.color: COMMON.bg4
             }
 
-            Item {
-                width: parent.width
+            SText {
+                id: nameText
+                text: GUI.modelName(dialog.detailer)
+                anchors.centerIn: parent
+                pointSize: 9.8
+                color: COMMON.fg1_5
+            }
+
+            SIconButton {
+                visible: !dialog.showingPrompt
+                id: promptButton
+                color: COMMON.bg2
+                border.width: 1
+                border.color: COMMON.bg4
+                icon: "qrc:/icons/text_2.svg"
+                anchors.top: parent.top
+                anchors.right: parent.right
+                anchors.rightMargin: 2
                 height: 20
-                
-                Rectangle {
-                    anchors.centerIn: parent
-                    width: nameText.width + 10
-                    height: parent.height
-                    color: COMMON.bg2
-                    border.width: 1
-                    border.color: COMMON.bg4
-                }
-
-                SText {
-                    id: nameText
-                    text: GUI.modelName(dialog.detailer)
-                    anchors.centerIn: parent
-                    pointSize: 9.8
-                    color: COMMON.fg1_5
+                width: visible ? 20 : 0
+                inset: 6
+                onPressed: {
+                    dialog.usualWidth = 550
                 }
             }
+        }
 
-            Item {
-                width: parent.width
-                height: 0
-            }
+        Column {
+            id: column
+            anchors.top: header.bottom
+            anchors.left: parent.left
+            anchors.leftMargin: 5
+            width: showingPrompt ? 200 : content.width - 10
+            height: 236
 
             OSlider {
                 id: resInput
@@ -249,6 +269,80 @@ SMovableDialog {
                 onValueChanged: {
                     dialog.save()
                 }
+            }
+        }
+
+        Item {
+            visible: dialog.showingPrompt
+            anchors.top: header.bottom
+            anchors.bottom: parent.bottom
+            anchors.left: column.right
+            anchors.right: parent.right
+            anchors.margins: 3
+            anchors.leftMargin: 1
+            anchors.topMargin: 1
+            clip: true
+
+            Rectangle {
+                anchors.fill: parent
+                border.width: 1
+                border.color: COMMON.bg4
+                color: "transparent"
+                anchors.margins: 1
+
+                Rectangle {
+                    id: promptHeader
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    height: 20
+                    border.width: 1
+                    border.color: COMMON.bg4
+                    color: COMMON.bg3
+                    SText {
+                        anchors.fill: parent
+                        text: root.tr("Detailer Prompt")
+                        pointSize: 9.8
+                        color: COMMON.fg1_5
+                        leftPadding: 5
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                }
+
+                STextArea {
+                    id: promptDetailer
+                    color: COMMON.bg1
+                    anchors.top: promptHeader.bottom
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    anchors.margins: 1
+                    menuActive: suggestions.active
+
+                    Component.onCompleted: {
+                        promptDetailer.text = dialog.settings.get("prompt")
+                        GUI.setHighlighting(promptDetailer.area.textDocument)
+                    }
+
+                    onTextChanged: {
+                        dialog.settings.set("prompt", promptDetailer.text)
+                        dialog.save()
+                    }
+                }
+            }
+        }
+
+        Suggestions {
+            id: suggestions
+            target: promptDetailer
+            suggestions: dialog.suggestions
+            x: promptDetailer.mapToItem(content, 0, 0).x + area.cursorRectangle.x;
+            y: promptDetailer.mapToItem(content, 0, 0).y + area.cursorRectangle.y;
+            height: area.cursorRectangle.height
+            visible: area.activeFocus
+
+            Component.onCompleted: {
+                dialog.suggestions.setPromptSources()
             }
         }
     }

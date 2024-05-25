@@ -13,7 +13,7 @@ from PyQt5.QtGui import QImage, QPainter, QColor, QFont, QTextOption
 from PyQt5.QtQml import qmlRegisterUncreatableType
 
 import parameters
-from misc import encodeImage, decodeImage
+from misc import encodeImage, decodeImage, SuggestionManager
 
 class InputRole(enum.Enum):
     IMAGE = 1
@@ -681,9 +681,10 @@ class DetailerManager(QObject):
         ]
         self._default_values = {
             "resolution": 512, "strength": 0.5, "padding": 64, "mask_blur": 4, "mask_expand": 0, "threshold": 0.5,
-            "box_mode": "Rectangle", "box_modes": ["Rectangle", "Ellipse"]
+            "box_mode": "Rectangle", "box_modes": ["Rectangle", "Ellipse"], "prompt": ""
         }
         self._settings = {}
+        self._suggestions = SuggestionManager(self.gui)
 
     def makeSettings(self, detailer):
         settings = self.getSettings(detailer)
@@ -735,6 +736,10 @@ class DetailerManager(QObject):
 
     def settingsName(self, detailer):
         return f"DETAILER-{self.gui.modelName(detailer)}"
+    
+    @pyqtProperty(SuggestionManager, notify=updated)
+    def suggestions(self):
+        return self._suggestions
 
 def registerTypes():
     qmlRegisterUncreatableType(RequestManager, "gui", 1, 0, "RequestManager", "Not a QML type")

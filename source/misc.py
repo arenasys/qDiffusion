@@ -394,7 +394,7 @@ class SyntaxHighlighter(QSyntaxHighlighter):
                 if text[s+1] == "@":
                     self.setFormat(s+1,1,err)
 
-        for s, e, ms, me in [(*m.span(0), *m.span(1)) for m in re.finditer("@?__([^\s]+?)__(?!___)", text)]:
+        for s, e, ms, me in [(*m.span(0), *m.span(1)) for m in re.finditer(r"@?__([^\s]+?)__(?!___)", text)]:
             m = text[ms:me]
             if m in wilds:
                 self.setFormat(s, e-s, wild_bg)
@@ -407,14 +407,14 @@ class SyntaxHighlighter(QSyntaxHighlighter):
                 if text[s] == "@":
                     self.setFormat(s,1,err)
 
-        for s, e in [m.span(0) for m in re.finditer("((?<=\s|,)|^)(AND|BREAK|START|END)(?=\s|,|$)", text)]:
+        for s, e in [m.span(0) for m in re.finditer(r"((?<=\s|,)|^)(AND|BREAK|START|END|PROMPT)(?=\s|,|$)", text)]:
             self.setFormat(s, e-s, keyword)
         
         if text.startswith("Negative prompt: "):
             self.setFormat(0, 16, field)
         
         if text.startswith("Steps: "):
-            for s, e in [m.span(1) for m in re.finditer("(?:\s)?([^,:]+):[^,]+(,)?", text.lower())]:
+            for s, e in [m.span(1) for m in re.finditer(r"(?:\s)?([^,:]+):[^,]+(,)?", text.lower())]:
                 self.setFormat(s, e-s, field)
 
 def encodeImage(img):
@@ -510,7 +510,7 @@ def setWindowProperties(hwnd, app_id, display_name, relaunch_path):
 def setAppID(app_id):
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
 
-NATSORT_KEY = lambda s: [int(t) if t.isdigit() else t.lower() for t in re.split('(\d+)', s)]
+NATSORT_KEY = lambda s: [int(t) if t.isdigit() else t.lower() for t in re.split(r'(\d+)', s)]
 
 def sortFiles(files):
     return sorted(files, key=lambda f: NATSORT_KEY(f.rsplit(os.path.sep,1)[-1]))
@@ -820,7 +820,7 @@ class DownloadManager(QObject):
                 del self._downloads[net_id]
         self.updated.emit()
 
-SUGGESTION_BLOCK_REGEX = lambda spaces: r'(?=\n|,|(?<!lora|rnet):|\||\[|\]|\(|\)'+ ('|\s)' if spaces else r')')
+SUGGESTION_BLOCK_REGEX = lambda spaces: r'(?=\n|,|(?<!lora|rnet):|\||\[|\]|\(|\)'+ (r'|\s)' if spaces else r')')
 SUGGESTION_SOURCES = ["Model", "UNET", "VAE", "CLIP", "LoRA", "TI", "Wild", "Vocab", "Keyword"]
 
 class SuggestionManager(QObject):
