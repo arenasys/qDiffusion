@@ -855,7 +855,7 @@ Rectangle {
                 anchors.rightMargin: Math.max(10, (parent.width - width)/2)
                 width: blockWeightLabels.big ? parent.width - 20 : 350
 
-                height: blockWeightLabels.big ? 396 : 306
+                height: blockWeightLabels.big ? (blockWeightLabels.value == "12 Block" ? 396 : 306) : 306
                 visible: modeChoice.value == "Advanced" && root.operation.hasAlpha
 
                 Rectangle {
@@ -900,10 +900,12 @@ Rectangle {
                             height: parent.height
                             width: blockWeightLabels.big ? parent.width / 3 : parent.width / 2
                             model: {
-                                if(blockWeightLabels.value == "12 Block") {
-                                    return ["IN00","IN01","IN02","IN03","IN04","IN05","IN06","IN07","IN08","IN09","IN10","IN11"]
+                                if(blockWeightLabels.value == "4 Block") {
+                                    return blockWeightLabels.blocks4
+                                } else if(blockWeightLabels.value == "12 Block") {
+                                    return blockWeightLabels.inBlocks12
                                 } else {
-                                    return ["DOWN0","DOWN1","DOWN2","DOWN3", "MID", "UP0", "UP1", "UP2", "UP3"]
+                                    return blockWeightLabels.inBlocks9
                                 }
                             }
 
@@ -951,7 +953,19 @@ Rectangle {
                                 width: parent.width
                                 height: 30
                                 label: "Labels"
-                                property var big: value == "12 Block"
+                                property var big: value != "4 Block"
+
+                                property var blocks4: ["DOWN0","DOWN1","DOWN2","DOWN3", "MID", "UP0", "UP1", "UP2", "UP3"]
+
+                                property var midBlocks12: "M00"
+                                property var inBlocks12: ["IN00","IN01","IN02","IN03","IN04","IN05","IN06","IN07","IN08","IN09","IN10","IN11"]
+                                property var outBlocks12: ["OUT00","OUT01","OUT02","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"].reverse()
+                                
+                                property var midBlocks9: "M0"
+                                property var inBlocks9: ["IN0","IN1","IN2","IN3","IN4","IN5","IN6","IN7","IN8"]
+                                property var outBlocks9: ["OUT0","OUT1","OUT2","OUT3","OUT4","OUT5","OUT6","OUT7","OUT8"].reverse()
+                                
+                                
 
                                 bindMap: root.operation.parameters
                                 bindKeyModel: "labels"
@@ -966,7 +980,7 @@ Rectangle {
                                 anchors.left: parent.left
                                 anchors.right: parent.right
                                 anchors.margins: 2
-                                height: 208
+                                height: blockWeightLabels.value == "9 Block" ? 178 : 208 
 
                                 Rectangle {
                                     width: parent.width
@@ -1114,7 +1128,7 @@ Rectangle {
                                 visible: blockWeightLabels.big
                                 width: visible ? parent.width : 0
                                 height: visible ? 30 : 0
-                                label: "M00"
+                                label: blockWeightLabels == "12 Block" ? blockWeightLabels.midBlocks12 : blockWeightLabels.midBlocks9
 
                                 bindMap: root.operation.blockWeights
                                 bindKey: label
@@ -1146,7 +1160,7 @@ Rectangle {
                             visible: blockWeightLabels.big
                             height: visible ? parent.height : 0
                             width: visible ? parent.width / 3 : 0
-                            model: ["OUT00","OUT01","OUT02","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"].reverse()
+                            model: blockWeightLabels.value == "12 Block" ? blockWeightLabels.outBlocks12 : blockWeightLabels.outBlocks9
 
                             delegate: Item {
                                 width: parent != null ? parent.width : 0

@@ -1194,6 +1194,7 @@ GRID_MERGE_OPTIONS = {"Alpha", "CLIP Alpha", "VAE Source", "Rank", "Model A", "M
 GRID_MODEL_OPTIONS = {"Model", "UNET", "VAE", "CLIP", "Upscaler", "Model A", "Model B", "Model C"}
 
 MERGE_BLOCKS_4 = ["DOWN0","DOWN1","DOWN2","DOWN3","MID","UP0","UP1","UP2","UP3"]
+MERGE_BLOCKS_9 = ["IN0","IN1","IN2","IN3","IN4","IN5","IN6","IN7","IN8", "M0", "OUT0","OUT1","OUT2","OUT3","OUT4","OUT5","OUT6","OUT7","OUT8"]
 MERGE_BLOCKS_12 = ["IN00","IN01","IN02","IN03","IN04","IN05","IN06","IN07","IN08","IN09","IN10","IN11", "M00", "OUT00","OUT01","OUT02","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
 
 class GridManager(QObject):

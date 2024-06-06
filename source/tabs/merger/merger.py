@@ -39,12 +39,13 @@ class MergeOperation(QObject):
             "vae_source": "Model A",
             "sources": ["Model A", "Model B", "Model C"],
             "label": "4 Block",
-            "labels": ["4 Block", "12 Block"]
+            "labels": ["4 Block", "9 Block", "12 Block"]
         })
 
         self._block_labels_12 = misc.MERGE_BLOCKS_12
+        self._block_labels_9 = misc.MERGE_BLOCKS_9
         self._block_labels_4 = misc.MERGE_BLOCKS_4
-        self._block_weights = VariantMap(self, {k:0.0 for k in self._block_labels_12 + self._block_labels_4})
+        self._block_weights = VariantMap(self, {k:0.0 for k in self._block_labels_12 + self._block_labels_9 + self._block_labels_4})
 
         self.setBlockWeightPreset("Linear")
 
@@ -166,37 +167,28 @@ class MergeOperation(QObject):
 
     @pyqtSlot(str)
     def setBlockWeightPreset(self, preset):
-        for i, label in enumerate(self._block_labels_12):
-            if preset == "Linear":
-                value = abs((12 - i)/12)
-            elif preset == "Linear Inverted":
-                value = 1 - abs((12 - i)/12)
-            elif preset == "Smooth":
-                x = abs((12 - i)/12)
-                value = (3 - 2*x) * x**2
-            elif preset == "Smooth Inverted":
-                x = 1 - abs((12 - i)/12)
-                value = (3 - 2*x) * x**2
-            else:
-                continue
-            value = float(f"{value:.4f}")
-            self._block_weights.set(label, value)
+        data = [
+            (12, self._block_labels_12),
+            (4, self._block_labels_4),
+            (9, self._block_labels_9)
+        ]
 
-        for i, label in enumerate(self._block_labels_4):
-            if preset == "Linear":
-                value = abs((4 - i)/4)
-            elif preset == "Linear Inverted":
-                value = 1 - abs((4 - i)/4)
-            elif preset == "Smooth":
-                x = abs((4 - i)/4)
-                value = (3 - 2*x) * x**2
-            elif preset == "Smooth Inverted":
-                x = 1 - abs((4 - i)/4)
-                value = (3 - 2*x) * x**2
-            else:
-                continue
-            value = float(f"{value:.4f}")
-            self._block_weights.set(label, value)
+        for n, labels in data:
+            for i, label in enumerate(labels):
+                if preset == "Linear":
+                    value = abs((n - i)/n)
+                elif preset == "Linear Inverted":
+                    value = 1 - abs((n - i)/n)
+                elif preset == "Smooth":
+                    x = abs((n - i)/n)
+                    value = (3 - 2*x) * x**2
+                elif preset == "Smooth Inverted":
+                    x = 1 - abs((n - i)/n)
+                    value = (3 - 2*x) * x**2
+                else:
+                    continue
+                value = float(f"{value:.4f}")
+                self._block_weights.set(label, value)
         
         if self._parameters.get("preset") != preset:
             self._parameters.set("preset", preset)
@@ -206,6 +198,8 @@ class MergeOperation(QObject):
         labels = self._parameters.get("label")
         if labels == "12 Block":
             return self._block_labels_12
+        if labels == "9 Block":
+            return self._block_labels_9
         if labels == "4 Block":
             return self._block_labels_4
 
@@ -227,11 +221,13 @@ class MergeOperation(QObject):
     def setBlockWeightValues(self, values):
         values = [v.strip() for v in values.split(",")]
 
-        if len(values) <= 9:
-            self._parameters.set("label", "4 Block")
-        else:
+        if len(values) == self._block_labels_12:
             self._parameters.set("label", "12 Block")
-
+        elif len(values) == self._block_labels_9:
+            self._parameters.set("label", "9 Block")
+        elif len(values) == self._block_labels_4:
+            self._parameters.set("label", "4 Block")
+        
         parsed_values = {}
         for i, label in enumerate(self.getBlockWeightLabels()):
             try:
