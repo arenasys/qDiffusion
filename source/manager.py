@@ -242,7 +242,8 @@ class RequestManager(QObject):
                         "scale": i._control_settings.get("strength"),
                         "annotator": i._control_settings.get("preprocessor"),
                         "args": i.getControlArgs(),
-                        "guess": i.getControlGuess()
+                        "guess": i.getControlGuess(),
+                        "stop": i.getControlStop()
                     }
                     k = i
                     if model == "Inpaint" and i._linked:

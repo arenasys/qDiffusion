@@ -64,7 +64,7 @@ class BasicInput(QObject):
         self._control_settings = parameters.VariantMap(self, {
             "mode": "", "strength":1.0, "preprocessors": [], "preprocessor": "", "bools": ["False", "True"],
             "bool": "False", "bool_label": "", "slider_a": 0.0, "slider_a_label": "", "slider_b": 0.0, "slider_b_label": "",
-            "guess": "False"
+            "guess": "False", "stop": 1.0
             })
         self._control_settings.updated.connect(self.onControlSettingsUpdated)
         self._tiles = []
@@ -690,6 +690,9 @@ class BasicInput(QObject):
     
     def getControlGuess(self):
         return self._control_settings.get("guess") == "True"
+    
+    def getControlStop(self):
+        return self._control_settings.get("stop")
     
     @pyqtSlot()
     def resetAnnotation(self):

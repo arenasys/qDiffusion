@@ -870,13 +870,29 @@ Item {
                             precValue: 2
                             incValue: 0.01
                             snapValue: 0.05
-                            bounded: false
+                            bounded: true
+                        }
+                        OSlider {
+                            width: parent.width
+                            visible: modelData.role == 4
+                            height: visible ? 22 : 0
+                            label: root.tr("Stop threshold")
+
+                            bindMap: modelData.controlSettings
+                            bindKey: "stop"
+
+                            minValue: 0
+                            maxValue: 1
+                            precValue: 2
+                            incValue: 0.01
+                            snapValue: 0.05
+                            bounded: true
                         }
                         OChoice {
                             width: parent.width
                             visible: modelData.role == 4
                             height: visible ? 22 : 0
-                            label: root.tr("Guess")
+                            label: root.tr("Guess Mode")
 
                             bindMap: modelData.controlSettings
                             bindKeyCurrent: "guess"
