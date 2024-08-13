@@ -895,6 +895,7 @@ class BasicInput(QObject):
 
     @pyqtSlot(MimeData, int)
     def setImageDrop(self, mimeData, index):
+
         mimeData = mimeData.mimeData
         found = False
         if MIME_BASIC_INPUT in mimeData.formats():
@@ -910,7 +911,7 @@ class BasicInput(QObject):
                     self._image = source.display
                 found = True
         else:
-            source = mimeData.imageData()
+            source = MimeData.getImage(mimeData)
             if source and not source.isNull():
                 self._image = source
                 found = True

@@ -347,7 +347,7 @@ class Explorer(QObject):
         mimedata = mimedata.mimeData
         image = None
         if mimedata.hasImage():
-            image = mimedata.imageData()
+            image = misc.MimeData.getImage(mimedata)
             if image and not image.isNull():
                 image.save(file)
 

@@ -309,7 +309,7 @@ class Basic(QObject):
                     if url.fileName().rsplit(".")[-1] in {"png", "jpg", "jpeg", "webp", "gif"}:
                         self.download(url, index)
             
-            source = mimeData.imageData()
+            source = MimeData.getImage(mimeData)
             if not done and source and not source.isNull():
                 self._inputs.insert(index, BasicInput(self, source, InputRole.IMAGE))
                 
@@ -323,7 +323,7 @@ class Basic(QObject):
             source = int(str(mimeData.data(MIME_BASIC_INPUT), 'utf-8'))
             width, height = self._inputs[source].dropWidth, self._inputs[source].dropHeight
         else:
-            source = mimeData.imageData()
+            source = MimeData.getImage(mimeData)
             if source and not source.isNull():
                 width, height = source.width(), source.height()
             for url in mimeData.urls():
@@ -535,9 +535,7 @@ class Basic(QObject):
         if mimedata.hasText():
             self.pastedText.emit(mimedata.text())
 
-        image = None
-        if mimedata.hasImage():
-            image = mimedata.imageData()
+        image = MimeData.getImage(mimedata)
         
         urls = mimedata.urls()
         if mimedata.hasText():
@@ -602,7 +600,7 @@ class Basic(QObject):
             inputs = []
             mimedata = QApplication.clipboard().mimeData()
             if mimedata.hasImage():
-                image = mimedata.imageData()
+                image = MimeData.getImage(mimedata)
                 if image and not image.isNull():
                     inputs += [image]
             elif mimedata.hasUrls():

@@ -3,7 +3,7 @@ websockets==11.0.3
 bson==0.5.10
 Send2Trash==1.8.2
 PyOpenGL==3.1.7
-PyQt5==5.15.7
+PyQt5==5.15.11
 cryptography==40.0.2
 numpy==1.24.3
 pygit2==1.12.1

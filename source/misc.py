@@ -211,6 +211,23 @@ class MimeData(QObject):
     @pyqtProperty(QMimeData)
     def mimeData(self):
         return self._mimeData
+    
+    def getImage(mimedata):
+        if type(mimedata) == MimeData:
+            mimedata = mimedata.mimeData
+        
+        if not type(mimedata) == QMimeData:
+            print("NOT QMIMEDATA")
+            return None
+
+        image = None
+        if mimedata.hasImage():
+            if mimedata.hasFormat("image/png"):
+                data = mimedata.data("image/png")
+                image = QImage.fromData(data)
+            else:
+                image = mimedata.imageData()
+        return image
 
 class DropArea(QQuickItem):
     dropped = pyqtSignal(MimeData, arguments=["mimeData"])
