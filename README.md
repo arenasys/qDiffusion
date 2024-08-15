@@ -7,7 +7,7 @@ Built from the ground up alongside [sd-inference-server](https://github.com/aren
 ## Getting started
 ### Install
 1. [Download](https://github.com/arenasys/qDiffusion/archive/refs/heads/master.zip) this repo as a zip and extract it.
-2. Run `qDiffusion.exe` (or `bash ./source/start.sh` on Linux, `sh source/start-mac.sh` on Mac).
+2. Run `qDiffusion.exe` (or `bash ./source/start.sh` on Linux, `sh ./source/start-mac.sh` on Mac).
 	- First time users will need to wait for Python and PyQt5 to be downloaded.
 	- AMD Ubuntu users need to follow: [Install ROCm](https://github.com/arenasys/qDiffusion/wiki/Install#ubuntu-22).
 3. Select a mode. `Remote`, `Nvidia` and `AMD` are available.
