@@ -19,6 +19,7 @@ import argparse
 
 import platform
 IS_WIN = platform.system() == 'Windows'
+IS_MAC = platform.system() == 'Darwin'
 
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, pyqtProperty, QObject, QUrl, QCoreApplication, Qt, QElapsedTimer, QThread
 from PyQt5.QtQml import QQmlApplicationEngine, qmlRegisterSingletonType, qmlRegisterType
@@ -442,6 +443,10 @@ class Coordinator(QObject):
             factor = round(self.parent().desktop().logicalDpiX()*(100/96))
             if factor == 125:
                 return 0.82
+        if IS_MAC:
+            factor = round(self.parent().desktop().logicalDpiX()*(100/96))
+            if factor == 75:
+                return 1.25
         return 1.0
     
 def launch(url):
