@@ -93,7 +93,7 @@ class RequestManager(QObject):
         self.parameters = None
 
         self.requests = []
-        self.count = 0
+        self.queuing = False
         self.seed = 0
         
         self.ids = []
@@ -123,7 +123,7 @@ class RequestManager(QObject):
         self.grid_metadata = None
         self.grid_save_all = False
 
-    def setRequests(self, requests):
+    def setRequests(self, requests, append=False):
         if self.parameters:
             folder = self.parameters._values.get("output_folder")
             
@@ -134,8 +134,12 @@ class RequestManager(QObject):
                 if folder and not "folder" in requests[i]:
                     requests[i]["folder"] = folder
 
-        self.requests = requests
-        self.count = len(requests)
+        if append:
+            self.requests += requests
+            self.queuing = True
+        else:
+            self.requests = requests
+            self.queuing = len(self.requests) > 1
         self.updated.emit()
 
     def makeRequest(self, request=None):
@@ -196,7 +200,7 @@ class RequestManager(QObject):
     
     @pyqtProperty(int, notify=updated)
     def remaining(self):
-        if self.count > 1:
+        if self.queuing:
             return len(self.requests) + 1
         return 0
     
@@ -267,7 +271,7 @@ class RequestManager(QObject):
 
         return found, links, controls, segmentation
     
-    def buildRequests(self, parameters, inputs):
+    def buildRequests(self, parameters, inputs, append=False):
         self.parameters = parameters
 
         builder = BuilderRunnable(self, inputs)
@@ -291,7 +295,7 @@ class RequestManager(QObject):
             for i in range(len(requests)):
                 requests[i] = self.modifyRequest(requests[i])
 
-        self.setRequests(requests)
+        self.setRequests(requests, append)
             
     def buildSegmentationRequests(self, segmentation):
         requests = []
@@ -476,7 +480,7 @@ class RequestManager(QObject):
                 return
 
         if not self.requests and name == "result":
-            self.count = 0
+            self.queuing = False
             self.updated.emit()
 
         if not id in self.mapping:

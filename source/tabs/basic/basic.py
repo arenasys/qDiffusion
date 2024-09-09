@@ -92,7 +92,18 @@ class Basic(QObject):
             self._manager.buildRequests(self._parameters, self._inputs)
         self._manager.makeRequest()
         self.updated.emit()
-        
+    
+    @pyqtProperty(bool)
+    def isGenerating(self):
+        return self.gui.statusMode == 2 or self.gui.statusMode == 5
+    
+    @pyqtSlot()
+    def enqueue(self):
+        self._manager.buildRequests(self._parameters, self._inputs, append=True)
+        if not self.isGenerating:
+            self.generate(user=False)
+        self.updated.emit()
+
     @pyqtSlot(int, str)
     def handleResult(self, id, name):
         self._manager.handleResult(id, name)

@@ -20,6 +20,7 @@ Item {
     }
 
     signal generate()
+    signal enqueue()
     signal cancel()
     signal buildModel()
     signal sizeFinished()
@@ -106,6 +107,13 @@ Item {
                     onCheckedChanged: {
                         root.forever = checked
                     }
+                }
+                SContextMenuItem {
+                    text: root.tr("Add to Queue")
+                    onPressed: {
+                        root.enqueue()
+                    }
+
                 }
                 SContextMenuItem {
                     height: visible ? 20 : 0

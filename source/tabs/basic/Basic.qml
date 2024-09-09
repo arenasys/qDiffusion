@@ -140,6 +140,9 @@ Item {
             onGenerate: {
                 BASIC.generate()
             }
+            onEnqueue: {
+                BASIC.enqueue()
+            }
             onCancel: {
                 BASIC.cancel()
             }
