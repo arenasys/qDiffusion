@@ -224,7 +224,6 @@ class RequestManager(QObject):
                         found[i] = data
                 if i._role == InputRole.MASK or (i._role == InputRole.CONTROL and i._control_mode == "Inpaint"):
                     if i._linked:
-                        links[i] = i._linked
                         if i._image and not i._image.isNull():
                             data += [encodeImage(i._image)]
                         if i._files:
@@ -232,14 +231,15 @@ class RequestManager(QObject):
                                 data += [i.getFilePath(f)]
                         if data:
                             found[i] = data
+                            links[i] = i._linked
                             data = []
                 if i._role == InputRole.SUBPROMPT:
-                    if i._linked:
-                        links[i] = i._linked
                     if i._image and not i._image.isNull():
                         data += [[encodeImage(a) for a in i.getAreas()]]
                     if data:
                         found[i] = data
+                        if i._linked:
+                            links[i] = i._linked
                 if i._role == InputRole.CONTROL:
                     model = i._control_settings.get("mode")
                     opts = {
