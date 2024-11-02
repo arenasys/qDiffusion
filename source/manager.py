@@ -37,7 +37,7 @@ class OutputWriter(threading.Thread):
         m = PIL.PngImagePlugin.PngInfo()
         if metadata:
             for key, value in metadata.items():
-                m.add_text(key, value)
+                m.add_text(key, str(value))
 
         self.img = img.copy()
         self.metadata = m
@@ -155,6 +155,9 @@ class RequestManager(QObject):
             del request["folder"]
 
         id = self.gui.makeRequest(request)
+
+        if False:
+            self.doSaveRequest(request, id)
 
         self.folders[id] = folder or request["type"]
         self.filenames[id] = filename if folder else ""
@@ -493,8 +496,31 @@ class RequestManager(QObject):
         else:
             self.normalResult(id, self.mapping[id], name)
 
-    def doSave(self, image, metadata, folder):
-        formatted = {"parameters": parameters.formatParameters(metadata)}
+    def doSaveRequest(self, request, id = None):
+        data = request["data"]
+        for k in ["image", "mask", "cn_image", "area"]:
+            metadata = {"id": id, "type": k}
+
+            for p in ["width", "height"]:
+                metadata[p] = data.get(p, None)
+
+            if k == "mask":
+                for p in ["mask_blur", "mask_expand", "padding"]:
+                    metadata[p] = data.get(p, None)
+            
+            if "strength" in data:
+                metadata["strength"] = data["strength"]
+            
+            for i in range(len(data.get(k, []))):
+                metadata["idx"] = i
+                image = decodeImage(data[k][i])
+                writer = OutputWriter(image, metadata, os.path.join(self.gui.outputDirectory(), "_requests"))
+                writer.signals.done.connect(self.onSave)
+                self.writers[writer.file] = writer
+                writer.start()
+
+    def doSave(self, image, metadata, folder, id = None):
+        formatted = {"parameters": parameters.formatParameters(metadata), "id": id}
         if recipe := parameters.formatRecipe(metadata):
             formatted["recipe"] = recipe
 
@@ -536,7 +562,7 @@ class RequestManager(QObject):
                 meta = metadata[i] if metadata else None
 
                 folder = self.folders.get(id, "monitor")
-                file = self.doSave(result, meta, folder)
+                file = self.doSave(result, meta, folder, id)
 
                 self.result.emit(out, result, meta, file)
 
@@ -656,11 +682,11 @@ class RequestManager(QObject):
 
             if self.grid_save_all:
                 folder = self.folders.get(self.grid_id, "grid")
-                file = self.doSave(image, metadata[0], folder)
+                file = self.doSave(image, metadata[0], folder, id)
 
             if idx+1 == cx*cy:
                 folder = self.folders.get(self.grid_id, "grid")
-                file = self.doSave(self.grid_image, self.grid_metadata, folder)
+                file = self.doSave(self.grid_image, self.grid_metadata, folder, id)
                 self.result.emit(out, self.grid_image, self.grid_metadata, file)
                 self.finished.emit()
         elif name == "temporary" and idx+1 == cx*cy:

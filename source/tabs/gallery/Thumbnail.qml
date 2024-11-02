@@ -73,21 +73,31 @@ Item {
 
     Rectangle {
         anchors.fill: overlay
-        anchors.margins: -2
+        anchors.margins: -1
         color: "transparent"
         border.color: "black"
-        border.width: thumb.border
+        border.width: selected || multiSelected ? 1 : 0
         visible: img.status == Image.Ready
     }
 
     Rectangle {
         anchors.fill:overlay
-        anchors.margins: -2
+        anchors.margins: 0
         color: "transparent"
-        border.color: "white"
-        border.width: thumb.border/2
+        border.color: "#cc2f00"
+        border.width: selected || multiSelected ? 2 : 0
         visible: img.status == Image.Ready
     }
+
+    Rectangle {
+        anchors.fill:overlay
+        anchors.margins: 2
+        color: "transparent"
+        border.color: "black"
+        border.width: selected || multiSelected ? 1 : 0
+        visible: img.status == Image.Ready
+    }
+
 
     Rectangle {
         id: overlay

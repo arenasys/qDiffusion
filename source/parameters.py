@@ -55,6 +55,9 @@ SETTABLE = [
 ]
 
 def formatParameters(json):
+    if json == None:
+        return ""
+    
     json = copy.deepcopy(json)
 
     formatted = ""
@@ -130,6 +133,9 @@ def getParameters(img):
     return params
 
 def formatRecipe(metadata):
+    if metadata == None:
+        return ""
+
     checkpoint_recipe = metadata.get("merge_checkpoint_recipe","")
     lora_recipe = metadata.get("merge_lora_recipe","")
     lora_strength = metadata.get("merge_lora_strength","")
