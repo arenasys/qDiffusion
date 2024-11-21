@@ -813,20 +813,23 @@ class Parameters(QObject):
                 }
             
             if p._name == "sampler":
-                if p._value.endswith(" Karras"):
-                    sampler = p._value.rsplit(" ",1)[0]
-                    schedule = "Karras"
-                elif p._value.endswith(" Exponential"):
-                    sampler = p._value.rsplit(" ",1)[0]
-                    schedule = "Exponential"  
+                if p._value in self._values._map["true_samplers"]:
+                    if p._value.endswith(" Karras"):
+                        sampler = p._value.rsplit(" ",1)[0]
+                        schedule = "Karras"
+                    elif p._value.endswith(" Exponential"):
+                        sampler = p._value.rsplit(" ",1)[0]
+                        schedule = "Exponential"  
+                    else:
+                        sampler = p._value
+                        schedule = "Linear"
+
+                    entries = {
+                        "sampler": (sampler, p._checked),
+                        "schedule": (schedule, p._checked)
+                    }
                 else:
-                    sampler = p._value
-                    schedule = "Linear"
-                
-                entries = {
-                    "sampler": (sampler, p._checked),
-                    "schedule": (schedule, p._checked)
-                }
+                    del entries[p._name]
             
             if p._name == "model":
                 entries = {
