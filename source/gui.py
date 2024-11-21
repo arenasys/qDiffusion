@@ -931,3 +931,6 @@ class GUI(QObject):
     def setDebugMode(self, mode):
         self._config._values.set("debug_mode", mode)
         self.statusUpdated.emit()
+
+    def getBasicTab(self):
+        return [t for t in self.tabs if t.name == "Generate"][0]

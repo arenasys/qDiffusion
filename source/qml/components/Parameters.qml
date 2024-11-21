@@ -622,6 +622,26 @@ Item {
                         }
                     }
 
+                    OChoice {
+                        id: zsnrInput
+                        visible: root.advanced || predictionInput.value == "V"
+                        label: root.tr("ZSNR")
+                        width: parent.width
+                        height: 30
+
+                        bindMap: root.binding.values
+                        bindKeyCurrent: "zsnr_mode"
+                        bindKeyModel: "zsnr_modes"
+
+                        function display(text) {
+                            return root.tr(text, "Options")
+                        }
+                        
+                        onSelected: {
+                            BASIC.saveDefaults()
+                        }
+                    }
+
                     OSlider {
                         label: root.tr("CLIP Skip")
                         width: parent.width

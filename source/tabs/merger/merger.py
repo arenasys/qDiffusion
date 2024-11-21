@@ -328,7 +328,7 @@ class Merger(QObject):
         self._parameters.updated.connect(self.parametersUpdated)
 
     def getGenerateParameters(self):
-        basic = [t for t in self.gui.tabs if t.name == "Generate"][0]
+        basic = self.gui.getBasicTab()
         return basic._parameters
 
     @pyqtProperty(VariantMap, notify=updated)

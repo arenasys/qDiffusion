@@ -209,7 +209,7 @@ class Trainer(QObject):
         self.statusChanged.emit()
 
     def getGenerateParameters(self):
-        basic = [t for t in self.gui.tabs if t.name == "Generate"][0]
+        basic = self.gui.getBasicTab()
         return basic._parameters
     
     @pyqtSlot()

@@ -825,6 +825,6 @@ class Basic(QObject):
         model = self._parameters._values.get("model")
         model_name = self.gui.modelName(model)
         defaults = {}
-        for k in ["model_mode", "prediction_type", "cfg_rescale", "clip_skip"]:
+        for k in ["model_mode", "prediction_type", "cfg_rescale", "clip_skip", "zsnr_mode"]:
             defaults[k] = self._parameters._values.get(k)
         self.gui.setDefaults(model_name, defaults)

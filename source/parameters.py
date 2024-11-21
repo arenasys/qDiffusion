@@ -361,7 +361,7 @@ class Parameters(QObject):
             "models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "SR", "LoRAs", "LoRA", "TIs", "TI", "CN", "CNs", "hr_upscalers", "img2img_upscalers", 
             "attentions", "device", "devices", "batch_count", "prompt", "negative_prompt", "vram_usages", "artifact_modes", "preview_modes", "schedules",
             "CN_modes", "CN_preprocessors", "vram_modes", "true_samplers", "schedule", "network_modes", "model", "output_folder", "mask_fill_modes", "autocast_modes",
-            "prediction_types", "tiling_modes", "precisions", "fetching_modes", "model_modes", "Refiners", "model_types", "Detailers", "Detailer"
+            "prediction_types", "zsnr_modes", "tiling_modes", "precisions", "fetching_modes", "model_modes", "Refiners", "model_types", "Detailers", "Detailer"
         ]
 
         self._adv_only = [
@@ -380,7 +380,7 @@ class Parameters(QObject):
             "tome_ratio": 0.0, "hr_model": "", "cfg_rescale": 0.0, "output_folder": "", "autocast": "Disabled", "autocast_modes": ["Disabled", "Enabled"],
             "CN_modes": ["Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD", "Instruct", "Shuffle", "Inpaint", "Scribble", "Normal", "Tile", "QR", "Anyline"],#, "Segmentation"]
             "CN_preprocessors": ["None", "Invert", "Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD", "Shuffle", "Scribble", "Normal", "Anyline"],
-            "prediction_type": "Default", "prediction_types": ["Default", "Epsilon", "V"], "tiling_mode": "Disabled", "tiling_modes": ["Disabled", "Enabled"],
+            "prediction_type": "Default", "prediction_types": ["Default", "Epsilon", "V"], "zsnr_mode": "Disabled", "zsnr_modes": ["Disabled", "Enabled"], "tiling_mode": "Disabled", "tiling_modes": ["Disabled", "Enabled"],
             "precisions": ["FP16", "FP32"], "vae_precision": "FP16", "precision": "FP16", "fetching_mode": "Dont Wait", "fetching_modes": ["Wait", "Dont Wait"],
             "model_mode": "Standard", "model_modes": ["Standard", "Refiner"], "Refiner": "", "Refiners": [], "model_types": {}, "Detailers": [], "Detailer": ""
         }
@@ -567,6 +567,7 @@ class Parameters(QObject):
             self._values.set("UNET", model)
             self._values.set("VAE", model)
             self._values.set("CLIP", model)
+            self.gui.getBasicTab().applyDefaults()
 
         self._availableNetworks = self._values.get("LoRAs")
         self._activeNetworks = [n for n in self._activeNetworks if n in self._availableNetworks]
@@ -640,7 +641,7 @@ class Parameters(QObject):
         
         if request["type"] == "txt2img" and self._activeDetailers:
             data["detailers"] = self._activeDetailers
-            basic = [t for t in self.gui.tabs if t.name == "Generate"][0]
+            basic = self.gui.getBasicTab()
             data["detailer_parameters"] = [
                 basic.detailers.getSettings(d) for d in self._activeDetailers
             ]
