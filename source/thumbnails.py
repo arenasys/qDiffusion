@@ -15,7 +15,7 @@ import sql
 def get_thumbnail(file, size, quality):
     blob = io.BytesIO()
     image = PIL.Image.open(file).convert('RGB')
-    image.thumbnail(size, PIL.Image.ANTIALIAS)
+    image.thumbnail(size, PIL.Image.Resampling.LANCZOS)
     image.save(blob, "JPEG", quality=quality)
     return blob.getvalue()
 

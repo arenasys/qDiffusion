@@ -1,4 +1,4 @@
-Pillow==9.5.0
+Pillow>=9.5.0
 websockets==11.0.3
 bson==0.5.10
 Send2Trash==1.8.2

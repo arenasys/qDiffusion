@@ -304,7 +304,7 @@ class Coordinator(QObject):
     
     def clearCache(self):
         # if the cache is ours then clear it
-        if os.environ["PIP_CACHE_DIR"] == self.venv_cache:
+        if os.environ.get("PIP_CACHE_DIR") == self.venv_cache:
             shutil.rmtree(self.venv_cache, ignore_errors=True)
 
     @pyqtProperty(bool, notify=updated)
