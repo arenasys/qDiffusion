@@ -396,6 +396,9 @@ class Parameters(QObject):
         self._activeDetailers = []
         self._active = []
 
+        if source:
+            self._activeDetailers = source._activeDetailers
+
     def resolution(self):
         w, h = self.values.get("width"), self.values.get("height")
         if self.gui.config.get("always_hr_resolution", True):
