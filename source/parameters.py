@@ -373,7 +373,7 @@ class Parameters(QObject):
             "hr_factor": 1.0, "hr_strength":  0.7, "hr_sampler": "Euler a", "hr_steps": 25, "hr_scale": 7.0, "clip_skip": 1, "batch_size": 1, "padding": -1, "mask_blur": 4, "mask_expand": 0, "subseed":-1, "subseed_strength": 0.0,
             "sampler": "Euler a", "samplers":[], "hr_upscaler":"Lanczos", "hr_upscalers":[], "img2img_upscaler":"Lanczos", "img2img_upscalers":[],
             "model":"", "models":[], "UNET":"", "UNETs":[], "CLIP":"", "CLIPs":[], "VAE":"", "VAEs":[], "LoRA":[], "LoRAs":[], "SR":[], "SRs":[], "TI":"", "TIs":[],
-            "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "schedule": "Linear", "schedules": ["Linear", "Karras", "Exponential"],
+            "attention":"", "attentions":[], "device":"", "devices":[], "batch_count": 1, "schedule": "Linear", "schedules": ["Linear", "Karras", "Exponential", "Uniform"],
             "vram_mode": "Default", "vram_modes": ["Default", "Minimal"], "artifact_mode": "Disabled", "artifact_modes": ["Disabled", "Enabled"], "preview_mode": "Light",
             "preview_modes": ["Disabled", "Light", "Medium", "Full"], "preview_interval":1, "true_samplers": [], "true_sampler": "Euler a",
             "network_mode": "Static", "network_modes": ["Dynamic", "Static"], "mask_fill": "Original", "mask_fill_modes": ["Original", "Noise"],
@@ -498,7 +498,7 @@ class Parameters(QObject):
 
         if key == "sampler":
             sampler = self._values.get("sampler")
-            schedules = ["Linear", "Karras", "Exponential"]
+            schedules = ["Linear", "Karras", "Exponential", "Uniform"]
             default_scheduler = "Linear"
 
             if sampler in {"DDIM", "PLMS"}:
@@ -604,7 +604,7 @@ class Parameters(QObject):
                 self._values.set(key, 5)
 
         self._values.set("true_samplers", self._values.get("samplers"))
-        self._values.set("samplers", [s for s in self._values.get("samplers") if not "Karras" in s and not "Exponential" in s])
+        self._values.set("samplers", [s for s in self._values.get("samplers") if not "Karras" in s and not "Exponential" in s and not "Uniform" in s])
 
         self.updated.emit()
 
@@ -822,7 +822,10 @@ class Parameters(QObject):
                         schedule = "Karras"
                     elif p._value.endswith(" Exponential"):
                         sampler = p._value.rsplit(" ",1)[0]
-                        schedule = "Exponential"  
+                        schedule = "Exponential"
+                    elif p._value.endswith(" Uniform"):
+                        sampler = p._value.rsplit(" ",1)[0]
+                        schedule = "Uniform"
                     else:
                         sampler = p._value
                         schedule = "Linear"
