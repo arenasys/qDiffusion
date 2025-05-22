@@ -201,6 +201,7 @@ Item {
                     property var couldHR: typ.startsWith("Txt2Img");
                     property var isImg: typ == "Img2Img" || typ == "Inpainting" || typ == "Upscaling" || typ.endsWith("Detail");
                     property var isInp: typ == "Inpainting" || typ.endsWith("Detail");
+                    property var isCFGPP: samplerColumn.sampler.endsWith("CFG++")
 
                     property var maxSize: 1024
                     function updateMaxSize() {
@@ -391,10 +392,11 @@ Item {
                         bindKey: "scale"
 
                         minValue: 1
-                        maxValue: 20
-                        precValue: 1
-                        incValue: 1
-                        snapValue: 0.5
+                        maxValue: optColumn.isCFGPP ? 4 : 20
+                        precValue: optColumn.isCFGPP ? 2 : 1
+                        incValue: optColumn.isCFGPP ? 0.05 : 1
+                        snapValue: optColumn.isCFGPP ? 0.05 : 0.5
+
                         bounded: false
                     }
                     OTextInput {
