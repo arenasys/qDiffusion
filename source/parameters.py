@@ -361,7 +361,7 @@ class Parameters(QObject):
             "models", "samplers", "UNETs", "CLIPs", "VAEs", "SRs", "SR", "LoRAs", "LoRA", "TIs", "TI", "CN", "CNs", "hr_upscalers", "img2img_upscalers", 
             "attentions", "device", "devices", "batch_count", "prompt", "negative_prompt", "vram_usages", "artifact_modes", "preview_modes", "schedules",
             "CN_modes", "CN_preprocessors", "vram_modes", "true_samplers", "schedule", "network_modes", "model", "output_folder", "mask_fill_modes", "autocast_modes",
-            "prediction_types", "zsnr_modes", "tiling_modes", "precisions", "fetching_modes", "model_modes", "Refiners", "model_types", "Detailers", "Detailer"
+            "prediction_types", "zsnr_modes", "tiling_modes", "precisions", "fetching_modes", "model_modes", "Refiners", "model_metadata", "Detailers", "Detailer"
         ]
 
         self._adv_only = [
@@ -382,7 +382,7 @@ class Parameters(QObject):
             "CN_preprocessors": ["None", "Invert", "Canny", "Depth", "Pose", "Lineart", "Softedge", "Anime", "M-LSD", "Shuffle", "Scribble", "Normal", "Anyline"],
             "prediction_type": "Default", "prediction_types": ["Default", "Epsilon", "V"], "zsnr_mode": "Disabled", "zsnr_modes": ["Disabled", "Enabled"], "tiling_mode": "Disabled", "tiling_modes": ["Disabled", "Enabled"],
             "precisions": ["FP16", "FP32"], "vae_precision": "FP16", "precision": "FP16", "fetching_mode": "Dont Wait", "fetching_modes": ["Wait", "Dont Wait"],
-            "model_mode": "Standard", "model_modes": ["Standard", "Refiner"], "Refiner": "", "Refiners": [], "model_types": {}, "Detailers": [], "Detailer": ""
+            "model_mode": "Standard", "model_modes": ["Standard", "Refiner"], "Refiner": "", "Refiners": [], "model_metadata": {}, "Detailers": [], "Detailer": ""
         }
 
         if source:
@@ -541,7 +541,7 @@ class Parameters(QObject):
                 models += [k]
         self._values.set("models", models)
 
-        self._values.set("model_types", self.gui._options.get("model_types", {}))
+        self._values.set("model_metadata", self.gui._options.get("model_metadata", {}))
 
         unets = self._values.get("UNETs")
         unets = [u for u in unets if not u in models] + [u for u in unets if u in models]
