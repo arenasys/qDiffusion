@@ -1481,13 +1481,15 @@ class DictModel(QObject):
         return self._markers
     
     def setMarkers(self, markers):
+        if not markers:
+            markers = [-1]
+        
         if(self._markers == markers):
             return
+
         self._markers = markers
         self.updated.emit()
 
-
-ORDERED_DECODER = json.JSONDecoder(object_pairs_hook=collections.OrderedDict)
 class InspectorManager(QObject):
     openingInspector = pyqtSignal()
     updated = pyqtSignal()
@@ -1514,7 +1516,7 @@ class InspectorManager(QObject):
 
     @pyqtSlot(str)
     def search(self, text):
-        if text == self._search:
+        if text == self._search and self._results:
             self._current_result = (self._current_result + 1) % len(self._results)
             self.jumpUpdated.emit()
             return
