@@ -190,8 +190,6 @@ class Populater(QObject):
 
         for idx, name in enumerate(o["LoRA"]):
             category = tp.get(name, "?")
-
-
             self.setModel(name, "lora", category, "lora", idx)
         self.finishCategory("lora", len(o["LoRA"]))
 
@@ -275,11 +273,16 @@ class Explorer(QObject):
         self.optionsRunning = False
         self.optionsOutdated = False
 
+
+        self._metadata = {}
+        self._inspector = misc.InspectorManager(self)
+
         qmlRegisterSingletonType(Explorer, "gui", 1, 0, "EXPLORER", lambda qml, js: self)
 
         self.gui.optionsUpdated.connect(self.optionsUpdated)
         self.gui.favUpdated.connect(self.favouritesUpdated)
         self.gui.aboutToQuit.connect(self.stop)
+        self.gui.response.connect(self.onResponse)
 
         self.conn = sql.Connection(self)
         self.conn.connect()
@@ -468,3 +471,22 @@ class Explorer(QObject):
     def showInfo(self, showInfo):
         self._showInfo = showInfo
         self.updated.emit()
+
+    @pyqtProperty(misc.InspectorManager, notify=updated)
+    def inspector(self):
+        return self._inspector
+    
+    def getMetadata(self, name):
+        request = {"type":"metadata", "data": {"model": name}}
+        self.gui.makeRequest(request)
+
+    @pyqtSlot(int, object)
+    def onResponse(self, id, response):
+        type = response.get("type", "")
+        data = response.get("data", {})
+        if type == "metadata":
+            model = data.get("model", "")
+            data = data.get("metadata", {})
+            self._metadata[model] = data
+            self._inspector.gotMetadata()
+            self.gui.setReady()

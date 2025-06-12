@@ -5,6 +5,11 @@ import math
 import platform
 import subprocess
 import time
+import json
+import copy
+import random
+import collections
+
 IS_WIN = platform.system() == 'Windows'
 
 #NOTE: imported by launcher
@@ -1409,6 +1414,203 @@ class GridManager(QObject):
         suggestions.setSource("Keyword")
         highlighter.setMode("Keyword")
 
+
+class DictModel(QObject):
+    updated = pyqtSignal()
+    def __init__(self, data, parent=None):
+        super().__init__(parent)
+
+        self._data = copy.deepcopy(data)
+        self._children = {}
+        self._markers = []
+
+    @pyqtProperty(int, notify=updated)
+    def count(self):
+        return len(self._data)
+    
+    @pyqtSlot(str, result=int)
+    def leaves(self, key):
+        if self.isLeaf(key):
+            return 1
+        c = 0
+        def lc(d):
+            nonlocal c
+            for v in d.values():
+                if isinstance(v, dict) and v:
+                    lc(v)
+                else:
+                    c += 1
+        lc(self._data.get(key, {}))
+        return c
+    
+    @pyqtProperty(int, notify=updated)
+    def width(self):
+        if not self._data:
+            return 0
+        return max([len(k) for k in self._data.keys()])
+    
+    @pyqtProperty(list)
+    def keys(self):
+        k = sorted(list(self._data.keys()))
+        return k
+
+    @pyqtSlot(str, result=bool)
+    def isLeaf(self, key):
+        v = self._data.get(key, None)
+        return not isinstance(v, dict) or not v
+
+    @pyqtSlot(str, result=str)
+    def getLeaf(self, key):
+        if not self.isLeaf(key):
+            return ""
+        l = self._data.get(key, None)
+        return str(l)
+    
+    @pyqtSlot(str, result='QVariant')
+    def getDict(self, key):
+        if self.isLeaf(key):
+            return None
+        
+        if not key in self._children:
+            self._children[key] = DictModel(self._data.get(key, {}), self)
+        
+        return self._children[key]
+    
+    @pyqtProperty(list, notify=updated)
+    def markers(self):
+        return self._markers
+    
+    def setMarkers(self, markers):
+        if(self._markers == markers):
+            return
+        self._markers = markers
+        self.updated.emit()
+
+
+ORDERED_DECODER = json.JSONDecoder(object_pairs_hook=collections.OrderedDict)
+class InspectorManager(QObject):
+    openingInspector = pyqtSignal()
+    updated = pyqtSignal()
+    jumpUpdated = pyqtSignal()
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.explorer = parent
+        self.gui = parent.gui
+        self._model = DictModel({}, self)
+        self._current = ""
+        self._loading = False
+
+        self._search = ""
+        self._results = []
+        self._current_result = 0
+
+    @pyqtSlot(str)
+    def openInspector(self, name):
+        self._current = name
+        self.syncModel()
+        self.updated.emit()
+        self.openingInspector.emit()
+
+    @pyqtSlot(str)
+    def search(self, text):
+        if text == self._search:
+            self._current_result = (self._current_result + 1) % len(self._results)
+            self.jumpUpdated.emit()
+            return
+        index = []
+        i = 0
+        def s(m):
+            nonlocal index, i
+            markers = []
+            if text:
+                t = text.lower()
+                for k in m.keys:
+                    if t in k.lower():
+                        markers.append(k)
+                        index.append(i)
+                    
+                    if m.isLeaf(k):
+                        if t in m.getLeaf(k).lower():
+                            markers.append(k)
+                            index.append(i)
+                        i += 1
+                    else:
+                        d = m.getDict(k)
+                        s(d)
+
+            m.setMarkers(markers)
+    
+        s(self._model)
+
+        self._search = text
+        self._results = index
+        self._current_result = 0
+        self.jumpUpdated.emit()
+
+    def syncModel(self):
+        def parse(m):
+            if isinstance(m, list):
+                m = {str(i):v for i,v in enumerate(m)}    
+            if isinstance(m, dict):
+                for k in list(m.keys()):
+                    if isinstance(m[k], str) and (m[k].startswith("{") or m[k].startswith("[")):
+                        try:
+                            m[k] = json.loads(m[k])
+                        except:
+                            pass
+                    m[k] = parse(m[k])
+            return m
+        
+        if not self._current in self.explorer._metadata:
+            self.explorer.getMetadata(self._current)
+            self._loading = True
+        else:
+            self._loading = False
+
+        metadata = self.explorer._metadata.get(self._current, {})
+
+        metadata = parse(metadata)
+        self._model = DictModel(metadata, self)
+    
+    def gotMetadata(self):
+        self.syncModel()
+        self.updated.emit()
+    
+    @pyqtProperty(DictModel, notify=updated)
+    def model(self):
+        return self._model
+    
+    @pyqtProperty(str, notify=updated)
+    def current(self):
+        if not self._current:
+            return ""
+        return self.gui.modelName(self._current)
+
+    @pyqtSlot()
+    def copy(self):
+        try:
+            data = json.dumps(self.explorer._metadata.get(self._current, {}), indent=4, ensure_ascii=False, sort_keys=True)
+            self.gui.copyText(data)
+        except:
+            pass
+        
+    @pyqtProperty(bool, notify=updated)
+    def isLoading(self):
+        return self._loading
+
+    @pyqtProperty(bool, notify=updated)
+    def isEmpty(self):
+        if self._current in self.explorer._metadata:
+            if not self.explorer._metadata[self._current]:
+                return True
+        return False
+    
+    @pyqtProperty(int, notify=jumpUpdated)
+    def jump(self):
+        if not self._results:
+            return 0
+        return self._results[self._current_result]
 class Signaller(QThread):
     signal = pyqtSignal(str)
     
@@ -1499,3 +1701,5 @@ def registerTypes():
     qmlRegisterUncreatableType(SuggestionManager, "gui", 1, 0, "SuggestionManager", "Not a QML type")
     qmlRegisterUncreatableType(SyntaxManager, "gui", 1, 0, "SyntaxManager", "Not a QML type")
     qmlRegisterUncreatableType(GridManager, "gui", 1, 0, "GridManager", "Not a QML type")
+    qmlRegisterUncreatableType(InspectorManager, "gui", 1, 0, "InspectorManager", "Not a QML type")
+    qmlRegisterUncreatableType(DictModel, "gui", 1, 0, "DictModel", "Not a QML type")

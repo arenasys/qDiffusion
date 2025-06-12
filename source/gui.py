@@ -743,7 +743,8 @@ class GUI(QObject):
     
     @pyqtSlot(str, result=str)
     def netType(self, name):
-        return self._options["model_metadata"].get(name, {}).get("type", "Unknown")
+        model_types = self._options["model_types"]
+        return model_types.get(name, "Unknown")
     
     @pyqtSlot(str)
     def visitFolder(self, folder):

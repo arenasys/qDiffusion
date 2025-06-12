@@ -430,6 +430,14 @@ Item {
                 }
             }
 
+            SContextMenuItem {
+                visible: sql_type != "wildcard"
+                text: root.tr("Inspect", "General")
+                onPressed: {
+                    EXPLORER.inspector.openInspector(sql_name)
+                }
+            }
+
             SContextMenuSeparator {}
 
             SContextMenuItem {

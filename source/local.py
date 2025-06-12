@@ -101,8 +101,12 @@ class InferenceProcessThread(threading.Thread):
                 elif request["type"] == "train_lora":
                     self.wrapper.set(**request["data"])
                     self.wrapper.train_lora()
+                elif request["type"] == "metadata":
+                    self.wrapper.set(**request["data"])
+                    self.wrapper.metadata()
                 elif request["type"] == "download":
                     self.do_download(request["data"], self.wrapper.storage.path, self.current, self.onResponse)
+
                 self.requests.task_done()
             except queue.Empty:
                 pass

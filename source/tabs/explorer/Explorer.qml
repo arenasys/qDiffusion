@@ -168,6 +168,23 @@ Item {
                     deleteDialog.show(model)
                 }
             }
+
+            Item {
+                id: dialogContainer
+                anchors.fill: parent
+
+                InspectorDialog {
+                    id: inspectorDialog
+                    source: EXPLORER.inspector
+                }
+
+                Connections {
+                    target: EXPLORER.inspector
+                    function onOpeningInspector() {
+                        inspectorDialog.open()
+                    }
+                }
+            }
         }
     }
 
