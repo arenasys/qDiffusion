@@ -152,7 +152,10 @@ class Settings(QObject):
 
         server_dir = os.path.join("source","sd-inference-server")
         if os.path.exists(server_dir):
-            commit, label = git.git_last(server_dir)
+            try:
+                commit, label = git.git_last(server_dir)
+            except:
+                pass
             if commit:
                 if self._currentGitServerInfo == None:
                     self._currentGitServerInfo = commit

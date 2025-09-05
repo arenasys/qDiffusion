@@ -128,7 +128,8 @@ def check(dependancies, enforce_version=True):
     for d in dependancies:
         try:
             pkg_resources.require(d)
-        except pkg_resources.DistributionNotFound:
+        except pkg_resources.DistributionNotFound as e:
+            #print("MISSING", d, e)
             needed += [d]
         except pkg_resources.VersionConflict as e:
             if enforce_version:
@@ -140,6 +141,7 @@ def check(dependancies, enforce_version=True):
 
 class Installer(QThread):
     output = pyqtSignal(str)
+    updated = pyqtSignal()
     installing = pyqtSignal(str)
     installed = pyqtSignal(str)
     def __init__(self, parent, packages):
@@ -147,6 +149,8 @@ class Installer(QThread):
         self.packages = packages
         self.proc = None
         self.stopping = False
+        self.downloading = False
+        self.download_progress = 1.0
 
     def run(self):
         for p in self.packages:
@@ -155,6 +159,8 @@ class Installer(QThread):
             pkg = p.split("=",1)[0]
             if pkg in {"torch", "torchvision"}:
                 args = ["pip", "install", "-U", p, "--index-url", "https://download.pytorch.org/whl/" + p.rsplit("+",1)[-1]]
+            args += ["--progress-bar", "off" if pkg == "pip" else "raw"]
+        
             args = [sys.executable.replace("pythonw", "python"), "-m"] + args
 
             startupinfo = None
@@ -169,8 +175,16 @@ class Installer(QThread):
                 while line := self.proc.stdout.readline():
                     if line:
                         line = line.strip()
-                        output += line + "\n"
-                        self.output.emit(line)
+                        if line.startswith("Progress"):
+                            _, current, _, total = line.split(" ")
+                            if total:
+                                self.download_progress = float(current)/float(total)
+                                self.downloading = self.download_progress < 1.0
+
+                                self.updated.emit()
+                        else:
+                            output += line + "\n"
+                            self.output.emit(line)
                     if self.stopping:
                         return
             if self.stopping:
@@ -398,7 +412,8 @@ class Coordinator(QObject):
         self.installer = Installer(self, packages)
         self.installer.installed.connect(self.onInstalled)
         self.installer.installing.connect(self.onInstalling)
-        self.installer.output.connect(self.onOutput)
+        self.installer.output.connect(self.onOutput)    
+        self.installer.updated.connect(self.onInstallUpdate)
         self.installer.finished.connect(self.doneInstalling)
         self.app.aboutToQuit.connect(self.installer.stop)
         self.cancel.connect(self.installer.stop)
@@ -418,6 +433,16 @@ class Coordinator(QObject):
     @pyqtSlot(str)
     def onOutput(self, out):
         self.output.emit(out)
+
+    @pyqtProperty(float, notify=installedUpdated)
+    def progress(self):
+        if self.installer and self.installer.downloading:
+            return self.installer.download_progress
+        return -1.0
+
+    @pyqtSlot()
+    def onInstallUpdate(self):
+        self.installedUpdated.emit()
     
     @pyqtSlot()
     def doneInstalling(self):

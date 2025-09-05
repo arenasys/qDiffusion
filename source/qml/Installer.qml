@@ -104,10 +104,24 @@ FocusReleaser {
                                 visible: COORDINATOR.installed.includes(modelData)
                             }
 
+
+                            SProgress {
+                                anchors.fill: parent
+                                working: COORDINATOR.progress == -1
+                                progress: COORDINATOR.progress
+                                color: "yellow"
+                                count: Math.ceil(width/60)
+                                duration: width * 8
+                                clip: true
+                                barWidth: 30
+                                opacity: 0.1
+                                visible: COORDINATOR.installing == modelData
+                            }
+
                             Rectangle {
                                 color: "yellow"
                                 anchors.fill: parent
-                                opacity: 0.1
+                                opacity: 0.05
                                 visible: COORDINATOR.installing == modelData
                                 onVisibleChanged: {
                                     if(visible) {
