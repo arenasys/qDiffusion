@@ -11,8 +11,8 @@ import string
 import platform
 IS_WIN = platform.system() == 'Windows'
 
-from PyQt5.QtCore import pyqtSlot, pyqtSignal, QThread
-from PyQt5.QtWidgets import QApplication
+from PySide6.QtCore import Slot as pyqtSlot, Signal as pyqtSignal, QThread
+from PySide6.QtWidgets import QApplication
 
 import remote
 

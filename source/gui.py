@@ -9,13 +9,13 @@ import platform
 import urllib.parse
 IS_WIN = platform.system() == 'Windows'
 
-from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent, QMimeData, QUrl, QSize, QThreadPool
-from PyQt5.QtQuick import QQuickItem, QQuickPaintedItem
-from PyQt5.QtGui import QImage, QColor, QDrag, QDesktopServices
-from PyQt5.QtQml import qmlRegisterType
-from PyQt5.QtWidgets import QApplication
+from PySide6.QtCore import Slot as pyqtSlot, Property as pyqtProperty, Signal as pyqtSignal, QObject, Qt, QEvent, QMimeData, QUrl, QSize, QThreadPool
+from PySide6.QtQuick import QQuickItem, QQuickPaintedItem
+from PySide6.QtGui import QImage, QColor, QDrag, QDesktopServices
+from PySide6.QtQml import qmlRegisterType
+from PySide6.QtWidgets import QApplication
 
-from PyQt5.QtQuick import QQuickTextDocument
+from PySide6.QtQuick import QQuickTextDocument
 from enum import Enum
 
 import sql

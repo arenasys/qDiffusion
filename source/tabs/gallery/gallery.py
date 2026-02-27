@@ -4,11 +4,11 @@ import os
 import send2trash
 import glob
 
-from PyQt5.QtCore import pyqtSlot, pyqtSignal, pyqtProperty, QObject, QThread, QUrl, QMimeData, Qt
-from PyQt5.QtSql import QSqlQuery
-from PyQt5.QtQml import qmlRegisterSingletonType
-from PyQt5.QtGui import QDesktopServices
-from PyQt5.QtWidgets import QApplication
+from PySide6.QtCore import Slot as pyqtSlot, Signal as pyqtSignal, Property as pyqtProperty, QObject, QThread, QUrl, QMimeData, Qt
+from PySide6.QtSql import QSqlQuery
+from PySide6.QtQml import qmlRegisterSingletonType
+from PySide6.QtGui import QDesktopServices
+from PySide6.QtWidgets import QApplication
 import sql
 import filesystem
 import parameters

@@ -1,7 +1,7 @@
-from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, QObject, Qt, QPointF, QPoint, QSize, QRectF, QTimer, QByteArray, QBuffer, QIODevice, QMimeData
-from PyQt5.QtQuick import QQuickFramebufferObject
-from PyQt5.QtGui import QColor, QPainter, QImage, QGuiApplication, QDrag, QPixmap
-from PyQt5.QtQml import qmlRegisterType, qmlRegisterUncreatableType
+from PySide6.QtCore import Property as pyqtProperty, Slot as pyqtSlot, Signal as pyqtSignal, QObject, Qt, QPointF, QPoint, QSize, QRectF, QTimer, QByteArray, QBuffer, QIODevice, QMimeData
+from PySide6.QtQuick import QQuickFramebufferObject
+from PySide6.QtGui import QColor, QPainter, QImage, QGuiApplication, QDrag, QPixmap
+from PySide6.QtQml import qmlRegisterType, qmlRegisterUncreatableType
 import math
 
 from canvas.renderer import *

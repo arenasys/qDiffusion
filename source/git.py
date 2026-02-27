@@ -2,9 +2,20 @@ import os
 import time
 import pygit2
 
-QDIFF_URL = "https://github.com/arenasys/qDiffusion"
-INFER_URL = "https://github.com/arenasys/sd-inference-server"
+QDIFF_URL = "https://github.com/stromtroopertk421/qDiffusion_Updateproject"
+INFER_URL = "https://github.com/stromtroopertk421/sd-inference-server"
 TRAIN_URL = "https://github.com/arenasys/sd-scripts"
+
+DEFAULT_BRANCHES = ("master", "main")
+
+
+def git_remote_head(repo):
+    for branch in DEFAULT_BRANCHES:
+        name = f"refs/remotes/origin/{branch}"
+        ref = repo.references.get(name)
+        if ref:
+            return ref.raw_target
+    raise KeyError("Could not find origin master/main branch reference")
 
 def git_repair(repo, origin):
     repo.remotes.delete("origin")
@@ -16,10 +27,10 @@ def git_reset(path, origin):
     repo.remotes.set_url("origin", origin)
     repo.remotes["origin"].fetch()
     try:
-        head = repo.lookup_reference("refs/remotes/origin/master").raw_target
+        head = git_remote_head(repo)
     except:
         git_repair(repo, origin)
-        head = repo.lookup_reference("refs/remotes/origin/master").raw_target
+        head = git_remote_head(repo)
     repo.reset(head, pygit2.GIT_RESET_HARD)
 
 def git_last(path):

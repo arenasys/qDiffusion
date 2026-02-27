@@ -3,8 +3,8 @@ import os
 import platform
 IS_WIN = platform.system() == 'Windows'
 
-from PyQt5.QtCore import pyqtProperty, pyqtSignal, QObject, pyqtSlot, QUrl, QThread
-from PyQt5.QtQml import qmlRegisterSingletonType
+from PySide6.QtCore import Property as pyqtProperty, Signal as pyqtSignal, QObject, Slot as pyqtSlot, QUrl, QThread
+from PySide6.QtQml import qmlRegisterSingletonType
 
 from misc import MimeData
 import git

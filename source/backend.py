@@ -6,8 +6,8 @@ import datetime
 import copy
 import os
 
-from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, QThread, Qt
-from PyQt5.QtWidgets import QApplication
+from PySide6.QtCore import Slot as pyqtSlot, Property as pyqtProperty, Signal as pyqtSignal, QObject, QThread, Qt
+from PySide6.QtWidgets import QApplication
 
 import local
 import remote

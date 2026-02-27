@@ -1,5 +1,5 @@
-from PyQt5.QtCore import pyqtSlot, pyqtProperty, QPointF, QSize, QObject
-from PyQt5.QtGui import QImage
+from PySide6.QtCore import Slot as pyqtSlot, Property as pyqtProperty, QPointF, QSize, QObject
+from PySide6.QtGui import QImage
 from enum import Enum
 import io
 import numpy as np

@@ -8,9 +8,9 @@ import re
 import threading
 import enum
 
-from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QSize, QRect, QRectF, QCoreApplication
-from PyQt5.QtGui import QImage, QPainter, QColor, QFont, QTextOption
-from PyQt5.QtQml import qmlRegisterUncreatableType
+from PySide6.QtCore import Slot as pyqtSlot, Property as pyqtProperty, Signal as pyqtSignal, QObject, Qt, QSize, QRect, QRectF, QCoreApplication
+from PySide6.QtGui import QImage, QPainter, QColor, QFont, QTextOption
+from PySide6.QtQml import qmlRegisterUncreatableType
 
 import parameters
 from misc import encodeImage, decodeImage, SuggestionManager

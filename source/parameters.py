@@ -7,8 +7,8 @@ import json
 import PIL.Image
 import PIL.PngImagePlugin
 
-from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QVariant, QSize
-from PyQt5.QtQml import qmlRegisterUncreatableType, qmlRegisterType
+from PySide6.QtCore import Slot as pyqtSlot, Property as pyqtProperty, Signal as pyqtSignal, QObject, Qt, QVariant, QSize
+from PySide6.QtQml import qmlRegisterUncreatableType, qmlRegisterType
 
 IDX = -1
 

@@ -9,8 +9,8 @@ import numpy as np
 from parameters import VariantMap
 from misc import encodeImage
 
-from PyQt5.QtCore import pyqtProperty, pyqtSignal, QObject, pyqtSlot, QUrl, QPointF, QThread
-from PyQt5.QtQml import qmlRegisterSingletonType, qmlRegisterUncreatableType
+from PySide6.QtCore import Property as pyqtProperty, Signal as pyqtSignal, QObject, Slot as pyqtSlot, QUrl, QPointF, QThread
+from PySide6.QtQml import qmlRegisterSingletonType, qmlRegisterUncreatableType
 
 def constant_schedule(current_step, total_steps, warmup):
     warmup_steps = total_steps * warmup

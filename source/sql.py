@@ -4,9 +4,9 @@ from typing import *
 import time
 import threading
 
-from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, Qt, QObject, QThread, QAbstractListModel, QByteArray, QModelIndex, QTimer, QVariant
-from PyQt5.QtSql import QSqlDatabase, QSqlQuery, QSqlDriver
-from PyQt5.QtQml import qmlRegisterType
+from PySide6.QtCore import Property as pyqtProperty, Slot as pyqtSlot, Signal as pyqtSignal, Qt, QObject, QThread, QAbstractListModel, QByteArray, QModelIndex, QTimer, QVariant
+from PySide6.QtSql import QSqlDatabase, QSqlQuery, QSqlDriver
+from PySide6.QtQml import qmlRegisterType
 
 class NotificationDelay(QTimer):
     notification = pyqtSignal(str)

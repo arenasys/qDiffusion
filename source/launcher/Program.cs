@@ -325,8 +325,8 @@ namespace qDiffusion
                 LaunchProgress();
                 progress?.SetLabel("Downloading Python");
 
-                var python_file = "python-3.10.11.tar.gz";
-                var python_url = "https://github.com/arenasys/binaries/releases/download/v1/cpython-3.10.11+20230507-x86_64-pc-windows-msvc-shared-install_only.tar.gz";
+                var python_file = "python-3.14.0.tar.gz";
+                var python_url = "https://github.com/indygreg/python-build-standalone/releases/download/20260112/cpython-3.14.0+20260112-x86_64-pc-windows-msvc-shared-install_only.tar.gz";
                 if(!Download(python_url, python_file))
                 {
                     progress?.DoClose();
@@ -348,7 +348,7 @@ namespace qDiffusion
                 }
             }
 
-            var python = ".\\python\\pythonw.exe";
+            var python = ".\\python\\python.exe";
 
             if (!Directory.Exists("venv"))
             {
@@ -377,38 +377,36 @@ namespace qDiffusion
             // Register qdiffusion:// protocol handler
             RegisterProtocol(exe);
 
-            python = ".\\venv\\Scripts\\pythonw.exe";
+            var pythonCli = ".\\venv\\Scripts\\python.exe";
+            var pythonGui = ".\\venv\\Scripts\\pythonw.exe";
 
             // Set AMD variables
             Environment.SetEnvironmentVariable("HSA_OVERRIDE_GFX_VERSION", "10.3.0");
             Environment.SetEnvironmentVariable("MIOPEN_LOG_LEVEL", "4");
 
-            if (!Directory.Exists("venv\\Lib\\site-packages\\PyQt5"))
+            if (!Directory.Exists("venv\\Lib\\site-packages\\PySide6"))
             {
                 LaunchProgress();
-                progress?.SetLabel("Downloading PyQT5");
+                progress?.SetLabel("Installing PySide6");
                 progress?.SetProgress(0);
 
-                var pyqt_file = "PyQt5-5.15.7-cp37-abi3-win_amd64.whl";
-                var pyqt_url = "https://github.com/arenasys/binaries/releases/download/v1/PyQt5-5.15.7-cp37-abi3-win_amd64.whl";
-                if (!Download(pyqt_url, pyqt_file))
+                try
                 {
+                    Run(pythonCli, "-m", "pip", "install", "PySide6==6.8.1");
+                }
+                catch (Exception ex)
+                {
+                    LaunchError(ex.Message);
                     progress?.DoClose();
                     return;
                 }
-
-                progress?.SetLabel("Installing PyQT5");
-
-                Run(python, "-m", "pip", "install", pyqt_file);
-
-                File.Delete(pyqt_file);
             }
 
             progress?.DoClose();
 
             try
             {
-                string[] cmd = { python, "source\\main.py" };
+                string[] cmd = { ".\\python\\pythonw.exe", "source\\launch.py" };
                 Launch(cmd.Concat(args).ToArray());
             }
             catch (Exception ex)

@@ -2,7 +2,7 @@ import glob
 import os
 import threading
 
-from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject, QThreadPool, QRunnable, QFileSystemWatcher
+from PySide6.QtCore import Slot as pyqtSlot, Signal as pyqtSignal, QObject, QThreadPool, QRunnable, QFileSystemWatcher
 
 class WatcherRunnableSignals(QObject):
     result = pyqtSignal(str, list, list)

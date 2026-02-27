@@ -1,7 +1,7 @@
-from PyQt5.QtCore import Qt, pyqtProperty, pyqtSignal, QObject, pyqtSlot, QUrl, QThread, QMimeData, QByteArray
-from PyQt5.QtQml import qmlRegisterSingletonType
-from PyQt5.QtSql import QSqlQuery
-from PyQt5.QtGui import QImage, QDesktopServices, QDrag
+from PySide6.QtCore import Qt, Property as pyqtProperty, Signal as pyqtSignal, QObject, Slot as pyqtSlot, QUrl, QThread, QMimeData, QByteArray
+from PySide6.QtQml import qmlRegisterSingletonType
+from PySide6.QtSql import QSqlQuery
+from PySide6.QtGui import QImage, QDesktopServices, QDrag
 
 import sql
 import os

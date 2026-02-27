@@ -1,6 +1,6 @@
 import json
 
-from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, QThread
+from PySide6.QtCore import Slot as pyqtSlot, Property as pyqtProperty, Signal as pyqtSignal, QObject, QThread
 
 from parameters import VariantMap
 

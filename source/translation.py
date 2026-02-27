@@ -1,5 +1,5 @@
-from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, QObject, QUrl
-from PyQt5.QtQml import qmlRegisterSingletonType, qmlRegisterUncreatableType
+from PySide6.QtCore import Property as pyqtProperty, Slot as pyqtSlot, Signal as pyqtSignal, QObject, QUrl
+from PySide6.QtQml import qmlRegisterSingletonType, qmlRegisterUncreatableType
 
 import json
 import os

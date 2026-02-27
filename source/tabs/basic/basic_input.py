@@ -1,6 +1,6 @@
-from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, QObject, QSize, QUrl, QMimeData, QByteArray, Qt, QRect, QRectF, QPointF, QSizeF
-from PyQt5.QtGui import QImage, QDrag, QVector3D, QColor, QPainter, QBrush, QPen, QPolygonF
-from PyQt5.QtWidgets import QApplication
+from PySide6.QtCore import Property as pyqtProperty, Slot as pyqtSlot, Signal as pyqtSignal, QObject, QSize, QUrl, QMimeData, QByteArray, Qt, QRect, QRectF, QPointF, QSizeF
+from PySide6.QtGui import QImage, QDrag, QVector3D, QColor, QPainter, QBrush, QPen, QPolygonF
+from PySide6.QtWidgets import QApplication
 from enum import Enum
 
 import parameters

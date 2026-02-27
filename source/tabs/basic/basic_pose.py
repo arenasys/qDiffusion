@@ -1,5 +1,5 @@
-from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, QObject, QSize, Qt, QRect, QRectF, QPointF
-from PyQt5.QtGui import QImage, QColor, QPainter, QBrush, QPolygonF
+from PySide6.QtCore import Property as pyqtProperty, Slot as pyqtSlot, Signal as pyqtSignal, QObject, QSize, Qt, QRect, QRectF, QPointF
+from PySide6.QtGui import QImage, QColor, QPainter, QBrush, QPolygonF
 import math
 
 NAMES = [

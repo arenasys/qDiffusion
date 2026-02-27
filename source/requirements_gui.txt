@@ -1,9 +1,16 @@
-Pillow>=9.5.0
-websockets==11.0.3
+# Python 3.14 lock policy: all runtime dependencies are strictly pinned.
+# Regenerate lock candidates with:
+#   python -m pip install -U pip pip-tools
+#   pip-compile --resolver=backtracking --generate-hashes --output-file source/requirements_gui.lock source/requirements_gui.txt
+
+Pillow==11.0.0
+websockets==12.0
 bson==0.5.10
-Send2Trash==1.8.2
-PyOpenGL==3.1.7
-PyQt5==5.15.7
-cryptography==40.0.2
-numpy==1.24.3
-pygit2==1.12.1
+Send2Trash==1.8.3
+PyOpenGL==3.1.9
+# Qt binding: GUI runtime uses PySide6 APIs; keep wheel-compatible line for Python 3.14.
+PySide6==6.8.1
+cryptography==44.0.1
+numpy==2.2.2
+pygit2==1.17.0
+packaging==24.2

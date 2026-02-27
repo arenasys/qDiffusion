@@ -1,7 +1,7 @@
-from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, Qt, QObject, QPointF, QRectF, QMimeData, QSizeF
-from PyQt5.QtQuick import QQuickItem, QQuickPaintedItem
-from PyQt5.QtGui import QRadialGradient, QColor, QPainter, QPainterPath, QPen, QPolygonF, QImage, QConicalGradient, QRadialGradient
-from PyQt5.QtQml import qmlRegisterType
+from PySide6.QtCore import Property as pyqtProperty, Slot as pyqtSlot, Signal as pyqtSignal, Qt, QObject, QPointF, QRectF, QMimeData, QSizeF
+from PySide6.QtQuick import QQuickItem, QQuickPaintedItem
+from PySide6.QtGui import QRadialGradient, QColor, QPainter, QPainterPath, QPen, QPolygonF, QImage, QConicalGradient, QRadialGradient
+from PySide6.QtQml import qmlRegisterType
 import time
 
 

@@ -10,10 +10,10 @@ VENV_DIR = os.path.join(os.getcwd(), "venv")
 IS_WIN = platform.system() == 'Windows'
 PYTHON_RUN = sys.executable
 
-QT_VER = "PyQt5==5.15.7"
+QT_VER = "PySide6==6.8.1"
 MISSING_QT = False
 try:
-    from PyQt5.QtCore import Qt
+    from PySide6.QtCore import Qt
 except Exception:
     MISSING_QT = True
 
@@ -34,22 +34,39 @@ def get_env():
     return env
 
 def restart():
+    venv_python = get_venv_python(gui=IS_WIN)
     if IS_WIN:
-        subprocess.Popen([VENV_DIR+"\\Scripts\\pythonw.exe", "source\\launch.py"] + sys.argv[1:], env=get_env(), creationflags=0x00000008|0x00000200)
+        subprocess.Popen([venv_python, "source\\launch.py"] + sys.argv[1:], env=get_env(), creationflags=0x00000008|0x00000200)
     else:
-        subprocess.Popen([VENV_DIR+"/bin/python", "source/launch.py"] + sys.argv[1:], env=get_env())
+        subprocess.Popen([venv_python, "source/launch.py"] + sys.argv[1:], env=get_env())
     exit()
+
+def get_venv_python(gui=False):
+    if IS_WIN:
+        candidates = [
+            "pythonw.exe" if gui else "python.exe",
+            "python3.14w.exe" if gui else "python3.14.exe",
+            "python3w.exe" if gui else "python3.exe"
+        ]
+        scripts_dir = os.path.join(VENV_DIR, "Scripts")
+    else:
+        candidates = ["python3.14", "python3", "python"]
+        scripts_dir = os.path.join(VENV_DIR, "bin")
+
+    for executable in candidates:
+        candidate_path = os.path.join(scripts_dir, executable)
+        if os.path.exists(candidate_path):
+            return candidate_path
+
+    return os.path.join(scripts_dir, candidates[-1])
 
 def install_venv():
     print(f"CREATING VENV... ({VENV_DIR})")
     subprocess.run([PYTHON_RUN, "-m", "venv", VENV_DIR])
 
 def install_qt():
-    print("INSTALLNG PyQt...")
-    if IS_WIN:
-        subprocess.run([VENV_DIR+"\\Scripts\\python.exe", "-m", "pip", "install", QT_VER], env=get_env())
-    else:
-        subprocess.run([VENV_DIR+"/bin/python", "-m", "pip", "install", QT_VER], env=get_env())
+    print("INSTALLING PySide6...")
+    subprocess.run([get_venv_python(), "-m", "pip", "install", QT_VER], env=get_env())
 
 def exceptHook(exc_type, exc_value, exc_tb):
     tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
@@ -64,8 +81,8 @@ def exceptHook(exc_type, exc_value, exc_tb):
 if __name__ == "__main__":
     sys.excepthook = exceptHook
 
-    if sys.version_info[0] < 3 or sys.version_info[1] < 8:
-        print(f"Python 3.8 or greater is required. Have Python {sys.version_info[0]}.{sys.version_info[1]}.")
+    if sys.version_info < (3, 14):
+        print(f"Python 3.14 or greater is required. Have Python {sys.version_info[0]}.{sys.version_info[1]}.")
         input()
         exit()
     if not importlib.util.find_spec("pip"):

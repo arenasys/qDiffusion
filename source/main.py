@@ -12,19 +12,22 @@ import os
 import glob
 import shutil
 import importlib
-import pkg_resources
 import json
 import hashlib
 import argparse
+from importlib import metadata
+
+from packaging.requirements import Requirement
+from packaging.version import InvalidVersion, Version
 
 import platform
 IS_WIN = platform.system() == 'Windows'
 IS_MAC = platform.system() == 'Darwin'
 
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, pyqtProperty, QObject, QUrl, QCoreApplication, Qt, QElapsedTimer, QThread
-from PyQt5.QtQml import QQmlApplicationEngine, qmlRegisterSingletonType, qmlRegisterType
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtGui import QIcon
+from PySide6.QtCore import Signal as pyqtSignal, Slot as pyqtSlot, Property as pyqtProperty, QObject, QUrl, QCoreApplication, Qt, QElapsedTimer, QThread
+from PySide6.QtQml import QQmlApplicationEngine, qmlRegisterSingletonType, qmlRegisterType
+from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QIcon
 
 from translation import Translator
 
@@ -82,7 +85,7 @@ def buildQMLPy():
         startupinfo = subprocess.STARTUPINFO()
         startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
 
-    status = subprocess.run(["pyrcc5", "-o", qml_py, qml_rc], capture_output=True, startupinfo=startupinfo)
+    status = subprocess.run(["pyside6-rcc", "-o", qml_py, qml_rc], capture_output=True, startupinfo=startupinfo)
     if status.returncode != 0:
         raise Exception(status.stderr)
 
@@ -122,22 +125,110 @@ class Builder(QThread):
         buildQMLRc()
         buildQMLPy()
 
+def _requirement_satisfied(requirement: Requirement, installed_version: str, enforce_version: bool) -> bool:
+    if not enforce_version or not str(requirement.specifier):
+        return True
+
+    try:
+        return requirement.specifier.contains(Version(installed_version), prereleases=True)
+    except InvalidVersion:
+        return False
+
+
 def check(dependancies, enforce_version=True):
-    importlib.reload(pkg_resources)
     needed = []
     for d in dependancies:
         try:
-            pkg_resources.require(d)
-        except pkg_resources.DistributionNotFound as e:
-            #print("MISSING", d, e)
-            needed += [d]
-        except pkg_resources.VersionConflict as e:
-            if enforce_version:
-                #print("CONFLICT", d, e)
-                needed += [d]
+            requirement = Requirement(d)
         except Exception:
-            pass
+            needed += [d]
+            continue
+
+        if requirement.marker and not requirement.marker.evaluate():
+            continue
+
+        try:
+            installed_version = metadata.version(requirement.name)
+        except metadata.PackageNotFoundError:
+            needed += [d]
+            continue
+        except Exception:
+            needed += [d]
+            continue
+
+        if not _requirement_satisfied(requirement, installed_version, enforce_version):
+            needed += [d]
+
     return needed
+
+
+def parse_requirements(requirements_path, visited=None):
+    requirements = []
+    visited = visited or set()
+
+    requirements_path = os.path.abspath(requirements_path)
+    if requirements_path in visited or not os.path.exists(requirements_path):
+        return requirements
+    visited.add(requirements_path)
+
+    with open(requirements_path, "r", encoding="utf-8") as file:
+        for raw_line in file:
+            line = raw_line.split("#", 1)[0].strip()
+            if not line:
+                continue
+
+            if line.startswith(("-r", "--requirement")):
+                include = line.split(maxsplit=1)
+                if len(include) == 2:
+                    include_path = include[1].strip()
+                    include_path = os.path.join(os.path.dirname(requirements_path), include_path)
+                    requirements += parse_requirements(include_path, visited)
+                continue
+
+            # pip install options that do not represent packages
+            if line.startswith(("-c", "--constraint", "--index-url", "--extra-index-url", "--find-links", "-f", "--pre")):
+                continue
+
+            requirements.append(line)
+
+    return requirements
+
+
+def load_inference_requirements():
+    infer_path = os.path.join("source", "sd-inference-server")
+    candidates = [
+        os.path.join(infer_path, "requirements.txt"),
+        os.path.join(infer_path, "requirements_inference.txt"),
+        os.path.join(infer_path, "requirements", "requirements.txt"),
+        os.path.join(infer_path, "requirements", "requirements_inference.txt"),
+        os.path.join(infer_path, "requirements", "inference.txt"),
+    ]
+    for requirements in candidates:
+        if os.path.exists(requirements):
+            return parse_requirements(requirements)
+
+    fallback = os.path.join("source", "requirements_inference.txt")
+    return parse_requirements(fallback)
+
+
+TORCH_BUILD_MATRIX = {
+    "nvidia": {
+        "torch": "2.8.0+cu129",
+        "torchvision": "0.23.0+cu129",
+        "index": "cu129",
+    },
+    "amd": {
+        "linux": {
+            "torch": "2.8.0+rocm6.4",
+            "torchvision": "0.23.0+rocm6.4",
+            "index": "rocm6.4",
+        },
+        "windows": {
+            # No Python 3.14 torch-directml build is currently available.
+            "torch-directml": None,
+        },
+    },
+}
 
 class Installer(QThread):
     output = pyqtSignal(str)
@@ -152,16 +243,18 @@ class Installer(QThread):
         self.downloading = False
         self.download_progress = 1.0
 
+    def _build_install_args(self, package):
+        args = ["pip", "install", "-U", package]
+        pkg = package.split("=", 1)[0]
+        if pkg in {"torch", "torchvision"} and "+" in package:
+            build_channel = package.rsplit("+", 1)[-1]
+            args += ["--index-url", "https://download.pytorch.org/whl/" + build_channel]
+        return [sys.executable.replace("pythonw", "python"), "-m"] + args
+
     def run(self):
         for p in self.packages:
             self.installing.emit(p)
-            args = ["pip", "install", "-U", p]
-            pkg = p.split("=",1)[0]
-            if pkg in {"torch", "torchvision"}:
-                args = ["pip", "install", "-U", p, "--index-url", "https://download.pytorch.org/whl/" + p.rsplit("+",1)[-1]]
-            args += ["--progress-bar", "off" if pkg == "pip" else "raw"]
-        
-            args = [sys.executable.replace("pythonw", "python"), "-m"] + args
+            args = self._build_install_args(p)
 
             startupinfo = None
             if IS_WIN:
@@ -250,43 +343,44 @@ class Coordinator(QObject):
         except Exception:
             pass
 
-        with open(os.path.join("source", "requirements_gui.txt")) as file:
-            self.required = [line.rstrip() for line in file]
-
-        with open(os.path.join("source", "requirements_inference.txt")) as file:
-            self.optional = [line.rstrip() for line in file]
+        self.required = parse_requirements(os.path.join("source", "requirements_gui.txt"))
+        self.optional = load_inference_requirements()
 
         self.find_needed()
 
         qmlRegisterSingletonType(Coordinator, "gui", 1, 0, "COORDINATOR", lambda qml, js: self)
 
     def find_needed(self):
+        self.install_blocker = ""
         self.torch_version = ""
         self.torchvision_version = ""
         self.directml_version = ""
 
         try:
-            self.torch_version = str(pkg_resources.get_distribution("torch")).split()[-1]
-        except:
+            self.torch_version = metadata.version("torch")
+        except Exception:
             pass
 
         try:
-            self.torchvision_version = str(pkg_resources.get_distribution("torchvision")).split()[-1]
-        except:
+            self.torchvision_version = metadata.version("torchvision")
+        except Exception:
             pass
 
         try:
-            self.directml_version = str(pkg_resources.get_distribution("torch-directml")).split()[-1]
-        except:
+            self.directml_version = metadata.version("torch-directml")
+        except Exception:
             pass
 
-        self.nvidia_torch_version = "2.1.0+cu118"
-        self.nvidia_torchvision_version = "0.16+cu118"
+        nvidia_cfg = TORCH_BUILD_MATRIX["nvidia"]
+        amd_cfg = TORCH_BUILD_MATRIX["amd"]
 
-        self.amd_torch_version = "2.1.0+rocm5.6"
-        self.amd_torchvision_version = "0.16.0+rocm5.6"
+        self.nvidia_torch_version = nvidia_cfg["torch"]
+        self.nvidia_torchvision_version = nvidia_cfg["torchvision"]
 
-        self.amd_torch_directml_version = "0.2.0.dev230426"
+        self.amd_torch_version = amd_cfg["linux"]["torch"]
+        self.amd_torchvision_version = amd_cfg["linux"]["torchvision"]
+
+        self.amd_torch_directml_version = amd_cfg["windows"]["torch-directml"]
         
         self.required_need = check(self.required, self.enforce)
         self.optional_need = check(self.optional, self.enforce)
@@ -354,26 +448,37 @@ class Coordinator(QObject):
     def get_needed(self):
         mode = self._modes[self._mode]
         needed = []
+
+        def _has_variant(version, variant):
+            return "+" in version and version.rsplit("+", 1)[-1].startswith(variant)
+
+        self.install_blocker = ""
         if mode == "nvidia":
-            if not "+cu" in self.torch_version:
+            if not _has_variant(self.torch_version, "cu"):
                 needed += ["torch=="+self.nvidia_torch_version]
-            if not "+cu" in self.torchvision_version:
+            if not _has_variant(self.torchvision_version, "cu"):
                 needed += ["torchvision=="+self.nvidia_torchvision_version]
             needed += self.optional_need
         if mode == "amd":
             if IS_WIN:
-                if not self.directml_version:
+                if self.amd_torch_directml_version is None:
+                    self.install_blocker = (
+                        "No compatible torch-directml package is currently available for this Python version on Windows. "
+                        "Use Remote mode, switch to Nvidia mode, or use a Python version supported by torch-directml."
+                    )
+                elif not self.directml_version:
                     needed += ["torch-directml==" + self.amd_torch_directml_version]
             else:
-                if not "+rocm" in self.torch_version:
+                if not _has_variant(self.torch_version, "rocm"):
                     needed += ["torch=="+self.amd_torch_version]
-                if not "+rocm" in self.torchvision_version:
+                if not _has_variant(self.torchvision_version, "rocm"):
                     needed += ["torchvision=="+self.amd_torchvision_version]
             needed += self.optional_need
 
         needed += self.required_need
 
         if needed:
+            needed = list(dict.fromkeys(needed))
             needed = ["pip", "wheel"] + needed
 
         return needed
@@ -405,6 +510,9 @@ class Coordinator(QObject):
         if self.installer:
             self.cancel.emit()
             return
+        if self.install_blocker:
+            self.output.emit("Installer blocked: " + self.install_blocker)
+            raise RuntimeError(self.install_blocker)
         packages = self.packages
         if not packages:
             self.done()

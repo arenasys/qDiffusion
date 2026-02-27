@@ -64,11 +64,11 @@ try:
 except:
     pass
 
-from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, Qt, QEvent, QMimeData, QByteArray, QBuffer, QIODevice, QRect, QRectF, QPoint, QUrl, QThread, QSharedMemory
-from PyQt5.QtQuick import QQuickItem, QQuickPaintedItem
-from PyQt5.QtGui import QColor, QImage, QSyntaxHighlighter, QColor
-from PyQt5.QtNetwork import QNetworkRequest, QNetworkReply, QNetworkAccessManager
-from PyQt5.QtQml import qmlRegisterType, qmlRegisterUncreatableType
+from PySide6.QtCore import Slot as pyqtSlot, Property as pyqtProperty, Signal as pyqtSignal, QObject, Qt, QEvent, QMimeData, QByteArray, QBuffer, QIODevice, QRect, QRectF, QPoint, QUrl, QThread, QSharedMemory
+from PySide6.QtQuick import QQuickItem, QQuickPaintedItem
+from PySide6.QtGui import QColor, QImage, QSyntaxHighlighter, QColor
+from PySide6.QtNetwork import QNetworkRequest, QNetworkReply, QNetworkAccessManager
+from PySide6.QtQml import qmlRegisterType, qmlRegisterUncreatableType
 
 class FocusReleaser(QQuickItem):
     releaseFocus = pyqtSignal()

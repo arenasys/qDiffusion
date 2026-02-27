@@ -1,4 +1,4 @@
-from PyQt5.QtCore import pyqtSlot, pyqtProperty, pyqtSignal, QObject, QThread, Qt
+from PySide6.QtCore import Slot as pyqtSlot, Property as pyqtProperty, Signal as pyqtSignal, QObject, QThread, Qt
 import os, re, glob, time, datetime
 
 import filesystem

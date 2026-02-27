@@ -1,9 +1,9 @@
-from PyQt5.QtCore import pyqtProperty, pyqtSlot, pyqtSignal, QObject, QSize, QUrl, QMimeData, QByteArray
-from PyQt5.QtQml import qmlRegisterSingletonType, qmlRegisterUncreatableType
-from PyQt5.QtGui import QImage, QDrag, QCursor
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtSql import QSqlQuery
-from PyQt5.QtNetwork import QNetworkRequest, QNetworkReply
+from PySide6.QtCore import Property as pyqtProperty, Slot as pyqtSlot, Signal as pyqtSignal, QObject, QSize, QUrl, QMimeData, QByteArray
+from PySide6.QtQml import qmlRegisterSingletonType, qmlRegisterUncreatableType
+from PySide6.QtGui import QImage, QDrag, QCursor
+from PySide6.QtWidgets import QApplication
+from PySide6.QtSql import QSqlQuery
+from PySide6.QtNetwork import QNetworkRequest, QNetworkReply
 
 import parameters
 import re

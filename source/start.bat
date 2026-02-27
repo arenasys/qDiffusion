@@ -1,23 +1,30 @@
 @echo off
-for /f "tokens=4-7 delims=[.] " %%i in ('ver') do (if %%i==Version (set v=%%j.%%k) else (set v=%%i.%%j))
 
 IF NOT EXIST "python" (
     cd ..
 )
 
 IF NOT EXIST "python" (
-    echo DOWNLOADING PYTHON...
+    set "PYTHON_URL=https://github.com/indygreg/python-build-standalone/releases/download/20260112/cpython-3.14.0+20260112-x86_64-pc-windows-msvc-shared-install_only.tar.gz"
 
-    IF "%v%" == "10.0" (
-        bitsadmin.exe /transfer "DOWNLOADING PYTHON 3.10..." "https://github.com/indygreg/python-build-standalone/releases/download/20230726/cpython-3.10.12+20230726-x86_64-pc-windows-msvc-shared-install_only.tar.gz" "%CD%/python.tar.gz"
-    ) else (
-        bitsadmin.exe /transfer "DOWNLOADING PYTHON 3.8..." "https://github.com/indygreg/python-build-standalone/releases/download/20230726/cpython-3.8.16+20230726-x86_64-pc-windows-msvc-shared-install_only.tar.gz" "%CD%/python.tar.gz"
+    echo DOWNLOADING PYTHON...
+    bitsadmin.exe /transfer "DOWNLOADING PYTHON 3.14..." "%PYTHON_URL%" "%CD%/python.tar.gz"
+    IF ERRORLEVEL 1 (
+        echo ERROR: Failed to download bundled Python 3.14 for Windows x86_64.
+        echo Tried URL: %PYTHON_URL%
+        exit /b 1
     )
 
     echo EXTRACTING PYTHON...
     tar -xf "python.tar.gz"
+    IF ERRORLEVEL 1 (
+        echo ERROR: Failed to extract bundled Python archive.
+        del /Q "python.tar.gz"
+        exit /b 1
+    )
+
     del /Q "python.tar.gz"
 )
 
-start .\python\python.exe source\launch.py
-exit
+.\python\python.exe source\launch.py
+exit /b %ERRORLEVEL%

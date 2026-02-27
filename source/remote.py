@@ -11,9 +11,9 @@ import math
 import time
 import threading
 
-from PyQt5.QtCore import pyqtSlot, pyqtSignal, QThread
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtGui import QImage
+from PySide6.QtCore import Slot as pyqtSlot, Signal as pyqtSignal, QThread
+from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QImage
 
 import secrets
 from cryptography.hazmat.primitives import hashes

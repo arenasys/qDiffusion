@@ -11,10 +11,10 @@ import misc
 from tabs.basic.basic_output import BasicOutput
 import manager
 
-from PyQt5.QtCore import pyqtProperty, pyqtSignal, QObject, pyqtSlot, QUrl, QThread, QThreadPool
-from PyQt5.QtQml import qmlRegisterSingletonType, qmlRegisterUncreatableType
-from PyQt5.QtSql import QSqlQuery
-from PyQt5.QtGui import QImage
+from PySide6.QtCore import Property as pyqtProperty, Signal as pyqtSignal, QObject, Slot as pyqtSlot, QUrl, QThread, QThreadPool
+from PySide6.QtQml import qmlRegisterSingletonType, qmlRegisterUncreatableType
+from PySide6.QtSql import QSqlQuery
+from PySide6.QtGui import QImage
 
 class MergeOperation(QObject):
     updated = pyqtSignal()
