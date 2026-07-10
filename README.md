@@ -2,7 +2,7 @@
 --------
 
 # Notice
-See [qDiffusionComfy](https://github.com/arenasys/qDiffusionComfy). Any possible future work will go there.
+See [qComfy](https://github.com/arenasys/qComfy). Any hope for future work is there.
 
 ----
 Built from the ground up alongside [sd-inference-server](https://github.com/arenasys/sd-inference-server), the backend for this GUI.
